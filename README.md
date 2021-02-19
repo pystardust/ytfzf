@@ -22,21 +22,27 @@ Initially this used to be a single line script. But for portability and extensib
 
 ## Examples
 	
+> Download audio (music)
+
 	ytfzf -dm <query>
 
-> to download audio (for music)
+> Download a video in your history
 
 	ytfzf -dH
 
-> download a video in your history
+> Watch a video in your history in a differnt format
 
 	ytfzf -fH
 
-> watch a video in your history in a differnt format
+> Download a video in a certain format
 
 	ytfzf -fd
 
-> Download a video in a certain format
+
+If you started watching a video and you wish to change format then first hit Q to save pos in mpv while closing, then choose your format using
+
+	ytfzf -fH
+
 
 Select the video using fzf. 
 It will search based on title and uploader names.
