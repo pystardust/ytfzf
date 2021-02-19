@@ -12,6 +12,7 @@ It will search based on title and uploader names.
 
 ## Dependencies
 * mpv
+* [youtube-dl](https://github.com/ytdl-org/youtube-dl)
 * [fzf](https://github.com/junegunn/fzf) - for menu
 * [jq](https://github.com/stedolan/jq) - to parse json
 * [pup](https://github.com/ericchiang/pup) - to parse html
@@ -35,4 +36,4 @@ Once you have all the dependencies
 
 Then you can move it to your path (optional)
 	
-	mv ytfzf /usr/local/bin/ytfzf
+	sudo mv ytfzf /usr/local/bin/ytfzf
