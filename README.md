@@ -1,7 +1,8 @@
 # ytfzf
 A POSIX script that helps you find youtube videos (with out API) and opens/downloads using mpv/youtube-dl.
 * History support
-* Format selection on the fly
+* Download support
+* Format selection ( with feature to choose default option )
 
 Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below.
 
