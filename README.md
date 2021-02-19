@@ -5,7 +5,7 @@ A one line script that help you find youtube videos.
 
 # Usage
 ```
-./ytfzf  <search query>
+ytfzf  <search query>
 ```
 Select the video using fzf. 
 It will search based on title and uploader names.
@@ -25,3 +25,14 @@ It will search based on title and uploader names.
 > from AUR
 
 	yay -S pup
+
+# Installation
+Once you have all the dependencies
+
+	git clone https://github.com/pystardust/ytfzf
+	cd ytfzf
+	chmod +x ytfzf
+
+Then you can move it to your path (optional)
+	
+	mv ytfzf /usr/local/bin/ytfzf
