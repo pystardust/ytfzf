@@ -16,3 +16,9 @@ It will search based on title and uploader names.
 * jq
 * pup
 * xargs
+
+# To install in arch based distors
+
+	pacman -S jq mpv fzf 
+> from AUR
+	yay -S pup
