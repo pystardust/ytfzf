@@ -21,4 +21,5 @@ It will search based on title and uploader names.
 
 	pacman -S jq mpv fzf 
 > from AUR
+
 	yay -S pup
