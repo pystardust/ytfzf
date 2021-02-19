@@ -1,5 +1,5 @@
 # ytfzf
-A single line script that help you find youtube videos (with out API).
+A single line script that helps you find youtube videos (with out API) and opens them using mpv.
 
 I have broken down the script into multiple sub-lines for visual clarity. Its still a single line, as \newline is ignored by the shell!
 
