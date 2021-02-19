@@ -21,6 +21,9 @@ Initially this used to be a single line script. But for portability and extensib
 	     -f  <search query>    Show available formats before proceeding
 
 ## Examples
+> Watch youtube videos ( Default format : best video )
+
+	ytfzf <query>
 	
 > Download audio (music)
 
