@@ -12,9 +12,9 @@ It will search based on title and uploader names.
 
 ## Dependencies
 * mpv
-* fzf 
-* jq
-* pup
+* [fzf](https://github.com/junegunn/fzf) - for menu
+* [jq](https://github.com/stedolan/jq) - to parse json
+* [pup](https://github.com/ericchiang/pup) - to parse html
 * xargs
 
 ## To install Dependencies
