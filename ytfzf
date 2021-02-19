@@ -1,16 +1,110 @@
 #!/bin/sh
-[ -z "$*" ] && printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m" || \
-	curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" |\
-	pup 'script' | grep  "^ *var ytInitialData" | sed 's/^[^=]*=//g;s/;$//' |\
-	jq '..|.videoRenderer?' | sed '/^null$/d' | jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'|\
-	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{60}).*/\1/;N;s/\n(.{30}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" |\
-	column -t  -s "$(printf "\t")" | fzf --delimiter='\|' --nth=1,2  |\
-	sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_' | xargs -r -I'{}' mpv "{}" 
-## I have broken down the single line for visual clarity, And have commented what each sub-line does in their respective order below.
-# Handling empty input and displaying usage
-# searching query by appending it to search url and giving html as output
-# extracting and cleaning json from html
-# To get contents from json
-# Formatting and truncating title and other fields
-# fuzzy find the first 2 fields ( title, author)
-# append url and play using mpv
+
+# Tweak these (Defaults)
+# ==============================
+## Maximum characters for result
+title_len=60
+channel_len=30
+## History settings
+### 0           : Don't save
+### 1           : save
+save_history=1
+history_file=~/.cache/ytfzf_hst
+## Preferred format
+### ""          : empty , choose best quality video (automatic)
+### "22"        : 720p
+### "18"        : 360p
+### "bestaudio" : Best quality only audio (Good for music)
+preferred_format=""
+### 1           : Shows all formats before proceeding
+show_format="0"
+### If preferred format isn't available then it will default 
+### to automatic ,i.e, is best quality video
+## Player
+player="mpv"
+player_format="mpv --ytdl-format="
+# ==============================
+
+# Misc
+errinfo () { 
+printf "Check for new versions at: https://github.com/pystardust/ytfzf\n"
+printf "If problem persists, please report this issue at: https://github.com/pystardust/ytfzf/issues\n"
+}
+
+helpinfo () {
+printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
+printf "     -h              Show this help text\n"; 
+printf "     -H              choose from history \n";
+printf "     -m              Audio Only (for listening to music)\n"; 
+printf "     -d              Download to current directory\n"; 
+printf "     -f              Show available formats before proceeding\n";
+exit ;
+}
+
+main=0
+# Dependecies check
+dep_ck () {
+	command -v "$1" 1>/dev/null || { printf "$1 not found. Please install it.\n" ; exit 2; }
+}
+dep_ck "jq"
+dep_ck "youtube-dl"
+dep_ck "xargs"
+dep_ck "mpv"
+dep_ck "fzf"
+
+# Options
+while getopts "hmdfH" opt; do
+	case ${opt} in
+		h) 	helpinfo
+			;;
+		m) 	preferred_format="bestaudio"
+			;;
+		d) 	player="youtube-dl"
+		   	player_format="youtube-dl -f "
+			;;
+		f) 	show_format="1"
+			;;
+		H) 	
+			[ $save_history -eq 1 ] && {
+				videos_data="$(tac "$history_file"  | column -t  -s "\|" | uniq )"
+				main=1
+				} || { printf "History is not enabled. Please enable it to use this option -H.\n";}
+			;;
+	esac
+done
+shift $((OPTIND-1)) 
+
+
+# Main
+[ $main -eq 0 ] && {
+
+	[ -z "$*" ] && { printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m"; exit 1; }
+	yt_html="$(curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" )"
+	[ -z "$yt_html" ] &&  { printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"; errinfo; exit 2;}
+
+	yt_json="$(echo "$yt_html" | grep "var *ytInitialData" | sed -E 's_^.*var ytInitialData ?=(.*)} *; *</script>.*_\1}_' )"
+	[ -z "$yt_json" ] &&  { printf "ERROR[#02]: Couldn't find data on site.\n\tThis shouldn't have happened.\n\tMaybe Youtube has changed somethings.\n"; errinfo ; exit 2; }
+
+	videos_data="$(echo "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
+		jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'|\
+		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{$title_len}).*/\1/;N;s/\n(.{$channel_len}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" | column -t  -s "$(printf "\t")" )"
+	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
+
+}
+selected_data="$(echo "$videos_data" | fzf --delimiter='\|' --nth=1,2 )"
+url="$(echo "$selected_data" | sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_')"
+[ -z "$url" ] && exit;
+
+[ $show_format -eq 1 ] && {
+	preferred_format="$(youtube-dl -F "$url" | sed '1,3d' | tac - | fzf | sed -E 's/^([^ ]*) .*/\1/')"
+}
+
+# Action
+[ -n "$preferred_format" ] && {
+	eval "$player_format""$preferred_format"  "$url" 
+} || { 
+	eval "$player" "$url"
+} || { printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; exit 2; }
+
+[ $save_history -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
+
