@@ -1,5 +1,7 @@
 # ytfzf
 A POSIX script that helps you find youtube videos (with out API) and opens/downloads using mpv/youtube-dl.
+* History support
+* Format selection on the fly
 
 Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below.
 
@@ -11,11 +13,12 @@ Initially this used to be a single line script. But for portability and extensib
 ![Gif](ytfzf.gif)
 
 	Usage: ytfzf <search query>
-		 -h              Show this help text
-		 -H              choose from history
-		 -m              Audio Only (for listening to music)
-		 -d              Download to current directory
-		 -f              Show available formats before proceeding
+	     -h                    Show this help text
+	     -H                    Choose from history
+	     -m  <search query>    Audio only (for listening to music)
+	     -d  <search query>    Download to current directory
+	     -f  <search query>    Show available formats before proceeding
+
 
 
 Select the video using fzf. 
