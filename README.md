@@ -20,7 +20,23 @@ Initially this used to be a single line script. But for portability and extensib
 	     -d  <search query>    Download to current directory
 	     -f  <search query>    Show available formats before proceeding
 
+## Examples
+	
+	ytfzf -dm <query>
 
+> to download audio (for music)
+
+	ytfzf -dH
+
+> download a video in your history
+
+	ytfzf -fH
+
+> watch a video in your history in a differnt format
+
+	ytfzf -fd
+
+> Download a video in a certain format
 
 Select the video using fzf. 
 It will search based on title and uploader names.
