@@ -6,7 +6,7 @@
 	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{60}).*/\1/;N;s/\n(.{30}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" |\
 	column -t  -s "$(printf "\t")" | fzf --delimiter='\|' --nth=1,2  |\
 	sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_' | xargs -r -I'{}' mpv "{}" 
-## I have broken down the single line for visual clarity, And have commented what each sub-line does it the respective order below.
+## I have broken down the single line for visual clarity, And have commented what each sub-line does in their respective order below.
 # Handling empty input and displaying usage
 # searching query by appending it to search url and giving html as output
 # extracting and cleaning json from html
