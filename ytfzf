@@ -1,2 +1,16 @@
 #!/bin/sh
-[ -z "$*" ] && printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m" || curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" |  pup 'script' | grep  "^ *var ytInitialData" | sed 's/^[^=]*=//g;s/;$//' | jq '..|.videoRenderer?' | sed '/^null$/d' | jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'| sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{60}).*/\1/;N;s/\n(.{30}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" | column -t  -s "$(printf "\t")" | fzf --delimiter='\|' --nth=1,2  | sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_' | xargs -r -I'{}' mpv "{}"
+[ -z "$*" ] && printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m" || \
+	curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" |\
+	pup 'script' | grep  "^ *var ytInitialData" | sed 's/^[^=]*=//g;s/;$//' |\
+	jq '..|.videoRenderer?' | sed '/^null$/d' | jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'|\
+	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{60}).*/\1/;N;s/\n(.{30}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" |\
+	column -t  -s "$(printf "\t")" | fzf --delimiter='\|' --nth=1,2  |\
+	sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_' | xargs -r -I'{}' mpv "{}" 
+## I have broken down the single line for visual clarity, And have commented what each sub-line does it the respective order below.
+# Handling empty input and displaying usage
+# searching query by appending it to search url and giving html as output
+# extracting and cleaning json from html
+# To get contents from json
+# Formatting and truncating title and other fields
+# fuzzy find the first 2 fields ( title, author)
+# append url and play using mpv

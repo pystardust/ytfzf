@@ -1,5 +1,8 @@
 # ytfzf
-A one line script that help you find youtube videos.
+A single line script that help you find youtube videos (with out API).
+I have broken down the script into multiple sub-lines for visual clarity.
+You can technically use this as a single line script
+
 
 ![Gif](ytfzf.gif)
 
