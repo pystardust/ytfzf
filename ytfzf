@@ -29,8 +29,7 @@ player_format="mpv --ytdl-format="
 
 # Misc
 errinfo () { 
-printf "Check for new versions at: https://github.com/pystardust/ytfzf\n"
-printf "If problem persists, please report this issue at: https://github.com/pystardust/ytfzf/issues\n"
+printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n"
 }
 
 helpinfo () {
@@ -68,9 +67,11 @@ while getopts "hmdfH" opt; do
 			;;
 		H) 	
 			[ $save_history -eq 1 ] && {
-				videos_data="$(tac "$history_file"  | column -t  -s "\|" | uniq )"
-				selected_data="$(echo "$videos_data" | fzf --delimiter='\|' --nth=1,2 )"
-				url="$(echo "$selected_data" | sed -E 's_.* ([^ ]*)$_https://www.youtube.com/watch?v=\1_')"
+				videos_data="$(tac "$history_file"  | column -t  -o "$(printf "\t")" -s "$(printf "\t")" | uniq )"
+				selected_data="$(echo "$videos_data" | fzf --delimiter="$(printf "\t")" --nth=1,2 )"
+				#echo "$selected_data" | grep -o "[^ ]* *$"
+				echo "$selected_data" | sed -E 's_.*\t\|([^|]+)$_\1_'
+				url="$(echo "$selected_data" | sed -E 's_^.*\t\|([^|]+)$_https://www.youtube.com/watch?v=\1_')"
 				main=1
 				} || { printf "History is not enabled. Please enable it to use this option -H.\n";}
 			;;
@@ -95,10 +96,10 @@ shift $((OPTIND-1))
 
 	videos_data="$(echo "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
 		jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'|\
-		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{$title_len}).*/\1/;N;s/\n(.{$channel_len}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" | column -t  -s "$(printf "\t")" )"
+		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{$title_len}).*/\1/;N;s/\n(.{$channel_len}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" | column -t  -o "$(printf "\t")" -s "$(printf "\t")" )"
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
-	selected_data="$(echo "$videos_data" | fzf --delimiter='\|' --nth=1,2 )"
-	url="$(echo "$selected_data" | sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_')"
+	selected_data="$(echo "$videos_data" | fzf --delimiter="$(printf "\t")" --nth=1,2 )"
+	url="$(echo "$selected_data" | sed -E 's_.*\|([^|]+) *$_https://www.youtube.com/watch?v=\1_')"
 
 }
 
