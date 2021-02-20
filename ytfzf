@@ -3,8 +3,8 @@
 # https://github.com/pystardust/ytfzf
 
 # DEFAULTS
-title_len=60                           # Display length for title and channel name
-channel_len=30
+title_len=55                           # Display length for title and channel name
+channel_len=28
 save_history=1                         # 0: history off, 1: history on
 history_file=~/.cache/ytfzf_hst
 preferred_format=""                    # ytdl-format (deafults to auto if format not found)"
