@@ -99,8 +99,10 @@ shift $((OPTIND-1))
 	yt_html="$(curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" )"
 	[ -z "$yt_html" ] &&  { printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"; errinfo; exit 2;}
 
-	yt_json="$(echo "$yt_html" | grep "var *ytInitialData" | sed -E 's_^.*var ytInitialData ?=(.*)} *; *</script>.*_\1}_' )"
+	yt_json="$(echo "$yt_html" |sed -n '/var *ytInitialData/,$p' | tr -d '\n' | sed -E 's_^.*var ytInitialData ?=__ ; s_;</script>.*__ ; s/\\L//g ' )"
 	[ -z "$yt_json" ] &&  { printf "ERROR[#02]: Couldn't find data on site.\n\tThis shouldn't have happened.\n\tMaybe Youtube has changed somethings.\n"; errinfo ; exit 2; }
+
+  
 
 	videos_data="$(echo "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
 		jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'|\
