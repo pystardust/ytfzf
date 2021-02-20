@@ -49,7 +49,6 @@ dep_ck () {
 }
 dep_ck "jq"
 dep_ck "youtube-dl"
-dep_ck "xargs"
 dep_ck "mpv"
 dep_ck "fzf"
 
