@@ -85,6 +85,10 @@ Once you have all the dependencies
 Then you can move it to your path (optional)
 	
 	sudo mv ytfzf /usr/local/bin/
+Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
+	
+	yay -S ytfzf-git
+        
 
 # Todo
 
