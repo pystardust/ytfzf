@@ -33,7 +33,7 @@ Initially this used to be a single line script. But for portability and extensib
 	
 * You can use multiple options together, here are some examples
 
-> Download audio (music)
+> Steam audio (music)
 
 	ytfzf -m <query>
 
