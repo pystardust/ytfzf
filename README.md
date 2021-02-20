@@ -30,6 +30,8 @@ It will search based on title and channel names.
 
 	ytfzf <query>
 	
+* You use multiple options together, here are some examples
+
 > Download audio (music)
 
 	ytfzf -dm <query>
@@ -44,7 +46,7 @@ It will search based on title and channel names.
 
 > Download a video in a certain format
 
-	ytfzf -fd
+	ytfzf -fd  <query>
 
 
 If you started watching a video and you wish to change format then first hit Q to save position and quit mpv, then choose your format using
@@ -82,7 +84,7 @@ Once you have all the dependencies
 
 Then you can move it to your path (optional)
 	
-	sudo mv ytfzf /usr/local/bin/ytfzf
+	sudo mv ytfzf /usr/local/bin/
 
 # Todo
 
