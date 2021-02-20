@@ -75,3 +75,8 @@ Once you have all the dependencies
 Then you can move it to your path (optional)
 	
 	sudo mv ytfzf /usr/local/bin/ytfzf
+
+# Todo
+
+* Fix the char encoding. (Without pup)
+* Playlists
