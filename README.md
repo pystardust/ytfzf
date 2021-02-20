@@ -58,13 +58,20 @@ If you started watching a video and you wish to change format then first hit Q t
 * [youtube-dl](https://github.com/ytdl-org/youtube-dl)
 * [fzf](https://github.com/junegunn/fzf) - for menu
 * [jq](https://github.com/stedolan/jq) - to parse json
-* xargs
 
 ## To install Dependencies
 
 ### Arch based
 
-	pacman -S jq mpv youtube-dl fzf 
+	sudo pacman -S jq mpv youtube-dl fzf 
+
+### Debian based
+
+	sudo apt install jq mpv youtube-dl fzf 
+
+> Note youtube-dl is usually outdated in debian repos, I suggest getting it from 
+
+* [youtube-dl github](https://github.com/ytdl-org/youtube-dl)
 
 # Installation
 Once you have all the dependencies
