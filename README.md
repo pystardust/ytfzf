@@ -1,8 +1,9 @@
 # ytfzf
-A POSIX script that helps you find youtube videos (with out API) and opens/downloads using mpv/youtube-dl.
+
+A posix script that helps you find youtube videos (with out API) and opens/downloads using mpv/youtube-dl.
 * History support
 * Download support
-* Format selection ( with feature to choose default option )
+* Format selection
 
 Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below.
 
@@ -22,46 +23,39 @@ Initially this used to be a single line script. But for portability and extensib
 	     -f  <search query>    Show available formats before proceeding
 
 
-Select the video using fzf. 
-It will search based on title and channel names.
+* Video to be selected using fzf.
+* Searches based on title and channel names.
 
 ## Examples
-> Watch Youtube videos ( Default format : best video )
+> Watch video
 
 	ytfzf <query>
 	
-* You use multiple options together, here are some examples
+* You can use multiple options together, here are some examples
 
 > Download audio (music)
 
-	ytfzf -dm <query>
+	ytfzf -m <query>
 
-> Download a video in your history
+> Download a video from your history
 
 	ytfzf -dH
-
-> Watch a video in your history in a different format
-
-	ytfzf -fH
 
 > Download a video in a certain format
 
 	ytfzf -fd  <query>
 
-
-If you started watching a video and you wish to change format then first hit Q to save position and quit mpv, then choose your format using
+If you started watching a video and you wish to change format then 
+first hit Q to save position and quit mpv, then choose your format using
 
 	ytfzf -fH
 
 
-
-## Dependencies
+# Dependencies
 * mpv
 * [youtube-dl](https://github.com/ytdl-org/youtube-dl)
 * [fzf](https://github.com/junegunn/fzf) - for menu
 * [jq](https://github.com/stedolan/jq) - to parse json
-
-## To install Dependencies
 
 ### Arch based
 
@@ -76,15 +70,15 @@ If you started watching a video and you wish to change format then first hit Q t
 * [youtube-dl github](https://github.com/ytdl-org/youtube-dl)
 
 # Installation
-Once you have all the dependencies
 
 	git clone https://github.com/pystardust/ytfzf
 	cd ytfzf
 	chmod +x ytfzf
 
-Then you can move it to your path (optional)
+Copy it to your path
 	
-	sudo mv ytfzf /usr/local/bin/
+	sudo cp ytfzf /usr/local/bin/
+
 Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
 	
 	yay -S ytfzf-git
@@ -94,3 +88,4 @@ Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/y
 
 * Fix the char encoding. (Without pup)
 * Playlists
+* Icons
