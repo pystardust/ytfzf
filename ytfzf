@@ -53,7 +53,7 @@ while getopts "hmdfDH" opt; do
 				hist_data="$(tac "$history_file")"
 				[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 				videos_data="$(echo "$hist_data" | uniq )"
-				selected_data="$(echo "$videos_data" | fzf --delimiter="$(printf "\t")" --nth=1,2 )"
+				selected_data="$(echo "$videos_data" | fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2 )"
 				echo "$selected_data" | sed -E 's_.*\t\|([^|]+)$_\1_'
 				url="$(echo "$selected_data" | sed -E 's_^.*\t\|([^|]+)$_https://www.youtube.com/watch?v=\1_')"
 				main=1
@@ -99,11 +99,11 @@ yt_json="$(printf "%s" "$yt_html" |sed -n '/var *ytInitialData/,$p' | tr -d '\n'
 
 videos_data="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
 	jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
-	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{$title_len}).*/\1/;N;s/\n(.{$channel_len}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" |\
-	column -t  -s "$(printf "\t")" )"
+	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{$title_len}).*/\1/;N;s/\n(.{$channel_len}).*/\n\1/;N;N;N;N;s/\n/\t/g;p" |\
+	awk -F'\t' '{printf "%-60s\t|%-30s\t|%-10s\t|%-6s\t|%-16s\t|%-12s\t\n",$1,$2,$3,$4,$5,$6}'  )"
 [ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
 
-selected_data="$(echo "$videos_data" | fzf --delimiter="$(printf "\t")" --nth=1,2 )"
+selected_data="$(echo "$videos_data" | fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2 )"
 url="$(echo "$selected_data" | sed -E 's_.*\|([^|]+) *$_https://www.youtube.com/watch?v=\1_')"
 }
 
