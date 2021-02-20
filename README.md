@@ -20,8 +20,12 @@ Initially this used to be a single line script. But for portability and extensib
 	     -d  <search query>    Download to current directory
 	     -f  <search query>    Show available formats before proceeding
 
+
+Select the video using fzf. 
+It will search based on title and channel names.
+
 ## Examples
-> Watch youtube videos ( Default format : best video )
+> Watch Youtube videos ( Default format : best video )
 
 	ytfzf <query>
 	
@@ -33,7 +37,7 @@ Initially this used to be a single line script. But for portability and extensib
 
 	ytfzf -dH
 
-> Watch a video in your history in a differnt format
+> Watch a video in your history in a different format
 
 	ytfzf -fH
 
@@ -42,13 +46,11 @@ Initially this used to be a single line script. But for portability and extensib
 	ytfzf -fd
 
 
-If you started watching a video and you wish to change format then first hit Q to save pos in mpv while closing, then choose your format using
+If you started watching a video and you wish to change format then first hit Q to save position and quit mpv, then choose your format using
 
 	ytfzf -fH
 
 
-Select the video using fzf. 
-It will search based on title and uploader names.
 
 ## Dependencies
 * mpv
@@ -61,7 +63,7 @@ It will search based on title and uploader names.
 
 ### Arch based
 
-	pacman -S jq mpv fzf 
+	pacman -S jq mpv youtube-dl fzf 
 
 # Installation
 Once you have all the dependencies

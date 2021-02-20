@@ -23,6 +23,8 @@ show_format="0"
 ## Player
 player="mpv"
 player_format="mpv --ytdl-format="
+### Player must support viewing of url 
+### you can use a browser here. 
 # ==============================
 
 # Misc
