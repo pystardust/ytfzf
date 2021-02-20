@@ -77,19 +77,29 @@ shift $((OPTIND-1))
 [ $main -eq 0 ] && {
 [ -z "$*" ] && { helpinfo ; exit 1; }
 
-yt_html="$(curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" )"
+yt_html="$( 
+useragent='user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'
+
+curl 'https://www.youtube.com/results' -s \
+  -G --data-urlencode "search_query=$*" \
+  -H 'authority: www.youtube.com' \
+  -H "$useragent" \
+  -H 'accept-language: en-US,en;q=0.9' \
+  --compressed
+)"
 [ -z "$yt_html" ] &&  { 
 	printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"; 
 	errinfo; exit 2; }
 
-yt_json="$(echo "$yt_html" |sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
-	sed -E 's_^.*var ytInitialData ?=__ ; s_;</script>.*__ ; s/\\L//g ' )"
+yt_json="$(printf "%s" "$yt_html" |sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
+	sed -E ':a s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;' 
+ )"
 [ -z "$yt_json" ] &&  { 
 	printf "ERROR[#02]: Couldn't find data on site.\n";
 	errinfo ; exit 2; }
 
-videos_data="$(echo "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
-	jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
+videos_data="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
+	jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
 	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{$title_len}).*/\1/;N;s/\n(.{$channel_len}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" |\
 	column -t  -o "$(printf "\t")" -s "$(printf "\t")" )"
 [ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
