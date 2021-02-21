@@ -109,7 +109,7 @@ If you prefer to watch youtube videos in certain option with out the prompting e
 
 	preferred_format="22"
 
-> 22: 720p
+> 22: 720p,
 > 18: 360p
 
 If the preferred format is not available then, it will go back to default selection.
@@ -119,8 +119,10 @@ If the preferred format is not available then, it will go back to default select
 * On by default. 
 * If you don't want history.
 
-	save_history=1                         # 0: history off, 1: history on
-	
+	save_history=1
+
+> 0: history off, 1: history on
+
 * File location 
 
 	~/.cache/ytfzf/ytfzf_hst
