@@ -22,7 +22,7 @@ Initially this used to be a single line script. But for portability and extensib
 	     -d  <search query>    Download to current directory
 	     -f  <search query>    Show available formats before proceeding
 	     -a  <search query>    Auto play the first result (no fzf)
-
+         -l  <search query>    loop: prompt again after video ends
 
 * Video to be selected using fzf.
 * Searches based on title and channel names.
@@ -88,15 +88,25 @@ Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/y
 
 # Defaults
 
+These setting can be tweaked from the first section of the script. Edit them as shown below.
+
 ### History
 
-On by default. If you don't want history, then tweak ytfzf 
+On by default. If you don't want history.
 
 	save_history=1                         # 0: history off, 1: history on
 	
 * File location 
 
 	~/.cache/ytfzf/ytfzf_hst
+
+### Loop prompt
+
+Off by default. Can be turned on using option -f.
+* This would return you to the fzf video selection prompt after the video is exited/ends.
+* To quit the script you can press ESC or ^C in the fzf video selection prompt.
+
+	prompt_loop=0                          # to prompt again after video finishes
 
 ### Currently Playing
 
@@ -110,6 +120,5 @@ On by default. Stores the details of the currently playing track. Empty when not
 
 # Todo
 
-* Fix the char encoding. (Without pup)
 * Playlists
 * Icons

@@ -5,6 +5,7 @@
 # DEFAULTS
 title_len=55                           # Display length for title and channel name
 channel_len=28
+prompt_loop=0                          # to prompt again after video finishes
 save_history=1                         # 0: history off, 1: history on
 cache_dir=~/.cache/ytfzf
 history_file="$cache_dir"/ytfzf_hst
@@ -70,6 +71,7 @@ printf "     -m  <search query>    Audio only (for listening to music)\n";
 printf "     -d  <search query>    Download to current directory\n"; 
 printf "     -f  <search query>    Show available formats before proceeding\n";
 printf "     -a  <search query>    Auto play the first result, no fzf\n";
+printf "     -l  <search query>    loop: prompt again after video ends\n";
 }
 format_awk () {
 	awk -F'\t' \
@@ -79,7 +81,7 @@ format_awk () {
 menu_fzf () {
 	format_awk | fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2
 }
-save_exit () {
+save_before_exit () {
 	[ $save_history -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
 	[ $save_cur -eq 1 ] && printf "" > "$current_file" ;
 }
@@ -94,7 +96,7 @@ dep_ck () {
 dep_ck "jq"; dep_ck "youtube-dl"; dep_ck "mpv"; dep_ck "fzf"
 
 # OPT
-while getopts "hmdfDHa" opt; do
+while getopts "hmdfDHal" opt; do
 	case ${opt} in
 		h) 	helpinfo
 			exit;
@@ -107,20 +109,23 @@ while getopts "hmdfDHa" opt; do
 		f) 	show_format="1"
 			;;
 		H) 	
-			[ $save_history -eq 1 ] && {
+			if [ $save_history -eq 1 ]; then
 				[ -e "$history_file" ] || touch "$history_file" 
 				hist_data="$(tac "$history_file")"
 				[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 				videos_data="$(echo "$hist_data" | uniq )"
-				selected_data="$(echo "$videos_data" | menu_fzf )"
 				main=1
-				} || { printf "History is not enabled. Please enable it to use this option -H.\n";}
+			else
+				printf "History is not enabled. Please enable it to use this option -H.\n";
+			fi
 			;;
 		D)	
 			[ -e "$history_file" ] && rm "$history_file" && touch "$history_file" && printf "History has been cleared\n"
 			exit;
 			;;
 		a) 	auto_select=1
+			;;
+		l) 	prompt_loop=1
 			;;
 		*)
 			printf "Option not found!\n"
@@ -133,62 +138,75 @@ shift $((OPTIND-1))
 
 # MAIN
 [ $main -eq 0 ] && {
-[ -z "$*" ] && { helpinfo ; exit 1; }
+	[ -z "$*" ] && { helpinfo ; exit 1; }
 
-## GETTING DATA
-yt_html="$( 
-useragent='user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'
+	## GETTING DATA
+	yt_html="$( 
+	useragent='user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'
 
-curl 'https://www.youtube.com/results' -s \
-  -G --data-urlencode "search_query=$*" \
-  -H 'authority: www.youtube.com' \
-  -H "$useragent" \
-  -H 'accept-language: en-US,en;q=0.9' \
-  --compressed
-)"
-[ -z "$yt_html" ] &&  { 
-	printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"; 
-	errinfo; exit 2; }
-
-yt_json="$(printf "%s" "$yt_html" |sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
-	sed -E ':a s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;' 
- )"
-[ -z "$yt_json" ] &&  { 
-	printf "ERROR[#02]: Couldn't find data on site.\n";
-	errinfo ; exit 2; }
-
-videos_data="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
-	jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
-	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p" 
+	curl 'https://www.youtube.com/results' -s \
+	  -G --data-urlencode "search_query=$*" \
+	  -H 'authority: www.youtube.com' \
+	  -H "$useragent" \
+	  -H 'accept-language: en-US,en;q=0.9' \
+	  --compressed
 	)"
-[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
+	[ -z "$yt_html" ] &&  { 
+		printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"; 
+		errinfo; exit 2; }
 
-## USER SELECTION
-if [ $auto_select -eq 0 ] ; then 
-	selected_data="$(echo "$videos_data" | menu_fzf )"
-else
-	selected_data="$(echo "$videos_data" | sed 1q )" ;
-fi
+	yt_json="$(printf "%s" "$yt_html" |sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
+		sed -E ':a s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;' 
+	 )"
+	[ -z "$yt_json" ] &&  { 
+		printf "ERROR[#02]: Couldn't find data on site.\n";
+		errinfo ; exit 2; }
+
+	videos_data="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
+		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
+		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p" 
+		)"
+	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
+
 } #MAIN END
 
-url="$(echo "$selected_data" | sed -E 's_.*\|([^|]+) *$_https://www.youtube.com/watch?v=\1_')"
-# to get back untruncated data
-selected_data="$(echo "$videos_data" | grep "$(echo "$selected_data" | cut -f6)" )"
-[ -z "$url" ] && exit;
-[ $show_format -eq 1 ] && {
-	preferred_format="$(youtube-dl -F "$url" | sed '1,3d' | tac - | fzf | sed -E 's/^([^ ]*) .*/\1/')"
+## USER SELECTION
+user_selection () {
+	if [ $auto_select -eq 0 ] ; then 
+		selected_data="$(echo "$videos_data" | menu_fzf )"
+	else
+		selected_data="$(echo "$videos_data" | sed 1q )" ;
+	fi
+
+	url="$(echo "$selected_data" | sed -E 's_.*\|([^|]+) *$_https://www.youtube.com/watch?v=\1_')"
+	# to get back untruncated data
+	selected_data="$(echo "$videos_data" | grep "$(echo "$selected_data" | cut -f6)" )"
+	[ -z "$url" ] && exit;
+	# selecte format if flag given
+	[ $show_format -eq 1 ] && {
+		preferred_format="$(youtube-dl -F "$url" | sed '1,3d' | tac - | fzf | sed -E 's/^([^ ]*) .*/\1/')"
+	}
+}
+play_url () {
+
+	[ $save_cur -eq 1 ] && printf "$selected_data" > "$current_file" ;
+
+	[ -n "$preferred_format" ] && {
+		eval "$player_format""$preferred_format"  "$url" 
+	} || { 
+		eval "$player" "$url"
+	} || { 
+		printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2; 
+	}
 }
 
-# BEFORE PlAYIGN
-[ $save_cur -eq 1 ] && printf "$selected_data" > "$current_file" ;
+while true; do
+	user_selection
+	play_url
+	save_before_exit 
+	[ $prompt_loop -eq 0 ] && exit;
+done
 
-# PLAY
-[ -n "$preferred_format" ] && {
-	eval "$player_format""$preferred_format"  "$url" 
-} || { 
-	eval "$player" "$url"
-} || { 
-	printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_exit ; exit 2; }
 
-# EXIT ACTIONS
-save_exit 
+
+
