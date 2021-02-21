@@ -102,7 +102,7 @@ Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/y
 
 These setting can be tweaked from the first section of the script. Edit them as shown below.
 
-### Format
+## Format
 
 If you prefer to watch youtube videos in certain option with out the prompting every single time.
 
@@ -115,13 +115,14 @@ preferred_format="22"
 
 If the preferred format is not available then, it will go back to default selection.
 
-### History
 
-* On by default. 
-* If you don't want history.
+
+## History
+
+On by default. If you don't want history.
 
 ```
-save_history=1
+save_history=0
 ```
 
 > 0: history off, 1: history on
@@ -132,11 +133,14 @@ save_history=1
 ~/.cache/ytfzf/ytfzf_hst
 ```
 
-### Loop menu prompt
 
-* Off by default. 
-* Can be turned on using option -l.
-* This would return you to the fzf/dmenu video selection prompt after the video is exited/ends.
+
+
+## Loop menu prompt
+
+Off by default. 
+Can be turned on using option -l.
+> This would return you to the fzf/dmenu video selection prompt after the video is exited/ends.
 * To quit the script you can press `ESC` or `^C` in the fzf/dmenu video selection prompt.
 
 ```
@@ -145,26 +149,35 @@ prompt_loop=0
 
 > Make this 1, if you want recursive menu by default
 
-### dmenu length (for dmenu users)
 
-* The width of the text output to dmenu can be adjust
+
+
+## dmenu length (for dmenu users)
+
+The width of the text output to dmenu can be adjust
 
 ```
 dmenu_length=180
 ```
 
+
 > Depending on you screen resolution and font size this may need to be modified
 
+Dmenu doesn't behave well with non-english character and symbols.
 
-### Currently Playing
+
+
+## Currently Playing
 
 On by default. Stores the details of the currently playing track. Empty when nothing is playing. This could be used in status bar modules.
+
 
 ```
 save_cur=1                             # For status bar modules
 ```
 
 * File location 
+
 
 ```
 ~/.cache/ytfzf/ytfzf_hst
