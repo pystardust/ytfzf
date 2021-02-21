@@ -85,6 +85,29 @@ Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/y
 	yay -S ytfzf-git
         
 
+
+# Defaults
+
+### History
+
+Toggled on my default. If you don't want history, then tweak ytfzf 
+
+	save_history=1                         # 0: history off, 1: history on
+	
+* File location 
+
+	~/.cache/ytfzf/ytfzf_hst
+
+### Currently Playing
+
+On by default. Stores the details of the currently playing track. Empty when nothing is playing. This could be used in status bar modules.
+
+	save_cur=1                             # For status bar modules
+
+* File location 
+
+	~/.cache/ytfzf/ytfzf_hst
+
 # Todo
 
 * Fix the char encoding. (Without pup)

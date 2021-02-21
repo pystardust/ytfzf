@@ -152,6 +152,8 @@ fi
 } #MAIN END
 
 url="$(echo "$selected_data" | sed -E 's_.*\|([^|]+) *$_https://www.youtube.com/watch?v=\1_')"
+# to get back untruncated data
+selected_data="$(echo "$videos_data" | grep "$(echo "$selected_data" | cut -f6)" )"
 [ -z "$url" ] && exit;
 [ $show_format -eq 1 ] && {
 	preferred_format="$(youtube-dl -F "$url" | sed '1,3d' | tac - | fzf | sed -E 's/^([^ ]*) .*/\1/')"
