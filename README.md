@@ -3,7 +3,7 @@
 A posix script that helps you find Youtube videos (with out API) and opens/downloads using mpv/youtube-dl.
 * History support
 * Download support
-* Format selection
+* Format selection (and default selection)
 
 Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below.
 
@@ -102,6 +102,17 @@ Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/y
 # Defaults
 
 These setting can be tweaked from the first section of the script. Edit them as shown below.
+
+### Format
+
+If you prefer to watch youtube videos in certain option with out the prompting every single time.
+
+	preferred_format="22"
+
+> 22: 720p
+> 18: 360p
+
+If the preferred format is not available then, it will go back to default selection.
 
 ### History
 
