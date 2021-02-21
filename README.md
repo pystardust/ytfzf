@@ -98,7 +98,6 @@ Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/y
 	yay -S ytfzf-git
         
 
-
 # Defaults
 
 These setting can be tweaked from the first section of the script. Edit them as shown below.
@@ -107,7 +106,9 @@ These setting can be tweaked from the first section of the script. Edit them as 
 
 If you prefer to watch youtube videos in certain option with out the prompting every single time.
 
-	preferred_format="22"
+```
+preferred_format="22"
+```
 
 > 22: 720p,
 > 18: 360p
@@ -119,13 +120,17 @@ If the preferred format is not available then, it will go back to default select
 * On by default. 
 * If you don't want history.
 
-	save_history=1
+```
+save_history=1
+```
 
 > 0: history off, 1: history on
 
 * File location 
 
-	~/.cache/ytfzf/ytfzf_hst
+```
+~/.cache/ytfzf/ytfzf_hst
+```
 
 ### Loop menu prompt
 
@@ -134,7 +139,9 @@ If the preferred format is not available then, it will go back to default select
 * This would return you to the fzf/dmenu video selection prompt after the video is exited/ends.
 * To quit the script you can press `ESC` or `^C` in the fzf/dmenu video selection prompt.
 
-	prompt_loop=0                          
+```
+prompt_loop=0                          
+```
 
 > Make this 1, if you want recursive menu by default
 
@@ -142,7 +149,9 @@ If the preferred format is not available then, it will go back to default select
 
 * The width of the text output to dmenu can be adjust
 
-	dmenu_length=180
+```
+dmenu_length=180
+```
 
 > Depending on you screen resolution and font size this may need to be modified
 
@@ -151,11 +160,15 @@ If the preferred format is not available then, it will go back to default select
 
 On by default. Stores the details of the currently playing track. Empty when nothing is playing. This could be used in status bar modules.
 
-	save_cur=1                             # For status bar modules
+```
+save_cur=1                             # For status bar modules
+```
 
 * File location 
 
-	~/.cache/ytfzf/ytfzf_hst
+```
+~/.cache/ytfzf/ytfzf_hst
+```
 
 
 # Todo
