@@ -18,24 +18,44 @@ FZF_DEFAULT_OPTS=""                    # reset fzf defaults
 [ -d $cache_dir ] || mkdir -p $cache_dir
 
 # ADJUST SIZE
+## min length
+dur_len=7
+view_len=10
+date_len=14
+url_len=12
+
 t_size="$(stty size | cut -f2 -d' ')"
-if [ $t_size -lt 80 ]; then 
-	title_len=$(( (t_size/4) * 3 - 3 ))
-	channel_len=$((t_size/4 - 3 ))
-elif [ $t_size -lt 120 ]; then 
-	t_size=$((t_size - 10 - 7 - 4 ))
-	title_len=$(( (t_size/4) * 3 - 3 ))
-	channel_len=$((t_size/4 - 3 ))
-else 
-	t_size=$((t_size - 7 - 10 - 13 - 12 - 6))
-	title_len=$(( (t_size/4) * 3 - 3 ))
-	channel_len=$((t_size/4 - 3 ))
+if [ $t_size -lt 75 ]; then  # title channel
+	frac=$(((t_size - 1)/4))
+	title_len=$((frac * 3))
+	channel_len=$((frac * 1 + 7))
+elif [ $t_size -lt 95 ]; then # title channel time
+	frac=$(((t_size - 4)/8))
+	title_len=$((frac * 5 - 1))
+	channel_len=$((frac * 2 - 1))
+	dur_len=$((frac * 1 + 10))
+elif [ $t_size -lt 110 ]; then # title channel time views
+	frac=$(((t_size - 1)/9))
+	title_len=$((frac * 5 ))
+	channel_len=$((frac * 2 ))
+	dur_len=$((frac * 1))
+	view_len=$((frac * 1 + 7))
+elif [ $t_size -lt 130 ]; then # title channel time views date
+	frac=$(((t_size - 5)/11))
+	title_len=$((frac * 5 - 1))
+	channel_len=$((frac * 2))
+	dur_len=$((frac * 1))
+	view_len=$((frac * 1))
+	date_len=$((frac * 2 + 20))
+else # all
+	frac=$(((t_size - 5 - 12)/11))
+	title_len=$((frac * 5 - 1))
+	channel_len=$((frac * 2))
+	dur_len=$((frac * 1))
+	view_len=$((frac * 1))
+	date_len=$((frac * 2 ))
 fi
 
-view_len=10
-dur_len=7
-date_len=13
-url_len=12
 
 # HELPER TEXT
 errinfo () { 
@@ -53,8 +73,8 @@ printf "     -a  <search query>    Auto play the first result, no fzf\n";
 }
 format_awk () {
 	awk -F'\t' \
-	-v A=$title_len -v B=$channel_len -v C=$view_len -v D=$dur_len -v E=$date_len -v F=$url_len \
-	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$3,$4,$5,$6}'  
+	-v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
+	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'  
 }
 menu_fzf () {
 	format_awk | fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2
