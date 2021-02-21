@@ -13,6 +13,26 @@ player="mpv"
 player_format="mpv --ytdl-format="
 FZF_DEFAULT_OPTS=""                    # reset fzf defaults
 
+# ADJUST SIZE
+t_size="$(stty size | cut -f2 -d' ')"
+if [ $t_size -lt 80 ]; then 
+	title_len=$(( (t_size/4) * 3 - 3 ))
+	channel_len=$((t_size/4 - 3 ))
+elif [ $t_size -lt 120 ]; then 
+	t_size=$((t_size - 10 - 7 - 4 ))
+	title_len=$(( (t_size/4) * 3 - 3 ))
+	channel_len=$((t_size/4 - 3 ))
+else 
+	t_size=$((t_size - 7 - 10 - 13 - 12 - 6))
+	title_len=$(( (t_size/4) * 3 - 3 ))
+	channel_len=$((t_size/4 - 3 ))
+fi
+
+view_len=10
+dur_len=7
+date_len=13
+url_len=12
+
 # HELPER TEXT
 errinfo () { 
 printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n"
@@ -99,8 +119,10 @@ yt_json="$(printf "%s" "$yt_html" |sed -n '/var *ytInitialData/,$p' | tr -d '\n'
 
 videos_data="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
 	jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
-	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{$title_len}).*/\1/;N;s/\n(.{$channel_len}).*/\n\1/;N;N;N;N;s/\n/\t/g;p" |\
-	awk -F'\t' '{printf "%-60s\t|%-30s\t|%-10s\t|%-6s\t|%-16s\t|%-12s\t\n",$1,$2,$3,$4,$5,$6}'  )"
+	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{$title_len}).*$/\1/;N;s/\n(.{$channel_len}).*$/\t\1/;N;s/\n(.*)$/\t\1/;N;s/\n(.*)$/\t\1/;N;s/\n(.*)$/\t\1/;N;s/\n/\t/g;p" |\
+	awk -F'\t' \
+	-v A=$title_len -v B=$channel_len -v C=$view_len -v D=$dur_len -v E=$date_len -v F=$url_len \
+	'{printf "%-"A"s\t|%-"B"s\t|%-"C"s\t|%-"D"s\t|%-"E"s\t|%-"F"s\t\n",$1,$2,$3,$4,$5,$6}'  )"
 [ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
 
 selected_data="$(echo "$videos_data" | fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2 )"
