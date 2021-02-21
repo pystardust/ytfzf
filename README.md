@@ -17,10 +17,11 @@ Initially this used to be a single line script. But for portability and extensib
 	Usage: ytfzf <search query>
 	     -h                    Show this help text
 	     -H                    Choose from history
-         -D                    Delete history
+	     -D                    Delete history
 	     -m  <search query>    Audio only (for listening to music)
 	     -d  <search query>    Download to current directory
 	     -f  <search query>    Show available formats before proceeding
+	     -a  <search query>    Auto play the first result (no fzf)
 
 
 * Video to be selected using fzf.

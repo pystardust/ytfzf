@@ -45,9 +45,11 @@ printf "     -D                    Delete history\n";
 printf "     -m  <search query>    Audio only (for listening to music)\n"; 
 printf "     -d  <search query>    Download to current directory\n"; 
 printf "     -f  <search query>    Show available formats before proceeding\n";
+printf "     -a  <search query>    Auto play the first result, no fzf\n";
 }
+# Opt variables
 main=0
-
+auto_select=0
 # DEP CHECK
 dep_ck () {
 	command -v "$1" 1>/dev/null || { printf "$1 not found. Please install it.\n" ; exit 2; }
@@ -55,7 +57,7 @@ dep_ck () {
 dep_ck "jq"; dep_ck "youtube-dl"; dep_ck "mpv"; dep_ck "fzf"
 
 # OPT
-while getopts "hmdfDH" opt; do
+while getopts "hmdfDHa" opt; do
 	case ${opt} in
 		h) 	helpinfo
 			exit;
@@ -82,6 +84,8 @@ while getopts "hmdfDH" opt; do
 		D)	
 			[ -e "$history_file" ] && rm "$history_file" && touch "$history_file" && printf "History has been cleared\n"
 			exit;
+			;;
+		a) 	auto_select=1
 			;;
 		*)
 			printf "Option not found!\n"
@@ -125,7 +129,9 @@ videos_data="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d
 	'{printf "%-"A"s\t|%-"B"s\t|%-"C"s\t|%-"D"s\t|%-"E"s\t|%-"F"s\t\n",$1,$2,$3,$4,$5,$6}'  )"
 [ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
 
+[ $auto_select -eq 0 ] && {
 selected_data="$(echo "$videos_data" | fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2 )"
+} || { selected_data="$(echo "$videos_data" | sed 1q )" ;}
 url="$(echo "$selected_data" | sed -E 's_.*\|([^|]+) *$_https://www.youtube.com/watch?v=\1_')"
 }
 
