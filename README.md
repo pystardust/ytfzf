@@ -90,7 +90,7 @@ Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/y
 
 ### History
 
-Toggled on my default. If you don't want history, then tweak ytfzf 
+On by default. If you don't want history, then tweak ytfzf 
 
 	save_history=1                         # 0: history off, 1: history on
 	
