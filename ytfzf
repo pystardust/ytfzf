@@ -6,12 +6,16 @@
 title_len=55                           # Display length for title and channel name
 channel_len=28
 save_history=1                         # 0: history off, 1: history on
-history_file=~/.cache/ytfzf_hst
+cache_dir=~/.cache/ytfzf
+history_file="$cache_dir"/ytfzf_hst
+save_cur=1                             # For status bar modules
+current_file="$cache_dir"/ytfzf_cur
 preferred_format=""                    # ytdl-format (deafults to auto if format not found)"
 show_format="0"                        # 1: shows all formats before proceeding
 player="mpv"
 player_format="mpv --ytdl-format="
 FZF_DEFAULT_OPTS=""                    # reset fzf defaults
+[ -d $cache_dir ] || mkdir -p $cache_dir
 
 # ADJUST SIZE
 t_size="$(stty size | cut -f2 -d' ')"
@@ -47,6 +51,19 @@ printf "     -d  <search query>    Download to current directory\n";
 printf "     -f  <search query>    Show available formats before proceeding\n";
 printf "     -a  <search query>    Auto play the first result, no fzf\n";
 }
+format_awk () {
+	awk -F'\t' \
+	-v A=$title_len -v B=$channel_len -v C=$view_len -v D=$dur_len -v E=$date_len -v F=$url_len \
+	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$3,$4,$5,$6}'  
+}
+menu_fzf () {
+	format_awk | fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2
+}
+save_exit () {
+	[ $save_history -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
+	[ $save_cur -eq 1 ] && printf "" > "$current_file" ;
+}
+
 # Opt variables
 main=0
 auto_select=0
@@ -75,9 +92,7 @@ while getopts "hmdfDHa" opt; do
 				hist_data="$(tac "$history_file")"
 				[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 				videos_data="$(echo "$hist_data" | uniq )"
-				selected_data="$(echo "$videos_data" | fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2 )"
-				echo "$selected_data" | sed -E 's_.*\t\|([^|]+)$_\1_'
-				url="$(echo "$selected_data" | sed -E 's_^.*\t\|([^|]+)$_https://www.youtube.com/watch?v=\1_')"
+				selected_data="$(echo "$videos_data" | menu_fzf )"
 				main=1
 				} || { printf "History is not enabled. Please enable it to use this option -H.\n";}
 			;;
@@ -100,6 +115,7 @@ shift $((OPTIND-1))
 [ $main -eq 0 ] && {
 [ -z "$*" ] && { helpinfo ; exit 1; }
 
+## GETTING DATA
 yt_html="$( 
 useragent='user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'
 
@@ -123,29 +139,34 @@ yt_json="$(printf "%s" "$yt_html" |sed -n '/var *ytInitialData/,$p' | tr -d '\n'
 
 videos_data="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
 	jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
-	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{$title_len}).*$/\1/;N;s/\n(.{$channel_len}).*$/\t\1/;N;s/\n(.*)$/\t\1/;N;s/\n(.*)$/\t\1/;N;s/\n(.*)$/\t\1/;N;s/\n/\t/g;p" |\
-	awk -F'\t' \
-	-v A=$title_len -v B=$channel_len -v C=$view_len -v D=$dur_len -v E=$date_len -v F=$url_len \
-	'{printf "%-"A"s\t|%-"B"s\t|%-"C"s\t|%-"D"s\t|%-"E"s\t|%-"F"s\t\n",$1,$2,$3,$4,$5,$6}'  )"
+	sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p" 
+	)"
 [ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
 
-[ $auto_select -eq 0 ] && {
-selected_data="$(echo "$videos_data" | fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2 )"
-} || { selected_data="$(echo "$videos_data" | sed 1q )" ;}
-url="$(echo "$selected_data" | sed -E 's_.*\|([^|]+) *$_https://www.youtube.com/watch?v=\1_')"
-}
+## USER SELECTION
+if [ $auto_select -eq 0 ] ; then 
+	selected_data="$(echo "$videos_data" | menu_fzf )"
+else
+	selected_data="$(echo "$videos_data" | sed 1q )" ;
+fi
+} #MAIN END
 
+url="$(echo "$selected_data" | sed -E 's_.*\|([^|]+) *$_https://www.youtube.com/watch?v=\1_')"
 [ -z "$url" ] && exit;
 [ $show_format -eq 1 ] && {
 	preferred_format="$(youtube-dl -F "$url" | sed '1,3d' | tac - | fzf | sed -E 's/^([^ ]*) .*/\1/')"
 }
+
+# BEFORE PlAYIGN
+[ $save_cur -eq 1 ] && printf "$selected_data" > "$current_file" ;
 
 # PLAY
 [ -n "$preferred_format" ] && {
 	eval "$player_format""$preferred_format"  "$url" 
 } || { 
 	eval "$player" "$url"
-} || { printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; exit 2; }
+} || { 
+	printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_exit ; exit 2; }
 
-[ $save_history -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
-
+# EXIT ACTIONS
+save_exit 
