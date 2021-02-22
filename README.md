@@ -73,6 +73,8 @@ first hit Q to save position and quit mpv, then choose your format using
 * [fzf](https://github.com/junegunn/fzf) - for menu
 * [jq](https://github.com/stedolan/jq) - to parse json
 
+> fzf is optional. You can use external menu (like dmenu) with the `-D` option.
+
 ### Arch based
 
 	sudo pacman -S jq mpv youtube-dl fzf 
@@ -104,7 +106,14 @@ Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/y
 
 Defaults can be set by environmental variables.
 
-> Environment variables can be set in many ways. You can add them to you ~/.bashrc 
+> Environment variables can be set in many ways. You can add them to you ~/.bashrc if you don't want to mention them every time
+
+For one time settings you can specify the variables as such
+
+```
+YTFZF_HIST=0 YTFZF_PREF="22" ytfzf  <query>
+```
+> This would not include the video in your history and display it in 720p. 
 
 ## Format
 
@@ -130,7 +139,7 @@ export YTFZF_HIST=0
 ```
 > 0: history off, 1: history on
 
-* This history will be stored in the cache file as `ytfzf_hst`
+* This history will be stored in the cache directory as `ytfzf_hst`
 
 You can modify the file location by changing the cache directory
 
@@ -141,7 +150,7 @@ export YTFZF_CACHE=~/.cache/ytfzf
 
 ## Loop menu prompt
 
-Off by default.  Can be turned on using option -l. Or setting
+Off by default.  Can be turned on using option `-l`. Or setting
 
 ```
 export YTFZF_LOOP=1
