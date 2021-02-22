@@ -180,7 +180,7 @@ save_cur=1                             # For status bar modules
 
 
 ```
-~/.cache/ytfzf/ytfzf_hst
+~/.cache/ytfzf/ytfzf_cur
 ```
 
 
