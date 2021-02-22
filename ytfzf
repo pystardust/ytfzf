@@ -117,7 +117,7 @@ is_ext_menu="0"
 dep_ck () {
 	command -v "$1" 1>/dev/null || { printf "$1 not found. Please install it.\n" ; exit 2; }
 }
-dep_ck "jq"; dep_ck "youtube-dl"; dep_ck "mpv"; dep_ck "fzf"
+dep_ck "jq"; dep_ck "youtube-dl"; dep_ck "mpv"; 
 
 # OPT
 while getopts "hDmdfxHal" opt; do
@@ -164,6 +164,7 @@ done
 shift $((OPTIND-1))
 
 if [ $is_ext_menu -eq 0 ]; then
+	dep_ck "fzf"
 	prompt_menu='fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2'
 	format_fzf
 else
