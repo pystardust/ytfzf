@@ -13,8 +13,17 @@ Initially this used to be a single line script. But for portability and extensib
 
 # Recent Updates
 
-* Use dmenu instead of fzf using option -D  (delete history has been shifted to -x)
-> dmenu may be slow when dealing with non english characters and symbols. 
+* Defaults can be now set through environment variables instead of changing the script.
+
+* Use external menu (dmenu/rofi) instead of fzf using option -D  (delete history has been shifted to -x), the menu command has to be specified as an environmental variable. 
+
+By default the external menu is `dmenu -i -l 30` . If you want any other menu like rofi then export this variable in your ( ~/.bashrc , ~/.zshrc)
+
+```
+export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
+```
+
+> You can read more about this below. Dmenu may be slow when dealing with non English characters and symbols. 
 
 * Option to loop the video menu, the menu will be shown again as the video ends/closes.
 
@@ -22,17 +31,20 @@ Initially this used to be a single line script. But for portability and extensib
 
 ![Gif](ytfzf.gif)
 
-	Usage: ytfzf <search query>
-	     -h                    Show this help text
-	     -D  <search query>    Use dmenu instad of fzf
-	                           warning: doesn't work as smooth as fzf
-	     -H                    Choose from history
-	     -x                    Delete history
-	     -m  <search query>    Audio only (for listening to music)
-	     -d  <search query>    Download to current directory
-	     -f  <search query>    Show available formats before proceeding
-	     -a  <search query>    Auto play the first result, no fzf
-	     -l  <search query>    loop: prompt again after video ends
+```
+Usage: ytfzf <search query>
+     -h                    Show this help text
+     -D  <search query>    Use dmenu instad of fzf
+                           warning: doesn't work as smooth as fzf
+     -H                    Choose from history
+     -x                    Delete history
+     -m  <search query>    Audio only (for listening to music)
+     -d  <search query>    Download to current directory
+     -f  <search query>    Show available formats before proceeding
+     -a  <search query>    Auto play the first result, no fzf
+     -l  <search query>    loop: prompt again after video ends
+ ```
+
 
 * Videoes can be selected using fzf (default) or dmenu.
 
@@ -100,20 +112,22 @@ Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/y
 
 # Defaults
 
-These setting can be tweaked from the first section of the script. Edit them as shown below.
+Defaults can be set by environmental variables.
+
+> Environment variables can be set in many ways. You can add them to you ~/.bashrc 
 
 ## Format
 
-If you prefer to watch youtube videos in certain option with out the prompting every single time.
+If you prefer to watch Youtube videos in certain option with out the prompting every single time.
 
 ```
-preferred_format="22"
+export YTFZF_PREF="22"                   
 ```
 
 > 22: 720p,
 > 18: 360p
 
-If the preferred format is not available then, it will go back to default selection.
+If the preferred format is not available then, it will go back to auto selection.
 
 
 
@@ -122,48 +136,53 @@ If the preferred format is not available then, it will go back to default select
 On by default. If you don't want history.
 
 ```
-save_history=0
+export YTFZF_HIST=0
 ```
-
 > 0: history off, 1: history on
 
-* File location 
+* This history will be stored in the cache file as `ytfzf_hst`
+
+You can modify the file location by changing the cache directory
 
 ```
-~/.cache/ytfzf/ytfzf_hst
+export YTFZF_CACHE=~/.cache/ytfzf
 ```
-
-
 
 
 ## Loop menu prompt
 
-Off by default. 
-Can be turned on using option -l.
-> This would return you to the fzf/dmenu video selection prompt after the video is exited/ends.
-* To quit the script you can press `ESC` or `^C` in the fzf/dmenu video selection prompt.
+Off by default.  Can be turned on using option -l. Or setting
 
 ```
-prompt_loop=0                          
+export YTFZF_LOOP=1
 ```
 
-> Make this 1, if you want recursive menu by default
+This would return you to the video selection prompt after the video is exited/ends.
 
+> To quit the script you can press `ESC` or `^C` in the video selection prompt.
 
+## External menu command (DMENU / ROFI)
 
-
-## dmenu length (for dmenu users)
-
-The width of the text output to dmenu can be adjust
-
+To use an external menu you will need to pass in the `-D` option
 ```
-dmenu_length=180
+ytfzf -D <query>
 ```
 
+By default the external menu is set to dmenu `dmenu -i -l 30`. You can modify to rofi this by
+
+```
+export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
+```
+
+You also may need to modify the width of the output that is being piped into external menu
+
+```
+export YTFZF_EXTMENU_LEN=180
+```
 
 > Depending on you screen resolution and font size this may need to be modified
 
-Dmenu doesn't behave well with non-english character and symbols.
+> WARNING : dmenu doesn't behave well with some fonts. Expect it to be slow when you have non-English character and symbols.
 
 
 
@@ -172,16 +191,12 @@ Dmenu doesn't behave well with non-english character and symbols.
 On by default. Stores the details of the currently playing track. Empty when nothing is playing. This could be used in status bar modules.
 
 
+To disable it
 ```
-save_cur=1                             # For status bar modules
+export YTFZF_CUR=0
 ```
 
-* File location 
-
-
-```
-~/.cache/ytfzf/ytfzf_cur
-```
+It will be stored in the ytfzf cache directory as `ytfzf_cur`
 
 
 # Todo
