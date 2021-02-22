@@ -3,7 +3,7 @@
 # https://github.com/pystardust/ytfzf
 
 # DEFAULTS
-save_history=0                         # 0: history off, 1: history on
+save_history=1                         # 0: history off, 1: history on
 is_prompt_loop=0                       # to prompt again after video finishes
 save_cur=1                             # For status bar modules
 
@@ -14,7 +14,7 @@ current_file="$cache_dir"/ytfzf_cur
 [ -d $cache_dir ] || mkdir -p $cache_dir
 
 ## player settings
-preferred_format="22"                    # ytdl-format (defaults to auto if format not found)"
+preferred_format=""                    # ytdl-format (defaults to auto if format not found)"
 show_format="0"                        # 1: shows all formats before proceeding
 player="mpv"
 player_format="mpv --ytdl-format="
