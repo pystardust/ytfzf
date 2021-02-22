@@ -19,15 +19,14 @@ Initially this used to be a single line script. But for portability and extensib
 ```
 Usage: ytfzf <search query>
      -h                    Show this help text
-     -D                    Use external menu (default: dmenu) instad of fzf
-                           warning: doesn't work as smooth as fzf
+     -D                    Use external menu(default dmenu) instad of fzf
      -H                    Choose from history
      -x                    Delete history
-     -m  <search query>    Audio only (for listening to music)
+     -m  <search query>    Audio only (for music)
      -d  <search query>    Download to current directory
      -f  <search query>    Show available formats before proceeding
-     -a  <search query>    Auto play the first result, no fzf
-     -l  <search query>    loop: prompt again after video ends
+     -a  <search query>    Auto play the first result, no selector
+     -l  <search query>    Loop: prompt selector again after video ends
  ```
 
 * To use dmenu with a custom width
@@ -63,21 +62,6 @@ first hit Q to save position and quit mpv, then choose your format using
 
 	ytfzf -faH
 
-# Recent Updates
-
-* Defaults can be now set through environment variables instead of changing the script.
-
-* Use external menu (dmenu/rofi) instead of fzf using option -D  (delete history has been shifted to -x), the menu command has to be specified as an environmental variable. 
-
-By default the external menu is `dmenu -i -l 30` . If you want any other menu like rofi then export this variable in your ( ~/.bashrc , ~/.zshrc)
-
-```
-export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
-```
-
-> You can read more about this below. Dmenu may be slow when dealing with non English characters and symbols. 
-
-* Option to loop the video menu, the menu will be shown again as the video ends/closes.
 
 ## Useful mpv keybindings to keep in mind
 * Use `J` for subtitles (also works with audio, if the music video has subtitles)
@@ -171,7 +155,7 @@ This would return you to the video selection prompt after the video is exited/en
 
 To use an external menu you will need to pass in the `-D` option
 ```
-ytfzf -D <query>
+ytfzf -D
 ```
 
 By default the external menu is set to dmenu `dmenu -i -l 30`. You can modify to rofi this by
@@ -181,13 +165,15 @@ export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
 ```
 > I don't use rofi much, I would love to hear from any rofi user on a better defaults.
 
-You also may need to modify the width of the output that is being piped into external menu
-
+You also may need to modify the width of the output that is being piped into external menu.
+ Depending on you screen resolution and font size this may need to be modified.
 ```
 export YTFZF_EXTMENU_LEN=180
 ```
-
-> Depending on you screen resolution and font size this may need to be modified
+or
+```
+YTFZF_EXTMENU_LEN=180 ytfzf -D
+```
 
 > WARNING : dmenu doesn't behave well with some fonts. Expect it to be slow when you have non-English character and symbols.
 
