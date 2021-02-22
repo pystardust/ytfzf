@@ -19,7 +19,7 @@ Initially this used to be a single line script. But for portability and extensib
 ```
 Usage: ytfzf <search query>
      -h                    Show this help text
-     -D                    Use external menu(default dmenu) instad of fzf
+     -D                    Use external menu(default dmenu) instead of fzf
      -H                    Choose from history
      -x                    Delete history
      -m  <search query>    Audio only (for music)
@@ -108,12 +108,12 @@ Defaults can be set by environmental variables.
 
 > Environment variables can be set in many ways. You can add them to you ~/.bashrc if you don't want to mention them every time
 
-For one time settings you can specify the variables as such
+For one time settings you can specify the variables as shown
 
 ```
-YTFZF_HIST=0 YTFZF_PREF="22" ytfzf  <query>
+YTFZF_HIST=0 YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best" ytfzf  <query>
 ```
-> This would not include the video in your history and display it in 720p. 
+> This will not include this video in your history and display it in a resolution no more than 1080p.
 
 ## Format
 
@@ -122,12 +122,9 @@ If you prefer to watch Youtube videos in certain option with out the prompting e
 ```
 export YTFZF_PREF="22"                   
 ```
-
-> 22: 720p,
-> 18: 360p
+[Documentation for ytdl formats](https://github.com/ytdl-org/youtube-dl#format-selection)
 
 If the preferred format is not available then, it will go back to auto selection.
-
 
 
 ## History
@@ -167,12 +164,12 @@ To use an external menu you will need to pass in the `-D` option
 ytfzf -D
 ```
 
-By default the external menu is set to dmenu `dmenu -i -l 30`. You can modify to rofi this by
+By default the external menu is set to dmenu `dmenu -i -l 30`. You can modify to this to rofy by
 
 ```
 export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
 ```
-> I don't use rofi much, I would love to hear from any rofi user on a better defaults.
+> I don't use rofi much, I would love to hear from any rofi user on better defaults.
 
 You also may need to modify the width of the output that is being piped into external menu.
  Depending on you screen resolution and font size this may need to be modified.
@@ -184,15 +181,13 @@ or
 YTFZF_EXTMENU_LEN=180 ytfzf -D
 ```
 
-> WARNING : dmenu doesn't behave well with some fonts. Expect it to be slow when you have non-English character and symbols.
+> WARNING : dmenu doesn't behave well with some fonts. Expect it to be slow with fonts you don't have.
 
 
 
 ## Currently Playing
 
 On by default. Stores the details of the currently playing track. Empty when nothing is playing. This could be used in status bar modules.
-
-
 To disable it
 ```
 export YTFZF_CUR=0
@@ -204,4 +199,4 @@ It will be stored in the ytfzf cache directory as `ytfzf_cur`
 # Todo
 
 * Playlists
-* Icons
+* Icons - Coming soon
