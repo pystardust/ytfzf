@@ -34,7 +34,7 @@ export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
 ```
 Usage: ytfzf <search query>
      -h                    Show this help text
-     -D  <search query>    Use dmenu instad of fzf
+     -D                    Use dmenu instad of fzf
                            warning: doesn't work as smooth as fzf
      -H                    Choose from history
      -x                    Delete history
@@ -66,7 +66,7 @@ Usage: ytfzf <search query>
 
 > Open using dmenu in a certain format
 
-	ytfzf -fD  <query>
+	ytfzf -fD  
 
 If you started watching a video and you wish to change format then 
 first hit Q to save position and quit mpv, then choose your format using
