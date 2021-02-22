@@ -167,7 +167,6 @@ if [ $is_ext_menu -eq 0 ]; then
 	prompt_menu='fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2'
 	format_fzf
 else
-	dep_ck "dmenu"
 	# dmenu doesnt render tabs so removing it
 	prompt_menu='tr -d "$(printf "\t")" | '"$YTFZF_EXTMENU"
 	format_ext_menu
