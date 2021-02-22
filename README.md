@@ -11,21 +11,6 @@ Initially this used to be a single line script. But for portability and extensib
 	[ -z "$*" ] || curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" |  pup 'script' | grep  "^ *var ytInitialData" | sed 's/^[^=]*=//g;s/;$//' | jq '..|.videoRenderer?' | sed '/^null$/d' | jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'| sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{60}).*/\1/;N;s/\n(.{30}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" | column -t  -s "$(printf "\t")" | fzf --delimiter='\|' --nth=1,2  | sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_' | xargs -r -I'{}' mpv {}
 
 
-# Recent Updates
-
-* Defaults can be now set through environment variables instead of changing the script.
-
-* Use external menu (dmenu/rofi) instead of fzf using option -D  (delete history has been shifted to -x), the menu command has to be specified as an environmental variable. 
-
-By default the external menu is `dmenu -i -l 30` . If you want any other menu like rofi then export this variable in your ( ~/.bashrc , ~/.zshrc)
-
-```
-export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
-```
-
-> You can read more about this below. Dmenu may be slow when dealing with non English characters and symbols. 
-
-* Option to loop the video menu, the menu will be shown again as the video ends/closes.
 
 # Usage
 
@@ -34,7 +19,7 @@ export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
 ```
 Usage: ytfzf <search query>
      -h                    Show this help text
-     -D                    Use dmenu instad of fzf
+     -D                    Use external menu (default: dmenu) instad of fzf
                            warning: doesn't work as smooth as fzf
      -H                    Choose from history
      -x                    Delete history
@@ -45,6 +30,11 @@ Usage: ytfzf <search query>
      -l  <search query>    loop: prompt again after video ends
  ```
 
+* To use dmenu with a custom width
+
+```
+YTFZF_EXTMENU_LEN=250 ytfzf -D
+```
 
 * Videoes can be selected using fzf (default) or dmenu.
 
@@ -72,6 +62,22 @@ If you started watching a video and you wish to change format then
 first hit Q to save position and quit mpv, then choose your format using
 
 	ytfzf -faH
+
+# Recent Updates
+
+* Defaults can be now set through environment variables instead of changing the script.
+
+* Use external menu (dmenu/rofi) instead of fzf using option -D  (delete history has been shifted to -x), the menu command has to be specified as an environmental variable. 
+
+By default the external menu is `dmenu -i -l 30` . If you want any other menu like rofi then export this variable in your ( ~/.bashrc , ~/.zshrc)
+
+```
+export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
+```
+
+> You can read more about this below. Dmenu may be slow when dealing with non English characters and symbols. 
+
+* Option to loop the video menu, the menu will be shown again as the video ends/closes.
 
 ## Useful mpv keybindings to keep in mind
 * Use `J` for subtitles (also works with audio, if the music video has subtitles)
@@ -173,6 +179,7 @@ By default the external menu is set to dmenu `dmenu -i -l 30`. You can modify to
 ```
 export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
 ```
+> I don't use rofi much, I would love to hear from any rofi user on a better defaults.
 
 You also may need to modify the width of the output that is being piped into external menu
 
