@@ -95,15 +95,17 @@ printf "     -d  <search query>    Download to current directory\n";
 printf "     -f  <search query>    Show available formats before proceeding\n";
 printf "     -a  <search query>    Auto play the first result, no fzf\n";
 printf "     -l  <search query>    loop: prompt again after video ends\n";
+printf "  Option can be combines. Example\n"
+printf "     ytfzf -fDH            to show history using ext menu and choose format\n"
 printf "\n"
 printf "  Defaults can be modified through ENV variables\n";
 printf "  Defaults:\n";
-printf "     YTFZF_HIST=1       # 0 :off\n";
+printf "     YTFZF_HIST=1          0 :off\n";
 printf "     YTFZF_CACHE=~/.cache/ytfzf\n";
-printf "     YTFZF_LOOP=0       # 1 :would loop the selection prompt\n";
-printf "     YTFZF_LOOP=0       # 1 :would loop the selection prompt\n";
-printf "     YTFZF_PREF=''      # 22: 720p,  18: 360p\n";
-printf "     YTFZF_CUR=1        # For status bar bodules";
+printf "     YTFZF_LOOP=0          1 :would loop the selection prompt\n";
+printf "     YTFZF_LOOP=0          1 :would loop the selection prompt\n";
+printf "     YTFZF_PREF=''         22: 720p,  18: 360p\n";
+printf "     YTFZF_CUR=1           For status bar bodules\n";
 printf "     YTFZF_EXTMENU=' dmenu -i -l 30'\n";
 printf "  To use rofi\n";
 printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
@@ -134,7 +136,7 @@ is_ext_menu="0"
 dep_ck () {
 	command -v "$1" 1>/dev/null || { printf "$1 not found. Please install it.\n" ; exit 2; }
 }
-dep_ck "jq"; dep_ck "youtube-dl"; dep_ck "mpv"; 
+dep_ck "jq"; dep_ck "youtube-dl"; dep_ck "mpv";
 
 # OPT
 while getopts "hDmdfxHal" opt; do
