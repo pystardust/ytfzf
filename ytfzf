@@ -103,7 +103,6 @@ printf "  Defaults:\n";
 printf "     YTFZF_HIST=1          0 :off\n";
 printf "     YTFZF_CACHE=~/.cache/ytfzf\n";
 printf "     YTFZF_LOOP=0          1 :would loop the selection prompt\n";
-printf "     YTFZF_LOOP=0          1 :would loop the selection prompt\n";
 printf "     YTFZF_PREF=''         22: 720p,  18: 360p\n";
 printf "     YTFZF_CUR=1           For status bar bodules\n";
 printf "     YTFZF_EXTMENU=' dmenu -i -l 30'\n";
