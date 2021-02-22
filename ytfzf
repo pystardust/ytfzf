@@ -3,7 +3,7 @@
 # https://github.com/pystardust/ytfzf
 
 # DEFAULTS
-save_history=1                         # 0: history off, 1: history on
+save_history=0                         # 0: history off, 1: history on
 is_prompt_loop=0                       # to prompt again after video finishes
 save_cur=1                             # For status bar modules
 
@@ -14,13 +14,13 @@ current_file="$cache_dir"/ytfzf_cur
 [ -d $cache_dir ] || mkdir -p $cache_dir
 
 ## player settings
-preferred_format=""                    # ytdl-format (deafults to auto if format not found)"
+preferred_format="22"                    # ytdl-format (defaults to auto if format not found)"
 show_format="0"                        # 1: shows all formats before proceeding
 player="mpv"
 player_format="mpv --ytdl-format="
 
 ## misc
-dmenu_length=180                       # depends on your font size and resolution 
+dmenu_length=180                       # depends on your font size and resolution
 FZF_DEFAULT_OPTS=""                    # reset fzf defaults
 
 # DYNAMIC SIZE
@@ -32,25 +32,25 @@ format_fzf () {
 	url_len=12
 
 	t_size="$(stty size | cut -f2 -d' ')"
-	if [ $t_size -lt 75 ]; then  
+	if [ $t_size -lt 75 ]; then
 		# title channel
 		frac=$(((t_size - 1)/4))
 		title_len=$((frac * 3))
 		channel_len=$((frac * 1 + 7))
-	elif [ $t_size -lt 95 ]; then 
+	elif [ $t_size -lt 95 ]; then
 		# title channel time
 		frac=$(((t_size - 4)/8))
 		title_len=$((frac * 5 - 1))
 		channel_len=$((frac * 2 - 1))
 		dur_len=$((frac * 1 + 10))
-	elif [ $t_size -lt 110 ]; then 
+	elif [ $t_size -lt 110 ]; then
 		# title channel time views
 		frac=$(((t_size - 1)/9))
 		title_len=$((frac * 5 ))
 		channel_len=$((frac * 2 ))
 		dur_len=$((frac * 1))
 		view_len=$((frac * 1 + 7))
-	elif [ $t_size -lt 130 ]; then 
+	elif [ $t_size -lt 130 ]; then
 		# title channel time views date
 		frac=$(((t_size - 5)/11))
 		title_len=$((frac * 5 - 1))
@@ -78,18 +78,18 @@ format_dmenu () {
 }
 
 # HELPER TEXT
-errinfo () { 
+errinfo () {
 printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n"
 }
 helpinfo () {
 printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
-printf "     -h                    Show this help text\n"; 
+printf "     -h                    Show this help text\n";
 printf "     -D  <search query>    Use dmenu instad of fzf \n";
 printf "                           warning: doesn't work as smooth as fzf\n";
 printf "     -H                    Choose from history \n";
 printf "     -x                    Delete history\n";
-printf "     -m  <search query>    Audio only (for listening to music)\n"; 
-printf "     -d  <search query>    Download to current directory\n"; 
+printf "     -m  <search query>    Audio only (for listening to music)\n";
+printf "     -d  <search query>    Download to current directory\n";
 printf "     -f  <search query>    Show available formats before proceeding\n";
 printf "     -a  <search query>    Auto play the first result, no fzf\n";
 printf "     -l  <search query>    loop: prompt again after video ends\n";
@@ -97,7 +97,7 @@ printf "     -l  <search query>    loop: prompt again after video ends\n";
 format_awk () {
 	awk -F'\t' \
 	-v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
-	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'  
+	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
 }
 video_menu () {
 	format_awk | eval "$prompt_menu"
@@ -132,9 +132,9 @@ while getopts "hDmdfxHal" opt; do
 			;;
 		f) 	show_format="1"
 			;;
-		H) 	
+		H)
 			if [ $save_history -eq 1 ]; then
-				[ -e "$history_file" ] || touch "$history_file" 
+				[ -e "$history_file" ] || touch "$history_file"
 				hist_data="$(tac "$history_file")"
 				[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 				videos_data="$(echo "$hist_data" | uniq )"
@@ -143,7 +143,7 @@ while getopts "hDmdfxHal" opt; do
 				printf "History is not enabled. Please enable it to use this option -H.\n";
 			fi
 			;;
-		x)	
+		x)
 			[ -e "$history_file" ] && rm "$history_file" && touch "$history_file" && printf "History has been cleared\n"
 			exit;
 			;;
@@ -153,12 +153,12 @@ while getopts "hDmdfxHal" opt; do
 			;;
 		*)
 			printf "Option not found!\n"
-			helpinfo 
+			helpinfo
 			exit 2;
 			;;
 	esac
 done
-shift $((OPTIND-1)) 
+shift $((OPTIND-1))
 
 if [ $is_dmenu -eq 0 ]; then
 	prompt_menu='fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2'
@@ -175,7 +175,7 @@ fi
 	[ -z "$*" ] && { helpinfo ; exit 1; }
 
 	## GETTING DATA
-	yt_html="$( 
+	yt_html="$(
 	useragent='user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'
 
 	curl 'https://www.youtube.com/results' -s \
@@ -185,20 +185,20 @@ fi
 	  -H 'accept-language: en-US,en;q=0.9' \
 	  --compressed
 	)"
-	[ -z "$yt_html" ] &&  { 
-		printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"; 
+	[ -z "$yt_html" ] &&  {
+		printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n";
 		errinfo; exit 2; }
 
 	yt_json="$(printf "%s" "$yt_html" |sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
-		sed -E ':a s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;' 
+		sed -E ':a s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
 	 )"
-	[ -z "$yt_json" ] &&  { 
+	[ -z "$yt_json" ] &&  {
 		printf "ERROR[#02]: Couldn't find data on site.\n";
 		errinfo ; exit 2; }
 
 	videos_data="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
-		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p" 
+		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p"
 		)"
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
 
@@ -206,7 +206,7 @@ fi
 
 ## USER SELECTION
 user_selection () {
-	if [ $auto_select -eq 0 ] ; then 
+	if [ $auto_select -eq 0 ] ; then
 		selected_data="$(echo "$videos_data" | video_menu )"
 	else
 		selected_data="$(echo "$videos_data" | sed 1q )" ;
@@ -216,7 +216,7 @@ user_selection () {
 	[ -z "$shorturl" ] && exit;
 	url="https://www.youtube.com/watch?v=$shorturl"
 	# to get back untruncated data
-	selected_data="$(echo "$videos_data" | grep -m1 "$shorturl" )" 
+	selected_data="$(echo "$videos_data" | grep -m1 "$shorturl" )"
 	# selecte format if flag given
 	[ $show_format -eq 1 ] && {
 		preferred_format="$(youtube-dl -F "$url" | sed '1,3d' | tac - |\
@@ -229,21 +229,17 @@ play_url () {
 	[ $save_cur -eq 1 ] && printf "$selected_data" > "$current_file" ;
 
 	[ -n "$preferred_format" ] && {
-		eval "$player_format""$preferred_format"  "$url" 
-	} || { 
+		eval "$player_format""$preferred_format"  "$url"
+	} || {
 		eval "$player" "$url"
-	} || { 
-		printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2; 
+	} || {
+		printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
 	}
 }
 
 while true; do
 	user_selection
 	play_url
-	save_before_exit 
+	save_before_exit
 	[ $is_prompt_loop -eq 0 ] && exit;
 done
-
-
-
-
