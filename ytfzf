@@ -86,33 +86,34 @@ helpinfo () {
 printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
 printf "     -h                    Show this help text\n";
 printf "     -D                    Use external menu(default dmenu) instad of fzf \n";
-printf "                           warning: doesn't work as smooth as fzf\n";
-printf "                           to use an other menu export YTFZF_EXTMENU='command'\n";
 printf "     -H                    Choose from history \n";
 printf "     -x                    Delete history\n";
-printf "     -m  <search query>    Audio only (for listening to music)\n";
+printf "     -m  <search query>    Audio only (for music)\n";
 printf "     -d  <search query>    Download to current directory\n";
 printf "     -f  <search query>    Show available formats before proceeding\n";
-printf "     -a  <search query>    Auto play the first result, no fzf\n";
-printf "     -l  <search query>    loop: prompt again after video ends\n";
-printf "  Option can be combines. Example\n"
-printf "     ytfzf -fDH            to show history using ext menu and choose format\n"
+printf "     -a  <search query>    Auto play the first result, no selector\n";
+printf "     -l  <search query>    Loop: prompt selector again after video ends\n";
+printf "\n"
+printf "  Option can be combines. Like\n"
+printf "     ytfzf -fDH            to show history using external \n"
+printf "                           menu and show formats\n"
 printf "\n"
 printf "  Defaults can be modified through ENV variables\n";
 printf "  Defaults:\n";
-printf "     YTFZF_HIST=1          0 :off\n";
+printf "     YTFZF_HIST=1                          0 : off history\n";
 printf "     YTFZF_CACHE=~/.cache/ytfzf\n";
-printf "     YTFZF_LOOP=0          1 :would loop the selection prompt\n";
-printf "     YTFZF_PREF=''         22: 720p,  18: 360p\n";
-printf "     YTFZF_CUR=1           For status bar bodules\n";
+printf "     YTFZF_LOOP=0                          1 : loop the selection prompt\n";
+printf "     YTFZF_PREF=''                         22: 720p,  18: 360p\n";
+printf "     YTFZF_CUR=1                           For status bar bodules\n";
 printf "     YTFZF_EXTMENU=' dmenu -i -l 30'\n";
 printf "  To use rofi\n";
 printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
+printf "\n";
 printf "  For more details refer https://github.com/pystardust/ytfzf\n";
 }
 usageinfo () {
 printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
-printf "     ytfzf -h         # to show help text\n";
+printf "     'ytfzf -h' for more informationt\n";
 }
 format_awk () {
 	awk -F'\t' \
