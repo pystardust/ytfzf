@@ -87,11 +87,21 @@ first hit Q to save position and quit mpv, then choose your format using
 
 * [youtube-dl github](https://github.com/ytdl-org/youtube-dl)
 
+### MacOS
+
+	brew install jq mpv youtube-dl fzf gsed
+
+> You have to install the GNU version of sed (gsed) because they are slightly different
+
 # Installation
 
 	git clone https://github.com/pystardust/ytfzf
 	cd ytfzf
 	chmod +x ytfzf
+
+If you are on MacOS you have to run this to use the GNU version of sed
+
+	gsed -i 's/\<sed\>/gsed/' ytfzf
 
 Copy it to your path
 	
