@@ -9,7 +9,7 @@
 [ -z "$YTFZF_CACHE" ] && YTFZF_CACHE=~/.cache/ytfzf
 [ -z "$YTFZF_PREF" ] && YTFZF_PREF=""
 [ -z "$YTFZF_EXTMENU" ] && YTFZF_EXTMENU='dmenu -i -l 30 -p Search:'
-[ -z "$YTFZF_EXTMENU_LEN" ] && YTFZF_EXTMENU_LEN=190
+[ -z "$YTFZF_EXTMENU_LEN" ] && YTFZF_EXTMENU_LEN=220
 
 ## directories
 history_file="$YTFZF_CACHE"/ytfzf_hst
@@ -23,6 +23,12 @@ player_format="mpv --ytdl-format="
 
 ## misc
 FZF_DEFAULT_OPTS=""
+
+## For MacOS users
+if [ "$(uname)" = "Darwin" ]; then
+	alias sed='gsed'
+fi
+
 
 # DYNAMIC SIZE
 ## min length
@@ -51,7 +57,7 @@ format_fzf () {
 		channel_len=$((frac * 2 ))
 		dur_len=$((frac * 1))
 		view_len=$((frac * 1 + 7))
-	elif [ $t_size -lt 130 ]; then
+	else
 		# title channel time views date
 		frac=$(((t_size - 5)/11))
 		title_len=$((frac * 5 - 1))
@@ -59,13 +65,6 @@ format_fzf () {
 		dur_len=$((frac * 1))
 		view_len=$((frac * 1))
 		date_len=$((frac * 2 + 20))
-	else    # all
-		frac=$(((t_size - 5 - 12)/11))
-		title_len=$((frac * 6 - 1))
-		channel_len=$((frac * 3/2))
-		dur_len=$((frac * 1))
-		view_len=$((frac * 1))
-		date_len=$((frac * 3/2 ))
 	fi
 }
 format_ext_menu () {
@@ -93,6 +92,7 @@ printf "     -d  <search query>    Download to current directory\n";
 printf "     -f  <search query>    Show available formats before proceeding\n";
 printf "     -a  <search query>    Auto play the first result, no selector\n";
 printf "     -l  <search query>    Loop: prompt selector again after video ends\n";
+printf "  Use - instead of <query> for stdin\n";
 printf "\n"
 printf "  Option can be combines. Like\n"
 printf "     ytfzf -fDH            to show history using external \n"
@@ -184,7 +184,6 @@ shift $((OPTIND-1))
 
 if [ $is_ext_menu -eq 0 ]; then
 	dep_ck "fzf"
-	search_query="$*"
 	prompt_menu='fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2'
 	format_fzf
 else
@@ -195,8 +194,17 @@ fi
 
 # MAIN
 [ $main -eq 0 ] && {
-	[ $is_ext_menu -eq 1 ] && search_query="$(printf "" | $YTFZF_EXTMENU)"
-	[ -z "$search_query" ] && { usageinfo ; exit 0; }
+
+	if [ "$*" = "-" ]; then
+		while read line; do
+			search_query="$search_query $line"
+		done
+	else
+		search_query="$*"
+		[ $is_ext_menu -eq 1 ] && [ -z "$search_query" ] && search_query="$(printf "" | $YTFZF_EXTMENU)"
+		[ -z "$search_query" ] && { usageinfo ; exit 0; }
+	fi
+
 
 	## GETTING DATA
 	yt_html="$(
@@ -213,7 +221,7 @@ fi
 		printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n";
 		errinfo; exit 2; }
 
-	yt_json="$(printf "%s" "$yt_html" |sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
+	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
 		sed -E ':a s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
 	 )"
 	[ -z "$yt_json" ] &&  {
