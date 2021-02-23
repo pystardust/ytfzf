@@ -32,6 +32,15 @@ fi
 
 # DYNAMIC SIZE
 ## min length
+format_ext_menu () {
+	frac=$(((YTFZF_EXTMENU_LEN - 5 - 12)/11))
+	title_len=$((frac * 6 - 1))
+	channel_len=$((frac * 3/2))
+	dur_len=$((frac * 1))
+	view_len=$((frac * 1))
+	date_len=$((frac * 3/2 ))
+	url_len=12
+}
 format_fzf () {
 	dur_len=7
 	view_len=10
@@ -67,16 +76,6 @@ format_fzf () {
 		date_len=$((frac * 2 + 20))
 	fi
 }
-format_ext_menu () {
-	frac=$(((YTFZF_EXTMENU_LEN - 5 - 12)/11))
-	title_len=$((frac * 6 - 1))
-	channel_len=$((frac * 3/2))
-	dur_len=$((frac * 1))
-	view_len=$((frac * 1))
-	date_len=$((frac * 3/2 ))
-	url_len=12
-}
-
 # HELPER TEXT
 errinfo () {
 printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n"
@@ -185,7 +184,7 @@ shift $((OPTIND-1))
 if [ $is_ext_menu -eq 0 ]; then
 	dep_ck "fzf"
 	prompt_menu='fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2'
-	format_fzf
+	[ ! "$*" = "-" ] && format_fzf || format_ext_menu
 else
 	# dmenu doesnt render tabs so removing it
 	prompt_menu='tr -d "$(printf "\t")" | '"$YTFZF_EXTMENU"
