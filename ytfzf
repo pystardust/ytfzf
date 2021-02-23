@@ -260,7 +260,7 @@ play_url () {
 	[ $YTFZF_CUR -eq 1 ] && printf "$selected_data" > "$current_file" ;
 
 	[ -n "$YTFZF_PREF" ] && {
-		eval "$player_format""$YTFZF_PREF"  "$url"
+		eval "$player_format"\'$YTFZF_PREF\'  "$url"
 	} || {
 		[ 4 -eq $? ] || eval "$player" "$url" # Ctr-C in MPV results in a return code of 4
 	} || {
