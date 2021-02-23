@@ -90,6 +90,7 @@ printf "     -m  <search query>    Audio only (for music)\n";
 printf "     -d  <search query>    Download to current directory\n";
 printf "     -f  <search query>    Show available formats before proceeding\n";
 printf "     -a  <search query>    Auto play the first result, no selector\n";
+printf "     -r  <search query>    Auto play a random result, no selector\n";
 printf "     -l  <search query>    Loop: prompt selector again after video ends\n";
 printf "  Use - instead of <query> for stdin\n";
 printf "\n"
@@ -130,6 +131,7 @@ save_before_exit () {
 # Opt variables
 main=0
 auto_select=0
+random_select=0
 is_ext_menu="0"
 # DEP CHECK
 dep_ck () {
@@ -138,7 +140,7 @@ dep_ck () {
 dep_ck "jq"; dep_ck "youtube-dl"; dep_ck "mpv";
 
 # OPT
-while getopts "hDmdfxHal" opt; do
+while getopts "hDmdfxHarl" opt; do
 	case ${opt} in
 		h) 	helpinfo
 			exit;
@@ -169,6 +171,9 @@ while getopts "hDmdfxHal" opt; do
 			exit;
 			;;
 		a) 	auto_select=1
+			;;
+		r)
+			random_select=1
 			;;
 		l) 	YTFZF_LOOP=1
 			;;
@@ -237,10 +242,12 @@ fi
 
 ## USER SELECTION
 user_selection () {
-	if [ $auto_select -eq 0 ] ; then
-		selected_data="$(echo "$videos_data" | video_menu )"
-	else
+	if [ $auto_select -eq 1 ] ; then
 		selected_data="$(echo "$videos_data" | sed 1q )" ;
+	elif [ $random_select -eq 1 ] ; then
+		selected_data="$(echo "$videos_data" | shuf -n 1)"
+	else
+		selected_data="$(echo "$videos_data" | video_menu )"
 	fi
 
 	shorturl="$(echo "$selected_data" | sed -E 's_.*\|([^|]+) *$_\1_')"
