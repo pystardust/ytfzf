@@ -10,7 +10,11 @@ Initially this used to be a single line script. But for portability and extensib
 	#!/bin/sh
 	[ -z "$*" ] || curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" |  pup 'script' | grep  "^ *var ytInitialData" | sed 's/^[^=]*=//g;s/;$//' | jq '..|.videoRenderer?' | sed '/^null$/d' | jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'| sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{60}).*/\1/;N;s/\n(.{30}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" | column -t  -s "$(printf "\t")" | fzf --delimiter='\|' --nth=1,2  | sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_' | xargs -r -I'{}' mpv {}
 
+# Update log
 
+- added MacOS support
+- Better fzf formatting
+- Stdin can be taken by using `ytfzf -`, for both fzf and external menu.
 
 # Usage
 
@@ -19,7 +23,7 @@ Initially this used to be a single line script. But for portability and extensib
 ```
 Usage: ytfzf <search query>
      -h                    Show this help text
-     -D                    Use external menu(default dmenu) instead of fzf
+     -D                    Use external menu(default dmenu) instad of fzf
      -H                    Choose from history
      -x                    Delete history
      -m  <search query>    Audio only (for music)
@@ -27,6 +31,7 @@ Usage: ytfzf <search query>
      -f  <search query>    Show available formats before proceeding
      -a  <search query>    Auto play the first result, no selector
      -l  <search query>    Loop: prompt selector again after video ends
+  Use - instead of <query> for stdin
  ```
 
 * To use dmenu with a custom width
@@ -98,10 +103,6 @@ first hit Q to save position and quit mpv, then choose your format using
 	git clone https://github.com/pystardust/ytfzf
 	cd ytfzf
 	chmod +x ytfzf
-
-If you are on MacOS you have to run this to use the GNU version of sed
-
-	gsed -i 's/\<sed\>/gsed/' ytfzf
 
 Copy it to your path
 	
