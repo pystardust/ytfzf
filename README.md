@@ -13,7 +13,7 @@ Initially this used to be a single line script. But for portability and extensib
 
 # Update log
 
-- Thumbnails!
+- Thumbnails! using ueberzug
 - added MacOS support
 - Better fzf formatting
 - Stdin can be taken by using `ytfzf -`, for both fzf and external menu.
@@ -99,8 +99,9 @@ first hit Q to save position and quit mpv, then choose your format using
 # Dependencies
 * mpv
 * [youtube-dl](https://github.com/ytdl-org/youtube-dl)
-* [fzf](https://github.com/junegunn/fzf) - for menu
+* [fzf](https://github.com/junegunn/fzf) (Optional) - for menu
 * [jq](https://github.com/stedolan/jq) - to parse json
+* [ueberzug](https://github.com/seebye/ueberzug) (Optional) - for thumbnails
 
 > fzf is optional. You can use external menu (like dmenu) with the `-D` option.
 
@@ -108,11 +109,19 @@ first hit Q to save position and quit mpv, then choose your format using
 
 	sudo pacman -S jq mpv youtube-dl fzf 
 
+> For thumbnails 
+	
+	sudo pacman -S ueberzug
+
 ### Debian based
 
 	sudo apt install jq mpv youtube-dl fzf 
 
 > Note youtube-dl is usually outdated in debian repos, I suggest getting it from 
+
+> For thumbnails 
+	
+	pip install ueberzug
 
 * [youtube-dl github](https://github.com/ytdl-org/youtube-dl)
 
