@@ -171,8 +171,8 @@ WIDTH=$FZF_PREVIEW_COLUMNS
 HEIGHT=$FZF_PREVIEW_LINES
 
 start_ueberzug () {
-    mkfifo "$FIFO" || exit 1
-    touch "$IMAGE" || exit 1
+    [ -e $FIFO ] || { mkfifo "$FIFO" || exit 1 ; }
+    [ -e $IMAGE ] || { touch "$IMAGE" || exit 1 ; }
     ueberzug layer --parser json --silent < "$FIFO" &
     exec 3>"$FIFO"
 }
