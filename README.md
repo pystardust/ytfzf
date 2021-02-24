@@ -12,6 +12,7 @@ Initially this used to be a single line script. But for portability and extensib
 
 # Update log
 
+- Thumbnails!
 - added MacOS support
 - Better fzf formatting
 - Stdin can be taken by using `ytfzf -`, for both fzf and external menu.
