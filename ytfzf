@@ -131,7 +131,6 @@ video_menu () {
 	format_awk | eval "$prompt_menu"
 }
 video_menu_img () {
-	dep_ck "ueberzug"
 	format_awk | fzf --tabstop=1 --bind change:first --delimiter="$(printf "\t")" --nth=1,2 \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "left:50%:noborder:wrap"
@@ -171,6 +170,7 @@ WIDTH=$FZF_PREVIEW_COLUMNS
 HEIGHT=$FZF_PREVIEW_LINES
 
 start_ueberzug () {
+    dep_ck "ueberzug"
     [ -e $FIFO ] || { mkfifo "$FIFO" || exit 1 ; }
     [ -e $IMAGE ] || { touch "$IMAGE" || exit 1 ; }
     ueberzug layer --parser json --silent < "$FIFO" &
