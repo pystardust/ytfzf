@@ -260,6 +260,10 @@ while getopts "hDmdfxHarltU:" opt; do
 done
 shift $((OPTIND-1))
 
+# If in auto select mode don't download thumbnails
+[ $auto_select -eq 1 ] || [ $random_select -eq 1 ]  && { show_thumbnails=0; }
+
+# Formatting and settings for menu's
 if [ $is_ext_menu -eq 0 ]; then
 	dep_ck "fzf"
 	prompt_menu='fzf  --bind change:first --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2'
@@ -271,6 +275,7 @@ else
 fi
 
 # MAIN
+## Scrape data and store video information ( and thumbnails download)
 [ $main -eq 0 ] && {
 
 	if [ "$*" = "-" ]; then
@@ -312,9 +317,8 @@ fi
 		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p"
 		)"
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
+
 	[ $show_thumbnails -eq 1 ] && download_thumbnails
-
-
 } #MAIN END
 
 ## USER SELECTION
