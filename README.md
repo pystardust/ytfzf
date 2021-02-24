@@ -13,7 +13,7 @@ Initially this used to be a single line script. But for portability and extensib
 
 # Update log
 
-- Thumbnails! using ueberzug
+- Thumbnails! using ueberzug. Inspired by [fontpreview](https://github.com/OliverLew/fontpreview-ueberzug).
 - added MacOS support
 - Better fzf formatting
 - Stdin can be taken by using `ytfzf -`, for both fzf and external menu.
@@ -117,11 +117,12 @@ first hit Q to save position and quit mpv, then choose your format using
 
 	sudo apt install jq mpv youtube-dl fzf 
 
-> Note youtube-dl is usually outdated in debian repos, I suggest getting it from 
-
 > For thumbnails 
-	
+
 	pip install ueberzug
+
+> Note youtube-dl is usually outdated in debian repos, I suggest getting it from 
+	
 
 * [youtube-dl github](https://github.com/ytdl-org/youtube-dl)
 
