@@ -191,7 +191,7 @@ preview_img () {
 	    printf '"width": %d, "height": %d }\n' "$WIDTH" "$((HEIGHT - 2))"
 	} > "$FIFO" 
 	echo "$@" |  tr -d '|' | awk -F'\t' \
-	'{ printf "%s\nChannel: %s\nDuration: %s\nViews: %s\nUploaded %s\n",$1,$2,$4,$3,$5}'
+	'{ printf "%s\nChannel: %s\nViews: %s\nDuration: %s\nUploaded %s\n",$1,$2,$4,$3,$5}'
 	#printf '{ "action": "remove", "identifier": "%s" }\n' "$ID" > "$FIFO"
 }
 ### End snippet
