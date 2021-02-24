@@ -30,6 +30,7 @@ Usage: ytfzf <search query>
      -d  <search query>    Download to current directory
      -f  <search query>    Show available formats before proceeding
      -a  <search query>    Auto play the first result, no selector
+     -r  <search query>    Auto play a random result, no selector
      -l  <search query>    Loop: prompt selector again after video ends
   Use - instead of <query> for stdin
  ```
