@@ -14,7 +14,10 @@
 ## directories
 history_file="$YTFZF_CACHE"/ytfzf_hst
 current_file="$YTFZF_CACHE"/ytfzf_cur
+thumb_dir="$YTFZF_CACHE"/thumb
 [ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
+[ -d $thumb_dir ] || mkdir -p $thumb_dir
+
 
 ## player settings
 show_format="0"
@@ -28,6 +31,7 @@ FZF_DEFAULT_OPTS=""
 if [ "$(uname)" = "Darwin" ]; then
 	alias sed='gsed'
 fi
+
 
 
 # DYNAMIC SIZE
@@ -48,6 +52,7 @@ format_fzf () {
 	url_len=12
 
 	t_size="$(stty size | cut -f2 -d' ')"
+	[ $show_thumbnails -eq 1 ] && t_size="$((t_size / 2))"
 	if [ $t_size -lt 75 ]; then
 		# title channel
 		frac=$(((t_size - 1)/4))
@@ -83,7 +88,9 @@ printf "Check for new versions and report at: https://github.com/pystardust/ytfz
 helpinfo () {
 printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
 printf "     -h                    Show this help text\n";
-printf "     -D                    Use external menu(default dmenu) instad of fzf \n";
+printf "     -t                    Show thumbnails (requires ueberzug)\n";
+printf "                           Doesn't work with -H -D\n";
+printf "     -D                    Use external menu(default dmenu) instead of fzf \n";
 printf "     -H                    Choose from history \n";
 printf "     -x                    Delete history\n";
 printf "     -m  <search query>    Audio only (for music)\n";
@@ -123,12 +130,74 @@ format_awk () {
 video_menu () {
 	format_awk | eval "$prompt_menu"
 }
+video_menu_img () {
+	dep_ck "ueberzug"
+	format_awk | fzf --tabstop=1 --bind change:first --delimiter="$(printf "\t")" --nth=1,2 \
+		--layout=reverse --preview "sh $0 -U {}" \
+        	--preview-window "left:50%:noborder:wrap"
+}
 save_before_exit () {
 	[ $YTFZF_HIST -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
 	[ $YTFZF_CUR -eq 1 ] && printf "" > "$current_file" ;
 }
+download_thumbnails () {
+	thumb_urls="$(printf "%s" "$videos_json" |\
+		jq  '.thumbnail.thumbnails[0].url,.videoId' )"
+
+	echo "Downloading Thumbnails.."
+	rm -r $thumb_dir/*
+	i=0
+	while read line; do
+		[ $((i % 2)) -eq 0 ] && { url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" ;}
+		[ $((i % 2)) -eq 1 ] && {
+			name="$(echo "$line" | tr -d '"')"
+			{ curl -s "$url" > "$thumb_dir/$name.png" && printf "."; } &
+		}
+		i=$((i + 1))
+	done << EOF
+$thumb_urls
+EOF
+	wait
+
+}
+
+## The following snippet of code has been copied and modified from
+## https://github.com/OliverLew/fontpreview-ueberzug      MIT License
+# Ueberzug related variables
+FIFO="/tmp/ytfzf-ueberzug-fifo"
+IMAGE="/tmp/ytfzf-ueberzug-img.png"
+ID="ytfzf-ueberzug"
+WIDTH=$FZF_PREVIEW_COLUMNS
+HEIGHT=$FZF_PREVIEW_LINES
+
+start_ueberzug () {
+    mkfifo "$FIFO" || exit 1
+    touch "$IMAGE" || exit 1
+    ueberzug layer --parser json --silent < "$FIFO" &
+    exec 3>"$FIFO"
+}
+
+stop_ueberzug () {
+    exec 3>&-
+    rm "$FIFO" "$IMAGE" > /dev/null 2>&1
+}
+
+preview_img () {
+	shorturl="$(echo "$@" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
+	# In fzf the cols and lines are those of the preview pane
+	IMAGE="$thumb_dir/$shorturl.png"
+	{   printf '{ "action": "add", "identifier": "%s", "path": "%s",' "$ID" "$IMAGE"
+	    printf '"x": %d, "y": %d, "scaler": "fit_contain",' 2 5
+	    printf '"width": %d, "height": %d }\n' "$WIDTH" "$((HEIGHT - 2))"
+	} > "$FIFO" 
+	echo "$@" | tr '\t' '\n'
+	#printf '{ "action": "remove", "identifier": "%s" }\n' "$ID" > "$FIFO"
+}
+### End snippet
+
 
 # Opt variables
+show_thumbnails=0
 main=0
 auto_select=0
 random_select=0
@@ -140,7 +209,7 @@ dep_ck () {
 dep_ck "jq"; dep_ck "youtube-dl"; dep_ck "mpv";
 
 # OPT
-while getopts "hDmdfxHarl" opt; do
+while getopts "hDmdfxHarltU:" opt; do
 	case ${opt} in
 		h) 	helpinfo
 			exit;
@@ -177,6 +246,10 @@ while getopts "hDmdfxHarl" opt; do
 			;;
 		l) 	YTFZF_LOOP=1
 			;;
+		t) 	show_thumbnails=1
+			;;
+		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
+			;;
 		*)
 			printf "Option not found!\n"
 			usageinfo
@@ -188,7 +261,7 @@ shift $((OPTIND-1))
 
 if [ $is_ext_menu -eq 0 ]; then
 	dep_ck "fzf"
-	prompt_menu='fzf --tabstop=1 --delimiter="$(printf "\t")" --nth=1,2'
+	prompt_menu='fzf  --bind change:first --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2'
 	[ ! "$*" = "-" ] && format_fzf || format_ext_menu
 else
 	# dmenu doesnt render tabs so removing it
@@ -232,11 +305,14 @@ fi
 		printf "ERROR[#02]: Couldn't find data on site.\n";
 		errinfo ; exit 2; }
 
-	videos_data="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d' |\
+	videos_json="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d')"
+	videos_data="$( printf "%s" "$videos_json" |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
 		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p"
 		)"
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; errinfo ; exit 1;}
+	[ $show_thumbnails -eq 1 ] && download_thumbnails
+
 
 } #MAIN END
 
@@ -246,11 +322,15 @@ user_selection () {
 		selected_data="$(echo "$videos_data" | sed 1q )" ;
 	elif [ $random_select -eq 1 ] ; then
 		selected_data="$(echo "$videos_data" | shuf -n 1)"
+	elif [ $show_thumbnails -eq 1 ] ; then
+		start_ueberzug
+		selected_data="$(echo "$videos_data" | video_menu_img )"
+		stop_ueberzug 
 	else
 		selected_data="$(echo "$videos_data" | video_menu )"
 	fi
 
-	shorturl="$(echo "$selected_data" | sed -E 's_.*\|([^|]+) *$_\1_')"
+	shorturl="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
 	[ -z "$shorturl" ] && exit;
 	url="https://www.youtube.com/watch?v=$shorturl"
 	# to get back untruncated data

@@ -23,7 +23,9 @@ Initially this used to be a single line script. But for portability and extensib
 ```
 Usage: ytfzf <search query>
      -h                    Show this help text
-     -D                    Use external menu(default dmenu) instad of fzf
+     -t                    Show thumbnails (requires ueberzug)
+                           Doesn't work with -H -D
+     -D                    Use external menu(default dmenu) instead of fzf
      -H                    Choose from history
      -x                    Delete history
      -m  <search query>    Audio only (for music)
@@ -33,6 +35,21 @@ Usage: ytfzf <search query>
      -r  <search query>    Auto play a random result, no selector
      -l  <search query>    Loop: prompt selector again after video ends
   Use - instead of <query> for stdin
+
+  Option can be combines. Like
+     ytfzf -fDH            to show history using external
+                           menu and show formats
+
+  Defaults can be modified through ENV variables
+  Defaults:
+     YTFZF_HIST=1                          0 : off history
+     YTFZF_CACHE=~/.cache/ytfzf
+     YTFZF_LOOP=0                          1 : loop the selection prompt
+     YTFZF_PREF=''                         22: 720p,  18: 360p
+     YTFZF_CUR=1                           For status bar bodules
+     YTFZF_EXTMENU=' dmenu -i -l 30'
+  To use rofi
+     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
  ```
 
 * To use dmenu with a custom width
@@ -44,9 +61,13 @@ YTFZF_EXTMENU_LEN=250 ytfzf -D
 * Videoes can be selected using fzf (default) or dmenu.
 
 ## Examples
-> Watch video
+> Watch to find videos (with out thumbnails)
 
 	ytfzf <query>
+
+> Watch to find videos with thumbnails
+
+	ytfzf -t <query>
 	
 * You can use multiple options together, here are some examples
 
