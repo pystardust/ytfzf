@@ -348,7 +348,7 @@ user_selection () {
 	# to get back untruncated data
 	selected_data="$(echo "$videos_data" | grep -m1 -e "$shorturl" )"
 
-    if [ $show_link_only ] ; then
+    if [ $show_link_only -eq 1 ] ; then
       echo $url
       exit
     fi
