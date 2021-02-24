@@ -131,7 +131,8 @@ video_menu () {
 	format_awk | eval "$prompt_menu"
 }
 video_menu_img () {
-	format_awk | fzf --tabstop=1 --bind change:first --delimiter="$(printf "\t")" --nth=1,2 \
+	dep_ck "ueberzug"
+	format_awk | fzf --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "left:50%:noborder:wrap"
 }
@@ -266,7 +267,7 @@ shift $((OPTIND-1))
 # Formatting and settings for menu's
 if [ $is_ext_menu -eq 0 ]; then
 	dep_ck "fzf"
-	prompt_menu='fzf  --bind change:first --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2'
+	prompt_menu='fzf  --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2'
 	[ ! "$*" = "-" ] && format_fzf || format_ext_menu
 else
 	# dmenu doesnt render tabs so removing it
