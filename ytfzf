@@ -274,9 +274,17 @@ else
 	format_ext_menu
 fi
 
+ytURL=""
+regex='(https|http)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]' # 100% not stolen from stackoverflow
+if [[ $* =~ $regex ]]
+then
+  main=0
+  ytURL=$*
+fi
+
 # MAIN
 ## Scrape data and store video information ( and thumbnails download)
-[ $main -eq 0 ] && {
+[ $main -eq 0 ] && [ -z "$ytURL" ] && {
 
 	if [ "$*" = "-" ]; then
 		while read line; do
@@ -287,7 +295,6 @@ fi
 		[ $is_ext_menu -eq 1 ] && [ -z "$search_query" ] && search_query="$(printf "" | $YTFZF_EXTMENU)"
 		[ -z "$search_query" ] && { usageinfo ; exit 0; }
 	fi
-
 
 	## GETTING DATA
 	yt_html="$(
@@ -324,24 +331,28 @@ fi
 
 ## USER SELECTION
 user_selection () {
-	if [ $auto_select -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | sed 1q )" ;
-	elif [ $random_select -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | shuf -n 1)"
-	elif [ $show_thumbnails -eq 1 ] ; then
-		dep_ck "ueberzug"
-		start_ueberzug
-		selected_data="$(echo "$videos_data" | video_menu_img )"
-		stop_ueberzug 
-	else
-		selected_data="$(echo "$videos_data" | video_menu )"
-	fi
+    if [ -z "$ytURL" ]; then
+      if [ $auto_select -eq 1 ] ; then
+          selected_data="$(echo "$videos_data" | sed 1q )" ;
+      elif [ $random_select -eq 1 ] ; then
+          selected_data="$(echo "$videos_data" | shuf -n 1)"
+      elif [ $show_thumbnails -eq 1 ] ; then
+          dep_ck "ueberzug"
+          start_ueberzug
+          selected_data="$(echo "$videos_data" | video_menu_img )"
+          stop_ueberzug 
+      else
+          selected_data="$(echo "$videos_data" | video_menu )"
+      fi
 
-	shorturl="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
-	[ -z "$shorturl" ] && exit;
-	url="https://www.youtube.com/watch?v=$shorturl"
-	# to get back untruncated data
-	selected_data="$(echo "$videos_data" | grep -m1 -e "$shorturl" )"
+      shorturl="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
+      [ -z "$shorturl" ] && exit;
+      url="https://www.youtube.com/watch?v=$shorturl"
+      # to get back untruncated data
+      selected_data="$(echo "$videos_data" | grep -m1 -e "$shorturl" )"
+    else
+      url=$ytURL
+    fi
 
     if [ $show_link_only -eq 1 ] ; then
       echo $url
