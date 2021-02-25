@@ -38,6 +38,7 @@ Usage: ytfzf <search query>
      -a  <search query>    Auto play the first result, no selector
      -r  <search query>    Auto play a random result, no selector
      -l  <search query>    Loop: prompt selector again after video ends
+     -s  <search query>    After the video ends make another search (only works with -l)
      -L  <search query>    Prints the selected URL only, helpful for scripting
   Use - instead of <query> for stdin
 ```

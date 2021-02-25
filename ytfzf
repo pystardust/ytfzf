@@ -90,6 +90,7 @@ printf "     -f  <search query>    Show available formats before proceeding\n";
 printf "     -a  <search query>    Auto play the first result, no selector\n";
 printf "     -r  <search query>    Auto play a random result, no selector\n";
 printf "     -l  <search query>    Loop: prompt selector again after video ends\n";
+printf "     -s  <search query>    After the video ends make another search (only works with -l)\n";
 printf "     -L  <search query>    Prints the selected URL only, helpful for scripting\n";
 printf "  Use - instead of <query> for stdin\n";
 printf "\n"
