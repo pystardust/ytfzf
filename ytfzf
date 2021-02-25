@@ -379,7 +379,7 @@ while true; do
 	play_url
 	save_before_exit
 	
-	#if looping is on don't exit
+	#if looping isn't on exit
 	[ $YTFZF_LOOP -eq 0 ] && exit;
 
 	#if -s was specified make another search query
