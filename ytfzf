@@ -11,7 +11,7 @@
 [ -z "$YTFZF_EXTMENU" ] && YTFZF_EXTMENU='dmenu -i -l 30 -p Search:'
 [ -z "$YTFZF_EXTMENU_LEN" ] && YTFZF_EXTMENU_LEN=220
 
-## directories
+## files and directories
 history_file="$YTFZF_CACHE"/ytfzf_hst
 current_file="$YTFZF_CACHE"/ytfzf_cur
 thumb_dir="$YTFZF_CACHE"/thumb
@@ -20,7 +20,6 @@ thumb_dir="$YTFZF_CACHE"/thumb
 
 
 ## player settings
-show_format="0"
 player="mpv"
 player_format="mpv --ytdl-format="
 
@@ -34,15 +33,14 @@ fi
 
 
 
-# DYNAMIC SIZE
-## min length
+# Adjusting size of menu 
 format_ext_menu () {
 	frac=$(((YTFZF_EXTMENU_LEN - 5 - 12)/11))
 	title_len=$((frac * 6 - 1))
 	channel_len=$((frac * 3/2))
 	dur_len=$((frac * 1))
 	view_len=$((frac * 1))
-	date_len=$((frac * 3/2 ))
+	date_len=$((frac * 3/2 + 100 ))
 	url_len=12
 }
 format_fzf () {
@@ -52,7 +50,7 @@ format_fzf () {
 	url_len=12
 
 	t_size="$(stty size | cut -f2 -d' ')"
-	[ $show_thumbnails -eq 1 ] && { t_size=200 ;}
+	[ $show_thumbnails -eq 1 ] && { t_size=220; }
 	if [ $t_size -lt 75 ]; then
 		# title channel
 		frac=$(((t_size - 1)/4))
@@ -132,6 +130,7 @@ video_menu () {
 	format_awk | eval "$prompt_menu"
 }
 video_menu_img () {
+	title_len=100
 	format_awk | fzf --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "left:50%:noborder:wrap"
@@ -192,20 +191,21 @@ preview_img () {
 	    printf '"x": %d, "y": %d, "scaler": "fit_contain",' 2 10
 	    printf '"width": %d, "height": %d }\n' "$WIDTH" "$((HEIGHT - 2))"
 	} > "$FIFO" 
-	echo "$@" |  tr -d '|' | awk -F'\t' \
-	'{ printf "%s\nChannel: %s\nViews: %s\nDuration: %s\nUploaded %s\n",$1,$2,$4,$3,$5}'
+	echo "$@" |  tr -d '|' | sed "s/ *\t/\t/g" | awk -F'\t' \
+	'{ printf "\n%s\nChannel: %s\nViews: %s\nDuration: %s\nUploaded %s\n",$1,$2,$4,$3,$5}'
 	#printf '{ "action": "remove", "identifier": "%s" }\n' "$ID" > "$FIFO"
 }
 ### End snippet
 
 
 # Opt variables
+is_ext_menu=0
 show_thumbnails=0
 show_link_only=0
 main=0
 auto_select=0
 random_select=0
-is_ext_menu="0"
+show_format=0
 # DEP CHECK
 dep_ck () {
 	command -v "$1" 1>/dev/null || { printf "$1 not found. Please install it.\n" ; exit 2; }
@@ -225,7 +225,7 @@ while getopts "LhDmdfxHarltU:" opt; do
 		d) 	player="youtube-dl"
 		   	player_format="youtube-dl -f "
 			;;
-		f) 	show_format="1"
+		f) 	show_format=1
 			;;
 		H)
 			if [ $YTFZF_HIST -eq 1 ]; then
@@ -255,6 +255,8 @@ while getopts "LhDmdfxHarltU:" opt; do
 		L) 	show_link_only=1
 			;;
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
+			# This option is reserved for the script, to show image previews
+			# Not to be used by explicitly
 			;;
 		*)
 			printf "Option not found!\n"
@@ -268,7 +270,7 @@ shift $((OPTIND-1))
 # If in auto select mode don't download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ]  && { show_thumbnails=0; }
 
-# Formatting and settings for menu's
+# Formatting and settings for for video selection
 if [ $is_ext_menu -eq 0 ]; then
 	dep_ck "fzf"
 	prompt_menu='fzf  --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2'
