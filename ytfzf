@@ -26,13 +26,6 @@ player_format="mpv --ytdl-format="
 ## misc
 FZF_DEFAULT_OPTS=""
 
-## For MacOS users
-if [ "$(uname)" = "Darwin" ]; then
-	alias sed='gsed'
-fi
-
-
-
 # Adjusting size of menu 
 format_ext_menu () {
 	frac=$(((YTFZF_EXTMENU_LEN - 5 - 12)/11))
@@ -312,7 +305,8 @@ fi
 		errinfo; exit 2; }
 
 	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
-		sed -E ':a s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
+        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
+
 	 )"
 	[ -z "$yt_json" ] &&  {
 		printf "ERROR[#02]: Couldn't find data on site.\n";
