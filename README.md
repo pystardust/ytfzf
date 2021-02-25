@@ -131,9 +131,8 @@ first hit Q to save position and quit mpv, then choose your format using
 
 ### MacOS
 
-	brew install jq mpv youtube-dl fzf gsed
+	brew install jq mpv youtube-dl fzf
 
-> You have to install the GNU version of sed (gsed) because they are slightly different
 
 # Installation
 
