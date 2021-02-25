@@ -26,12 +26,13 @@ player_format="mpv --ytdl-format="
 ## misc
 FZF_DEFAULT_OPTS=""
 
-## For MacOS users
-if [ "$(uname)" = "Darwin" ]; then
-	alias sed='gsed'
-fi
-
-
+sed () {
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    gsed "${@}"
+  else
+    sed "${@}"
+  fi
+}
 
 # Adjusting size of menu 
 format_ext_menu () {
