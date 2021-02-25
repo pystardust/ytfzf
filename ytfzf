@@ -276,8 +276,7 @@ fi
 
 # MAIN
 ## Scrape data and store video information ( and thumbnails download)
-[ $main -eq 0 ] && {
-
+main_fn () {
 	if [ "$*" = "-" ]; then
 		while read line; do
 			search_query="$search_query $line"
@@ -369,6 +368,7 @@ play_url () {
 }
 
 while true; do
+	main_fn $*
 	user_selection
 	play_url
 	save_before_exit
