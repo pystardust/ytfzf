@@ -198,6 +198,7 @@ show_link_only=0
 main=0
 auto_select=0
 random_select=0
+search_again=0
 show_format=0
 # DEP CHECK
 dep_ck () {
@@ -206,7 +207,7 @@ dep_ck () {
 dep_ck "jq"; dep_ck "youtube-dl"; dep_ck "mpv";
 
 # OPT
-while getopts "LhDmdfxHarltU:" opt; do
+while getopts "LhDmdfxHarltsU:" opt; do
 	case ${opt} in
 		h) 	helpinfo
 			exit;
@@ -240,6 +241,8 @@ while getopts "LhDmdfxHarltU:" opt; do
 			;;
 		r)
 			random_select=1
+			;;
+		s)	search_again=1
 			;;
 		l) 	YTFZF_LOOP=1
 			;;
@@ -367,10 +370,21 @@ play_url () {
 	}
 }
 
+#call main function
+[ $main -eq 0 ] && main_fn $*
+
 while true; do
-	main_fn $*
 	user_selection
 	play_url
 	save_before_exit
+	
+	#if looping is on don't exit
 	[ $YTFZF_LOOP -eq 0 ] && exit;
+
+	#if -s was specified make another search query
+	if [ $search_again -eq 1 ]; then
+	    printf "Search: "
+	    read search
+	    main_fn $search
+	fi
 done
