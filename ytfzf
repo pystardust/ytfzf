@@ -140,6 +140,7 @@ video_menu_img () {
         	--preview-window "left:50%:noborder:wrap"
 }
 save_before_exit () {
+	[ $is_url -eq 1 ] && exit
 	[ $YTFZF_HIST -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
 	[ $YTFZF_CUR -eq 1 ] && printf "" > "$current_file" ;
 }
