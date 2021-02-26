@@ -116,7 +116,7 @@ format_fzf () {
 format_menu () {
 	if [ $is_ext_menu -eq 0 ]; then
 		dep_ck "fzf"
-		prompt_menu='fzf  --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2'
+		prompt_menu='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2'
 		if [ $is_stdin -eq 0 ] ; then
 			format_fzf 
 		else 
@@ -138,13 +138,13 @@ video_menu () {
 }
 video_menu_img () {
 	title_len=400
-	format_awk | fzf --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 \
+	format_awk | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "left:50%:noborder:wrap"
 }
 save_before_exit () {
 	[ $is_url -eq 1 ] && exit
-	[ $YTFZF_HIST -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
+	[ $YTFZF_HIST -eq 1 ] && printf "$selected_data\n" >> "$history_file" ;
 	[ $YTFZF_CUR -eq 1 ] && printf "" > "$current_file" ;
 }
 ## The following snippet of code has been copied and modified from
@@ -281,20 +281,28 @@ user_selection () {
 		selected_data="$(echo "$videos_data" | video_menu )"
 	fi
 
-	shorturl="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
-	[ -z "$shorturl" ] && exit;
-	url="https://www.youtube.com/watch?v=$shorturl"
-	# to get back untruncated data
-	selected_data="$(echo "$videos_data" | grep -m1 -e "$shorturl" )"
+	shorturls="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
+	[ -z "$shorturls" ] && exit;
+	urls=""
+	selected_data=""
+	while read surl; do
+		urls="$urls\nhttps://www.youtube.com/watch?v=$surl"
+		# to get back untrucated titles from formatting
+		selected_data="$selected_data\n$(echo "$videos_data" | grep -m1 -e "$surl" )"
+	done<<EOF
+	$shorturls
+EOF
+	urls="$(echo "$urls" | sed 1d )"
+	selected_data="$(echo "$selected_data" | sed 1d )"
 
 	if [ $show_link_only -eq 1 ] ; then
-		echo $url
+		echo "$urls"
 		exit
 	fi
 
 	# selecte format if flag given
 	[ $show_format -eq 1 ] && {
-		YTFZF_PREF="$(youtube-dl -F "$url" | sed '1,3d' | tac - |\
+		YTFZF_PREF="$(youtube-dl -F "$(echo "$urls" | sed 1q)" | sed '1,3d' | tac - |\
 		eval "$prompt_menu" | sed -E 's/^([^ ]*) .*/\1/')"
 		[ -z $YTFZF_PREF  ] && exit;
 	}
@@ -304,14 +312,14 @@ play_url () {
 	[ $YTFZF_CUR -eq 1 ] && printf "$selected_data" > "$current_file" ;
 
 	[ -n "$YTFZF_PREF" ] && {
-		eval "$player_format"\'$YTFZF_PREF\'  "$url"
+		eval "$player_format"\'$YTFZF_PREF\'  "$(echo $urls | tr '\n' '\t' | sed 's_\t_" "_g' )"
 	} || {
-		[ 4 -eq $? ] || eval "$player" "$url" # Ctr-C in MPV results in a return code of 4
+		[ 4 -eq $? ] || eval "$player" "$urls" # Ctr-C in MPV results in a return code of 4
 	} || {
 		printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
 	}
 }
-checkurl () {
+check_if_url () {
 	# to check if given input is a url
 	regex='^https\?://.*'
 	echo "$1" | grep -q "$regex"
@@ -387,7 +395,7 @@ done
 shift $((OPTIND-1))
 [ "$*" = "-" ] && is_stdin=1 || is_stdin=0
 search_query="$*"
-checkurl "$search_query" 
+check_if_url "$search_query" 
 # If in auto select mode don't download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0; 
 
