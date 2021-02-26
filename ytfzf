@@ -220,7 +220,7 @@ get_query () {
 			if [ $is_ext_menu -eq 1 ]; then 
 				search_query="$(printf "" | $YTFZF_EXTMENU)"
 			else
-				printf "Search: "
+				printf "Search Youtube: "
 				read search_query
 			fi
 			[ -z "$search_query" ] && {  exit 0; }
