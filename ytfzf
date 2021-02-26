@@ -85,7 +85,6 @@ format_fzf () {
 	url_len=12
 
 	t_size="$(stty size | cut -f2 -d' ')"
-	[ $show_thumbnails -eq 1 ] && { t_size=220; }
 	if [ $t_size -lt 75 ]; then
 		# title channel
 		frac=$(((t_size - 1)/4))
@@ -118,7 +117,11 @@ format_menu () {
 	if [ $is_ext_menu -eq 0 ]; then
 		dep_ck "fzf"
 		prompt_menu='fzf  --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2'
-		[ $is_stdin -eq 0 ] && format_fzf || format_ext_menu
+		if [ $is_stdin -eq 0 ] ; then
+			format_fzf 
+		else 
+			format_ext_menu
+		fi
 	else
 		# dmenu doesnt render tabs so removing it
 		prompt_menu='tr -d "$(printf "\t")" | '"$YTFZF_EXTMENU"
@@ -134,7 +137,7 @@ video_menu () {
 	format_awk | eval "$prompt_menu"
 }
 video_menu_img () {
-	title_len=100
+	title_len=400
 	format_awk | fzf --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "left:50%:noborder:wrap"
