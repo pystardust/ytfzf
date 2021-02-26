@@ -15,10 +15,9 @@ Initially this used to be a single line script. But for portability and extensib
 
 # Update log
 
-- Make continuos queries with `-s`
-- Thumbnails! using ueberzug. Inspired by [fontpreview](https://github.com/OliverLew/fontpreview-ueberzug).
+- Make continuous queries with `-s`
+- Thumbnails! Using Ueberzug. Inspired by [fontpreview-ueberzup](https://github.com/OliverLew/fontpreview-ueberzug).
 - added MacOS support
-- Better fzf formatting
 - Stdin can be taken by using `ytfzf -`, for both fzf and external menu.
 
 # Usage
@@ -82,7 +81,8 @@ first hit Q to save position and quit mpv, then choose your format using
 	ytfzf -faH
 
 
-## Useful mpv keybindings to keep in mind
+## Useful mpv key bindings
+* Use `f` for full screen
 * Use `J` for subtitles (also works with audio, if the music video has subtitles)
 * Use `L` for single-loop
 
@@ -93,7 +93,8 @@ first hit Q to save position and quit mpv, then choose your format using
 * [jq](https://github.com/stedolan/jq) - to parse json
 * [ueberzug](https://github.com/seebye/ueberzug) (Optional) - for thumbnails
 
-> fzf is optional. You can use external menu (like dmenu) with the `-D` option.
+> Fzf is optional, you can use external menu (like dmenu) with the `-D` option (no thumbnail support).
+> Thumbnails only work with fzf and Ueberzug as of now.
 
 ### Arch based
 
@@ -242,4 +243,4 @@ It will be stored in the ytfzf cache directory as `ytfzf_cur`
 
 ## Bugs
 
-* dwm with swallow patch: Images don't render when looped (option -l)
+* dwm with swallow patch: Images don't render when looped (ie, option -l)
