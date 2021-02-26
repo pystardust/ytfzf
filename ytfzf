@@ -262,6 +262,7 @@ scrape_fn () {
 	[ $show_thumbnails -eq 1 ] && download_thumbnails
 }
 user_selection () {
+	[ $is_url -eq 1 ] && return
 	format_menu 
 	if [ $auto_select -eq 1 ] ; then
 		selected_data="$(echo "$videos_data" | sed 1q )" ;
@@ -306,6 +307,24 @@ play_url () {
 		printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
 	}
 }
+checkurl () {
+	# to check if given input is a url
+	regex='^https\?://.*'
+	echo "$1" | grep -q "$regex"
+	if [ $? -eq 0 ] ; then
+		is_url=1
+		url="$1"
+	else
+		is_url=0
+	fi
+}
+# DEP CHECK
+dep_ck () {
+	for dep in "$@"; do
+		command -v "$dep" 1>/dev/null || { printf "$dep not found. Please install it.\n" ; exit 2; }
+	done
+}
+dep_ck "jq" "youtube-dl" "mpv";
 
 # Opt variables
 is_ext_menu=0
@@ -316,14 +335,6 @@ auto_select=0
 random_select=0
 search_again=0
 show_format=0
-# DEP CHECK
-dep_ck () {
-	for dep in "$@"; do
-		command -v "$dep" 1>/dev/null || { printf "$dep not found. Please install it.\n" ; exit 2; }
-	done
-}
-dep_ck "jq" "youtube-dl" "mpv";
-
 # OPT
 while getopts "LhDmdfxHarltsU:" opt; do
 	case ${opt} in
@@ -372,6 +383,7 @@ done
 shift $((OPTIND-1))
 [ "$*" = "-" ] && is_stdin=1 || is_stdin=0
 search_query="$*"
+checkurl "$search_query" 
 # If in auto select mode don't download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0; 
 
