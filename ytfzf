@@ -84,7 +84,10 @@ format_fzf () {
 	date_len=14
 	url_len=12
 
-	t_size="$(stty size | cut -f2 -d' ')"
+	t_size="$(stty size 2> /dev/null | cut -f2 -d' ')"
+	if [ "$t_size" = "" ]; then
+	    printf "\e[31mWhen using stdin put - for the search query\033[000m\n" && exit 2
+	fi
 	if [ $t_size -lt 75 ]; then
 		# title channel
 		frac=$(((t_size - 1)/4))
