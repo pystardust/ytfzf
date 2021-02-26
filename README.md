@@ -239,3 +239,7 @@ It will be stored in the ytfzf cache directory as `ytfzf_cur`
 * Playlists
 * Comments
 * ~~Icons - Coming soon~~
+
+## Bugs
+
+* dwm with swallow patch: Images don't render when looped (option -l)
