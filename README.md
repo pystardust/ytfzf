@@ -5,7 +5,7 @@ A posix script that helps you find Youtube videos (with out API) and opens/downl
 * History support
 * Download support
 * Format selection (and default formats)
-* Queue multiple tracks
+* Queue multiple tracks (using fzf multiselection)
 
 Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below. 
 
