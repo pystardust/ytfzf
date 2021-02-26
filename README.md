@@ -4,7 +4,8 @@ A posix script that helps you find Youtube videos (with out API) and opens/downl
 * Thumbnails
 * History support
 * Download support
-* Format selection (and default selection)
+* Format selection (and default formats)
+* Queue multiple tracks
 
 Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below. 
 
@@ -15,6 +16,7 @@ Initially this used to be a single line script. But for portability and extensib
 
 # Update log
 
+- Now ytfzf can queue videos using fzf multiselect option. Press tab to select a video. All the videos will be lined up in mpv. Use `>` and `<` to traverse them.
 - Make continuous queries with `-s`
 - Thumbnails! Using Ueberzug. Inspired by [fontpreview-ueberzup](https://github.com/OliverLew/fontpreview-ueberzug).
 - added MacOS support
