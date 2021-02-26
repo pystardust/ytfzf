@@ -15,6 +15,7 @@ Initially this used to be a single line script. But for portability and extensib
 
 # Update log
 
+- Make continuos queries with `-s`
 - Thumbnails! using ueberzug. Inspired by [fontpreview](https://github.com/OliverLew/fontpreview-ueberzug).
 - added MacOS support
 - Better fzf formatting
@@ -38,7 +39,7 @@ Usage: ytfzf <search query>
      -a  <search query>    Auto play the first result, no selector
      -r  <search query>    Auto play a random result, no selector
      -l  <search query>    Loop: prompt selector again after video ends
-     -s  <search query>    After the video ends make another search (only works with -l)
+     -s  <search query>    After the video ends make another search
      -L  <search query>    Prints the selected URL only, helpful for scripting
   Use - instead of <query> for stdin
 ```
