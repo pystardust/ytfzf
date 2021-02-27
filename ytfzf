@@ -317,7 +317,7 @@ play_url () {
 	[ -n "$YTFZF_PREF" ] && {
 		eval "$player_format"\'$YTFZF_PREF\'  "$(echo $urls | tr '\n' '\t' | sed 's_\t_" "_g' )"
 	} || {
-		[ 4 -eq $? ] || eval "$player" "$urls" # Ctr-C in MPV results in a return code of 4
+		[ 4 -eq $? ] || eval "$player" "$(echo $urls | tr '\n' '\t' | sed 's_\t_" "_g' )"# Ctr-C in MPV results in a return code of 4
 	} || {
 		printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
 	}
