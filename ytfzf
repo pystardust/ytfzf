@@ -295,7 +295,7 @@ user_selection () {
 	done<<EOF
 	$shorturls
 EOF
-	urls="$(echo "$urls" | sed 1d )"
+	urls="$(printf "$urls" | sed 1d )"
 	selected_data="$(echo "$selected_data" | sed 1d )"
 
 	if [ $show_link_only -eq 1 ] ; then
@@ -305,19 +305,19 @@ EOF
 
 	# selecte format if flag given
 	[ $show_format -eq 1 ] && {
-		YTFZF_PREF="$(youtube-dl -F "$(echo "$urls" | sed 1q)" | sed '1,3d' | tac - |\
+		YTFZF_PREF="$(youtube-dl -F "$(printf "$urls" | sed 1q)" | sed '1,3d' | tac - |\
 		eval "$prompt_menu" | sed -E 's/^([^ ]*) .*/\1/')"
 		[ -z $YTFZF_PREF  ] && exit;
 	}
 }
 play_url () {
-
 	[ $YTFZF_CUR -eq 1 ] && printf "$selected_data" > "$current_file" ;
 
 	[ -n "$YTFZF_PREF" ] && {
-		eval "$player_format"\'$YTFZF_PREF\'  "$(echo $urls | tr '\n' '\t' | sed 's_\t_" "_g' )"
+		eval "$player_format"\'$YTFZF_PREF\'  "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
 	} || {
-		[ 4 -eq $? ] || eval "$player" "$urls" # Ctr-C in MPV results in a return code of 4
+		[ 4 -eq $? ] || eval "$player" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
+			# Ctr-C in MPV results in a return code of 4
 	} || {
 		printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
 	}
