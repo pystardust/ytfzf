@@ -247,17 +247,21 @@ scrape_fn () {
 	  -H 'accept-language: en-US,en;q=0.9' \
 	  --compressed
 	)"
-	[ -z "$yt_html" ] &&  {
-		printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n";
-		errinfo; exit 2; }
+	if [ -z "$yt_html" ]; then
+		printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"
+		errinfo
+		exit 2
+	fi
 
 	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
         sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
 
 	 )"
-	[ -z "$yt_json" ] &&  {
-		printf "ERROR[#02]: Couldn't find data on site.\n";
-		errinfo ; exit 2; }
+	if [ -z "$yt_json" ]; then  
+		printf "ERROR[#02]: Couldn't find data on site.\n"
+		errinfo
+		exit 2
+	fi
 
 	videos_json="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d')"
 	videos_data="$( printf "%s" "$videos_json" |\
@@ -304,23 +308,23 @@ EOF
 	fi
 
 	# selecte format if flag given
-	[ $show_format -eq 1 ] && {
+	if [ $show_format -eq 1 ]; then 
 		YTFZF_PREF="$(youtube-dl -F "$(printf "$urls" | sed 1q)" | sed '1,3d' | tac - |\
 		eval "$prompt_menu" | sed -E 's/^([^ ]*) .*/\1/')"
 		[ -z $YTFZF_PREF  ] && exit;
-	}
+	fi	
 }
 play_url () {
 	[ $YTFZF_CUR -eq 1 ] && printf "$selected_data" > "$current_file" ;
 
-	[ -n "$YTFZF_PREF" ] && {
+	if [ -n "$YTFZF_PREF" ]; then
 		eval "$player_format"\'$YTFZF_PREF\'  "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
-	} || {
-		[ 4 -eq $? ] || eval "$player" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
+	elif [ $? -ne 4 ]; then
+		eval "$player" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
 			# Ctr-C in MPV results in a return code of 4
-	} || {
+	else
 		printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
-	}
+	fi
 }
 check_if_url () {
 	# to check if given input is a url
