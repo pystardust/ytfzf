@@ -316,15 +316,14 @@ EOF
 }
 play_url () {
 	[ $YTFZF_CUR -eq 1 ] && printf "$selected_data" > "$current_file" ;
-
-	if [ -n "$YTFZF_PREF" ]; then
+	[ -n "$YTFZF_PREF" ] && {
 		eval "$player_format"\'$YTFZF_PREF\'  "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
-	elif [ $? -ne 4 ]; then
-		eval "$player" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
-			# Ctr-C in MPV results in a return code of 4
-	else
+	} || {
+		[ 4 -eq $? ] || eval "$player" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
+                     # Ctr-C in MPV results in a return code of 4
+	} || {
 		printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
-	fi
+	}
 }
 check_if_url () {
 	# to check if given input is a url
