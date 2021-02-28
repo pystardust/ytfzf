@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # https://github.com/pystardust/ytfzf
 
@@ -328,7 +328,8 @@ check_if_url () {
 	echo "$1" | grep -q "$regex"
 	if [ $? -eq 0 ] ; then
 		is_url=1
-		url="$1"
+		urls="$1"
+		scrape=0
 	else
 		is_url=0
 	fi
