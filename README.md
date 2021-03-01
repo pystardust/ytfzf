@@ -42,6 +42,7 @@ Usage: ytfzf <search query>
      -l  <search query>    Loop: prompt selector again after video ends
      -s  <search query>    After the video ends make another search
      -L  <search query>    Prints the selected URL only, helpful for scripting
+     -n <link count> <search query> Prints selected URLs only (useful with -a or -r)
   Use - instead of <query> for stdin
 ```
 
