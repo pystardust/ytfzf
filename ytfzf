@@ -248,7 +248,7 @@ scrape_fn () {
 	  --compressed
 	)"
 	if [ -z "$yt_html" ]; then
-		printf "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"
+		printf "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
 		errinfo
 		exit 2
 	fi
@@ -258,7 +258,7 @@ scrape_fn () {
 
 	 )"
 	if [ -z "$yt_json" ]; then  
-		printf "ERROR[#02]: Couldn't find data on site.\n"
+		printf "\033[31mERROR[#02]: Couldn't find data on site.\033[000m\n"
 		errinfo
 		exit 2
 	fi
@@ -322,7 +322,7 @@ play_url () {
 		[ 4 -eq $? ] || eval "$player" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
                      # Ctr-C in MPV results in a return code of 4
 	} || {
-		printf "ERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
+		printf "\033[31mERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\033[000m\n"; errinfo ; save_before_exit ; exit 2;
 	}
 }
 check_if_url () {
