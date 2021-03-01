@@ -134,13 +134,13 @@ cd ytfzf
 Install with the Makefile
 	
 ```sh
-make install
+sudo make install
 ```
 
 Uninstall with the Makefile
 
 ```sh
-make uninstall
+sudo make uninstall
 ```
 
 Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
