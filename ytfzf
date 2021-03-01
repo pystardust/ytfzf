@@ -316,7 +316,7 @@ EOF
 play_url () {
 	[ $YTFZF_CUR -eq 1 ] && printf "$selected_data" > "$current_file" ;
 	[ -n "$YTFZF_PREF" ] && {
-		eval "$YTFZF_PLAYER_FORMAT"\'$YTFZF_PREF\'  "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
+		eval "$YTFZF_PLAYER_FORMAT" \'$YTFZF_PREF\'  "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
 	} || {
 		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
                      # Ctr-C in MPV results in a return code of 4
