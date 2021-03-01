@@ -42,6 +42,7 @@ printf "     -r  <search query>    Auto play a random result, no selector\n";
 printf "     -l  <search query>    Loop: prompt selector again after video ends\n";
 printf "     -s  <search query>    After the video ends make another search \n";
 printf "     -L  <search query>    Prints the selected URL only, helpful for scripting\n";
+printf "     -n <link count> <search query> Prints selected URLs only (useful with -a or -r)\n";
 printf "  Use - instead of <query> for stdin\n";
 printf "\n"
 printf "  Option can be combines. Like\n"
