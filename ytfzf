@@ -399,7 +399,6 @@ while getopts "LhDmdfxHarltsn:U:" opt; do
 		L) 	show_link_only=1
 			;;
 		n)	link_count="$OPTARG"	
-			show_link_only=1
 			;;
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
