@@ -10,6 +10,9 @@
 [ -z "$YTFZF_PREF" ] && YTFZF_PREF=""
 [ -z "$YTFZF_EXTMENU" ] && YTFZF_EXTMENU='dmenu -i -l 30 -p Search:'
 [ -z "$YTFZF_EXTMENU_LEN" ] && YTFZF_EXTMENU_LEN=220
+## player settings
+[ -z "$YTFZF_PLAYER" ] && YTFZF_PLAYER="mpv"
+[ -z "$YTFZF_PLAYER_FORMAT" ] && YTFZF_PLAYER_FORMAT="mpv --ytdl-format="
 
 ## files and directories
 history_file="$YTFZF_CACHE"/ytfzf_hst
@@ -18,10 +21,6 @@ thumb_dir="$YTFZF_CACHE"/thumb
 [ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
 [ -d $thumb_dir ] || mkdir -p $thumb_dir
 
-
-## player settings
-player="mpv"
-player_format="mpv --ytdl-format="
 
 ## misc
 FZF_DEFAULT_OPTS=""
@@ -317,9 +316,9 @@ EOF
 play_url () {
 	[ $YTFZF_CUR -eq 1 ] && printf "$selected_data" > "$current_file" ;
 	[ -n "$YTFZF_PREF" ] && {
-		eval "$player_format"\'$YTFZF_PREF\'  "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
+		eval "$YTFZF_PLAYER_FORMAT"\'$YTFZF_PREF\'  "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
 	} || {
-		[ 4 -eq $? ] || eval "$player" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
+		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
                      # Ctr-C in MPV results in a return code of 4
 	} || {
 		printf "\033[31mERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\033[000m\n"; errinfo ; save_before_exit ; exit 2;
@@ -364,8 +363,8 @@ while getopts "LhDmdfxHarltsU:" opt; do
 			;;
 		m) 	YTFZF_PREF="bestaudio"
 			;;
-		d) 	player="youtube-dl"
-		   	player_format="youtube-dl -f "
+		d) 	YTFZF_PLAYER="youtube-dl"
+		   	YTFZF_PLAYER_FORMAT="youtube-dl -f "
 			;;
 		f) 	show_format=1
 			;;
