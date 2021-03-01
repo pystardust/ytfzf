@@ -129,13 +129,18 @@ first hit Q to save position and quit mpv, then choose your format using
 ```sh
 git clone https://github.com/pystardust/ytfzf
 cd ytfzf
-chmod +x ytfzf
 ```
 
-Copy it to your path
+Install with the Makefile
 	
 ```sh
-sudo cp ytfzf /usr/local/bin/
+sudo make install
+```
+
+Uninstall with the Makefile
+
+```sh
+sudo make uninstall
 ```
 
 Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
