@@ -10,9 +10,11 @@
 [ -z "$YTFZF_PREF" ] && YTFZF_PREF=""
 [ -z "$YTFZF_EXTMENU" ] && YTFZF_EXTMENU='dmenu -i -l 30 -p Search:'
 [ -z "$YTFZF_EXTMENU_LEN" ] && YTFZF_EXTMENU_LEN=220
+
 ## player settings
 [ -z "$YTFZF_PLAYER" ] && YTFZF_PLAYER="mpv"
 [ -z "$YTFZF_PLAYER_FORMAT" ] && YTFZF_PLAYER_FORMAT="mpv --ytdl-format="
+[ -z "$YTFZF_ENABLE_FZF_DEFAULT_OPTS" ] && YTFZF_ENABLE_FZF_DEFAULT_OPTS=0
 
 ## files and directories
 history_file="$YTFZF_CACHE"/ytfzf_hst
@@ -23,7 +25,7 @@ thumb_dir="$YTFZF_CACHE"/thumb
 
 
 ## misc
-FZF_DEFAULT_OPTS=""
+[ $YTFZF_ENABLE_FZF_DEFAULT_OPTS -eq 0 ] && FZF_DEFAULT_OPTS=""
 
 helpinfo () {
 printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
@@ -38,6 +40,7 @@ printf "     -d  <search query>    Download to current directory\n";
 printf "     -f  <search query>    Show available formats before proceeding\n";
 printf "     -a  <search query>    Auto play the first result, no selector\n";
 printf "     -r  <search query>    Auto play a random result, no selector\n";
+printf "     -n  <link count>       To specify number of videos to select with -a or -r\n";
 printf "     -l  <search query>    Loop: prompt selector again after video ends\n";
 printf "     -s  <search query>    After the video ends make another search \n";
 printf "     -L  <search query>    Prints the selected URL only, helpful for scripting\n";
@@ -57,6 +60,7 @@ printf "     YTFZF_CUR=1                           For status bar bodules\n";
 printf "     YTFZF_EXTMENU=' dmenu -i -l 30'\n";
 printf "  To use rofi\n";
 printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
+printf "     YTFZF_ENABLE_FZF_DEFAULT_OPTS=0	   1 : fzf will use FZF_DEFAULT_OPTS\n";
 printf "\n";
 printf "  For more details refer https://github.com/pystardust/ytfzf\n";
 }
@@ -118,7 +122,7 @@ format_fzf () {
 format_menu () {
 	if [ $is_ext_menu -eq 0 ]; then
 		dep_ck "fzf"
-		prompt_menu='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2'
+		prompt_menu='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS'
 		if [ $is_stdin -eq 0 ] ; then
 			format_fzf 
 		else 
@@ -140,7 +144,7 @@ video_menu () {
 }
 video_menu_img () {
 	title_len=400
-	format_awk | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 \
+	format_awk | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "left:50%:noborder:wrap"
 }
@@ -274,10 +278,11 @@ scrape_fn () {
 user_selection () {
 	[ $is_url -eq 1 ] && return
 	format_menu 
+
 	if [ $auto_select -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | sed 1q )" ;
+		selected_data="$(echo "$videos_data" | sed ${link_count}q )" ;
 	elif [ $random_select -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | shuf -n 1)"
+		selected_data="$(echo "$videos_data" | shuf -n $link_count )"
 	elif [ $show_thumbnails -eq 1 ] ; then
 		dep_ck "ueberzug"
 		start_ueberzug
@@ -286,12 +291,13 @@ user_selection () {
 	else
 		selected_data="$(echo "$videos_data" | video_menu )"
 	fi
-
+	
 	shorturls="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
 	[ -z "$shorturls" ] && exit;
 	urls=""
 	selected_data=""
 	while read surl; do
+		[ -z "$surl" ] && continue
 		urls="$urls\nhttps://www.youtube.com/watch?v=$surl"
 		# to get back untrucated titles from formatting
 		selected_data="$selected_data\n$(echo "$videos_data" | grep -m1 -e "$surl" )"
@@ -353,8 +359,9 @@ auto_select=0
 random_select=0
 search_again=0
 show_format=0
+link_count=1
 # OPT
-while getopts "LhDmdfxHarltsU:" opt; do
+while getopts "LhDmdfxHarltsn:U:" opt; do
 	case ${opt} in
 		h) 	helpinfo
 			exit;
@@ -386,6 +393,8 @@ while getopts "LhDmdfxHarltsU:" opt; do
 		t) 	show_thumbnails=1
 			;;
 		L) 	show_link_only=1
+			;;
+		n)	link_count="$OPTARG"	
 			;;
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews

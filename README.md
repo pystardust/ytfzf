@@ -39,6 +39,7 @@ Usage: ytfzf <search query>
      -f  <search query>    Show available formats before proceeding
      -a  <search query>    Auto play the first result, no selector
      -r  <search query>    Auto play a random result, no selector
+	 -n  <link count>       To specify number of videos to select with -a or -r
      -l  <search query>    Loop: prompt selector again after video ends
      -s  <search query>    After the video ends make another search
      -L  <search query>    Prints the selected URL only, helpful for scripting
@@ -253,9 +254,9 @@ export YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
 
 # Todo
 
-* Playlists
-* Comments
-* ~~Icons - Coming soon~~
+* [ ] Playlists
+* [ ] Comments
+* [x] Icons
 
 ## Bugs
 
