@@ -417,8 +417,8 @@ link_count=1
 parse_opt () {
 	#the first arg is the option
 	opt=$1
-	#second arg is the optarg defaults to empty
-	OPTARG="${2-}"
+	#second arg is the optarg 
+	OPTARG="$2"
 	case ${opt} in
 		#Long options
 		-)
@@ -452,52 +452,52 @@ parse_opt () {
 
 				random-auto-play) parse_opt "r" ;;
 
-				*) parse_opt "UNKNOWN" ;;
+				*)
+				    printf "Illegal option --$OPTARG\n"
+				    usageinfo
+				    exit 2;
+				    ;;
 			esac
 			;;
 		#Short options
 		h) 	helpinfo
-			exit;
-			;;
-		D) 	is_ext_menu="1"
-			;;
-		m) 	YTFZF_PREF="bestaudio"
-			;;
+			exit ;;
+
+		D) 	is_ext_menu="1" ;;
+
+		m) 	YTFZF_PREF="bestaudio" ;;
+
 		d) 	YTFZF_PLAYER="youtube-dl"
-		   	YTFZF_PLAYER_FORMAT="youtube-dl -f "
-			;;
-		f) 	show_format=1
-			;;
-		H)	get_history
-			;;
+			YTFZF_PLAYER_FORMAT="youtube-dl -f " ;;
+		f) 	show_format=1 ;;
+
+		H)	get_history ;;
+
 		x)	[ -e "$history_file" ] && rm "$history_file" && touch "$history_file" && printf "History has been cleared\n"
-			exit;
-			;;
-		a) 	auto_select=1
-			;;
-		r)
-			random_select=1
-			;;
+			exit ;;
+		a) 	auto_select=1 ;;
+
+		r)	random_select=1 ;;
+
 		s)	search_again=1
-		 	YTFZF_LOOP=1
-			;;
-		l) 	YTFZF_LOOP=1
-			;;
-		t) 	show_thumbnails=1
-			;;
-		L) 	show_link_only=1
-			;;
-		n)	link_count="$OPTARG"	
-			;;
+		 	YTFZF_LOOP=1 ;;
+
+		l) 	YTFZF_LOOP=1 ;;
+
+		t) 	show_thumbnails=1 ;;
+
+		L) 	show_link_only=1 ;;
+
+		n)	link_count="$OPTARG" ;;
+
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
+
 			# This option is reserved for the script, to show image previews
 			# Not to be used by explicitly
 			;;
 		*)
-			printf "${OPT-Option} not found!\n"
 			usageinfo
-			exit 2;
-			;;
+			exit 2 ;;
 	esac
 }
 
