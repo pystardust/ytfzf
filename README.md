@@ -28,22 +28,22 @@ Initially this used to be a single line script. But for portability and extensib
 
 ```
 Usage: ytfzf <search query>
-     -h                    Show this help text
-     -t                    Show thumbnails (requires ueberzug)
-                           Doesn't work with -H -D
-     -D                    Use external menu(default dmenu) instead of fzf
-     -H                    Choose from history
-     -x                    Delete history
-     -m  <search query>    Audio only (for music)
-     -d  <search query>    Download to current directory
-     -f  <search query>    Show available formats before proceeding
-     -a  <search query>    Auto play the first result, no selector
-     -r  <search query>    Auto play a random result, no selector
-	 -n  <link count>       To specify number of videos to select with -a or -r
-     -l  <search query>    Loop: prompt selector again after video ends
-     -s  <search query>    After the video ends make another search
-     -L  <search query>    Prints the selected URL only, helpful for scripting
-  Use - instead of <query> for stdin
+     -h, --help                           Show this help text
+     -t, --thumbnails                     Show thumbnails (requires ueberzug)
+                                          Doesn't work with -H -D
+     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf 
+     -H, --choose-from-history            Choose from history 
+     -x, --clear-history                  Delete history
+     -m, --audio-only   <search-query>    Audio only (for music)
+     -d, --download     <search-query>    Download to current directory
+     -f                 <search-query>    Show available formats before proceeding
+     -a, --auto-play    <search-query>    Auto play the first result, no selector
+     -r  --random-play  <search-query>    Auto play a random result, no selector
+     -n, --link-count=  <link-count>      To specify number of videos to select with -a or -r
+     -l, --loop         <search-query>    Loop: prompt selector again after video ends
+     -s                 <search-query>    After the video ends make another search 
+     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting
+  Use - instead of <search-query> for stdin
 ```
 
 * To use dmenu with a custom width

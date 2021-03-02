@@ -56,7 +56,7 @@ printf "     -d, --download     <search-query>    Download to current directory\
 printf "     -f  	        <search-query>    Show available formats before proceeding\n";
 printf "     -a, --auto-play    <search-query>    Auto play the first result, no selector\n";
 printf "     -r  --random-play  <search-query>    Auto play a random result, no selector\n";
-printf "     -n, --link-count=   <link-count>      To specify number of videos to select with -a or -r\n";
+printf "     -n, --link-count=  <link-count>      To specify number of videos to select with -a or -r\n";
 printf "     -l, --loop	        <search-query>    Loop: prompt selector again after video ends\n";
 printf "     -s  	        <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
@@ -414,13 +414,15 @@ show_format=0
 link_count=1
 
 #OPT
-
 parse_opt () {
+	#the first arg is the option
 	opt=$1
+	#second arg is the optarg defaults to empty
 	OPTARG="${2-}"
 	case ${opt} in
 		#Long options
 		-)
+			#if the option has a short version it calls this function with the opt as the shortopt
 			case "${OPTARG}" in
 			        help) parse_opt "h" ;;
 
