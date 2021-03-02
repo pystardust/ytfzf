@@ -457,8 +457,7 @@ parse_opt () {
 				    usageinfo
 				    exit 2;
 				    ;;
-			esac
-			;;
+			esac ;;
 		#Short options
 		h) 	helpinfo
 			exit ;;
@@ -469,12 +468,14 @@ parse_opt () {
 
 		d) 	YTFZF_PLAYER="youtube-dl"
 			YTFZF_PLAYER_FORMAT="youtube-dl -f " ;;
+
 		f) 	show_format=1 ;;
 
 		H)	get_history ;;
 
 		x)	[ -e "$history_file" ] && rm "$history_file" && touch "$history_file" && printf "History has been cleared\n"
 			exit ;;
+
 		a) 	auto_select=1 ;;
 
 		r)	random_select=1 ;;
@@ -491,10 +492,10 @@ parse_opt () {
 		n)	link_count="$OPTARG" ;;
 
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
-
 			# This option is reserved for the script, to show image previews
 			# Not to be used by explicitly
 			;;
+
 		*)
 			usageinfo
 			exit 2 ;;
