@@ -39,10 +39,10 @@ Usage: ytfzf <search query>
      -f  <search query>    Show available formats before proceeding
      -a  <search query>    Auto play the first result, no selector
      -r  <search query>    Auto play a random result, no selector
+	 -n  <link count>       To specify number of videos to select with -a or -r
      -l  <search query>    Loop: prompt selector again after video ends
      -s  <search query>    After the video ends make another search
      -L  <search query>    Prints the selected URL only, helpful for scripting
-     -n <link count> <search query> Prints selected URLs only (useful with -a or -r)
   Use - instead of <query> for stdin
 ```
 
