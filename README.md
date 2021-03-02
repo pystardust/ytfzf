@@ -245,9 +245,9 @@ It will be stored in the ytfzf cache directory as `ytfzf_cur`
 
 # Todo
 
-* Playlists
-* Comments
-* ~~Icons - Coming soon~~
+* [ ] Playlists
+* [ ] Comments
+* [x] Icons
 
 ## Bugs
 
