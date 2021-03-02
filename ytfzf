@@ -40,10 +40,10 @@ printf "     -d  <search query>    Download to current directory\n";
 printf "     -f  <search query>    Show available formats before proceeding\n";
 printf "     -a  <search query>    Auto play the first result, no selector\n";
 printf "     -r  <search query>    Auto play a random result, no selector\n";
+printf "     -n  <link count>       To specify number of videos to select with -a or -r\n";
 printf "     -l  <search query>    Loop: prompt selector again after video ends\n";
 printf "     -s  <search query>    After the video ends make another search \n";
 printf "     -L  <search query>    Prints the selected URL only, helpful for scripting\n";
-printf "     -n <link count> <search query> Prints selected URLs only (useful with -a or -r)\n";
 printf "  Use - instead of <query> for stdin\n";
 printf "\n"
 printf "  Option can be combines. Like\n"
