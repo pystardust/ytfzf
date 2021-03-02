@@ -243,6 +243,15 @@ export YTFZF_CUR=0
 It will be stored in the ytfzf cache directory as `ytfzf_cur`
 
 
+## Custom Player
+By default, ytfzf uses `mpv`. custom player should have the ability to launch youtube links.
+
+``` sh
+# example: using devour
+export FZF_PLAYER="devour mpv"
+export YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
+```
+
 # Todo
 
 * [ ] Playlists
