@@ -7,10 +7,11 @@
 ############################
 #         Defaults         #
 ############################
+
 [ -z "$YTFZF_HIST" ] && YTFZF_HIST=1
 [ -z "$YTFZF_LOOP" ] && YTFZF_LOOP=0
 [ -z "$YTFZF_CUR" ] && YTFZF_CUR=1
-[ -z "$YTFZF_CACHE" ] && YTFZF_CACHE=~/.cache/ytfzf
+[ -z "$YTFZF_CACHE" ] && YTFZF_CACHE="$HOME/.cache/ytfzf"
 [ -z "$YTFZF_PREF" ] && YTFZF_PREF=""
 [ -z "$YTFZF_EXTMENU" ] && YTFZF_EXTMENU='dmenu -i -l 30 -p Search:'
 [ -z "$YTFZF_EXTMENU_LEN" ] && YTFZF_EXTMENU_LEN=220
@@ -26,9 +27,32 @@
 history_file="$YTFZF_CACHE"/ytfzf_hst
 current_file="$YTFZF_CACHE"/ytfzf_cur
 thumb_dir="$YTFZF_CACHE"/thumb
+#> make folders that don't exist
 [ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
 [ -d $thumb_dir ] || mkdir -p $thumb_dir
 
+#> Setting and reading the config file 
+config_file="$HOME/.config/ytfzf.sh"
+if [ -e $config_file ]
+then
+    #source config file if exists (overrides env variables)
+    . "$config_file"
+else
+    echo "#Defaults
+YTFZF_HIST=$YTFZF_HIST
+YTFZF_LOOP=$YTFZF_LOOP
+YTFZF_CUR=$YTFZF_CUR
+YTFZF_CACHE=\"$YTFZF_CACHE\"
+YTFZF_PREF=\"$YTFZF_PREF\"
+YTFZF_EXTMENU=\"$YTFZF_EXTMENU\"
+YTFZF_EXTMENU_LEN=$YTFZF_EXTMENU_LEN
+
+#Player settings
+YTFZF_PLAYER=\"$YTFZF_PLAYER\"
+YTFZF_PLAYER_FORMAT=\"$YTFZF_PLAYER_FORMAT\"
+YTFZF_ENABLE_FZF_DEFAULT_OPTS=$YTFZF_ENABLE_FZF_DEFAULT_OPTS
+    " > "$config_file"
+fi
 
 # DEP CHECK
 dep_ck () {
