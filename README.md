@@ -18,7 +18,7 @@ Initially this used to be a single line script. But for portability and extensib
 
 - Now ytfzf can queue videos using fzf multiselect option. Press tab to select a video. All the videos will be lined up in mpv. Use `>` and `<` to traverse them.
 - Make continuous queries with `-s`
-- Thumbnails! Using Ueberzug. Inspired by [fontpreview-ueberzup](https://github.com/OliverLew/fontpreview-ueberzug).
+- Thumbnails! Using Ueberzug. Inspired by [fontpreview-ueberzug](https://github.com/OliverLew/fontpreview-ueberzug).
 - added MacOS support
 - Stdin can be taken by using `ytfzf -`, for both fzf and external menu.
 
