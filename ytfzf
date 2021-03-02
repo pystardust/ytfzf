@@ -43,6 +43,7 @@ printf "     -r  <search query>    Auto play a random result, no selector\n";
 printf "     -l  <search query>    Loop: prompt selector again after video ends\n";
 printf "     -s  <search query>    After the video ends make another search \n";
 printf "     -L  <search query>    Prints the selected URL only, helpful for scripting\n";
+printf "     -n <link count> <search query> Prints selected URLs only (useful with -a or -r)\n";
 printf "  Use - instead of <query> for stdin\n";
 printf "\n"
 printf "  Option can be combines. Like\n"
@@ -277,10 +278,11 @@ scrape_fn () {
 user_selection () {
 	[ $is_url -eq 1 ] && return
 	format_menu 
+
 	if [ $auto_select -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | sed 1q )" ;
+		selected_data="$(echo "$videos_data" | sed ${link_count}q )" ;
 	elif [ $random_select -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | shuf -n 1)"
+		selected_data="$(echo "$videos_data" | shuf -n $link_count )"
 	elif [ $show_thumbnails -eq 1 ] ; then
 		dep_ck "ueberzug"
 		start_ueberzug
@@ -289,12 +291,18 @@ user_selection () {
 	else
 		selected_data="$(echo "$videos_data" | video_menu )"
 	fi
-
+	
 	shorturls="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
 	[ -z "$shorturls" ] && exit;
 	urls=""
 	selected_data=""
+	#used so if n is more than results found it breaks
+	previous_url=""
 	while read surl; do
+		[ -z "$surl" ] && continue
+		# means it has found the last result
+		[ "$previous_url" = "$surl" ] && break
+		previous_url="$surl"
 		urls="$urls\nhttps://www.youtube.com/watch?v=$surl"
 		# to get back untrucated titles from formatting
 		selected_data="$selected_data\n$(echo "$videos_data" | grep -m1 -e "$surl" )"
@@ -356,8 +364,9 @@ auto_select=0
 random_select=0
 search_again=0
 show_format=0
+link_count=1
 # OPT
-while getopts "LhDmdfxHarltsU:" opt; do
+while getopts "LhDmdfxHarltsn:U:" opt; do
 	case ${opt} in
 		h) 	helpinfo
 			exit;
@@ -389,6 +398,8 @@ while getopts "LhDmdfxHarltsU:" opt; do
 		t) 	show_thumbnails=1
 			;;
 		L) 	show_link_only=1
+			;;
+		n)	link_count="$OPTARG"	
 			;;
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
