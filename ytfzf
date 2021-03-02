@@ -10,6 +10,7 @@
 [ -z "$YTFZF_PREF" ] && YTFZF_PREF=""
 [ -z "$YTFZF_EXTMENU" ] && YTFZF_EXTMENU='dmenu -i -l 30 -p Search:'
 [ -z "$YTFZF_EXTMENU_LEN" ] && YTFZF_EXTMENU_LEN=220
+[ -z "$YTFZF_ENABLE_FZF_DEFAULT_OPTS" ] && YTFZF_ENABLE_FZF_DEFAULT_OPTS=0
 
 ## files and directories
 history_file="$YTFZF_CACHE"/ytfzf_hst
@@ -24,7 +25,7 @@ player="mpv"
 player_format="mpv --ytdl-format="
 
 ## misc
-FZF_DEFAULT_OPTS=""
+[ $YTFZF_ENABLE_FZF_DEFAULT_OPTS -eq 0 ] && FZF_DEFAULT_OPTS=""
 
 helpinfo () {
 printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
@@ -58,6 +59,7 @@ printf "     YTFZF_CUR=1                           For status bar bodules\n";
 printf "     YTFZF_EXTMENU=' dmenu -i -l 30'\n";
 printf "  To use rofi\n";
 printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
+printf "     YTFZF_ENABLE_FZF_DEFAULT_OPTS=0	   1 : fzf will use FZF_DEFAULT_OPTS\n";
 printf "\n";
 printf "  For more details refer https://github.com/pystardust/ytfzf\n";
 }
@@ -119,7 +121,7 @@ format_fzf () {
 format_menu () {
 	if [ $is_ext_menu -eq 0 ]; then
 		dep_ck "fzf"
-		prompt_menu='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2'
+		prompt_menu='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS'
 		if [ $is_stdin -eq 0 ] ; then
 			format_fzf 
 		else 
@@ -141,7 +143,7 @@ video_menu () {
 }
 video_menu_img () {
 	title_len=400
-	format_awk | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 \
+	format_awk | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "left:50%:noborder:wrap"
 }
