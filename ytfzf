@@ -277,24 +277,18 @@ user_selection () {
 	[ $is_url -eq 1 ] && return
 	format_menu 
 
-	#starts at 1 because when doing -an it selects the first n results (0 is not a result)
-	i=1
-	while [ $i -le $link_count ]
-	do
-	    if [ $auto_select -eq 1 ] ; then
-		    selected_data="$selected_data\n$(echo "$videos_data" | sed ${i}q | tail -n1)" ;
-	    elif [ $random_select -eq 1 ] ; then
-		    selected_data="$selected_data\n$(echo "$videos_data" | shuf -n 1)"
-	    elif [ $show_thumbnails -eq 1 ] ; then
-		    dep_ck "ueberzug"
-		    start_ueberzug
-		    selected_data="$(echo "$videos_data" | video_menu_img )"
-		    stop_ueberzug 
-	    else
-		    selected_data="$selected_data\n$(echo "$videos_data" | video_menu )"
-	    fi
-	    i=$(($i+1))
-	done
+	if [ $auto_select -eq 1 ] ; then
+		selected_data="$(echo "$videos_data" | sed ${link_count}q )" ;
+	elif [ $random_select -eq 1 ] ; then
+		selected_data="$(echo "$videos_data" | shuf -n $link_count )"
+	elif [ $show_thumbnails -eq 1 ] ; then
+		dep_ck "ueberzug"
+		start_ueberzug
+		selected_data="$(echo "$videos_data" | video_menu_img )"
+		stop_ueberzug 
+	else
+		selected_data="$selected_data\n$(echo "$videos_data" | video_menu )"
+	fi
 	
 	shorturls="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
 	[ -z "$shorturls" ] && exit;
