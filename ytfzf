@@ -287,7 +287,7 @@ user_selection () {
 		selected_data="$(echo "$videos_data" | video_menu_img )"
 		stop_ueberzug 
 	else
-		selected_data="$selected_data\n$(echo "$videos_data" | video_menu )"
+		selected_data="$(echo "$videos_data" | video_menu )"
 	fi
 	
 	shorturls="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
