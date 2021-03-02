@@ -296,13 +296,8 @@ user_selection () {
 	[ -z "$shorturls" ] && exit;
 	urls=""
 	selected_data=""
-	#used so if n is more than results found it breaks
-	previous_url=""
 	while read surl; do
 		[ -z "$surl" ] && continue
-		# means it has found the last result
-		[ "$previous_url" = "$surl" ] && break
-		previous_url="$surl"
 		urls="$urls\nhttps://www.youtube.com/watch?v=$surl"
 		# to get back untrucated titles from formatting
 		selected_data="$selected_data\n$(echo "$videos_data" | grep -m1 -e "$surl" )"
