@@ -36,7 +36,7 @@ dep_ck () {
 		command -v "$dep" 1>/dev/null || { printf "$dep not found. Please install it.\n" ; exit 2; }
 	done
 }
-dep_ck "jq" "youtube-dl" "$YTFZF_PLAYER";
+dep_ck "jq" "youtube-dl" "mpv";
 
 
 ############################
