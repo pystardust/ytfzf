@@ -324,7 +324,7 @@ get_search_query () {
 				printf "$search_prompt"
 				read search_query
 			fi
-			[ -z "$search_query" ] && {  exit 0; }
+			[ -z "$search_query" ] && exit 0
 		fi
 	fi
 }
@@ -401,8 +401,8 @@ save_before_exit () {
 #> if the input is a url then skip video selection and play the url
 check_if_url () {
 	# to check if given input is a url
-	regex='^https\?://.*'
-	echo "$1" | grep -q "$regex"
+	url_regex='^https\?://.*'
+	echo "$1" | grep -q "$url_regex"
 	if [ $? -eq 0 ] ; then
 		is_url=1
 		urls="$1"
