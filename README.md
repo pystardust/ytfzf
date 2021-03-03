@@ -27,21 +27,22 @@ Initially this used to be a single line script. But for portability and extensib
 ![Gif](ytfzf.gif)
 
 ```
-Usage: ytfzf <search query>
+Usage: ytfzf [OPTIONS] <search-query>
+  OPTIONS:
      -h, --help                           Show this help text
      -t, --thumbnails                     Show thumbnails (requires ueberzug)
                                           Doesn't work with -H -D
-     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf 
-     -H, --choose-from-history            Choose from history 
+     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf
+     -H, --choose-from-history            Choose from history
      -x, --clear-history                  Delete history
      -m, --audio-only   <search-query>    Audio only (for music)
      -d, --download     <search-query>    Download to current directory
      -f                 <search-query>    Show available formats before proceeding
      -a, --auto-play    <search-query>    Auto play the first result, no selector
      -r  --random-play  <search-query>    Auto play a random result, no selector
-     -n, --link-count=  <link-count>      To specify number of videos to select with -a or -r
+     -n, --video-count= <video-count>     To specify number of videos to select with -a or -r
      -l, --loop         <search-query>    Loop: prompt selector again after video ends
-     -s                 <search-query>    After the video ends make another search 
+     -s                 <search-query>    After the video ends make another search
      -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting
   Use - instead of <search-query> for stdin
 ```
@@ -151,15 +152,29 @@ Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/y
 
 # Defaults
 
-Defaults can be set by environmental variables.
+Defaults can be set in the configuration file `~/.config/ytfzf/conf.sh` or with environment variables.
 
-> Environment variables can be set in many ways. You can add them to you ~/.bashrc if you don't want to mention them every time
+* Defaults can be set in `~/.config/ytfzf/conf.sh`
+```sh
+YTFZF_HIST=0
+YTFZF_LOOP=1
+YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best"
+```
+
+* Or export them in your shell config
+```sh
+export YTFZF_HIST=0
+export YTFZF_LOOP=1
+export YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best"
+```
 
 For one time settings you can specify the variables as shown
 
 ```sh
 YTFZF_HIST=0 YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best" ytfzf  <query>
 ```
+> The setting in the config will always override environment variables. This command wouldn't function as expected if `YTFZF_HIST=1` was mentioned in the config file.
+
 > This will not include this video in your history and display it in a resolution no more than 1080p.
 
 ## Format
@@ -167,7 +182,7 @@ YTFZF_HIST=0 YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best" ytfzf  <query>
 If you prefer to watch Youtube videos in certain option with out the prompting every single time.
 
 ```sh
-export YTFZF_PREF="22"                   
+YTFZF_PREF="22"                   
 ```
 [Documentation for ytdl formats](https://github.com/ytdl-org/youtube-dl#format-selection)
 
@@ -179,7 +194,7 @@ If the preferred format is not available then, it will go back to auto selection
 On by default. If you don't want history.
 
 ```sh
-export YTFZF_HIST=0
+YTFZF_HIST=0
 ```
 > 0: history off, 1: history on
 
@@ -188,7 +203,7 @@ export YTFZF_HIST=0
 You can modify the file location by changing the cache directory
 
 ```sh
-export YTFZF_CACHE=~/.cache/ytfzf
+YTFZF_CACHE=~/.cache/ytfzf
 ```
 
 
@@ -197,7 +212,7 @@ export YTFZF_CACHE=~/.cache/ytfzf
 Off by default.  Can be turned on using option `-l`. Or setting
 
 ```sh
-export YTFZF_LOOP=1
+YTFZF_LOOP=1
 ```
 
 This would return you to the video selection prompt after the video is exited/ends.
@@ -214,14 +229,14 @@ ytfzf -D
 By default the external menu is set to dmenu `dmenu -i -l 30`. You can modify to this to rofy by
 
 ```sh
-export YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
+YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
 ```
 > I don't use rofi much, I would love to hear from any rofi user on better defaults.
 
 You also may need to modify the width of the output that is being piped into external menu.
  Depending on you screen resolution and font size this may need to be modified.
 ```sh
-export YTFZF_EXTMENU_LEN=180
+YTFZF_EXTMENU_LEN=180
 ```
 or
 ```sh
@@ -237,7 +252,7 @@ YTFZF_EXTMENU_LEN=180 ytfzf -D
 On by default. Stores the details of the currently playing track. Empty when nothing is playing. This could be used in status bar modules.
 To disable it
 ```sh
-export YTFZF_CUR=0
+YTFZF_CUR=0
 ```
 
 It will be stored in the ytfzf cache directory as `ytfzf_cur`
@@ -248,8 +263,8 @@ By default, ytfzf uses `mpv`. custom player should have the ability to launch yo
 
 ``` sh
 # example: using devour
-export FZF_PLAYER="devour mpv"
-export YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
+FZF_PLAYER="devour mpv"
+YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
 ```
 
 # Todo
