@@ -75,6 +75,9 @@ printf "     -l, --loop         <search-query>    Loop: prompt selector again af
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
 printf "     --upload-time=     <time-range>      Time range can be one of, last-hour, today, this-week, this-month, this-year\n";
+printf "                   You can also put the filter as it's own option eg: --today\n";
+printf "     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of, upload-date, view-count, rating\n";
+printf "                   You can also put the filter as it's own option eg: --upload-date\n";
 printf "  Use - instead of <search-query> for stdin\n";
 printf "\n"
 printf "  Option usage:\n"
@@ -257,21 +260,53 @@ EOF
 	wait && [ $show_link_only -eq 0 ] && echo ""
 
 }
+get_sp_filter () {
+
+	#filter_id is a variable that keeps changing throught this function
+	filter_id=""
+
+	#sp is the final filter id that is used in the search query
+	sp=""
+
+	#the way youtube uses these has a pattern, for example
+	    #in the sort_by_filter the only difference is the 3rd character, I just don't know how to use this efficeintly
+	case "$sort_by_filter" in
+		upload-date) filter_id="CAISBAgAEAE" ;;
+		view-count) filter_id="CAMSBAgAEAE" ;;
+		rating) filter_id="CAESBAgAEAE" ;;
+	esac
+
+	#another example is sort by filter + upload date filter only changes one character as well
+	if [ ! -z "$filter_id" ]; then
+		#gets the character in sort_by that needs to be replaced
+		upload_date_character="$(echo "$filter_id" | awk '{print substr($1, 8, 1)}')"
+	fi
+
+	#For each of these, if there isn't an upload character, the upload_date should be the normal filter
+	#Otherwise set the upload_date_character to the right upload_date_character
+	case "$upload_date_filter" in
+		last-hour) [ -z "$upload_date_character" ] && filter_id="EgQIARAB" || upload_date_character="B" ;;
+		today) [ -z "$upload_date_character" ] && filter_id="EgQIAhAB" || upload_date_character="C" ;;
+		this-week) [ -z "$upload_date_character" ] && filter_id="EgQIAxAB" || upload_date_character="D" ;;
+		this-month) [ -z "$upload_date_character" ] && filter_id="EgQIBBAB" || upload_date_character="E" ;;
+		this-year) [-z "$upload_date_character" ] && filter_id="EgQIBRAB" || upload_date_character="F" ;;
+	esac
+
+	#if upload_date_character isn't empty, set sp to upload_date filter + sort_by filter
+	if [ ! -z "$upload_date_character" ]; then
+		sp="$(echo "$filter_id" | sed "s/\\(.\\{7\\}\\)./\\1$upload_date_character/")"
+	else
+		sp="$filter_id"
+	fi
+}
 scrape_yt () {
 	# needs search_query
 	## Scrape data and store video information in videos_data ( and thumbnails download)
 	## GETTING DATA
-	
-	#sp is the variable youtube uses for search filters
-	#this method of getting filters will not scale well as every filter and combination of filters has it's own ids.
-	    #However since we're just getting upload date filters it should be fine for now
-	case "$upload_date_filter" in
-		last-hour) sp="EgQIARAB" ;;
-		today) sp="EgQIAhAB" ;;
-		this-week) sp="EgQIAxAB" ;;
-		this-month) sp="EgQIBBAB" ;;
-		this-year) sp="EgQIBRAB" ;;
-	esac
+
+	#sp is the filter for sorting videos
+	get_sp_filter
+
 	yt_html="$(
 	useragent='user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'
 
@@ -441,6 +476,7 @@ search_again=0
 show_format=0
 link_count=1
 upload_date_filter="default"
+sort_by_filter="relevance"
 #OPT
 parse_opt () {
 	#the first arg is the option
@@ -486,6 +522,11 @@ parse_opt () {
 				this-week) upload_date_filter="this-week" ;;
 				this-month) upload_date_filter="this-month" ;;
 				this-year) upload_date_filter="this-year" ;;
+
+				upload-sort=*) sort_by_filter="${OPTARG#*=}" ;;
+				upload-date) sort_by_filter="upload-date" ;;
+				view-count) sort_by_filter="view-count" ;;
+				rating) sort_by_filter="rating" ;;
 				
 				*)
 				    printf "Illegal option --$OPTARG\n"
