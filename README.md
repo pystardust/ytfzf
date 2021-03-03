@@ -27,7 +27,7 @@ Initially this used to be a single line script. But for portability and extensib
 ![Gif](ytfzf.gif)
 
 ```
-Usage: ytfzf [OPTIONS] <search-query>
+Basic Usage: ytfzf [OPTIONS] <search-query>
   OPTIONS:
      -h, --help                           Show this help text
      -t, --thumbnails                     Show thumbnails (requires ueberzug)
@@ -44,10 +44,6 @@ Usage: ytfzf [OPTIONS] <search-query>
      -l, --loop         <search-query>    Loop: prompt selector again after video ends
      -s                 <search-query>    After the video ends make another search 
      -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting
-     --upload-time=     <time-range>      Time range can be one of, last-hour, today, this-week, this-month, this year
-                   You can also put the filter as it's own option eg: --today
-     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of, upload-date, view-count, rating
-                   You can also put the filter as it's own option eg: --upload-date
   Use - instead of <search-query> for stdin
 ```
 
