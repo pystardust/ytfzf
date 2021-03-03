@@ -49,7 +49,8 @@ dep_ck () {
 		command -v "$dep" 1>/dev/null || { printf "$dep not found. Please install it.\n" ; exit 2; }
 	done
 }
-dep_ck "jq" "youtube-dl" "mpv";
+dep_ck "jq" "youtube-dl";
+[ "$YTFZF_PLAYER" = "mpv" ] && dep_ck "mpv"
 
 
 ############################
@@ -373,7 +374,7 @@ play_url () {
 		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
                      # Ctr-C in MPV results in a return code of 4
 	} || {
-		printf "\033[31mERROR[#03]: Couldn't play the video/audio using the current player.\n\tTry updating youtube-dl\033[000m\n"; errinfo ; save_before_exit ; exit 2;
+		printf "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[000mTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
 	}
 }
 save_before_exit () {
