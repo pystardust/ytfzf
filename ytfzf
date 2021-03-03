@@ -70,16 +70,16 @@ printf "     -d, --download     <search-query>    Download to current directory\
 printf "     -f                 <search-query>    Show available formats before proceeding\n";
 printf "     -a, --auto-play    <search-query>    Auto play the first result, no selector\n";
 printf "     -r  --random-play  <search-query>    Auto play a random result, no selector\n";
-printf "     -n, --link-count=  <link-count>	  To specify number of videos to select with -a or -r\n";
+printf "     -n, --video-count= <video-count>     To specify number of videos to select with -a or -r\n";
 printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
 printf "  Use - instead of <search-query> for stdin\n";
 printf "\n"
 printf "  Option usage:\n"
-printf "     ytfzf -fDH            		to show history using external \n"
-printf "                           		menu and show formats\n"
-printf "     ytfzf -fD --choose-from-history	same as above\n"
+printf "     ytfzf -fDH                           to show history using external \n"
+printf "                                          menu and show formats\n"
+printf "     ytfzf -fD --choose-from-history      same as above\n"
 printf "\n"
 printf "  Defaults can be modified through ENV variables\n";
 printf "  Defaults:\n";
@@ -91,7 +91,7 @@ printf "     YTFZF_CUR=1                           For status bar bodules\n";
 printf "     YTFZF_EXTMENU=' dmenu -i -l 30'\n";
 printf "  To use rofi\n";
 printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
-printf "     YTFZF_ENABLE_FZF_DEFAULT_OPTS=0	   1 : fzf will use FZF_DEFAULT_OPTS\n";
+printf "     YTFZF_ENABLE_FZF_DEFAULT_OPTS=0       1 : fzf will use FZF_DEFAULT_OPTS\n";
 printf "\n";
 printf "  For more details refer https://github.com/pystardust/ytfzf\n";
 }
@@ -458,7 +458,7 @@ parse_opt () {
 
 				link-only) parse_opt "L" ;;
 
-				link-count=*) parse_opt "n" "${OPTARG#*=}" ;;
+				video-count=*) parse_opt "n" "${OPTARG#*=}" ;;
 
 				audio-only) parse_opt "m" ;;
 
@@ -507,7 +507,7 @@ parse_opt () {
 
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
-			# Not to be used by explicitly
+			# Not to be used explicitly
 			;;
 
 		*)
