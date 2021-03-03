@@ -272,6 +272,10 @@ scrape_yt () {
 	# needs search_query
 	## Scrape data and store video information in videos_data ( and thumbnails download)
 	## GETTING DATA
+	
+	#sp is the variable youtube uses for search filters
+	#this method of getting filters will not scale well as every filter and combination of filters has it's own ids.
+	    #However since we're just getting upload date filters it should be fine for now
 	case "$upload_date_filter" in
 		last-hour) sp="EgQIARAB" ;;
 		today) sp="EgQIAhAB" ;;
