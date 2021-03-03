@@ -323,7 +323,6 @@ scrape_yt () {
 		#youtube puts in %253d one ore more times in the filter id, it doesn't seem useful, so we are removing it if it's in the filter
 		sp="${sp%%%*}"
 	fi
-	echo $sp
 
 	yt_html="$(
 	useragent='user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'
