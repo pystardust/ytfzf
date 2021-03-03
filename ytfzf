@@ -7,10 +7,11 @@
 ############################
 #         Defaults         #
 ############################
+
 [ -z "$YTFZF_HIST" ] && YTFZF_HIST=1
 [ -z "$YTFZF_LOOP" ] && YTFZF_LOOP=0
 [ -z "$YTFZF_CUR" ] && YTFZF_CUR=1
-[ -z "$YTFZF_CACHE" ] && YTFZF_CACHE=~/.cache/ytfzf
+[ -z "$YTFZF_CACHE" ] && YTFZF_CACHE="$HOME/.cache/ytfzf"
 [ -z "$YTFZF_PREF" ] && YTFZF_PREF=""
 [ -z "$YTFZF_EXTMENU" ] && YTFZF_EXTMENU='dmenu -i -l 30 -p Search:'
 [ -z "$YTFZF_EXTMENU_LEN" ] && YTFZF_EXTMENU_LEN=220
@@ -26,9 +27,21 @@
 history_file="$YTFZF_CACHE"/ytfzf_hst
 current_file="$YTFZF_CACHE"/ytfzf_cur
 thumb_dir="$YTFZF_CACHE"/thumb
+#> make folders that don't exist
 [ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
 [ -d $thumb_dir ] || mkdir -p $thumb_dir
 
+#> Setting and reading the config file 
+config_dir="$HOME/.config/ytfzf"
+config_file="$config_dir/ytfzf.sh"
+if [ -e $config_file ]
+then
+    #source config file if exists (overrides env variables)
+    . "$config_file"
+fi
+
+#> settings only set in config
+search_prompt="${search_prompt-Search Youtube: }"
 
 # DEP CHECK
 dep_ck () {
@@ -296,7 +309,7 @@ get_search_query () {
 			if [ $is_ext_menu -eq 1 ]; then 
 				search_query="$(printf "" | $YTFZF_EXTMENU)"
 			else
-				printf "Search Youtube: "
+				printf "$search_prompt"
 				read search_query
 			fi
 			[ -z "$search_query" ] && {  exit 0; }
