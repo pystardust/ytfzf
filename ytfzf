@@ -85,6 +85,7 @@ printf "     -n, --video-count= <video-count>     To specify number of videos to
 printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
+printf "     --upload-time=     <time-range>      Time range can be one of, last-hour, today, this-week, this-month, this-year\n";
 printf "  Use - instead of <search-query> for stdin\n";
 printf "\n"
 printf "  Option usage:\n"
@@ -271,9 +272,18 @@ scrape_yt () {
 	# needs search_query
 	## Scrape data and store video information in videos_data ( and thumbnails download)
 	## GETTING DATA
+	case "$upload_date_filter" in
+		last-hour) sp="EgQIARAB" ;;
+		today) sp="EgQIAhAB" ;;
+		this-week) sp="EgQIAxAB" ;;
+		this-month) sp="EgQIBBAB" ;;
+		this-year) sp="EgQIBRAB" ;;
+	esac
 	yt_html="$(
+	upload date filters
 	curl 'https://www.youtube.com/results' -s \
 	  -G --data-urlencode "search_query=$*" \
+	  -G --data-urlencode "sp=$sp" \
 	  -H 'authority: www.youtube.com' \
 	  -H "user-agent: $useragent" \
 	  -H 'accept-language: en-US,en;q=0.9' \
@@ -465,6 +475,13 @@ parse_opt () {
 
 				random-auto-play) parse_opt "r" ;;
 
+				upload-time=*) upload_date_filter="${OPTARG#*=}" ;;
+				last-hour) upload_date_filter="last-hour" ;;
+				today) upload_date_filter="today" ;;
+				this-week) upload_date_filter="this-week" ;;
+				this-month) upload_date_filter="this-month" ;;
+				this-year) upload_date_filter="this-year" ;;
+				
 				*)
 				    printf "Illegal option --$OPTARG\n"
 				    usageinfo
