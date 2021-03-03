@@ -59,26 +59,27 @@ dep_ck "jq" "youtube-dl";
 helpinfo () {
 printf "Usage: %bytfzf [OPTIONS] %b<search-query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
 printf "  OPTIONS:\n"
-printf "     -h                    Show this help text\n";
-printf "     -t                    Show thumbnails (requires ueberzug)\n";
-printf "                           Doesn't work with -H -D\n";
-printf "     -D                    Use external menu(default dmenu) instead of fzf \n";
-printf "     -H                    Choose from history \n";
-printf "     -x                    Delete history\n";
-printf "     -m  <search-query>    Audio only (for music)\n";
-printf "     -d  <search-query>    Download to current directory\n";
-printf "     -f  <search-query>    Show available formats before proceeding\n";
-printf "     -a  <search-query>    Auto play the first result, no selector\n";
-printf "     -r  <search-query>    Auto play a random result, no selector\n";
-printf "     -n  <link-count>       To specify number of videos to select with -a or -r\n";
-printf "     -l  <search-query>    Loop: prompt selector again after video ends\n";
-printf "     -s  <search-query>    After the video ends make another search \n";
-printf "     -L  <search-query>    Prints the selected URL only, helpful for scripting\n";
+printf "     -h, --help                           Show this help text\n";
+printf "     -t, --thumbnails                     Show thumbnails (requires ueberzug)\n";
+printf "                                          Doesn't work with -H -D\n";
+printf "     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf \n";
+printf "     -H, --choose-from-history            Choose from history \n";
+printf "     -x, --clear-history                  Delete history\n";
+printf "     -m, --audio-only   <search-query>    Audio only (for music)\n";
+printf "     -d, --download     <search-query>    Download to current directory\n";
+printf "     -f                 <search-query>    Show available formats before proceeding\n";
+printf "     -a, --auto-play    <search-query>    Auto play the first result, no selector\n";
+printf "     -r  --random-play  <search-query>    Auto play a random result, no selector\n";
+printf "     -n, --link-count=  <link-count>	  To specify number of videos to select with -a or -r\n";
+printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
+printf "     -s                 <search-query>    After the video ends make another search \n";
+printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
 printf "  Use - instead of <search-query> for stdin\n";
 printf "\n"
-printf "  Option can be combined. Like\n"
-printf "     ytfzf -fDH            to show history using external \n"
-printf "                           menu and show formats\n"
+printf "  Option usage:\n"
+printf "     ytfzf -fDH            		to show history using external \n"
+printf "                           		menu and show formats\n"
+printf "     ytfzf -fD --choose-from-history	same as above\n"
 printf "\n"
 printf "  Defaults can be modified through ENV variables\n";
 printf "  Defaults:\n";
@@ -425,54 +426,101 @@ random_select=0
 search_again=0
 show_format=0
 link_count=1
-# OPT
-while getopts "LhDmdfxHarltsn:U:" opt; do
+
+#OPT
+parse_opt () {
+	#the first arg is the option
+	opt=$1
+	#second arg is the optarg 
+	OPTARG="$2"
 	case ${opt} in
+		#Long options
+		-)
+			#if the option has a short version it calls this function with the opt as the shortopt
+			case "${OPTARG}" in
+			        help) parse_opt "h" ;;
+
+				ext-menu) parse_opt "D" ;;
+
+				download) parse_opt "d" ;;
+
+				choose-from-history) parse_opt "H" ;;
+
+				clear-history) parse_opt "x" ;;
+
+				random-select) parase_opt "r" ;;
+
+				search) parse_opt "s" ;;
+
+				loop) parse_opt "l" ;;
+
+				thumbnails) parse_opt "t" ;;
+
+				link-only) parse_opt "L" ;;
+
+				link-count=*) parse_opt "n" "${OPTARG#*=}" ;;
+
+				audio-only) parse_opt "m" ;;
+
+				auto-play) parse_opt "a" ;;
+
+				random-auto-play) parse_opt "r" ;;
+
+				*)
+				    printf "Illegal option --$OPTARG\n"
+				    usageinfo
+				    exit 2;
+				    ;;
+			esac ;;
+		#Short options
 		h) 	helpinfo
-			exit;
-			;;
-		D) 	is_ext_menu="1"
-			;;
-		m) 	YTFZF_PREF="bestaudio"
-			;;
+			exit ;;
+
+		D) 	is_ext_menu="1" ;;
+
+		m) 	YTFZF_PREF="bestaudio" ;;
+
 		d) 	YTFZF_PLAYER="youtube-dl"
-		   	YTFZF_PLAYER_FORMAT="youtube-dl -f "
-			;;
-		f) 	show_format=1
-			;;
-		H)	get_history
-			;;
-		x)	[ -e "$history_file" ] && rm "$history_file" && touch "$history_file" && printf "History has been cleared\n"
-			exit;
-			;;
-		a) 	auto_select=1
-			;;
-		r)
-			random_select=1
-			;;
+			YTFZF_PLAYER_FORMAT="youtube-dl -f " ;;
+
+		f) 	show_format=1 ;;
+
+		H)	get_history ;;
+
+		x)	[ -e "$history_file" ] && (echo "" > "$history_file") && printf "History has been cleared\n"
+			exit ;;
+
+		a) 	auto_select=1 ;;
+
+		r)	random_select=1 ;;
+
 		s)	search_again=1
-		 	YTFZF_LOOP=1
-			;;
-		l) 	YTFZF_LOOP=1
-			;;
-		t) 	show_thumbnails=1
-			;;
-		L) 	show_link_only=1
-			;;
-		n)	link_count="$OPTARG"	
-			;;
+		 	YTFZF_LOOP=1 ;;
+
+		l) 	YTFZF_LOOP=1 ;;
+
+		t) 	show_thumbnails=1 ;;
+
+		L) 	show_link_only=1 ;;
+
+		n)	link_count="$OPTARG" ;;
+
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
 			# Not to be used by explicitly
 			;;
+
 		*)
-			printf "Option not found!\n"
 			usageinfo
-			exit 2;
-			;;
+			exit 2 ;;
 	esac
+}
+
+while getopts "LhDmdfxHarltsn:U:-:" opt; do
+    parse_opt "$opt" "$OPTARG"
 done
 shift $((OPTIND-1))
+
 [ "$*" = "-" ] && is_stdin=1 || is_stdin=0
 search_query="$*"
 check_if_url "$search_query" 
