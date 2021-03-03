@@ -29,7 +29,6 @@ current_file="$YTFZF_CACHE"/ytfzf_cur
 thumb_dir="$YTFZF_CACHE"/thumb
 #> make folders that don't exist
 [ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
-[ -d $thumb_dir ] || mkdir -p $thumb_dir
 
 #> Setting and reading the config file 
 config_dir="$HOME/.config/ytfzf"
@@ -39,6 +38,9 @@ then
     #source config file if exists (overrides env variables)
     . "$config_file"
 fi
+
+#done after sourcing config so thumb_dir can be set in config
+[ -d $thumb_dir ] || mkdir -p $thumb_dir
 
 #> config settings 
 search_prompt="${search_prompt-Search Youtube: }"
