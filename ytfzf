@@ -44,7 +44,6 @@ fi
 search_prompt="${search_prompt-Search Youtube: }"
 useragent=${useragent-'user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 
-
 # DEP CHECK
 dep_ck () {
 	for dep in "$@"; do
