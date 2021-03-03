@@ -34,29 +34,10 @@ thumb_dir="$YTFZF_CACHE"/thumb
 #> Setting and reading the config file 
 config_dir="$HOME/.config/ytfzf"
 config_file="$config_dir/ytfzf.sh"
-[ -d "$config_dir" ] || mkdir -p $config_dir
 if [ -e $config_file ]
 then
     #source config file if exists (overrides env variables)
     . "$config_file"
-else
-    echo "#Defaults
-YTFZF_HIST=$YTFZF_HIST
-YTFZF_LOOP=$YTFZF_LOOP
-YTFZF_CUR=$YTFZF_CUR
-YTFZF_CACHE=\"$YTFZF_CACHE\"
-YTFZF_PREF=\"$YTFZF_PREF\"
-YTFZF_EXTMENU=\"$YTFZF_EXTMENU\"
-YTFZF_EXTMENU_LEN=$YTFZF_EXTMENU_LEN
-
-#Player settings
-YTFZF_PLAYER=\"$YTFZF_PLAYER\"
-YTFZF_PLAYER_FORMAT=\"$YTFZF_PLAYER_FORMAT\"
-YTFZF_ENABLE_FZF_DEFAULT_OPTS=$YTFZF_ENABLE_FZF_DEFAULT_OPTS
-
-#Other settings
-search_prompt=\"Search Youtube: \"
-" > "$config_file"
 fi
 
 #> settings only set in config
