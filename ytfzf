@@ -280,7 +280,7 @@ get_sp_filter () {
 	sp=""
 
 	#the way youtube uses these has a pattern, for example
-	    #in the sort_by_filter the only difference is the 3rd character, I just don't know how to use this efficeintly
+	    #in the sort_by_filter the only difference is the 3rd character, I just don't know how to use this information efficeintly
 	case "$sort_by_filter" in
 		upload-date) filter_id="CAISBAgAEAE" ;;
 		view-count) filter_id="CAMSBAgAEAE" ;;
@@ -289,11 +289,11 @@ get_sp_filter () {
 
 	#another example is sort by filter + upload date filter only changes one character as well
 	if [ ! -z "$filter_id" ]; then
-		#gets the character in sort_by that needs to be replaced
+		#gets the character in the filter_id that needs to be replaced
 		upload_date_character="$(echo "$filter_id" | awk '{print substr($1, 8, 1)}')"
 	fi
 
-	#For each of these, if there isn't an upload character, the upload_date should be the normal filter
+	#For each of these, if upload_date_character is unset, the filter_id should be the normal filter
 	#Otherwise set the upload_date_character to the right upload_date_character
 	case "$upload_date_filter" in
 		last-hour) [ -z "$upload_date_character" ] && filter_id="EgQIARAB" || upload_date_character="B" ;;
@@ -306,6 +306,7 @@ get_sp_filter () {
 	#if upload_date_character isn't empty, set sp to upload_date filter + sort_by filter
 	if [ ! -z "$upload_date_character" ]; then
 		sp="$(echo "$filter_id" | sed "s/\\(.\\{7\\}\\)./\\1$upload_date_character/")"
+	#otherwise set it to the filter_id
 	else
 		sp="$filter_id"
 	fi
