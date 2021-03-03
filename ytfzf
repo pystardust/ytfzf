@@ -49,6 +49,9 @@ useragent=${useragent-'user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/5
 #Opt variables that can also be set in config
 is_ext_menu=${is_ext_menu-0}
 show_thumbnails=${show_thumbnails-0}
+auto_select=0
+random_select=0
+show_link_only=0
 
 # DEP CHECK
 dep_ck () {
@@ -421,10 +424,7 @@ get_history () {
 }
 
 # Opt variables
-show_link_only=0
 scrape=1
-auto_select=0
-random_select=0
 search_again=0
 show_format=0
 link_count=1
