@@ -348,8 +348,8 @@ user_selection () {
 	done<<EOF
 	$shorturls
 EOF
-	urls="$(printf "$urls" | sed 1d )"
-	selected_data="$(echo "$selected_data" | sed 1d )"
+	urls="$( printf "$urls" | sed 1d )"
+	selected_data="$( printf "$selected_data" | sed 1d )"
 
 	if [ $show_link_only -eq 1 ] ; then
 		echo "$urls"
