@@ -53,8 +53,14 @@ YTFZF_EXTMENU_LEN=$YTFZF_EXTMENU_LEN
 YTFZF_PLAYER=\"$YTFZF_PLAYER\"
 YTFZF_PLAYER_FORMAT=\"$YTFZF_PLAYER_FORMAT\"
 YTFZF_ENABLE_FZF_DEFAULT_OPTS=$YTFZF_ENABLE_FZF_DEFAULT_OPTS
+
+#Other settings
+search_prompt=\"Search Youtube: \"
 " > "$config_file"
 fi
+
+#> settings only set in config
+search_prompt="${search_prompt-Search Youtube: }"
 
 # DEP CHECK
 dep_ck () {
@@ -322,7 +328,7 @@ get_search_query () {
 			if [ $is_ext_menu -eq 1 ]; then 
 				search_query="$(printf "" | $YTFZF_EXTMENU)"
 			else
-				printf "Search Youtube: "
+				printf "$search_prompt"
 				read search_query
 			fi
 			[ -z "$search_query" ] && {  exit 0; }
