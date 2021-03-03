@@ -40,8 +40,10 @@ then
     . "$config_file"
 fi
 
-#> settings only set in config
+#> config settings 
 search_prompt="${search_prompt-Search Youtube: }"
+useragent=${useragent-'user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
+
 
 # DEP CHECK
 dep_ck () {
@@ -261,7 +263,6 @@ scrape_yt () {
 	## Scrape data and store video information in videos_data ( and thumbnails download)
 	## GETTING DATA
 	yt_html="$(
-	useragent='user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'
 
 	curl 'https://www.youtube.com/results' -s \
 	  -G --data-urlencode "search_query=$*" \
@@ -414,7 +415,6 @@ get_history () {
 		exit;
 	fi
 }
-
 
 # Opt variables
 is_ext_menu=0
