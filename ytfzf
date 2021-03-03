@@ -269,7 +269,7 @@ get_sp_filter () {
 	sp=""
 
 	#the way youtube uses these has a pattern, for example
-	    #in the sort_by_filter the only difference is the 3rd character, I just don't know how to use this information efficeintly
+	    #in the sort_by_filter the only difference is the 3rd character, I just don't know how to use this information efficiently
 	case "$sort_by_filter" in
 		upload-date) filter_id="CAISBAgAEAE" ;;
 		view-count) filter_id="CAMSBAgAEAE" ;;
@@ -278,7 +278,7 @@ get_sp_filter () {
 
 	#another example is sort by filter + upload date filter only changes one character as well
 	if [ -n "$filter_id" ]; then
-		#gets the character in the filter_id that needs to be replaced
+		#gets the character in the filter_id that needs to be replaced if upload_date_filter is also given
 		upload_date_character="$(echo "$filter_id" | awk '{print substr($1, 8, 1)}')"
 	fi
 
@@ -294,6 +294,8 @@ get_sp_filter () {
 
 	#if upload_date_character isn't empty, set sp to upload_date filter + sort_by filter
 	if [ -n "$upload_date_character" ]; then
+		#replaces the 8th character in the filter_id with the appropriate character
+		#the 8th character specifies the upload_date_filter
 		sp="$(echo "$filter_id" | sed "s/\\(.\\{7\\}\\)./\\1$upload_date_character/")"
 	#otherwise set it to the filter_id
 	else
@@ -305,7 +307,7 @@ scrape_yt () {
 	## Scrape data and store video information in videos_data ( and thumbnails download)
 	## GETTING DATA
 
-	#sp is the filter for sorting videos
+	#sp is the urlquery youtube uses for sorting videos
 	get_sp_filter
 
 	yt_html="$(
