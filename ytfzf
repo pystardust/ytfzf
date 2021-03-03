@@ -85,10 +85,18 @@ printf "     -n, --video-count= <video-count>     To specify number of videos to
 printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
+printf "\n";
 printf "     --upload-time=     <time-range>      Time range can be one of, last-hour, today, this-week, this-month, this-year\n";
 printf "                   You can also put the filter as it's own option eg: --today\n";
 printf "     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of, upload-date, view-count, rating\n";
 printf "                   You can also put the filter as it's own option eg: --upload-date\n";
+printf "     --filter-id=       <filter>          The id of the filter to use for video reults\n";
+printf "                   A filter id can be found by going to youtube searching, filtering how you want\n";
+printf "                   Then taking the value of the &sp= part of the url\n";
+printf "                   Filters may not work especially when the filter sorts for non-videos\n";
+printf "                   In addition this overrides any filter provided through options\n";
+printf "                   Example: \033[1mytfzf --filter-id=CAASBBABQAE%%253D minecraft\033[000m\n";
+printf "                   This will filter by livestream\n";
 printf "  Use - instead of <search-query> for stdin\n";
 printf "\n"
 printf "  Option usage:\n"
@@ -319,7 +327,14 @@ scrape_yt () {
 	## GETTING DATA
 
 	#sp is the urlquery youtube uses for sorting videos
-	get_sp_filter
+	#only runs if --filter-id or --sp was unspecified
+	if [ -z "$sp" ]; then
+		get_sp_filter
+	else
+		#youtube puts in %253d one ore more times in the filter id, it doesn't seem useful, so we are removing it if it's in the filter
+		sp="${sp%%%*}"
+	fi
+	echo $sp
 
 	yt_html="$(
 	upload date filters
@@ -528,6 +543,8 @@ parse_opt () {
 				upload-date) sort_by_filter="upload-date" ;;
 				view-count) sort_by_filter="view-count" ;;
 				rating) sort_by_filter="rating" ;;
+
+				filter-id=*|sp=*) sp="${OPTARG#*=}" ;;
 				
 				*)
 				    printf "Illegal option --$OPTARG\n"
