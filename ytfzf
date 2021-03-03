@@ -334,7 +334,6 @@ scrape_yt () {
 		#youtube puts in %253d one ore more times in the filter id, it doesn't seem useful, so we are removing it if it's in the filter
 		sp="${sp%%%*}"
 	fi
-	echo $sp
 
 	yt_html="$(
 	upload date filters
