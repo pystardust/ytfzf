@@ -262,7 +262,6 @@ scrape_yt () {
 	## Scrape data and store video information in videos_data ( and thumbnails download)
 	## GETTING DATA
 	yt_html="$(
-
 	curl 'https://www.youtube.com/results' -s \
 	  -G --data-urlencode "search_query=$*" \
 	  -H 'authority: www.youtube.com' \
