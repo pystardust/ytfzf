@@ -473,7 +473,7 @@ parse_opt () {
 
 		H)	get_history ;;
 
-		x)	[ -e "$history_file" ] && rm "$history_file" && touch "$history_file" && printf "History has been cleared\n"
+		x)	[ -e "$history_file" ] && (echo "" > "$history_file") && printf "History has been cleared\n"
 			exit ;;
 
 		a) 	auto_select=1 ;;
