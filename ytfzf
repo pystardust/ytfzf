@@ -332,8 +332,6 @@ get_search_query () {
 user_selection () {
 	[ $is_url -eq 1 ] && return
 
-	format_menu 
-
 	if [ $auto_select -eq 1 ] ; then
 		selected_data="$(echo "$videos_data" | sed ${link_count}q )" ;
 	elif [ $random_select -eq 1 ] ; then
@@ -526,6 +524,8 @@ check_if_url "$search_query"
 # If in auto select mode don't download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0; 
 
+#format the menu screen
+format_menu 
 
 #call scrape function
 if [ $scrape -eq 1 ]; then 
