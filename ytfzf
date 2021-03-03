@@ -33,7 +33,7 @@ thumb_dir="$YTFZF_CACHE"/thumb
 
 #> Setting and reading the config file 
 config_dir="$HOME/.config/ytfzf"
-config_file="$config_dir/ytfzf.sh"
+config_file="$config_dir/conf.sh"
 if [ -e $config_file ]
 then
     #source config file if exists (overrides env variables)
