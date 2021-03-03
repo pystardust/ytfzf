@@ -277,7 +277,7 @@ get_sp_filter () {
 	esac
 
 	#another example is sort by filter + upload date filter only changes one character as well
-	if [ ! -z "$filter_id" ]; then
+	if [ -n "$filter_id" ]; then
 		#gets the character in the filter_id that needs to be replaced
 		upload_date_character="$(echo "$filter_id" | awk '{print substr($1, 8, 1)}')"
 	fi
@@ -289,11 +289,11 @@ get_sp_filter () {
 		today) [ -z "$upload_date_character" ] && filter_id="EgQIAhAB" || upload_date_character="C" ;;
 		this-week) [ -z "$upload_date_character" ] && filter_id="EgQIAxAB" || upload_date_character="D" ;;
 		this-month) [ -z "$upload_date_character" ] && filter_id="EgQIBBAB" || upload_date_character="E" ;;
-		this-year) [-z "$upload_date_character" ] && filter_id="EgQIBRAB" || upload_date_character="F" ;;
+		this-year) [ -z "$upload_date_character" ] && filter_id="EgQIBRAB" || upload_date_character="F" ;;
 	esac
 
 	#if upload_date_character isn't empty, set sp to upload_date filter + sort_by filter
-	if [ ! -z "$upload_date_character" ]; then
+	if [ -n "$upload_date_character" ]; then
 		sp="$(echo "$filter_id" | sed "s/\\(.\\{7\\}\\)./\\1$upload_date_character/")"
 	#otherwise set it to the filter_id
 	else
