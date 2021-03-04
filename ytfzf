@@ -11,7 +11,7 @@
 YTFZF_HIST=${YTFZF_HIST-1}
 YTFZF_LOOP=${YTFZF_LOOP-0}
 YTFZF_CUR=${YTFZF_CUR-1}
-YTFZF_CACHE="${YTFZF_CACHE-$HOME/.cahce.ytfzf}"
+YTFZF_CACHE="${YTFZF_CACHE-$HOME/.cache/ytfzf}"
 YTFZF_PREF="${YTFZF_PREF-}"
 YTFZF_EXTMENU="${YTFZF_EXTMENU-}"
 YTFZF_EXTMENU_LEN=${YTFZF_EXTMENU_LEN-220}
@@ -382,7 +382,7 @@ play_url () {
 		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
                      # Ctr-C in MPV results in a return code of 4
 	} || {
-		print_error "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[000mTry updating youtube-dl\n"; save_before_exit ; exit 2;
+		print_error "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[000mTry updating youtube-dl\n"; save_before_exit ; exit 1;
 	}
 }
 save_before_exit () {
@@ -475,8 +475,7 @@ parse_opt () {
 				*)
 				    printf "Illegal option --$OPTARG\n"
 				    usageinfo
-				    exit 2;
-				    ;;
+				    exit 2 ;;
 			esac ;;
 		#Short options
 		h) 	helpinfo
