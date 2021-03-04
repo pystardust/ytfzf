@@ -227,9 +227,11 @@ video_menu_img () {
 ## The following snippet of code has been copied and modified from
 # https://github.com/OliverLew/fontpreview-ueberzug      MIT License
 # Ueberzug related variables
-FIFO="/tmp/ytfzf-ueberzug-fifo"
-IMAGE="/tmp/ytfzf-ueberzug-img.png"
-ID="ytfzf-ueberzug"
+
+#exports an environment variable that is used in all subprocesses of this script so that FIFO is always a unique file
+[ -z "$R" ] && export R="$PPID"
+FIFO="/tmp/ytfzf-ueberzug-fifo-$R"
+ID="ytfzf-ueberzug-$R"
 WIDTH=$FZF_PREVIEW_COLUMNS
 HEIGHT=$FZF_PREVIEW_LINES
 
