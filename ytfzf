@@ -40,8 +40,19 @@ then
     . "$config_file"
 fi
 
-#> settings only set in config
+#> config settings 
 search_prompt="${search_prompt-Search Youtube: }"
+useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
+
+#Opt variables (can also be set in config)
+is_ext_menu=${is_ext_menu-0}
+show_thumbnails=${show_thumbnails-0}
+auto_select=${auto_select-0}
+random_select=${random_select-0}
+show_link_only=${show_link_only-0}
+show_format=${show_format-0}
+link_count=${link_count-1}
+search_again=${search_again-0}
 
 # DEP CHECK
 dep_ck () {
@@ -325,14 +336,11 @@ scrape_yt () {
 	fi
 
 	yt_html="$(
-	useragent='user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'
-
-
 	curl 'https://www.youtube.com/results' -s \
 	  -G --data-urlencode "search_query=$*" \
 	  -G --data-urlencode "sp=$sp" \
 	  -H 'authority: www.youtube.com' \
-	  -H "$useragent" \
+	  -H "user-agent: $useragent" \
 	  -H 'accept-language: en-US,en;q=0.9' \
 	  --compressed
 	)"
@@ -481,19 +489,8 @@ get_history () {
 	fi
 }
 
-
-# Opt variables
-is_ext_menu=0
-show_thumbnails=0
-show_link_only=0
+#is used to know whether or not scraping the search page is necessary
 scrape=1
-auto_select=0
-random_select=0
-search_again=0
-show_format=0
-link_count=1
-upload_date_filter="default"
-sort_by_filter="relevance"
 #OPT
 parse_opt () {
 	#the first arg is the option
@@ -575,8 +572,7 @@ parse_opt () {
 
 		r)	random_select=1 ;;
 
-		s)	search_again=1
-		 	YTFZF_LOOP=1 ;;
+		s)	search_again=1 ;;
 
 		l) 	YTFZF_LOOP=1 ;;
 
@@ -620,8 +616,8 @@ while true; do
 	play_url
 	save_before_exit
 	
-	#if looping isn't on then exit
-	[ $YTFZF_LOOP -eq 0 ] && exit;
+	#if looping and searching_again aren't on then exit
+	[ $YTFZF_LOOP -eq 0 ] && [ $search_again -eq 0 ] && exit;
 
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
