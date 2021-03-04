@@ -1,30 +1,34 @@
 # ytfzf
 
-A posix script that helps you find Youtube videos (with out API) and opens/downloads using mpv/youtube-dl.
+##### This is a posix script that helps you find Youtube videos (with out API) and opens/downloads using mpv/youtube-dl.
+
 * Thumbnails
 * History support
 * Download support
 * Format selection (and default formats)
 * Queue multiple tracks (using fzf multiselection)
 
-Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below. 
+##### _Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below._
 
 ```sh
 #!/bin/sh
 [ -z "$*" ] || curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" |  pup 'script' | grep  "^ *var ytInitialData" | sed 's/^[^=]*=//g;s/;$//' | jq '..|.videoRenderer?' | sed '/^null$/d' | jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'| sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{60}).*/\1/;N;s/\n(.{30}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" | column -t  -s "$(printf "\t")" | fzf --delimiter='\|' --nth=1,2  | sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_' | xargs -r -I'{}' mpv {}
 ```
 
-# Update log
+## Table of content 
 
-- Now ytfzf can queue videos using fzf multiselect option. Press tab to select a video. All the videos will be lined up in mpv. Use `>` and `<` to traverse them.
-- Make continuous queries with `-s`
-- Thumbnails! Using Ueberzug. Inspired by [fontpreview-ueberzug](https://github.com/OliverLew/fontpreview-ueberzug).
-- added MacOS support
-- Stdin can be taken by using `ytfzf -`, for both fzf and external menu.
+- [`Usege instruction`](#Usage-Instructions)
+- [`Examples`](#Examples)
+- [`Dependencies`](#Dependencies)
+- [`Installation`](#Installation)
+- [`Configuration`](#Configuration)
+- [`External menu command (dmenu / rofi)`](#External-menu-command)
 
-# Usage
+### This is a little showcase
 
-![Gif](ytfzf.gif)
+![Gif](.assets/ytfzf.gif)
+
+## Usage-Instructions
 
 ```
 Basic Usage: ytfzf [OPTIONS] <search-query>
@@ -46,220 +50,225 @@ Basic Usage: ytfzf [OPTIONS] <search-query>
      -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting
   Use - instead of <search-query> for stdin
 ```
+> To quit the script you can press `ESC` or `^C` in the video selection prompt.
 
-* To use dmenu with a custom width
+_**To use dmenu with a custom width**_
 
 ```sh
 YTFZF_EXTMENU_LEN=250 ytfzf -D
 ```
 
-* Videos can be selected using fzf, dmenu or rofi.
+_Videos can be selected using fzf, dmenu or rofi._
+
 
 ## Examples
-> Watch to find videos (with out thumbnails)
 
-	ytfzf <query>
++  Search with Thumbnails 
 
-> Watch to find videos with thumbnails
+	> Find and watch videos with thumbnails preview 
 
-	ytfzf -t <query>
-	
-* You can use multiple options together, here are some examples
+       ytfzf -t <query>
 
-> Steam audio (music), and prompt as the music finishes
++  Search without Thumbnails 
 
-	ytfzf -ml <query>
+	> Find and watch videos without thumbnails preview (good if are on MacOS for example)
+
+	   ytfzf <query>
+
++  You can use multiple options together, here are some examples
+
+	- Steam audio (music), and prompt as the music finishes
+
+		  ytfzf -ml <query>
+
+	- Download a video from your history
+
+	      ytfzf -dH
+
+	- Open using dmenu in a certain format
+
+	 	  ytfzf -fD  
+
++ _If you started watching a video and you wish to change format then 
+first hit Q to save position and quit mpv, then choose your format using_
+
+	  ytfzf -faH
 
 
-> Download a video from your history
+### Useful mpv key bindings
 
-	ytfzf -dH
-
-> Open using dmenu in a certain format
-
-	ytfzf -fD  
-
-If you started watching a video and you wish to change format then 
-first hit Q to save position and quit mpv, then choose your format using
-
-	ytfzf -faH
-
-
-## Useful mpv key bindings
 * Use `f` for full screen
 * Use `J` for subtitles (also works with audio, if the music video has subtitles)
 * Use `L` for single-loop
 
-# Dependencies
-* mpv
-* [youtube-dl](https://github.com/ytdl-org/youtube-dl)
-* [fzf](https://github.com/junegunn/fzf) (Optional) - for menu
-* [jq](https://github.com/stedolan/jq) - to parse json
-* [ueberzug](https://github.com/seebye/ueberzug) (Optional) - for thumbnails
+### Update log
 
-> Fzf is optional, you can use external menu (like dmenu) with the `-D` option (no thumbnail support).
+- Now ytfzf can queue videos using fzf multiselect option. Press tab to select a video. All the videos will be lined up in mpv. Use `>` and `<` to traverse them.
+- Make continuous queries with `-s`
+- Thumbnails! Using Ueberzug. Inspired by [`fontpreview-ueberzug`](https://github.com/OliverLew/fontpreview-ueberzug).
+- added MacOS support
+- Stdin can be taken by using `ytfzf -`, for both fzf and external menu.
+
+## Dependencies
+
+_Fzf is optional, you can use external menu (like dmenu) with the `-D` option (no thumbnail support)._
+
+* [`mpv`](https://github.com/mpv-player/mpv)
+* [`youtube-dl`](https://github.com/ytdl-org/youtube-dl)
+* [`fzf`](https://github.com/junegunn/fzf) (Optional) - _for menu_
+* [`jq`](https://github.com/stedolan/jq) - _to parse json_
+* [`ueberzug`](https://github.com/seebye/ueberzug) (Optional) - _for thumbnails_
+
 > Thumbnails only work with fzf and Ueberzug as of now.
 
-### Arch based
 
-	sudo pacman -S jq mpv youtube-dl fzf 
++ ### Arch based
 
-> For thumbnails 
+	  sudo pacman -S jq mpv youtube-dl fzf 
+
+	> For thumbnails 
 	
-	sudo pacman -S ueberzug
+	  sudo pacman -S ueberzug
 
-### Debian based
++ ### Debian based
 
-	sudo apt install jq mpv youtube-dl fzf 
+	  sudo apt install jq mpv youtube-dl fzf 
 
-> For thumbnails 
+	> For thumbnails 
 
-	pip install ueberzug
+	  pip install ueberzug
 
-> Note youtube-dl is usually outdated in debian repos, I suggest getting it from 
+	_Note youtube-dl is usually outdated in debian repos, I suggest getting it from  [youtube-dl github](https://github.com/ytdl-org/youtube-dl)_
+
++ ### MacOS
+
+	  brew install jq mpv youtube-dl fzf
+
+	_As of now thoumbnails preview doesn't work_
+
+
+## Installation
+
++ #### Cloning the repository
+
+	```sh
+	git clone https://github.com/pystardust/ytfzf
+	cd ytfzf
+	```
+
+	- ##### Install with the Makefile
+		
+		```sh
+		sudo make install
+		```
+
+	- ##### Uninstall with the Makefile
 	
-
-* [youtube-dl github](https://github.com/ytdl-org/youtube-dl)
-
-### MacOS
-
-	brew install jq mpv youtube-dl fzf
-
-
-# Installation
-
-```sh
-git clone https://github.com/pystardust/ytfzf
-cd ytfzf
-```
-
-Install with the Makefile
+		```sh
+		sudo make uninstall
+		```
 	
-```sh
-sudo make install
-```
-
-Uninstall with the Makefile
-
-```sh
-sudo make uninstall
-```
-
-Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
++ #### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
+		
+		yay -S ytfzf-git
+        	
 	
-	yay -S ytfzf-git
-        
+## Configuration
 
-# Defaults
+_Default configuration can be set in the configuration file `~/.config/ytfzf/conf.sh` or with environment variables._
 
-Defaults can be set in the configuration file `~/.config/ytfzf/conf.sh` or with environment variables.
++ ##### Defaults can be set in `~/.config/ytfzf/conf.sh`
+	```sh
+	YTFZF_HIST=0 # history is on by default it can be set to -> 0 history off, 1: history on
+	YTFZF_LOOP=1 # if set to 1 it is on but normally it is off by default. Can be turned on using option -l
+	YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best"
+	YTFZF_ENABLE_FZF_DEFAULT_OPTS=1 # fzf colors are going to be the one from your fzf configuration
+	```
 
-* Defaults can be set in `~/.config/ytfzf/conf.sh`
-```sh
-YTFZF_HIST=0
-YTFZF_LOOP=1
-YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best"
-```
++ ##### Or export them in your shell config
 
-* Or export them in your shell config
-```sh
-export YTFZF_HIST=0
-export YTFZF_LOOP=1
-export YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best"
-```
+	```sh
+	export YTFZF_HIST=0 # history is on by default it can be set to -> 0 history off, 1: history on
+	export YTFZF_LOOP=1 # if set to 1 it is on but normally it is off by default. Can be turned on using option -l
+	export YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best"
+	export YTFZF_ENABLE_FZF_DEFAULT_OPTS=1 # fzf colors are going to be the one from your fzf configuration
+	```
 
-For one time settings you can specify the variables as shown
++ ##### One time settings can be specify as showed here
 
-```sh
-YTFZF_HIST=0 YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best" ytfzf  <query>
-```
-> The setting in the config will always override environment variables. This command wouldn't function as expected if `YTFZF_HIST=1` was mentioned in the config file.
+	```sh
+	YTFZF_HIST=0 YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best" ytfzf  <query>
+	```
+	- _The setting in the config will always override environment variables. This command wouldn't function as expected if_ `YTFZF_HIST=1` _was mentioned in the config file._
 
-> This will not include this video in your history and display it in a resolution no more than 1080p.
+	- _This will not include this video in your history and display it in a resolution no more than 1080p._
 
-## Format
++ ##### This history will be stored in the cache directory as `ytfzf_hst`
 
-If you prefer to watch Youtube videos in certain option with out the prompting every single time.
+	```sh
+	YTFZF_CACHE=~/.cache/ytfzf
+	```
 
-```sh
-YTFZF_PREF="22"                   
-```
-[Documentation for ytdl formats](https://github.com/ytdl-org/youtube-dl#format-selection)
+	_You can modify the file location by changing the cache directory_
 
-If the preferred format is not available then, it will go back to auto selection.
++ ##### Format
 
+	_If you prefer to watch Youtube videos in certain option without the prompting every single time you can use the following setting.
 
-## History
+	```sh
+	YTFZF_PREF="22"                   
+	```
 
-On by default. If you don't want history.
+	_If the preferred format is not available then, it will go back to auto selection._ [_Documentation for ytdl formats_](https://github.com/ytdl-org/youtube-dl#format-selection)
 
-```sh
-YTFZF_HIST=0
-```
-> 0: history off, 1: history on
+## External-menu command 
+	
+_The currently supported one are (dmenu / rofi)_
 
-* This history will be stored in the cache directory as `ytfzf_hst`
++ ##### To use an external menu you will need to pass in the `-D` option
+	```sh
+	ytfzf -D
+	```
+	_By default the external menu is set to dmenu `dmenu -i -l 30`. You can modify to this to rofy by_
 
-You can modify the file location by changing the cache directory
+	```sh
+	YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
+	```
 
-```sh
-YTFZF_CACHE=~/.cache/ytfzf
-```
+	> I don't use rofi much, I would love to hear from any rofi user on better defaults.
 
++ ##### You also may need to modify the width of the output that is being piped into external menu.
+	_Depending on you screen resolution and font size this may need to be modified._
 
-## Loop menu prompt
-
-Off by default.  Can be turned on using option `-l`. Or setting
-
-```sh
-YTFZF_LOOP=1
-```
-
-This would return you to the video selection prompt after the video is exited/ends.
-
-> To quit the script you can press `ESC` or `^C` in the video selection prompt.
-
-## External menu command (dmenu / rofi)
-
-To use an external menu you will need to pass in the `-D` option
-```sh
-ytfzf -D
-```
-
-By default the external menu is set to dmenu `dmenu -i -l 30`. You can modify to this to rofy by
-
-```sh
-YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
-```
-> I don't use rofi much, I would love to hear from any rofi user on better defaults.
-
-You also may need to modify the width of the output that is being piped into external menu.
- Depending on you screen resolution and font size this may need to be modified.
-```sh
-YTFZF_EXTMENU_LEN=180
-```
-or
-```sh
-YTFZF_EXTMENU_LEN=180 ytfzf -D
-```
+  - **First option**
+	
+	```sh
+	YTFZF_EXTMENU_LEN=180
+	```
+	
+  - **Second option**
+	
+	```sh
+	YTFZF_EXTMENU_LEN=180 ytfzf -D
+	```
 
 > WARNING : dmenu doesn't behave well with some fonts. Expect it to be slow with fonts you don't have.
 
+### Currently Playing
 
+_`YTFZF` is `on` by default. Stores the details of the currently playing track. Empty when nothing is playing. This could be used in status bar modules._
 
-## Currently Playing
++ ##### This will allow you to disable it
 
-On by default. Stores the details of the currently playing track. Empty when nothing is playing. This could be used in status bar modules.
-To disable it
-```sh
-YTFZF_CUR=0
-```
+	```sh
+	YTFZF_CUR=0
+	```
 
-It will be stored in the ytfzf cache directory as `ytfzf_cur`
+	> It will be stored in the ytfzf cache directory as `ytfzf_cur`
 
+### Custom Player
 
-## Custom Player
-By default, ytfzf uses `mpv`. custom player should have the ability to launch youtube links.
+_By default, ytfzf uses `mpv`. Custom player should have the ability to launch youtube links._
 
 ``` sh
 # example: using devour
@@ -267,12 +276,12 @@ FZF_PLAYER="devour mpv"
 YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
 ```
 
-# Todo
+## Todo 📝
 
 * [ ] Playlists
 * [ ] Comments
 * [x] Icons
 
-## Bugs
+## Bugs ❌
 
-* dwm with swallow patch: Images don't render when looped (ie, option -l)
+* _dwm with swallow patch: Images don't render when looped (ie, option -l)_
