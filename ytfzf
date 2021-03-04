@@ -24,10 +24,18 @@ YTFZF_PLAYER_FORMAT="${YTFZF_PLAYER_FORMAT-mpv --ytdl-format=}"
 YTFZF_ENABLE_FZF_DEFAULT_OPTS=${YTFZF_ENABLE_FZF_DEFAULT_OPTS-0}
 [ $YTFZF_ENABLE_FZF_DEFAULT_OPTS -eq 0 ] && FZF_DEFAULT_OPTS=""
 
+#variable used for when this process spawns subprocesses and there needs to be a unique value (ueberzug)
+#this could be any unique value, PPID is used because it is the most easily accessible unique value
+#$RANDOM does not work in POSIX
+[ -z "$PROC_ID" ] && export PROC_ID="$PPID"
+
 #> files and directories
 history_file="$YTFZF_CACHE"/ytfzf_hst
 current_file="$YTFZF_CACHE"/ytfzf_cur
-thumb_dir="$YTFZF_CACHE"/thumb
+
+#uses a unique thumbnail dir so thumbnails in 2+ instances of ytfzf don't override each other
+thumb_dir="$YTFZF_CACHE/thumb-$PROC_ID"
+
 #> make folders that don't exist
 [ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
 [ -d $thumb_dir ] || mkdir -p $thumb_dir
@@ -211,7 +219,7 @@ format_video_data () {
 #   Video selection Menu   #
 ############################
 video_menu () {
-	format_video_data "$*" | eval "$menu_command"
+	format_video_data "$*" | "$menu_command"
 }
 video_menu_img () {
 	title_len=400
@@ -227,15 +235,16 @@ video_menu_img () {
 ## The following snippet of code has been copied and modified from
 # https://github.com/OliverLew/fontpreview-ueberzug      MIT License
 # Ueberzug related variables
-FIFO="/tmp/ytfzf-ueberzug-fifo"
-IMAGE="/tmp/ytfzf-ueberzug-img.png"
+
+#the is doesn't have to be the PPID it just has to be unique for each instance of the script
+#PPID is the easiest unique value to access that I could think of
+
+FIFO="/tmp/ytfzf-ueberzug-fifo-$PROC_ID"
 ID="ytfzf-ueberzug"
 WIDTH=$FZF_PREVIEW_COLUMNS
 HEIGHT=$FZF_PREVIEW_LINES
-
 start_ueberzug () {
     [ -e $FIFO ] || { mkfifo "$FIFO" || exit 1 ; }
-    [ -e $IMAGE ] || { touch "$IMAGE" || exit 1 ; }
     ueberzug layer --parser json --silent < "$FIFO" &
     exec 3>"$FIFO"
 }
@@ -456,6 +465,9 @@ save_before_exit () {
 	[ $is_url -eq 1 ] && exit
 	[ $YTFZF_HIST -eq 1 ] && printf "$selected_data\n" >> "$history_file" ;
 	[ $YTFZF_CUR -eq 1 ] && printf "" > "$current_file" ;
+	#removes thumb_dir and not contents inside
+	#because it's usually unique and it's nice to not have 200 of the same directory
+	rm -r "$thumb_dir"
 }
 
 
@@ -599,6 +611,7 @@ parse_opt () {
 			exit 2 ;;
 	esac
 }
+
 
 while getopts "LhDmdfxHarltsn:U:-:" opt; do
     parse_opt "$opt" "$OPTARG"
