@@ -201,7 +201,7 @@ format_menu () {
 }
 #> Trucating and formatting the fields based on the decided lengths
 format_video_data () {
-	printf "%s" "$*" | awk -F'\t' \
+	printf "%s" "$*" | awk -F"$(printf '\t')" \
 	-v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
 	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
 }
@@ -252,7 +252,7 @@ preview_img () {
 	    printf '"x": %d, "y": %d, "scaler": "fit_contain",' 2 10
 	    printf '"width": %d, "height": %d }\n' "$WIDTH" "$((HEIGHT - 2))"
 	} > "$FIFO" 
-	echo "$@" |  tr -d '|' | sed "s/ *\t/\t/g" | awk -F'\t' \
+	echo "$@" |  tr -d '|' | sed "s/ *""$(printf '\t')""/""$(printf '\t')""/g" | awk -F"$(printf '\t')" \
 	'{ printf "\n%s\nChannel: %s\nViews: %s\nDuration: %s\nUploaded %s\n",$1,$2,$4,$3,$5}'
 }
 
@@ -364,7 +364,7 @@ scrape_yt () {
 	videos_json="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d')"
 	videos_data="$( printf "%s" "$videos_json" |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
-		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p")"
+		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/""$(printf '\t')""\|/g;p")"
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails
@@ -439,12 +439,14 @@ play_url () {
 	#> output the current track to current file before playing
 	[ $YTFZF_CUR -eq 1 ] && printf "$selected_data" > "$current_file" ;
 
+	#> The urls are quoted and placed one after the other for mpv to read
+	player_urls="\"$(printf "$urls" | awk  'ORS="\" \"" { print }' | sed 's/"$//' )"
 	#> Play url with $player or $player_format based on options
 	#> if player format fails, then use normal player
 	[ -n "$YTFZF_PREF" ] && {
-		eval "$YTFZF_PLAYER_FORMAT"\'$YTFZF_PREF\'  "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
+		eval "$YTFZF_PLAYER_FORMAT"\'$YTFZF_PREF\'  "$player_urls"
 	} || {
-		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
+		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "$player_urls"
                      # Ctr-C in MPV results in a return code of 4
 	} || {
 		print_error "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[000mTry updating youtube-dl\n"; save_before_exit ; exit 1;
