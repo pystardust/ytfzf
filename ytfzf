@@ -336,6 +336,7 @@ scrape_yt () {
 	fi
 
 	yt_html="$(
+	upload date filters
 	curl 'https://www.youtube.com/results' -s \
 	  -G --data-urlencode "search_query=$*" \
 	  -G --data-urlencode "sp=$sp" \
