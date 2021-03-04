@@ -85,6 +85,18 @@ printf "     -n, --video-count= <video-count>     To specify number of videos to
 printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
+printf "\n";
+printf "     --upload-time=     <time-range>      Time range can be one of, last-hour, today, this-week, this-month, this-year\n";
+printf "                   You can also put the filter as it's own option eg: --today\n";
+printf "     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of, upload-date, view-count, rating\n";
+printf "                   You can also put the filter as it's own option eg: --upload-date\n";
+printf "     --filter-id=       <filter>          The id of the filter to use for video reults\n";
+printf "                   A filter id can be found by going to youtube searching, filtering how you want\n";
+printf "                   Then taking the value of the &sp= part of the url\n";
+printf "                   Filters may not work especially when the filter sorts for non-videos\n";
+printf "                   In addition this overrides any filter provided through options\n";
+printf "                   Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[000m\n";
+printf "                   This will filter by livestream\n";
 printf "  Use - instead of <search-query> for stdin\n";
 printf "\n"
 printf "  Option usage:\n"
@@ -267,13 +279,66 @@ EOF
 	wait && [ $show_link_only -eq 0 ] && echo ""
 
 }
+get_sp_filter () {
+
+	#filter_id is a variable that keeps changing throught this function
+	filter_id=""
+
+	#sp is the final filter id that is used in the search query
+	sp=""
+
+	#the way youtube uses these has a pattern, for example
+	    #in the sort_by_filter the only difference is the 3rd character, I just don't know how to use this information efficiently
+	case "$sort_by_filter" in
+		upload-date) filter_id="CAISBAgAEAE" ;;
+		view-count) filter_id="CAMSBAgAEAE" ;;
+		rating) filter_id="CAESBAgAEAE" ;;
+	esac
+
+	#another example is sort by filter + upload date filter only changes one character as well
+	if [ -n "$filter_id" ]; then
+		#gets the character in the filter_id that needs to be replaced if upload_date_filter is also given
+		upload_date_character="$(echo "$filter_id" | awk '{print substr($1, 8, 1)}')"
+	fi
+
+	#For each of these, if upload_date_character is unset, the filter_id should be the normal filter
+	#Otherwise set the upload_date_character to the right upload_date_character
+	case "$upload_date_filter" in
+		last-hour) [ -z "$upload_date_character" ] && filter_id="EgQIARAB" || upload_date_character="B" ;;
+		today) [ -z "$upload_date_character" ] && filter_id="EgQIAhAB" || upload_date_character="C" ;;
+		this-week) [ -z "$upload_date_character" ] && filter_id="EgQIAxAB" || upload_date_character="D" ;;
+		this-month) [ -z "$upload_date_character" ] && filter_id="EgQIBBAB" || upload_date_character="E" ;;
+		this-year) [ -z "$upload_date_character" ] && filter_id="EgQIBRAB" || upload_date_character="F" ;;
+	esac
+
+	#if upload_date_character isn't empty, set sp to upload_date filter + sort_by filter
+	if [ -n "$upload_date_character" ]; then
+		#replaces the 8th character in the filter_id with the appropriate character
+		#the 8th character specifies the upload_date_filter
+		sp="$(echo "$filter_id" | sed "s/\\(.\\{7\\}\\)./\\1$upload_date_character/")"
+	#otherwise set it to the filter_id
+	else
+		sp="$filter_id"
+	fi
+}
 scrape_yt () {
 	# needs search_query
 	## Scrape data and store video information in videos_data ( and thumbnails download)
 	## GETTING DATA
+
+	#sp is the urlquery youtube uses for sorting videos
+	#only runs if --filter-id or --sp was unspecified
+	if [ -z "$sp" ]; then
+		get_sp_filter
+	else
+		#youtube puts in %253d one ore more times in the filter id, it doesn't seem useful, so we are removing it if it's in the filter
+		sp="${sp%%%*}"
+	fi
+
 	yt_html="$(
 	curl 'https://www.youtube.com/results' -s \
 	  -G --data-urlencode "search_query=$*" \
+	  -G --data-urlencode "sp=$sp" \
 	  -H 'authority: www.youtube.com' \
 	  -H "user-agent: $useragent" \
 	  -H 'accept-language: en-US,en;q=0.9' \
@@ -465,6 +530,20 @@ parse_opt () {
 
 				random-auto-play) parse_opt "r" ;;
 
+				upload-time=*) upload_date_filter="${OPTARG#*=}" ;;
+				last-hour) upload_date_filter="last-hour" ;;
+				today) upload_date_filter="today" ;;
+				this-week) upload_date_filter="this-week" ;;
+				this-month) upload_date_filter="this-month" ;;
+				this-year) upload_date_filter="this-year" ;;
+
+				upload-sort=*) sort_by_filter="${OPTARG#*=}" ;;
+				upload-date) sort_by_filter="upload-date" ;;
+				view-count) sort_by_filter="view-count" ;;
+				rating) sort_by_filter="rating" ;;
+
+				filter-id=*|sp=*) sp="${OPTARG#*=}" ;;
+				
 				*)
 				    printf "Illegal option --$OPTARG\n"
 				    usageinfo
