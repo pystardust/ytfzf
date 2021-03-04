@@ -1,7 +1,7 @@
 # ytfzf
 
 <p align="center">
-    <a> <img src=""https://raw.githubusercontent.com/Jac-Zac/ytfzf/master/.assets/logo.png"></a>
+    <a> <img src="https://raw.githubusercontent.com/Jac-Zac/ytfzf/master/.assets/logo.png"></a>
     <br />
     <br />
     <i>A posix script that helps you find Youtube video (without API) and opnes/downloads using mpv/youtube-dl</i> 
