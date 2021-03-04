@@ -318,7 +318,7 @@ get_search_query () {
 	else
 		if [ -z "$search_query" ]; then
 			if [ $is_ext_menu -eq 1 ]; then 
-				search_query="$(eval $YTFZF_EXTMENU)"
+				search_query="$(printf "" | $YTFZF_EXTMENU)"
 			else
 				printf "$search_prompt"
 				read search_query
