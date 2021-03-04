@@ -27,13 +27,13 @@ Initially this used to be a single line script. But for portability and extensib
 ![Gif](ytfzf.gif)
 
 ```
-Usage: ytfzf [OPTIONS] <search-query>
+Basic Usage: ytfzf [OPTIONS] <search-query>
   OPTIONS:
      -h, --help                           Show this help text
      -t, --thumbnails                     Show thumbnails (requires ueberzug)
                                           Doesn't work with -H -D
-     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf
-     -H, --choose-from-history            Choose from history
+     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf 
+     -H, --choose-from-history            Choose from history 
      -x, --clear-history                  Delete history
      -m, --audio-only   <search-query>    Audio only (for music)
      -d, --download     <search-query>    Download to current directory
@@ -42,7 +42,7 @@ Usage: ytfzf [OPTIONS] <search-query>
      -r  --random-play  <search-query>    Auto play a random result, no selector
      -n, --video-count= <video-count>     To specify number of videos to select with -a or -r
      -l, --loop         <search-query>    Loop: prompt selector again after video ends
-     -s                 <search-query>    After the video ends make another search
+     -s                 <search-query>    After the video ends make another search 
      -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting
   Use - instead of <search-query> for stdin
 ```
