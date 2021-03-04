@@ -1,20 +1,15 @@
-# ytfzf
-
 <p align="center">
     <a> <img src="https://raw.githubusercontent.com/Jac-Zac/ytfzf/master/.assets/logo.png"></a>
     <br />
     <br />
     <i>A posix script that helps you find Youtube video (without API) and opnes/downloads using mpv/youtube-dl</i> 
+	<hr>
 </p>
-<hr />
 
-* Thumbnails
-* History support
-* Download support
-* Format selection (and default formats)
-* Queue multiple tracks (using fzf multiselection)
+<p align="center">
+	<i>Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below.</i>
+</p>
 
-##### _Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below._
 
 ```sh
 #!/bin/sh
@@ -24,6 +19,7 @@
 ## Table of content 
 
 - [`Usege instruction`](#Usage-Instructions)
+- [`Features`](#Features)
 - [`Examples`](#Examples)
 - [`Dependencies`](#Dependencies)
 - [`Installation`](#Installation)
@@ -65,6 +61,14 @@ YTFZF_EXTMENU_LEN=250 ytfzf -D
 ```
 
 _Videos can be selected using fzf, dmenu or rofi._
+
+## Features
+
+* Thumbnails
+* History support
+* Download support
+* Format selection (and default formats)
+* Queue multiple tracks (using fzf multiselection)
 
 
 ## Examples
