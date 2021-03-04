@@ -188,7 +188,7 @@ format_menu () {
 	fi
 }
 #> Trucating and formatting the fields based on the decided lengths
-format_awk () {
+format_video_data () {
 	printf "%s" "$*" | awk -F'\t' \
 	-v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
 	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
@@ -199,11 +199,11 @@ format_awk () {
 #   Video selection Menu   #
 ############################
 video_menu () {
-	format_awk "$*" | eval "$menu_command"
+	format_video_data "$*" | eval "$menu_command"
 }
 video_menu_img () {
 	title_len=400
-	format_awk "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
+	format_video_data "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "left:50%:noborder:wrap"
 }
@@ -285,7 +285,7 @@ scrape_yt () {
 	)"
 	if [ -z "$yt_html" ]; then
 		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
-		exit 2
+		exit 1 
 	fi
 
 	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
@@ -293,7 +293,7 @@ scrape_yt () {
 
 	if [ -z "$yt_json" ]; then  
 		print_error "\033[31mERROR[#02]: Couldn't find data on site.\033[000m\n"
-		exit 2
+		exit 1
 	fi
 
 	videos_json="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d')"
@@ -352,7 +352,7 @@ user_selection () {
 		[ -z "$surl" ] && continue
 		urls="$urls\nhttps://www.youtube.com/watch?v=$surl"
 		selected_data="$selected_data\n$(echo "$videos_data" | grep -m1 -e "$surl" )"
-	done<<EOF
+	done << EOF
 	$shorturls
 EOF
 	urls="$( printf "$urls" | sed 1d )"
@@ -421,6 +421,15 @@ get_history () {
 		exit;
 	fi
 }
+clear_history () {
+	if [ -e "$history_file" ]; then
+		echo "" > "$history_file"
+		printf "History has been cleared\n"
+	else
+		printf "\033[31mHistory file not found, history not cleared\033[000m\n"
+		exit 1
+	fi
+}
 
 #is used to know whether or not scraping the search page is necessary
 scrape=1
@@ -484,8 +493,7 @@ parse_opt () {
 
 		H)	get_history ;;
 
-		x)	[ -e "$history_file" ] && (echo "" > "$history_file") && printf "History has been cleared\n"
-			exit ;;
+		x)	clear_history && exit ;;
 
 		a) 	auto_select=1 ;;
 
