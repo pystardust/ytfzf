@@ -16,7 +16,16 @@
 [ -z "$*" ] || curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" |  pup 'script' | grep  "^ *var ytInitialData" | sed 's/^[^=]*=//g;s/;$//' | jq '..|.videoRenderer?' | sed '/^null$/d' | jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'| sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{60}).*/\1/;N;s/\n(.{30}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" | column -t  -s "$(printf "\t")" | fzf --delimiter='\|' --nth=1,2  | sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_' | xargs -r -I'{}' mpv {}
 ```
 
+<h2 align="center">
+	This is a little showcase
+</h2>
+<p align="center">
+<img src=.assets/ytfzf.gif width="100%">
+</p>
+
 ## Table of content 
+
+_Those will bring you to were you need in the snap of a finger_
 
 - [`Usege instruction`](#Usage-Instructions)
 - [`Features`](#Features)
@@ -26,9 +35,6 @@
 - [`Configuration`](#Configuration)
 - [`External menu command (dmenu / rofi)`](#External-menu-command)
 
-### This is a little showcase
-
-![Gif](.assets/ytfzf.gif)
 
 ## Usage-Instructions
 
@@ -295,3 +301,9 @@ YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
 ## Bugs ❌
 
 * _dwm with swallow patch: Images don't render when looped (ie, option -l)_
+
+## Contacts 🧑🏽‍💻
+
+- You can join the discord server
+
+<a href="https://discord.gg/KnGrq6RK"><img src="https://img.shields.io/discord/815609275644117022.svg?label=discord&logo=discord" alt="Discord"></a>
