@@ -42,7 +42,7 @@ fi
 
 #> config settings 
 search_prompt="${search_prompt-Search Youtube: }"
-useragent=${useragent-'user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
+useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 
 #Opt variables (can also be set in config)
 is_ext_menu=${is_ext_menu-0}
@@ -275,7 +275,7 @@ scrape_yt () {
 	curl 'https://www.youtube.com/results' -s \
 	  -G --data-urlencode "search_query=$*" \
 	  -H 'authority: www.youtube.com' \
-	  -H "$useragent" \
+	  -H "user-agent: $useragent" \
 	  -H 'accept-language: en-US,en;q=0.9' \
 	  --compressed
 	)"
