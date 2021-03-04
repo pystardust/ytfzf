@@ -135,6 +135,7 @@ format_fzf () {
 	url_len=12
 
 	#> Get the terminal size to adjust length accordingly
+	    #"terminal size" is the number of columns (characters that fit in a line)
 	t_size="$(stty size 2> /dev/null | cut -f2 -d' ')"
 	#t_size should only be empty if stty errored, and that only happens when using stdin
 	if [ -z "$t_size" ]; then
@@ -142,26 +143,26 @@ format_fzf () {
 	    exit 2
 	fi
 
+	#show title, channel
 	if [ $t_size -lt 75 ]; then
-		# title channel
 		frac=$(((t_size - 1)/4))
 		title_len=$((frac * 3))
 		channel_len=$((frac * 1 + 7))
+	#show title, channel, time
 	elif [ $t_size -lt 95 ]; then
-		# title channel time
 		frac=$(((t_size - 4)/8))
 		title_len=$((frac * 5 - 1))
 		channel_len=$((frac * 2 - 1))
 		dur_len=$((frac * 1 + 10))
+	#show title, channel, time, views
 	elif [ $t_size -lt 110 ]; then
-		# title channel time views
 		frac=$(((t_size - 1)/9))
 		title_len=$((frac * 5 ))
 		channel_len=$((frac * 2 ))
 		dur_len=$((frac * 1))
 		view_len=$((frac * 1 + 7))
+	#show title, channel, time, views, date
 	else
-		# title channel time views date
 		frac=$(((t_size - 5)/11))
 		title_len=$((frac * 5 - 1))
 		channel_len=$((frac * 2))
@@ -288,9 +289,8 @@ scrape_yt () {
 	fi
 
 	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
-        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
+        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;')"
 
-	 )"
 	if [ -z "$yt_json" ]; then  
 		print_error "\033[31mERROR[#02]: Couldn't find data on site.\033[000m\n"
 		exit 2
@@ -299,8 +299,7 @@ scrape_yt () {
 	videos_json="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d')"
 	videos_data="$( printf "%s" "$videos_json" |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
-		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p"
-		)"
+		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p")"
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails
