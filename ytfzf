@@ -160,7 +160,7 @@ format_fzf () {
 format_menu () {
 	if [ $is_ext_menu -eq 0 ]; then
 		dep_ck "fzf"
-		menu_command='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS'
+		menu_command='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "	")" --nth=1,2 $FZF_DEFAULT_OPTS'
 		if [ $is_stdin -eq 0 ] ; then
 			format_fzf 
 		else 
@@ -168,15 +168,15 @@ format_menu () {
 		fi
 	else
 		# dmenu doesnt render tabs so removing it
-		menu_command='tr -d "$(printf "\t")" | '"$YTFZF_EXTMENU"
+		menu_command='tr -d "$(printf "	")" | '"$YTFZF_EXTMENU"
 		format_ext_menu
 	fi
 }
 #> Trucating and formatting the fields based on the decided lengths
 format_awk () {
-	printf "%s" "$*" | awk -F'\t' \
+	printf "%s" "$*" | awk -F'	' \
 	-v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
-	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
+	'{ printf "%-"A"."A"s	%-"B"."B"s	%-"C"."C"s	%-"D"."D"s	%-"E"."E"s	%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
 }
 
 
@@ -189,7 +189,7 @@ video_menu () {
 }
 video_menu_img () {
 	title_len=400
-	format_awk "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
+	format_awk "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "	")" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "left:50%:noborder:wrap"
 }
@@ -226,7 +226,7 @@ preview_img () {
 	    printf '"x": %d, "y": %d, "scaler": "fit_contain",' 2 10
 	    printf '"width": %d, "height": %d }\n' "$WIDTH" "$((HEIGHT - 2))"
 	} > "$FIFO" 
-	echo "$@" |  tr -d '|' | sed "s/ *\t/\t/g" | awk -F'\t' \
+	echo "$@" |  tr -d '|' | sed "s/ *	/	/g" | awk -F'	' \
 	'{ printf "\n%s\nChannel: %s\nViews: %s\nDuration: %s\nUploaded %s\n",$1,$2,$4,$3,$5}'
 }
 
@@ -289,7 +289,7 @@ scrape_yt () {
 	videos_json="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d')"
 	videos_data="$( printf "%s" "$videos_json" |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
-		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p"
+		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/	\|/g;p"
 		)"
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 
@@ -370,12 +370,12 @@ play_url () {
 	#> Play url with $player or $player_format based on options
 	#> if player format fails, then use normal player
 	[ -n "$YTFZF_PREF" ] && {
-		eval "$YTFZF_PLAYER_FORMAT"\'$YTFZF_PREF\'  "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
+		eval "$YTFZF_PLAYER_FORMAT"\'$YTFZF_PREF\'  "\"$(printf "$urls" | tr '\n' '	' | sed 's_	_" "_g' )\""
 	} || {
-		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
+		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "\"$(printf "$urls" | tr '\n' '	' | sed 's_	_" "_g' )\""
                      # Ctr-C in MPV results in a return code of 4
 	} || {
-		printf "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[000mTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
+		printf "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n	\033[000mTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
 	}
 }
 save_before_exit () {
