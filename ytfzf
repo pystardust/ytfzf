@@ -8,19 +8,20 @@
 #         Defaults         #
 ############################
 
-[ -z "$YTFZF_HIST" ] && YTFZF_HIST=1
-[ -z "$YTFZF_LOOP" ] && YTFZF_LOOP=0
-[ -z "$YTFZF_CUR" ] && YTFZF_CUR=1
-[ -z "$YTFZF_CACHE" ] && YTFZF_CACHE="$HOME/.cache/ytfzf"
-[ -z "$YTFZF_PREF" ] && YTFZF_PREF=""
-[ -z "$YTFZF_EXTMENU" ] && YTFZF_EXTMENU='dmenu -i -l 30 -p Search:'
-[ -z "$YTFZF_EXTMENU_LEN" ] && YTFZF_EXTMENU_LEN=220
+YTFZF_HIST=${YTFZF_HIST-1}
+YTFZF_LOOP=${YTFZF_LOOP-0}
+YTFZF_CUR=${YTFZF_CUR-1}
+YTFZF_CACHE="${YTFZF_CACHE-$HOME/.cache/ytfzf}"
+YTFZF_PREF="${YTFZF_PREF-}"
+YTFZF_EXTMENU="${YTFZF_EXTMENU-dmenu -i -l 30 -p Search:}"
+YTFZF_EXTMENU_LEN=${YTFZF_EXTMENU_LEN-220}
 
 ## player settings
-[ -z "$YTFZF_PLAYER" ] && YTFZF_PLAYER="mpv"
-[ -z "$YTFZF_PLAYER_FORMAT" ] && YTFZF_PLAYER_FORMAT="mpv --ytdl-format="
+YTFZF_PLAYER="${YTFZF_PLAYER-mpv}"
+YTFZF_PLAYER_FORMAT="${YTFZF_PLAYER_FORMAT-mpv --ytdl-format=}"
+
 #> Clearing/Enabling fzf_defaults
-[ -z "$YTFZF_ENABLE_FZF_DEFAULT_OPTS" ] && YTFZF_ENABLE_FZF_DEFAULT_OPTS=0
+YTFZF_ENABLE_FZF_DEFAULT_OPTS=${YTFZF_ENABLE_FZF_DEFAULT_OPTS-0}
 [ $YTFZF_ENABLE_FZF_DEFAULT_OPTS -eq 0 ] && FZF_DEFAULT_OPTS=""
 
 #> files and directories
@@ -34,11 +35,9 @@ thumb_dir="$YTFZF_CACHE"/thumb
 #> Setting and reading the config file 
 config_dir="$HOME/.config/ytfzf"
 config_file="$config_dir/conf.sh"
-if [ -e $config_file ]
-then
-    #source config file if exists (overrides env variables)
-    . "$config_file"
-fi
+
+#source config file if exists (overrides env variables)
+[ -e $config_file ] && . "$config_file"
 
 #> config settings 
 search_prompt="${search_prompt-Search Youtube: }"
@@ -119,11 +118,12 @@ printf "\n";
 printf "  For more details refer https://github.com/pystardust/ytfzf\n";
 }
 usageinfo () {
-printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
-printf "     'ytfzf -h' for more information\n";
+    printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
+    printf "     'ytfzf -h' for more information\n";
 }
-errinfo () {
-printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n"
+print_error () {
+    printf "$*"
+    printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n"
 }
 
 
@@ -147,30 +147,34 @@ format_fzf () {
 	url_len=12
 
 	#> Get the terminal size to adjust length accordingly
+	    #"terminal size" is the number of columns (characters that fit in a line)
 	t_size="$(stty size 2> /dev/null | cut -f2 -d' ')"
-	if [ "$t_size" = "" ]; then
-	    printf "\e[31mWhen using stdin put - for the search query\033[000m\n" && exit 2
+	#t_size should only be empty if stty errored, and that only happens when using stdin
+	if [ -z "$t_size" ]; then
+	    printf "\e[31mWhen using stdin put - for the search query\033[000m\n"
+	    exit 2
 	fi
+
+	#show title, channel
 	if [ $t_size -lt 75 ]; then
-		# title channel
 		frac=$(((t_size - 1)/4))
 		title_len=$((frac * 3))
 		channel_len=$((frac * 1 + 7))
+	#show title, channel, time
 	elif [ $t_size -lt 95 ]; then
-		# title channel time
 		frac=$(((t_size - 4)/8))
 		title_len=$((frac * 5 - 1))
 		channel_len=$((frac * 2 - 1))
 		dur_len=$((frac * 1 + 10))
+	#show title, channel, time, views
 	elif [ $t_size -lt 110 ]; then
-		# title channel time views
 		frac=$(((t_size - 1)/9))
 		title_len=$((frac * 5 ))
 		channel_len=$((frac * 2 ))
 		dur_len=$((frac * 1))
 		view_len=$((frac * 1 + 7))
+	#show title, channel, time, views, date
 	else
-		# title channel time views date
 		frac=$(((t_size - 5)/11))
 		title_len=$((frac * 5 - 1))
 		channel_len=$((frac * 2))
@@ -196,23 +200,22 @@ format_menu () {
 	fi
 }
 #> Trucating and formatting the fields based on the decided lengths
-format_awk () {
+format_video_data () {
 	printf "%s" "$*" | awk -F'\t' \
 	-v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
 	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
 }
 
 
-
 ############################
 #   Video selection Menu   #
 ############################
 video_menu () {
-	format_awk "$*" | eval "$menu_command"
+	format_video_data "$*" | eval "$menu_command"
 }
 video_menu_img () {
 	title_len=400
-	format_awk "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
+	format_video_data "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "left:50%:noborder:wrap"
 }
@@ -267,11 +270,12 @@ download_thumbnails () {
 	rm -r $thumb_dir/* 1>/dev/null 2>&1
 	i=0
 	while read line; do
-		[ $((i % 2)) -eq 0 ] && { url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" ;}
-		[ $((i % 2)) -eq 1 ] && {
+		if [ $((i % 2)) -eq 0 ]; then
+			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
+		else
 			name="$(echo "$line" | tr -d '"')"
 			{ curl -s "$url" > "$thumb_dir/$name.png" && [ $show_link_only -eq 0 ] && printf "."; } &
-		}
+		fi
 		i=$((i + 1))
 	done << EOF
 $thumb_urls
@@ -345,26 +349,22 @@ scrape_yt () {
 	  --compressed
 	)"
 	if [ -z "$yt_html" ]; then
-		printf "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
-		errinfo
-		exit 2
+		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
+		exit 1 
 	fi
 
 	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
-        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
+        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;')"
 
-	 )"
 	if [ -z "$yt_json" ]; then  
-		printf "\033[31mERROR[#02]: Couldn't find data on site.\033[000m\n"
-		errinfo
-		exit 2
+		print_error "\033[31mERROR[#02]: Couldn't find data on site.\033[000m\n"
+		exit 1
 	fi
 
 	videos_json="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d')"
 	videos_data="$( printf "%s" "$videos_json" |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
-		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p"
-		)"
+		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/\t\|/g;p")"
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails
@@ -388,15 +388,13 @@ get_search_query () {
 				printf "$search_prompt"
 				read search_query
 			fi
-			[ -z "$search_query" ] && {  exit 0; }
+			[ -z "$search_query" ] && exit 0
 		fi
 	fi
 }
 #> To select videos from videos_data
 user_selection () {
 	[ $is_url -eq 1 ] && return
-
-	format_menu 
 
 	if [ $auto_select -eq 1 ] ; then
 		selected_data="$(echo "$videos_data" | sed ${link_count}q )" ;
@@ -419,7 +417,7 @@ user_selection () {
 		[ -z "$surl" ] && continue
 		urls="$urls\nhttps://www.youtube.com/watch?v=$surl"
 		selected_data="$selected_data\n$(echo "$videos_data" | grep -m1 -e "$surl" )"
-	done<<EOF
+	done << EOF
 	$shorturls
 EOF
 	urls="$( printf "$urls" | sed 1d )"
@@ -449,7 +447,7 @@ play_url () {
 		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "\"$(printf "$urls" | tr '\n' '\t' | sed 's_\t_" "_g' )\""
                      # Ctr-C in MPV results in a return code of 4
 	} || {
-		printf "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[000mTry updating youtube-dl\n"; errinfo ; save_before_exit ; exit 2;
+		print_error "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[000mTry updating youtube-dl\n"; save_before_exit ; exit 1;
 	}
 }
 save_before_exit () {
@@ -465,8 +463,8 @@ save_before_exit () {
 #> if the input is a url then skip video selection and play the url
 check_if_url () {
 	# to check if given input is a url
-	regex='^https\?://.*'
-	echo "$1" | grep -q "$regex"
+	url_regex='^https\?://.*'
+	echo "$1" | grep -q "$url_regex"
 	if [ $? -eq 0 ] ; then
 		is_url=1
 		urls="$1"
@@ -486,6 +484,15 @@ get_history () {
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n";
 		exit;
+	fi
+}
+clear_history () {
+	if [ -e "$history_file" ]; then
+		echo "" > "$history_file"
+		printf "History has been cleared\n"
+	else
+		printf "\033[31mHistory file not found, history not cleared\033[000m\n"
+		exit 1
 	fi
 }
 
@@ -547,8 +554,7 @@ parse_opt () {
 				*)
 				    printf "Illegal option --$OPTARG\n"
 				    usageinfo
-				    exit 2;
-				    ;;
+				    exit 2 ;;
 			esac ;;
 		#Short options
 		h) 	helpinfo
@@ -565,8 +571,7 @@ parse_opt () {
 
 		H)	get_history ;;
 
-		x)	[ -e "$history_file" ] && (echo "" > "$history_file") && printf "History has been cleared\n"
-			exit ;;
+		x)	clear_history && exit ;;
 
 		a) 	auto_select=1 ;;
 
@@ -604,6 +609,8 @@ check_if_url "$search_query"
 # If in auto select mode don't download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0; 
 
+#format the menu screen
+format_menu 
 
 #call scrape function
 if [ $scrape -eq 1 ]; then 
