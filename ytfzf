@@ -35,11 +35,9 @@ thumb_dir="$YTFZF_CACHE"/thumb
 #> Setting and reading the config file 
 config_dir="$HOME/.config/ytfzf"
 config_file="$config_dir/conf.sh"
-if [ -e $config_file ]
-then
-    #source config file if exists (overrides env variables)
-    . "$config_file"
-fi
+
+#source config file if exists (overrides env variables)
+[ -e $config_file ] && . "$config_file"
 
 #> config settings 
 search_prompt="${search_prompt-Search Youtube: }"
@@ -108,8 +106,8 @@ printf "\n";
 printf "  For more details refer https://github.com/pystardust/ytfzf\n";
 }
 usageinfo () {
-printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
-printf "     'ytfzf -h' for more information\n";
+    printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
+    printf "     'ytfzf -h' for more information\n";
 }
 print_error () {
     printf "$*"
@@ -138,9 +136,12 @@ format_fzf () {
 
 	#> Get the terminal size to adjust length accordingly
 	t_size="$(stty size 2> /dev/null | cut -f2 -d' ')"
-	if [ "$t_size" = "" ]; then
-	    printf "\e[31mWhen using stdin put - for the search query\033[000m\n" && exit 2
+	#t_size should only be empty if stty errored, and that only happens when using stdin
+	if [ -z "$t_size" ]; then
+	    printf "\e[31mWhen using stdin put - for the search query\033[000m\n"
+	    exit 2
 	fi
+
 	if [ $t_size -lt 75 ]; then
 		# title channel
 		frac=$(((t_size - 1)/4))
@@ -318,7 +319,7 @@ get_search_query () {
 	else
 		if [ -z "$search_query" ]; then
 			if [ $is_ext_menu -eq 1 ]; then 
-				search_query="$(printf "" | $YTFZF_EXTMENU)"
+				search_query="$(eval $YTFZF_EXTMENU)"
 			else
 				printf "$search_prompt"
 				read search_query
