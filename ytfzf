@@ -476,7 +476,7 @@ user_selection () {
 		selected_data="$( video_menu_img "$videos_data" )"
 		stop_ueberzug 
 		# Deletes thumbnails if no video is selected
-		[ -z "$selected_data" ] && delete_thumbnails 
+		[ -z "$selected_data" -a $keep_thumbs -eq 0 ] && delete_thumbnails 
 	#show regular menu
 	else
 		selected_data="$( video_menu "$videos_data" )"
@@ -730,7 +730,7 @@ while true; do
 	
 	#if looping and searching_again aren't on then exit
 	if [ $YTFZF_LOOP -eq 0 -a $search_again -eq 0 ] ; then
-		delete_thumbnails
+		[ $keep_thumbs -eq 0 ] && delete_thumbnails
 		exit
 	fi
 
