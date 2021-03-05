@@ -2,7 +2,7 @@
     <a> <img src=.assets/logo.png></a>
     <br />
     <br />
-    <i>A POSIX script that helps you find Youtube videos (without API) and opens/downloads them using mpv/youtube-dl</i> 
+    <i>A POSIX script that helps you find Youtube videos (without API) and opens/downloads them using mpv/youtube-dl</i>
 	<hr>
 </p>
 
@@ -23,7 +23,7 @@
 <img src=.assets/ytfzf.gif width="100%">
 </p>
 
-## Table of Contents 
+## Table of Contents
 
 _These links will take you where you want to go with the snap of a finger_
 
@@ -44,8 +44,8 @@ Basic Usage: ytfzf [OPTIONS] <search-query>
      -h, --help                           Show this help text
      -t, --thumbnails                     Show thumbnails (requires ueberzug)
                                           Doesn't work with -H -D
-     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf 
-     -H, --choose-from-history            Choose from history 
+     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf
+     -H, --choose-from-history            Choose from history
      -x, --clear-history                  Delete history
      -m, --audio-only   <search-query>    Audio only (for music)
      -d, --download     <search-query>    Download to current directory
@@ -54,7 +54,7 @@ Basic Usage: ytfzf [OPTIONS] <search-query>
      -r  --random-play  <search-query>    Auto play a random result, no selector
      -n, --video-count= <video-count>     To specify number of videos to select with -a or -r
      -l, --loop         <search-query>    Loop: prompt selector again after video ends
-     -s                 <search-query>    After the video ends make another search 
+     -s                 <search-query>    After the video ends make another search
      -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting
   Use - instead of <search-query> for stdin
 ```
@@ -79,13 +79,13 @@ _Videos can be selected using fzf, dmenu or rofi._
 
 ## Examples
 
-+  Search with Thumbnails 
++  Search with Thumbnails
 
-	> Find and watch videos with thumbnail previews 
+	> Find and watch videos with thumbnail previews
 
        ytfzf -t <query>
 
-+  Search without Thumbnails 
++  Search without Thumbnails
 
 	> Find and watch videos without thumbnail previews (good if are on MacOS for example)
 
@@ -103,9 +103,9 @@ _Videos can be selected using fzf, dmenu or rofi._
 
 	- Open using dmenu in a certain format
 
-	 	  ytfzf -fD  
+	 	  ytfzf -fD
 
-+ _If you started watching a video and you wish to change format then 
++ _If you started watching a video and you wish to change format then
 first hit Q to save position and quit mpv, then choose your format using_
 
 	  ytfzf -faH
@@ -140,17 +140,17 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
 + ### Arch based
 
-	  sudo pacman -S jq mpv youtube-dl fzf 
+	  sudo pacman -S jq mpv youtube-dl fzf
 
-	> For thumbnails 
-	
+	> For thumbnails
+
 	  sudo pacman -S ueberzug
 
 + ### Debian based
 
-	  sudo apt install jq mpv youtube-dl fzf 
+	  sudo apt install jq mpv youtube-dl fzf
 
-	> For thumbnails 
+	> For thumbnails
 
 	  pip install ueberzug
 
@@ -173,26 +173,26 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 	```
 
 	- ##### Install with the Makefile
-		
+
 		```sh
 		sudo make install
 		```
 
 	- ##### Uninstall with the Makefile
-	
+
 		```sh
 		sudo make uninstall
 		```
-	
+
 + #### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
-		
+
 		yay -S ytfzf-git
 
 + #### Gentoo users can install ytfzf from the [nitratesky](https://github.com/VTimofeenko/nitratesky) overlay
 
 		eselect repository enable nitratesky
 		emerge -a1 net-misc/ytfzf
-	
+
 ## Configuration
 
 _Default configuration can be set in the configuration file `~/.config/ytfzf/conf.sh` or with environment variables._
@@ -236,13 +236,13 @@ _Default configuration can be set in the configuration file `~/.config/ytfzf/con
 	_If you prefer to watch Youtube videos with certain options without being prompted every single time you can use the following setting_.
 
 	```sh
-	YTFZF_PREF="22"                   
+	YTFZF_PREF="22"
 	```
 
 	_If the preferred format is not available then it will revert back to auto selection._ [_Documentation for ytdl formats_](https://github.com/ytdl-org/youtube-dl#format-selection)
 
-## External-menu command 
-	
+## External-menu command
+
 _The currently supported ones are (dmenu / rofi)_
 
 + ##### To use an external menu you will need to pass in the `-D` option
@@ -261,13 +261,13 @@ _The currently supported ones are (dmenu / rofi)_
 	_Depending on you screen resolution and font size this may need to be modified._
 
   - **First option**
-	
+
 	```sh
 	YTFZF_EXTMENU_LEN=180
 	```
-	
+
   - **Second option**
-	
+
 	```sh
 	YTFZF_EXTMENU_LEN=180 ytfzf -D
 	```
@@ -305,6 +305,7 @@ YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
 ## Bugs ❌
 
 * _dwm with swallow patch: Images don't render when looped (ie, option -l)_
+- _Sometimes thumbnails may not get previewed. This is likely an issue with ueberzug itself. Try deleting `.Xauthority` and relogging._
 
 ## Contacts 🧑🏽‍💻
 
