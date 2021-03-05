@@ -11,8 +11,6 @@
 ###################
 
 #the variables below can either be set here, or using export
-#variables set here will override any set by export
-#if you want to only use export you can remove the variables from here
 
 #enable/disable history (enabled by default)
 #history is stored in $history_file ($YTFZF_CACHE/ytfzf_hst by default, change $history_file to change this)

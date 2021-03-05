@@ -8,6 +8,12 @@
 #         Defaults         #
 ############################
 
+#>reading the config file 
+config_dir="$HOME/.config/ytfzf"
+config_file="$config_dir/conf.sh"
+#source config file if exists
+[ -e $config_file ] && . "$config_file"
+
 #enable/disable history
 YTFZF_HIST=${YTFZF_HIST-1}
 #enable/disable looping
@@ -43,13 +49,6 @@ thumb_dir="$YTFZF_CACHE"/thumb
 #> make folders that don't exist
 [ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
 [ -d $thumb_dir ] || mkdir -p $thumb_dir
-
-#> Setting and reading the config file 
-config_dir="$HOME/.config/ytfzf"
-config_file="$config_dir/conf.sh"
-
-#source config file if exists (overrides env variables)
-[ -e $config_file ] && . "$config_file"
 
 YTFZF_VERSION="1.0.0"
 
@@ -132,7 +131,7 @@ printf "                                          menu and show formats\n"
 printf "     ytfzf -fD --choose-from-history      same as above\n"
 printf "\n"
 printf "  Defaults can be modified through ENV variables or the config file\n";
-printf "  the default config file can be found at https://github.com/pystardust/ytfzf/blob/master/conf.sh\n";
+printf "  the default config file can be found at https://github.com/pystardust/ytfzf/blob/master/docs/conf.sh\n";
 printf "  Defaults:\n";
 printf "     YTFZF_HIST=1                          0 : off history\n";
 printf "     YTFZF_CACHE=~/.cache/ytfzf\n";
