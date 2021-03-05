@@ -87,6 +87,8 @@ show_format=${show_format-0}
 link_count=${link_count-1}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
+#after the video ends $thumb_dir is deleted, when set to 1 this prevents that from happening
+keep_thumbs=${keep_thumbs-0}
 
 #dependency check
 dep_ck () {
@@ -123,6 +125,7 @@ printf "     -l, --loop         <search-query>    Loop: prompt selector again af
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
 printf "\n";
+printf "     --keep-thumbnails                    prevents thumbnails from being deleted after ytfzf is closed\n";
 printf "     --upload-time=     <time-range>      Time range can be one of, last-hour, today, this-week, this-month, this-year\n";
 printf "                   You can also put the filter as it's own option eg: --today\n";
 printf "     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of, upload-date, view-count, rating\n";
@@ -640,6 +643,8 @@ parse_opt () {
 				rating) sort_by_filter="rating" ;;
 
 				filter-id=*|sp=*) sp="${OPTARG#*=}" ;;
+
+				keep-thumbnails) keep_thumbs=1 ;;
 
 				version) 
 				    printf "ytfzf: $YTFZF_VERSION\n"
