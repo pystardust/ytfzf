@@ -75,6 +75,7 @@ show_format=${show_format-0}
 link_count=${link_count-1}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
+sp="${sp-}"
 
 #dependency check
 dep_ck () {
@@ -129,7 +130,7 @@ printf "     ytfzf -fDH                           to show history using external
 printf "                                          menu and show formats\n"
 printf "     ytfzf -fD --choose-from-history      same as above\n"
 printf "\n"
-printf "  Defaults can be modified through ENV variables\n";
+printf "  Defaults can be modified through ENV variables or the config file\n";
 printf "  Defaults:\n";
 printf "     YTFZF_HIST=1                          0 : off history\n";
 printf "     YTFZF_CACHE=~/.cache/ytfzf\n";
@@ -141,6 +142,7 @@ printf "  To use rofi\n";
 printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
 printf "     YTFZF_ENABLE_FZF_DEFAULT_OPTS=0       1 : fzf will use FZF_DEFAULT_OPTS\n";
 printf "\n";
+printf "  Documentation about the config file can be found at https://github.com/pystardust/ytfzf/blob/master/conf.sh\n";
 printf "  For more details refer https://github.com/pystardust/ytfzf\n";
 }
 usageinfo () {

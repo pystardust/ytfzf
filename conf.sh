@@ -1,0 +1,147 @@
+#This is the default config file
+#this file is read when it is placed in the ~/.config/ytfzf directory
+
+#keep in mind that this is a .sh file, and can be used as such
+
+#anything in this config file can be removed, any variable not set here will use the default value,
+    #unless it is set as an environment variable
+
+###################
+#  ENV VARIABLES  #
+###################
+
+#the variables below can either be set here, or using export
+#variables set here will override any set by export
+#if you want to only use export you can remove the setting of the variables from here
+
+#enable/disable history (enabled by default)
+YTFZF_HIST=1
+
+#enable/disable looping (disabled by default)
+#when enabled, after a video ends it will bring up the results menu again
+YTFZF_LOOP=0
+
+#the directory to store cache
+#history, thumbnails, and the currently playing video will be stored here
+YTFZF_CACHE="$HOME/.cache/ytfzf"
+
+#enable/disable ouputting the currently played video
+#when enabled, the currently playing video will be in a file in ~/.cache/$YTFZF_CACHE/ytfzf_cur
+YTFZF_CUR=1
+
+#the format of the video (1080p, 720p, etc)
+#uses the youtube-dl preference system
+#must be a number eg: 22 is 720p
+#setting this to bestaudio is equivelent to -m
+YTFZF_PREF=""
+
+#when -D is given it will use this external menu instead of fzf
+YTFZF_EXTMENU="dmenu -i -l 30 -p Search:"
+
+#the amount of characters that can fit on a line in the external menu
+#tweek this for better formatting if the external menu looks weird
+YTFZF_EXTMENU_LEN=220
+
+#the player to use for playing the video, must be able to stream from youtube-dl
+#vlc also works
+YTFZF_PLAYER="mpv"
+
+#the player to use when choosing a video format with $YTFZF_PREF or -m
+YTFZF_PLAYER_FORMAT="mpv --ytdl-format="
+
+#enable/default ytfzf's use of your $FZF_DEFAULT_OPTS
+YTFZF_ENABLE_FZF_DEFAULT_OPTS=0
+
+###################
+#  OPT VARIABLES  #
+###################
+
+#any variables here can be set with options when running the command
+#see ytfzf --help for more info
+
+#enable/disable using the external menu
+#same as -D
+is_ext_menu=0
+
+#enable/disable viewing of thumbnails (currently only works when using the X display manager)
+#same as -t
+show_thumbnails=0
+
+#enable/disable selecting the first result automatically
+#same as -a
+auto_select=0
+
+#enable/disable selecting a random result
+#same as -r
+random_select=0
+
+#the amount of links to select with -a or -r
+#same as -n{number}
+link_count=1
+
+#enable/disable only showing the selected video's link
+#same as -L
+show_link_only=0
+
+#enable/disable showing the different video formats
+#same as -f
+show_format=0
+
+#the filter id that will be used when searching youtube
+#same as --filter-id={filter}
+#to get a filter id go to youtube search for something, choose the filter you want,
+    #then take the part of the url that says &sp= (excluding the &sp=) and put it here
+#this will override any options having to do with the filter unless you explictly use --filter-id
+
+#some filters have options that you can pass when running ytfzf they will be in parentheses
+
+###############
+#COMMON FILTERS
+###############
+
+#UPLOAD DATE FILTERS
+#last hour: EgIIAQ (--last-hour)
+#today: EgQIAhAB (--today)
+#this week: EgQIAxAB (--this-week)
+#this month: EgQIBBAB (--this-month)
+#this year: EgQIBRAB (--this-year)
+
+#DURATION FILTERS
+#short: EgQQARgB
+#long: EgQQARgC
+
+#FEATURE FILTERS
+#live: EgQQAUAB
+#4k: EgQQAXAB
+#subtitles/cc: EgQQASgB
+
+#SORT BY FILTERS
+#upload date: CAISAhAB (--upload-date)
+#view count: CAMSAhAB (--view-count)
+#rating: CAESAhAB (--rating)
+
+#to combine any of these filters it would be best to go to youtube,
+    #filter how you want, then copy the &sp= part of the url
+sp=""
+
+####################
+#       MISC       #
+####################
+
+#useragent when using curl on youtube
+useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
+
+####################
+#    ULTRA MISC    #
+####################
+
+#these variables are so miscellaneous that
+#they are only here because you CAN set them if you really want
+#and not because they were intended to be changed
+
+#the file for storing watch history
+history_file="$YTFZF_CACHE/ytfzf_hst"
+
+#the file for writing the video that is currently being watched
+current_file="$YTFZF_CACHE/ytfzf_cur"
+
