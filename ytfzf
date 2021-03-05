@@ -126,6 +126,7 @@ printf "     -s                 <search-query>    After the video ends make anot
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
 printf "\n";
 printf "     --keep-thumbnails                    prevents thumbnails from being deleted after ytfzf is closed\n";
+printf "                   Warning: the next time this is off, all thumbnails will be deleted\n";
 printf "     --upload-time=     <time-range>      Time range can be one of, last-hour, today, this-week, this-month, this-year\n";
 printf "                   You can also put the filter as it's own option eg: --today\n";
 printf "     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of, upload-date, view-count, rating\n";
@@ -329,6 +330,11 @@ download_thumbnails () {
 			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
 		else
 			name="$(echo "$line" | tr -d '"')"
+			if [ -e "$thumb_dir/$name.png" ]; then
+				i=$((i + 1))
+				continue
+			fi
+
 			{ curl -s "$url" > "$thumb_dir/$name.png" && [ $show_link_only -eq 0 ] && printf "."; } &
 		fi
 		i=$((i + 1))
@@ -476,7 +482,7 @@ user_selection () {
 		selected_data="$( video_menu_img "$videos_data" )"
 		stop_ueberzug 
 		# Deletes thumbnails if no video is selected
-		[ -z "$selected_data" -a $keep_thumbs -eq 0 ] && delete_thumbnails 
+		[ -z "$selected_data" ] && delete_thumbnails 
 	#show regular menu
 	else
 		selected_data="$( video_menu "$videos_data" )"
@@ -531,6 +537,7 @@ play_url () {
 }
 #> Checks if other sessions are running, if not then deletes thumbnails
 delete_thumbnails () {
+	[ $keep_thumbs -eq 1 ] && return
 	session_count=0
 	while read pid; do
 		[ -d /proc/$pid ] && session_count=$(( session_count + 1 ))
@@ -730,7 +737,7 @@ while true; do
 	
 	#if looping and searching_again aren't on then exit
 	if [ $YTFZF_LOOP -eq 0 -a $search_again -eq 0 ] ; then
-		[ $keep_thumbs -eq 0 ] && delete_thumbnails
+		delete_thumbnails
 		exit
 	fi
 
