@@ -8,44 +8,49 @@
 #         Defaults         #
 ############################
 
+
 #>reading the config file 
 config_dir="$HOME/.config/ytfzf"
 config_file="$config_dir/conf.sh"
 #source config file if exists
 [ -e $config_file ] && . "$config_file"
 
+#for each environment variable, check if it's set in environment,
+    #if set in invironment, use that value
+    #otherwise use the variable set in config, if that's not set, use the default value
+
 #enable/disable history
-YTFZF_HIST=${YTFZF_HIST-1}
+[ -z "$YTFZF_HIST" ] && YTFZF_HIST=${enable_hist-1}
 #enable/disable looping
-YTFZF_LOOP=${YTFZF_LOOP-0}
+[ -z "$YTFZF_LOOP" ] && YTFZF_LOOP=${enable_loop-0}
 #enable/disable outputting current track to $current_file
-YTFZF_CUR=${YTFZF_CUR-1}
+[ -z "$YTFZF_CUR" ] && YTFZF_CUR=${enable_cur-1}
 #the cache directory
-YTFZF_CACHE="${YTFZF_CACHE-$HOME/.cache/ytfzf}"
+[ -z "$YTFZF_CACHE" ] && YTFZF_CACHE="${cache_dir-$HOME/.cache/ytfzf}"
 #video type preference (mp4/1080p, mp4/720p, etc..)
-YTFZF_PREF="${YTFZF_PREF-}"
+[ -z  "$YTFZF_PREF" ] && YTFZF_PREF="${video_pref-}"
 #the menu to use instead of fzf when -D is specified
-YTFZF_EXTMENU="${YTFZF_EXTMENU-dmenu -i -l 30 -p Search:}"
+[ -z "$YTFZF_EXTMENU" ] && YTFZF_EXTMENU="${external_menu-dmenu -i -l 30 -p Search:}"
 #number of columns (characters on a line) the external menu can have
 #necessary for formatting text for external menus
-YTFZF_EXTMENU_LEN=${YTFZF_EXTMENU_LEN-220}
+[ -z "$YTFZF_EXTMENU_LEN" ] && YTFZF_EXTMENU_LEN=${external_menu_len-220}
 
 ## player settings (players need to support streaming with youtube-dl)
 #player to use for watching the video
-YTFZF_PLAYER="${YTFZF_PLAYER-mpv}"
+[ -z "$YTFZF_PLAYER" ] && YTFZF_PLAYER="${video_player-mpv}"
 #if YTFZF_PREF is specified, use this player instead
-YTFZF_PLAYER_FORMAT="${YTFZF_PLAYER_FORMAT-mpv --ytdl-format=}"
+[ -z "$YTFZF_PLAYER_FORMAT" ] && YTFZF_PLAYER_FORMAT="${video_player_format-mpv --ytdl-format=}"
 
 #> Clearing/Enabling fzf_defaults
 #enable/disable the use of FZF_DEFAULT_OPTS
-YTFZF_ENABLE_FZF_DEFAULT_OPTS=${YTFZF_ENABLE_FZF_DEFAULT_OPTS-0}
+[ -z "$YTFZF_ENABLE_FZF_DEFAULT_OPTS" ] && YTFZF_ENABLE_FZF_DEFAULT_OPTS=${enable_fzf_default_opts-0}
 #clear FZF_DEFAULT_OPTS
 [ $YTFZF_ENABLE_FZF_DEFAULT_OPTS -eq 0 ] && FZF_DEFAULT_OPTS=""
 
 #> files and directories
-history_file="$YTFZF_CACHE"/ytfzf_hst
-current_file="$YTFZF_CACHE"/ytfzf_cur
-thumb_dir="$YTFZF_CACHE"/thumb
+history_file="$YTFZF_CACHE/ytfzf_hst"
+current_file="$YTFZF_CACHE/ytfzf_cur"
+thumb_dir="$YTFZF_CACHE/thumb"
 #> make folders that don't exist
 [ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
 [ -d $thumb_dir ] || mkdir -p $thumb_dir

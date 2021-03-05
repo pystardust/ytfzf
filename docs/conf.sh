@@ -10,46 +10,59 @@
 #  ENV VARIABLES  #
 ###################
 
-#the variables below can either be set here, or using export
+#each variable below can be set here, or using export
+#when setting them through export, use the variable in parentheses instead
+#variables set through export will override the ones set here
 
 #enable/disable history (enabled by default)
 #history is stored in $history_file ($YTFZF_CACHE/ytfzf_hst by default, change $history_file to change this)
-YTFZF_HIST=1
+#(YTFZF_HIST)
+enable_hist=1
 
 #enable/disable looping (disabled by default)
 #when enabled, after a video ends it will bring up the results menu again
-YTFZF_LOOP=0
+#(YTFZF_LOOP)
+enable_loop=0
 
 #the directory to store cache
 #history, thumbnails, and the currently playing video will be stored here
-YTFZF_CACHE="$HOME/.cache/ytfzf"
+#(YTFZF_CACHE)
+cache_dir="$HOME/.cache/ytfzf"
 
 #enable/disable writting the selected menu option to a file
 #this file is $YTFZF_CACHE/ytfzf_cur by default, can be changed by changing $current_file
-YTFZF_CUR=1
+#(YTFZF_CUR)
+enable_cur=1
 
 #the format of the video (1080p, 720p, etc)
 #uses the youtube-dl preference system
 #must be a number eg: 22 is 720p
 #setting this to bestaudio is equivelent to -m
-YTFZF_PREF=""
+#(YTFZF_PREF)
+video_pref=""
 
 #when -D is given it will use this external menu instead of fzf
-YTFZF_EXTMENU="dmenu -i -l 30 -p Search:"
+#(YTFZF_EXTMENU)
+external_menu="dmenu -i -l 30 -p Search:"
 
 #the amount of characters that can fit on a line in the external menu
 #tweek this for better formatting if the external menu looks weird
-YTFZF_EXTMENU_LEN=220
+#(YTFZF_EXTMENU_LEN)
+external_menu_len=220
 
 #the player to use for playing the video, must be able to stream from youtube-dl
 #vlc also works
-YTFZF_PLAYER="mpv"
+#(YTFZF_PLAYER)
+video_player="mpv"
 
 #the player to use when choosing a video format with $YTFZF_PREF or -m
-YTFZF_PLAYER_FORMAT="mpv --ytdl-format="
+#(YTFZF_PLAYER_FORMAT)
+video_player_format="mpv --ytdl-format="
 
 #enable/disable ytfzf's use of your $FZF_DEFAULT_OPTS
-YTFZF_ENABLE_FZF_DEFAULT_OPTS=0
+#depending on your fzf settings, this could mess up the formatting of the menu
+#(YTFZF_ENABLE_FZF_DEFAULT_OPTS)
+enable_fzf_default_opts=0
 
 ###################
 #  OPT VARIABLES  #
