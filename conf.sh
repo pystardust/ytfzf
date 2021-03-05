@@ -4,7 +4,7 @@
 #keep in mind that this is a .sh file, and can be used as such
 
 #this config file can be completely empty and ytfzf will still work (as these are the default settings),
-    #so feel free to get rid of anything you don't want
+    #so feel free to get rid of anything you don't want in here
 
 ###################
 #  ENV VARIABLES  #
@@ -15,6 +15,7 @@
 #if you want to only use export you can remove the variables from here
 
 #enable/disable history (enabled by default)
+#history is stored in $history_file ($YTFZF_CACHE/ytfzf_hst by default, change $history_file to change this)
 YTFZF_HIST=1
 
 #enable/disable looping (disabled by default)
@@ -25,8 +26,8 @@ YTFZF_LOOP=0
 #history, thumbnails, and the currently playing video will be stored here
 YTFZF_CACHE="$HOME/.cache/ytfzf"
 
-#enable/disable ouputting the currently played video
-#when enabled, the currently playing video will be in a file in ~/.cache/$YTFZF_CACHE/ytfzf_cur
+#enable/disable writting the selected menu option to a file
+#this file is $YTFZF_CACHE/ytfzf_cur by default, can be changed by changing $current_file
 YTFZF_CUR=1
 
 #the format of the video (1080p, 720p, etc)
@@ -129,14 +130,6 @@ sp=""
 
 #useragent when using curl on youtube
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
-
-####################
-#    ULTRA MISC    #
-####################
-
-#these variables are so miscellaneous that they are only here because,
-    #you CAN set them if you really want to,
-    #not because they were intended to be changed
 
 #the file for storing watch history
 history_file="$YTFZF_CACHE/ytfzf_hst"
