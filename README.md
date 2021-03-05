@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-	<i>Initially this used to be a single line script. But for portability and extensibility I am breaking my vow. If you still are here for the memes then use the line below.</i>
+	<i>Initially this used to be a single line script.</i>
 </p>
 
 
