@@ -330,12 +330,8 @@ download_thumbnails () {
 			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
 		else
 			name="$(echo "$line" | tr -d '"')"
-			if [ -e "$thumb_dir/$name.png" ]; then
-				i=$((i + 1))
-				continue
-			fi
-
-			{ curl -s "$url" > "$thumb_dir/$name.png" && [ $show_link_only -eq 0 ] && printf "."; } &
+			#doesn't download if the image is already there
+			[ -e "$thumb_dir/$name.png" ] || { curl -s "$url" > "$thumb_dir/$name.png" && [ $show_link_only -eq 0 ] && printf "."; } &
 		fi
 		i=$((i + 1))
 	done << EOF
