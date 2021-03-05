@@ -2,7 +2,7 @@
     <a> <img src=.assets/logo.png></a>
     <br />
     <br />
-    <i>A posix script that helps you find Youtube video (without API) and opnes/downloads using mpv/youtube-dl</i> 
+    <i>A POSIX script that helps you find Youtube videos (without API) and opens/downloads them using mpv/youtube-dl</i> 
 	<hr>
 </p>
 
@@ -23,9 +23,9 @@
 <img src=.assets/ytfzf.gif width="100%">
 </p>
 
-## Table of content 
+## Table of Contents 
 
-_Those will bring you to were you need in the snap of a finger_
+_These links will take you where you want to go with the snap of a finger_
 
 - [`Usage instruction`](#Usage-Instructions)
 - [`Features`](#Features)
@@ -81,19 +81,19 @@ _Videos can be selected using fzf, dmenu or rofi._
 
 +  Search with Thumbnails 
 
-	> Find and watch videos with thumbnails preview 
+	> Find and watch videos with thumbnail previews 
 
        ytfzf -t <query>
 
 +  Search without Thumbnails 
 
-	> Find and watch videos without thumbnails preview (good if are on MacOS for example)
+	> Find and watch videos without thumbnail previews (good if are on MacOS for example)
 
 	   ytfzf <query>
 
 +  You can use multiple options together, here are some examples
 
-	- Steam audio (music), and prompt as the music finishes
+	- Stream audio (music), and prompt as the music finishes
 
 		  ytfzf -ml <query>
 
@@ -127,7 +127,7 @@ first hit Q to save position and quit mpv, then choose your format using_
 
 ## Dependencies
 
-_Fzf is optional, you can use external menu (like dmenu) with the `-D` option (no thumbnail support)._
+_Fzf is optional, you can use an external menu (like dmenu) with the `-D` option (no thumbnail support)._
 
 * [`mpv`](https://github.com/mpv-player/mpv)
 * [`youtube-dl`](https://github.com/ytdl-org/youtube-dl)
@@ -160,7 +160,7 @@ _Fzf is optional, you can use external menu (like dmenu) with the `-D` option (n
 
 	  brew install jq mpv youtube-dl fzf
 
-	_As of now thoumbnails preview doesn't work_
+	_At the moment thumbnail previews aren't working on MacOS_
 
 
 ## Installation
@@ -210,14 +210,14 @@ _Default configuration can be set in the configuration file `~/.config/ytfzf/con
 	export YTFZF_ENABLE_FZF_DEFAULT_OPTS=1 # fzf colors are going to be the one from your fzf configuration
 	```
 
-+ ##### One time settings can be specify as showed here
++ ##### You can also specify settings that will be only be used for that specific query
 
 	```sh
 	YTFZF_HIST=0 YTFZF_PREF="bestvideo[height<=?1080]+bestaudio/best" ytfzf  <query>
 	```
 	- _The setting in the config will always override environment variables. This command wouldn't function as expected if_ `YTFZF_HIST=1` _was mentioned in the config file._
 
-	- _This will not include this video in your history and display it in a resolution no more than 1080p._
+	- _The example shown above will launch ytfzf without including the video in your history and it will only display the best resolution available at 1080p or lower._
 
 + ##### This history will be stored in the cache directory as `ytfzf_hst`
 
@@ -229,23 +229,23 @@ _Default configuration can be set in the configuration file `~/.config/ytfzf/con
 
 + ##### Format
 
-	_If you prefer to watch Youtube videos in certain option without the prompting every single time you can use the following setting.
+	_If you prefer to watch Youtube videos with certain options without being prompted every single time you can use the following setting_.
 
 	```sh
 	YTFZF_PREF="22"                   
 	```
 
-	_If the preferred format is not available then, it will go back to auto selection._ [_Documentation for ytdl formats_](https://github.com/ytdl-org/youtube-dl#format-selection)
+	_If the preferred format is not available then it will revert back to auto selection._ [_Documentation for ytdl formats_](https://github.com/ytdl-org/youtube-dl#format-selection)
 
 ## External-menu command 
 	
-_The currently supported one are (dmenu / rofi)_
+_The currently supported ones are (dmenu / rofi)_
 
 + ##### To use an external menu you will need to pass in the `-D` option
 	```sh
 	ytfzf -D
 	```
-	_By default the external menu is set to dmenu `dmenu -i -l 30`. You can modify to this to rofy by_
+	_By default the external menu is set to dmenu `dmenu -i -l 30`. You can modify this to use rofi by using the following settings_
 
 	```sh
 	YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
@@ -253,7 +253,7 @@ _The currently supported one are (dmenu / rofi)_
 
 	> I don't use rofi much, I would love to hear from any rofi user on better defaults.
 
-+ ##### You also may need to modify the width of the output that is being piped into external menu.
++ ##### You also may need to modify the width of the output that is being piped into the external menu.
 	_Depending on you screen resolution and font size this may need to be modified._
 
   - **First option**
