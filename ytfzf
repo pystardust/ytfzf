@@ -36,17 +36,14 @@ YTFZF_ENABLE_FZF_DEFAULT_OPTS=${YTFZF_ENABLE_FZF_DEFAULT_OPTS-0}
 #clear FZF_DEFAULT_OPTS
 [ $YTFZF_ENABLE_FZF_DEFAULT_OPTS -eq 0 ] && FZF_DEFAULT_OPTS=""
 
-#variable used for when this process spawns subprocesses and there needs to be a unique value (ueberzug)
-#this could be any unique value, PPID is used because it is the most easily accessible unique value
-#$RANDOM does not work in POSIX
-[ -z "$PROC_ID" ] && export PROC_ID="$PPID"
-
 #> files and directories
 history_file="$YTFZF_CACHE"/ytfzf_hst
 current_file="$YTFZF_CACHE"/ytfzf_cur
 
-#uses a unique thumbnail dir so thumbnails in 2+ instances of ytfzf don't override each other
-thumb_dir="$YTFZF_CACHE/thumb-$PROC_ID"
+#> stores the pid of running ytfzf sessions
+pid_file="$YTFZF_CACHE"/.pid
+
+thumb_dir="$YTFZF_CACHE/thumb"
 
 #> make folders that don't exist
 [ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
@@ -60,6 +57,13 @@ config_file="$config_dir/conf.sh"
 [ -e $config_file ] && . "$config_file"
 
 YTFZF_VERSION="1.0.0"
+
+#variable used for when this process spawns subprocesses and there needs to be a unique value (ueberzug)
+#this could be any unique value, $$ is used because it is the most easily accessible unique value
+if [ -z "$PROC_ID" ] ; then
+	export PROC_ID="$$" 
+	echo "$$" >> "$pid_file"
+fi
 
 #> config settings 
 search_prompt="${search_prompt-Search Youtube: }"
@@ -275,8 +279,8 @@ video_menu_img () {
 # https://github.com/OliverLew/fontpreview-ueberzug      MIT License
 # Ueberzug related variables
 
-#the is doesn't have to be the PPID it just has to be unique for each instance of the script
-#PPID is the easiest unique value to access that I could think of
+#the is doesn't have to be the $$ it just has to be unique for each instance of the script
+#$$ is the easiest unique value to access that I could think of
 
 FIFO="/tmp/ytfzf-ueberzug-fifo-$PROC_ID"
 ID="ytfzf-ueberzug"
@@ -289,7 +293,7 @@ start_ueberzug () {
 }
 stop_ueberzug () {
     exec 3>&-
-    rm "$FIFO" "$IMAGE" > /dev/null 2>&1
+    rm "$FIFO" > /dev/null 2>&1
 }
 
 preview_img () {
@@ -316,8 +320,6 @@ download_thumbnails () {
 
 	[ $show_link_only -eq 0 ] && printf "Downloading Thumbnails.."
     
-	# removes all the thumbnails in the thumb_dir folder
-	rm -r $thumb_dir/* 1>/dev/null 2>&1
 	i=0
 	while read line; do
 		if [ $((i % 2)) -eq 0 ]; then
@@ -470,6 +472,8 @@ user_selection () {
 		start_ueberzug
 		selected_data="$( video_menu_img "$videos_data" )"
 		stop_ueberzug 
+		# Deletes thumbnails if no video is selected
+		[ -z "$selected_data" ] && delete_thumbnails 
 	#show regular menu
 	else
 		selected_data="$( video_menu "$videos_data" )"
@@ -522,13 +526,22 @@ play_url () {
 		print_error "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[000mTry updating youtube-dl\n"; save_before_exit ; exit 1;
 	}
 }
+#> Checks if other sessions are running, if not then deletes thumbnails
+delete_thumbnails () {
+	session_count=0
+	while read pid; do
+		[ -d /proc/$pid ] && session_count=$(( session_count + 1 ))
+	done < "$pid_file"
+	if [ $session_count -eq 1 ] ; then
+		[ -d $thumb_dir ] && rm -r $thumb_dir
+		printf "" > $pid_file
+	fi
+}
+#> Save and clean up before script exits
 save_before_exit () {
 	[ $is_url -eq 1 ] && exit
 	[ $YTFZF_HIST -eq 1 ] && printf "$selected_data\n" >> "$history_file" ;
 	[ $YTFZF_CUR -eq 1 ] && printf "" > "$current_file" ;
-	#removes thumb_dir and not contents inside
-	#because it's usually unique and it's nice to not have 200 of the same directory
-	rm -r "$thumb_dir"
 }
 
 
@@ -711,7 +724,10 @@ while true; do
 	save_before_exit
 	
 	#if looping and searching_again aren't on then exit
-	[ $YTFZF_LOOP -eq 0 ] && [ $search_again -eq 0 ] && exit;
+	if [ $YTFZF_LOOP -eq 0 -a $search_again -eq 0 ] ; then
+		delete_thumbnails
+		exit
+	fi
 
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
