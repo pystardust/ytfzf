@@ -27,7 +27,7 @@
 
 _Those will bring you to were you need in the snap of a finger_
 
-- [`Usege instruction`](#Usage-Instructions)
+- [`Usage instruction`](#Usage-Instructions)
 - [`Features`](#Features)
 - [`Examples`](#Examples)
 - [`Dependencies`](#Dependencies)
