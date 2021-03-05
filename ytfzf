@@ -75,6 +75,7 @@ show_format=${show_format-0}
 link_count=${link_count-1}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
+#filter id used when searching
 sp="${sp-}"
 
 #dependency check
