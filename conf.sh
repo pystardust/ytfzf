@@ -1,10 +1,10 @@
 #This is the default config file
-#this file is read when it is placed in the ~/.config/ytfzf directory
+#this file is read when it is placed in ~/.config/ytfzf
 
 #keep in mind that this is a .sh file, and can be used as such
 
-#anything in this config file can be removed, any variable not set here will use the default value,
-    #unless it is set as an environment variable
+#this config file can be completely empty and ytfzf will still work (as these are the default settings),
+    #so feel free to get rid of anything you don't want
 
 ###################
 #  ENV VARIABLES  #
@@ -49,7 +49,7 @@ YTFZF_PLAYER="mpv"
 #the player to use when choosing a video format with $YTFZF_PREF or -m
 YTFZF_PLAYER_FORMAT="mpv --ytdl-format="
 
-#enable/default ytfzf's use of your $FZF_DEFAULT_OPTS
+#enable/disable ytfzf's use of your $FZF_DEFAULT_OPTS
 YTFZF_ENABLE_FZF_DEFAULT_OPTS=0
 
 ###################
@@ -93,11 +93,11 @@ show_format=0
     #then take the part of the url that says &sp= (excluding the &sp=) and put it here
 #this will override any options having to do with the filter unless you explictly use --filter-id
 
-#some filters have options that you can pass when running ytfzf they will be in parentheses
+sp=""
 
-###############
 #COMMON FILTERS
-###############
+
+#the parentheses are options you can pass when running ytfzf
 
 #UPLOAD DATE FILTERS
 #last hour: EgIIAQ (--last-hour)
@@ -122,7 +122,6 @@ show_format=0
 
 #to combine any of these filters it would be best to go to youtube,
     #filter how you want, then copy the &sp= part of the url
-sp=""
 
 ####################
 #       MISC       #
@@ -135,13 +134,13 @@ useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko
 #    ULTRA MISC    #
 ####################
 
-#these variables are so miscellaneous that
-#they are only here because you CAN set them if you really want
-#and not because they were intended to be changed
+#these variables are so miscellaneous that they are only here because,
+    #you CAN set them if you really want to,
+    #not because they were intended to be changed
 
 #the file for storing watch history
 history_file="$YTFZF_CACHE/ytfzf_hst"
 
-#the file for writing the video that is currently being watched
+#the file for writing the menu option that was chosen
 current_file="$YTFZF_CACHE/ytfzf_cur"
 
