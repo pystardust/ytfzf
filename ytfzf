@@ -87,7 +87,7 @@ show_format=${show_format-0}
 link_count=${link_count-1}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
-#after the video ends $thumb_dir is deleted, when set to 1 this prevents that from happening
+#when ytfzf is closed $thumb_dir is deleted, when set to 1 this prevents that from happening
 keep_thumbs=${keep_thumbs-0}
 
 #dependency check
