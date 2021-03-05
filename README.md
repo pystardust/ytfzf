@@ -187,7 +187,11 @@ _Fzf is optional, you can use external menu (like dmenu) with the `-D` option (n
 + #### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
 		
 		yay -S ytfzf-git
-        	
+
++ #### Gentoo users can install ytfzf from the [nitratesky](https://github.com/VTimofeenko/nitratesky) overlay
+
+		eselect repository enable nitratesky
+		emerge -a1 net-misc/ytfzf
 	
 ## Configuration
 
