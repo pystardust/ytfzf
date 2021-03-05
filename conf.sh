@@ -12,7 +12,7 @@
 
 #the variables below can either be set here, or using export
 #variables set here will override any set by export
-#if you want to only use export you can remove the setting of the variables from here
+#if you want to only use export you can remove the variables from here
 
 #enable/disable history (enabled by default)
 YTFZF_HIST=1
