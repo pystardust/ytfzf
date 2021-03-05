@@ -59,6 +59,8 @@ config_file="$config_dir/conf.sh"
 #source config file if exists (overrides env variables)
 [ -e $config_file ] && . "$config_file"
 
+YTFZF_VERSION="1.0.0"
+
 #> config settings 
 search_prompt="${search_prompt-Search Youtube: }"
 #used when getting the html from youtube
@@ -101,6 +103,7 @@ helpinfo () {
 printf "Usage: %bytfzf [OPTIONS] %b<search-query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
 printf "  OPTIONS:\n"
 printf "     -h, --help                           Show this help text\n";
+printf "     -v, --version                        -v for ytfzf's version, --version for ytfzf + youtube-dl's version\n"; 
 printf "     -t, --thumbnails                     Show thumbnails (requires ueberzug)\n";
 printf "                                          Doesn't work with -H -D\n";
 printf "     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf \n";
@@ -624,6 +627,12 @@ parse_opt () {
 				rating) sort_by_filter="rating" ;;
 
 				filter-id=*|sp=*) sp="${OPTARG#*=}" ;;
+
+				version) 
+				    printf "ytfzf: $YTFZF_VERSION\n"
+				    printf "youtube-dl: $(youtube-dl --version)\n"
+				    exit;
+				    ;;
 				
 				*)
 				    printf "Illegal option --$OPTARG\n"
@@ -657,6 +666,10 @@ parse_opt () {
 
 		t) 	show_thumbnails=1 ;;
 
+		v)	printf "ytfzf: $YTFZF_VERSION\n"
+			exit;
+			;;
+
 		L) 	show_link_only=1 ;;
 
 		n)	link_count="$OPTARG" ;;
@@ -672,8 +685,7 @@ parse_opt () {
 	esac
 }
 
-
-while getopts "LhDmdfxHarltsn:U:-:" opt; do
+while getopts "LhDmdfxHarltsvn:U:-:" opt; do
     parse_opt "$opt" "$OPTARG"
 done
 shift $((OPTIND-1))
