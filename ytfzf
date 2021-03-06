@@ -564,6 +564,23 @@ clear_history () {
 	fi
 }
 
+update_ytfzf () {
+	#check for root privileges
+	if [ $(id -u) -ne 0 ]; then
+		printf "Missing root privileges, run again as root\n"
+		exit 126
+	fi
+	#clone repo into temp directory
+	git clone https://github.com/pystardust/ytfzf .clone-ytfzf-tmp
+	#go into directory and install
+	cd .clone-ytfzf-tmp
+	make install
+	#leave directory and remove the temp directory
+	cd ..
+	rm -r .clone-ytfzf-tmp
+	exit
+}
+
 #is used to know whether or not scraping the search page is necessary
 scrape=1
 #OPT
@@ -619,22 +636,7 @@ parse_opt () {
 
 				filter-id=*|sp=*) sp="${OPTARG#*=}" ;;
 
-				update) 
-				    #check for root privileges
-				    if [ $(id -u) -ne 0 ]; then
-					printf "Missing root privileges, run again as root\n"
-					exit 126
-				    fi
-				    #clone repo into temp directory
-				    git clone https://github.com/pystardust/ytfzf .clone-ytfzf-tmp
-				    #go into directory and install
-				    cd .clone-ytfzf-tmp
-				    make install
-				    #leave directory and remove the temp directory
-				    cd ..
-				    rm -r .clone-ytfzf-tmp
-				    exit
-				    ;;
+				update) update_ytfzf ;;
 
 				version) 
 				    printf "ytfzf: $YTFZF_VERSION\n"
