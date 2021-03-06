@@ -565,10 +565,11 @@ clear_history () {
 }
 
 update_ytfzf () {
-	curl https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf > ytfzf-tmp
-	chmod 755 ytfzf-tmp
-	sudo cp ytfzf-tmp "/usr/local/bin/ytfzf"
-	rm ytfzf-tmp
+	updatefile="/tmp/ytfzf-update"
+	curl "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" > "$updatefile"
+	chmod 755 "$updatefile"
+	sudo cp "$updatefile" "/usr/local/bin/ytfzf"
+	rm "$updatefile"
 	exit
 }
 
