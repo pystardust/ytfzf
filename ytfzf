@@ -79,6 +79,10 @@ search_again=${search_again-0}
 #needs to be exported because ueberzug spawns subprocesses
 [ -z "$PREVIEW_SIDE" ] && export PREVIEW_SIDE="${preview_side-left}"
 
+#used for thumbnail previews in ueberzug (getting lines + cols later is inconsistent)
+[ -z "$TTY_LINES" ] && export TTY_LINES="$(tput lines)"
+[ -z "$TTY_COLS" ] && export TTY_COLS="$(tput cols)"
+
 #dependency check
 dep_ck () {
 	for dep in "$@"; do
@@ -298,7 +302,7 @@ preview_img () {
 	case "$PREVIEW_SIDE" in
 	    right)
 		thumb_y=10
-		thumb_x=$(($(tput cols) / 2 + 3))
+		thumb_x=$(($TTY_COLS / 2 + 3))
 		;;
 	    left)
 		thumb_y=10
@@ -307,12 +311,12 @@ preview_img () {
 	    top)
 		thumb_height=$((HEIGHT - 5))
 		thumb_y=2
-		thumb_x=$(($(tput cols) / 2 + 3))
+		thumb_x=$(($TTY_COLS / 2 + 3))
 		;;
 	    bottom)
 		thumb_height=$((HEIGHT - 5))
-		thumb_y=$(($(tput lines) / 2 + 3))
-		thumb_x=$(($(tput cols) / 2 + 3))
+		thumb_y=$(($TTY_LINES / 2 + 3))
+		thumb_x=$(($TTY_COLS / 2 + 3))
 		;;
 	esac
 
