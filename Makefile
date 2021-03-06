@@ -1,12 +1,13 @@
 PROG=ytfzf
 
-PREFIX = /usr/local
+PREFIX = /usr/bin
 
 install:
 	chmod 755 $(PROG)
-	install ${PROG} ${DESTDIR}${PREFIX}/bin/${PROG}
+	mkdir -p ${DESTDIR}${PREFIX}
+	install ${PROG} ${DESTDIR}${PREFIX}/${PROG}
 
 uninstall:
-	rm -f ${DESTDIR}${PREFIX}/bin/${PROG}
+	rm -f ${DESTDIR}${PREFIX}/${PROG}
 
 .PHONY: install uninstall
