@@ -126,6 +126,9 @@ printf "                   Filters may not work especially when the filter sorts
 printf "                   In addition this overrides any filter provided through options\n";
 printf "                   Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[000m\n";
 printf "                   This will filter by livestream\n";
+printf "\n";
+printf "     --update                             clones the latest commit and installs it\n";
+printf "                   on Arch ytfzf is available in the AUR\n";
 printf "  Use - instead of <search-query> for stdin\n";
 printf "\n"
 printf "  Option usage:\n"
@@ -589,6 +592,14 @@ clear_history () {
 	fi
 }
 
+update_ytfzf () {
+	curl https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf > ytfzf-tmp
+	chmod 755 ytfzf-tmp
+	sudo cp ytfzf-tmp "/usr/local/bin/ytfzf"
+	rm ytfzf-tmp
+	exit
+}
+
 #is used to know whether or not scraping the search page is necessary
 scrape=1
 #OPT
@@ -644,7 +655,10 @@ parse_opt () {
 
 				filter-id=*|sp=*) sp="${OPTARG#*=}" ;;
 
+
 				previews=*) export PREVIEW_SIDE="${OPTARG#*=}" ;;
+
+				update) update_ytfzf ;;
 
 				version) 
 				    printf "ytfzf: $YTFZF_VERSION\n"
