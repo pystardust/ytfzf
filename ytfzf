@@ -75,6 +75,9 @@ show_format=${show_format-0}
 link_count=${link_count-1}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
+#the side where thumbnails are shown
+#needs to be exported because ueberzug spawns subprocesses
+[ -z "$PREVIEW_SIDE" ] && export PREVIEW_SIDE="${preview_side-left}"
 
 #dependency check
 dep_ck () {
@@ -111,6 +114,7 @@ printf "     -l, --loop         <search-query>    Loop: prompt selector again af
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
 printf "\n";
+printf "     --previews=       <left/right>      the side of the screen to show thumbnails\n";
 printf "     --upload-time=     <time-range>      Time range can be one of, last-hour, today, this-week, this-month, this-year\n";
 printf "                   You can also put the filter as it's own option eg: --today\n";
 printf "     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of, upload-date, view-count, rating\n";
@@ -259,7 +263,7 @@ video_menu_img () {
 	#for thumbnails, fzf is always used
 	format_video_data "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview "sh $0 -U {}" \
-        	--preview-window "left:50%:noborder:wrap"
+        	--preview-window "$PREVIEW_SIDE:50%:noborder:wrap"
 }
 
 
@@ -288,11 +292,35 @@ stop_ueberzug () {
 
 preview_img () {
 	shorturl="$(echo "$@" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
+
+	thumb_width=$WIDTH
+	thumb_height=$((HEIGHT - 2))
+	case "$PREVIEW_SIDE" in
+	    right)
+		thumb_y=10
+		thumb_x=$(($(tput cols) + 6))
+		;;
+	    left)
+		thumb_y=10
+		thumb_x=2
+		;;
+	    top)
+		thumb_height=$((HEIGHT - 7))
+		thumb_y=8
+		thumb_x=2
+		;;
+	    bottom)
+		thumb_height=$((HEIGHT - 7))
+		thumb_y=$(($(tput lines) + 12))
+		thumb_x=2
+		;;
+	esac
+
 	# In fzf the cols and lines are those of the preview pane
 	IMAGE="$thumb_dir/$shorturl.png"
 	{   printf '{ "action": "add", "identifier": "%s", "path": "%s",' "$ID" "$IMAGE"
-	    printf '"x": %d, "y": %d, "scaler": "fit_contain",' 2 10
-	    printf '"width": %d, "height": %d }\n' "$WIDTH" "$((HEIGHT - 2))"
+	    printf '"x": %d, "y": %d, "scaler": "fit_contain",' $thumb_x $thumb_y
+	    printf '"width": %d, "height": %d }\n' "$thumb_width" "$thumb_height"
 	} > "$FIFO" 
 	echo "$@" |  tr -d '|' | sed "s/ *""$(printf '\t')""/""$(printf '\t')""/g" | awk -F"$(printf '\t')" \
 	'{ printf "\n%s\nChannel: %s\nViews: %s\nDuration: %s\nUploaded %s\n",$1,$2,$4,$3,$5}'
@@ -627,6 +655,9 @@ parse_opt () {
 				rating) sort_by_filter="rating" ;;
 
 				filter-id=*|sp=*) sp="${OPTARG#*=}" ;;
+
+
+				previews=*) export PREVIEW_SIDE="${OPTARG#*=}" ;;
 
 				update) update_ytfzf ;;
 
