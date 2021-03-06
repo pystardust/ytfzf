@@ -99,6 +99,11 @@ show_link_only=0
 #same as -f
 show_format=0
 
+#the side to show thumbnails
+#options are "left", "right", "top", "bottom"
+#same as --previews=
+preview_side="left"
+
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
 #to get a filter id go to youtube search for something, choose the filter you want,
