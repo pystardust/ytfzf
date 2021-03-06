@@ -2,19 +2,16 @@
     <a> <img src=.assets/logo.png></a>
     <br />
     <br />
-    <i>A POSIX script that helps you find Youtube videos (without API) and opens/downloads them using mpv/youtube-dl</i>
+	<a href="https://github.com/pystardust/ytfzf/stargazers"><img src="https://img.shields.io/github/stars/pystardust/ytfzf?color=orange&logo=github&style=flat-square"></a>
+	<a href="https://github.com/pystardust/ytfzf/graphs/contributors"><img src="https://img.shields.io/github/contributors/pystardust/ytfzf?style=flat-square"></a>
+	<a href="https://github.com/pystardust/ytfzf/releases/tag/v1.0.0"><img src="https://img.shields.io/github/v/tag/pystardust/ytfzf?style=flat-square"> </a>
+	<a href="https://github.com/pystardust/ytfzf/commits/master"><img src="https://img.shields.io/github/commit-activity/m/pystardust/ytfzf?color=green&style=flat-square"></a>
+	<a href="https://discord.gg/eE4WxBEC"><img src="https://img.shields.io/discord/815609275644117022?color=yellow&logo=discord&style=flat-square" alt="Discord"></a>
+    <br />
+    <br />
+    <i>A POSIX script that helps you find Youtube videos (without API) and opens/downloads them using mpv/youtube-dl</i> 
 	<hr>
 </p>
-
-<p align="center">
-	<i>Initially this used to be a single line script.</i>
-</p>
-
-
-```sh
-#!/bin/sh
-[ -z "$*" ] || curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" |  pup 'script' | grep  "^ *var ytInitialData" | sed 's/^[^=]*=//g;s/;$//' | jq '..|.videoRenderer?' | sed '/^null$/d' | jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'| sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{60}).*/\1/;N;s/\n(.{30}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" | column -t  -s "$(printf "\t")" | fzf --delimiter='\|' --nth=1,2  | sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_' | xargs -r -I'{}' mpv {}
-```
 
 <h2 align="center">
 	This is a little showcase
@@ -35,6 +32,12 @@ _These links will take you where you want to go with the snap of a finger_
 - [`Configuration`](#Configuration)
 - [`External menu command (dmenu / rofi)`](#External-menu-command)
 
+_Initially this used to be a single line script._
+
+```sh
+#!/bin/sh
+[ -z "$*" ] || curl "https://www.youtube.com/results" -s -G --data-urlencode "search_query=$*" |  pup 'script' | grep  "^ *var ytInitialData" | sed 's/^[^=]*=//g;s/;$//' | jq '..|.videoRenderer?' | sed '/^null$/d' | jq '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId'| sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n "s/(.{60}).*/\1/;N;s/\n(.{30}).*/\n\1/;N;N;N;N;s/\n/\t|/g;p" | column -t  -s "$(printf "\t")" | fzf --delimiter='\|' --nth=1,2  | sed -E 's_.*\|([^|]*)$_https://www.youtube.com/watch?v=\1_' | xargs -r -I'{}' mpv {}
+```
 
 ## Usage-Instructions
 
@@ -306,9 +309,3 @@ YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
 
 * _dwm with swallow patch: Images don't render when looped (ie, option -l)_
 - _Sometimes thumbnails may not get previewed. This is likely an issue with ueberzug itself. Try deleting `.Xauthority` and relogging._
-
-## Contacts 🧑🏽‍💻
-
-- You can join the discord server
-
-<a href="https://discord.gg/KnGrq6RK"><img src="https://img.shields.io/discord/815609275644117022.svg?label=discord&logo=discord" alt="Discord"></a>
