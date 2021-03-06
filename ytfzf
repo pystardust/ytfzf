@@ -298,21 +298,21 @@ preview_img () {
 	case "$PREVIEW_SIDE" in
 	    right)
 		thumb_y=10
-		thumb_x=$(($(tput cols) + 6))
+		thumb_x=$(($(tput cols) / 2 + 3))
 		;;
 	    left)
 		thumb_y=10
 		thumb_x=2
 		;;
 	    top)
-		thumb_height=$((HEIGHT - 7))
-		thumb_y=8
-		thumb_x=2
+		thumb_height=$((HEIGHT - 5))
+		thumb_y=2
+		thumb_x=$(($(tput cols) / 2 + 3))
 		;;
 	    bottom)
-		thumb_height=$((HEIGHT - 7))
-		thumb_y=$(($(tput lines) + 12))
-		thumb_x=2
+		thumb_height=$((HEIGHT - 5))
+		thumb_y=$(($(tput lines) / 2 + 3))
+		thumb_x=$(($(tput cols) / 2 + 3))
 		;;
 	esac
 
