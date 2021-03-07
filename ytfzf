@@ -416,6 +416,24 @@ get_yt_json () {
         sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;')"
 }
 
+get_yt_html () {
+    link="$1"
+    query="$2"
+    yt_html="$(
+	curl "$link" -s \
+	  -G --data-urlencode "search_query=$query" \
+	  -G --data-urlencode "sp=$sp" \
+	  -H 'authority: www.youtube.com' \
+	  -H "user-agent: $useragent" \
+	  -H 'accept-language: en-US,en;q=0.9' \
+	  --compressed
+    )"
+    if [ -z "$yt_html" ]; then
+	    print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
+	    exit 1 
+    fi
+}
+
 scrape_subscriptions () {
 	if [ ! -e "$subscriptions_file" ]; then
 		printf "\033[31mERROR[#05]: \"$subscriptions_file\" not found\033[000m\n"
@@ -426,20 +444,10 @@ scrape_subscriptions () {
 	#get each channel link
 	channel_links="$(echo "$subscriptions" | jq '.[].link' | tr '"' ' ')"
 	for link in $channel_links; do
-	    yt_html="$(
-		curl $link -s \
-		    -H 'authority: www.youtube.com' \
-		    -H "user-agent: $useragent" \
-		    -H "accept-language: en-US,en;q=0.9" \
-		    --compressed
-	    )"
+	    get_yt_html "$link"
+	    #gets the channel name from title of page
 	    channel_name="$(echo "$yt_html" | pup 'title' | grep -o "\\s.*-" | tr '-' ' ')"
-	    #if there's no html
-	    if [ -z "$yt_html" ]; then
-		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
-		exit 1 
-	    fi
-	    
+	    #gets json of videos
 	    get_yt_json
 	    #gets a list of videos
 	    videos_json="$(printf "%s" "$yt_json" | jq '..|.gridVideoRenderer?' | sed '/^null$/d')"
@@ -453,6 +461,9 @@ $channel_name
 	    videos_data="$(printf "%s" "$videos_json" |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,.publishedTimeText.simpleText,.videoId' |\
 		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/""$(printf '\t')""\|/g;p" | sed ${link_count}q)"
+	    #if there aren't videos
+	    [ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
+	    
 	    [ $show_thumbnails -eq 1 ] && download_thumbnails
 
 	    #adds the new videos to the previously gotten videos
@@ -473,20 +484,7 @@ scrape_yt () {
 		sp="${sp%%%*}"
 	fi
 
-	yt_html="$(
-	curl 'https://www.youtube.com/results' -s \
-	  -G --data-urlencode "search_query=$*" \
-	  -G --data-urlencode "sp=$sp" \
-	  -H 'authority: www.youtube.com' \
-	  -H "user-agent: $useragent" \
-	  -H 'accept-language: en-US,en;q=0.9' \
-	  --compressed
-	)"
-	#if there's no html
-	if [ -z "$yt_html" ]; then
-		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
-		exit 1 
-	fi
+	get_yt_html "https://www.youtube.com/results" "$*"
 
 	get_yt_json
 
