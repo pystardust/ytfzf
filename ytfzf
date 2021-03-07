@@ -628,74 +628,76 @@ update_ytfzf () {
 #is used to know whether or not scraping the search page is necessary
 scrape=1
 #OPT
+parse_long_opt () {
+	opt="$1"
+	#if the option has a short version it calls this function with the opt as the shortopt
+	case "${opt}" in
+	        help) parse_opt "h" ;;
+
+		ext-menu) parse_opt "D" ;;
+
+		download) parse_opt "d" ;;
+
+		choose-from-history) parse_opt "H" ;;
+
+		clear-history) parse_opt "x" ;;
+
+		random-select) parase_opt "r" ;;
+		search) parse_opt "s" ;;
+
+
+		loop) parse_opt "l" ;;
+
+		thumbnails) parse_opt "t" ;;
+
+		link-only) parse_opt "L" ;;
+
+		video-count=*) parse_opt "n" "${opt#*=}" ;;
+
+		audio-only) parse_opt "m" ;;
+
+		auto-play) parse_opt "a" ;;
+
+		random-auto-play) parse_opt "r" ;;
+
+		upload-time=*) upload_date_filter="${opt#*=}" ;;
+		last-hour) upload_date_filter="last-hour" ;;
+		today) upload_date_filter="today" ;;
+		this-week) upload_date_filter="this-week" ;;
+		this-month) upload_date_filter="this-month" ;;
+		this-year) upload_date_filter="this-year" ;;
+
+		upload-sort=*) sort_by_filter="${opt#*=}" ;;
+		upload-date) sort_by_filter="upload-date" ;;
+		view-count) sort_by_filter="view-count" ;;
+		rating) sort_by_filter="rating" ;;
+
+		filter-id=*|sp=*) sp="${opt#*=}" ;;
+
+
+		previews=*) export PREVIEW_SIDE="${opt#*=}" ;;
+
+		update) update_ytfzf ;;
+
+		version) 
+		    printf "ytfzf: $YTFZF_VERSION\n"
+		    printf "youtube-dl: $(youtube-dl --version)\n"
+		    exit ;;
+				
+		*)
+		    printf "Illegal option --$opt\n"
+		    usageinfo
+		    exit 2 ;;
+	esac
+}
 parse_opt () {
 	#the first arg is the option
-	opt=$1
+	opt="$1"
 	#second arg is the optarg 
 	OPTARG="$2"
 	case ${opt} in
 		#Long options
-		-)
-			#if the option has a short version it calls this function with the opt as the shortopt
-			case "${OPTARG}" in
-			        help) parse_opt "h" ;;
-
-				ext-menu) parse_opt "D" ;;
-
-				download) parse_opt "d" ;;
-
-				choose-from-history) parse_opt "H" ;;
-
-				clear-history) parse_opt "x" ;;
-
-				random-select) parase_opt "r" ;;
-				search) parse_opt "s" ;;
-
-
-				loop) parse_opt "l" ;;
-
-				thumbnails) parse_opt "t" ;;
-
-				link-only) parse_opt "L" ;;
-
-				video-count=*) parse_opt "n" "${OPTARG#*=}" ;;
-
-				audio-only) parse_opt "m" ;;
-
-				auto-play) parse_opt "a" ;;
-
-				random-auto-play) parse_opt "r" ;;
-
-				upload-time=*) upload_date_filter="${OPTARG#*=}" ;;
-				last-hour) upload_date_filter="last-hour" ;;
-				today) upload_date_filter="today" ;;
-				this-week) upload_date_filter="this-week" ;;
-				this-month) upload_date_filter="this-month" ;;
-				this-year) upload_date_filter="this-year" ;;
-
-				upload-sort=*) sort_by_filter="${OPTARG#*=}" ;;
-				upload-date) sort_by_filter="upload-date" ;;
-				view-count) sort_by_filter="view-count" ;;
-				rating) sort_by_filter="rating" ;;
-
-				filter-id=*|sp=*) sp="${OPTARG#*=}" ;;
-
-
-				previews=*) export PREVIEW_SIDE="${OPTARG#*=}" ;;
-
-				update) update_ytfzf ;;
-
-				version) 
-				    printf "ytfzf: $YTFZF_VERSION\n"
-				    printf "youtube-dl: $(youtube-dl --version)\n"
-				    exit;
-				    ;;
-				
-				*)
-				    printf "Illegal option --$OPTARG\n"
-				    usageinfo
-				    exit 2 ;;
-			esac ;;
+		-)	parse_long_opt "$OPTARG" ;;
 		#Short options
 		h) 	helpinfo
 			exit ;;
@@ -724,8 +726,7 @@ parse_opt () {
 		t) 	show_thumbnails=1 ;;
 
 		v)	printf "ytfzf: $YTFZF_VERSION\n"
-			exit;
-			;;
+			exit ;;
 
 		L) 	show_link_only=1 ;;
 
@@ -755,8 +756,7 @@ if [ ! -t 0 ]; then
 	done
 fi
 [ -n "$search_query" ] && is_stdin=1 || is_stdin=0
-search_query="${search_query-$*}"
-check_if_url "$search_query" 
+check_if_url "${search_query:=$*}" 
 # If in auto select mode don't download thumbnails
 [ $auto_select -eq 1 -o $random_select -eq 1 ] && show_thumbnails=0; 
 
