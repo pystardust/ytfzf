@@ -4,6 +4,8 @@
 #> https://github.com/pystardust/ytfzf
 ######################################
 
+YTFZF_VERSION="1.0.0"
+
 ############################
 #         Defaults         #
 ############################
@@ -53,22 +55,11 @@ current_file="$YTFZF_CACHE/ytfzf_cur"
 thumb_dir="$YTFZF_CACHE/thumb"
 
 #> stores the pid of running ytfzf sessions
-pid_file="$YTFZF_CACHE"/.pid
-
+pid_file="$YTFZF_CACHE/.pid"
 thumb_dir="$YTFZF_CACHE/thumb"
-
 #> make folders that don't exist
 [ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
 [ -d $thumb_dir ] || mkdir -p $thumb_dir
-
-YTFZF_VERSION="1.0.0"
-
-#variable used for when this process spawns subprocesses and there needs to be a unique value (ueberzug)
-#this could be any unique value, $$ is used because it is the most easily accessible unique value
-if [ -z "$PROC_ID" ] ; then
-	export PROC_ID="$$" 
-	echo "$$" >> "$pid_file"
-fi
 
 #> config settings 
 search_prompt="${search_prompt-Search Youtube: }"
@@ -95,15 +86,19 @@ search_again=${search_again-0}
 #filter id used when searching
 sp="${sp-}"
 
-
+#ueberzug related variables
 #the side where thumbnails are shown
 #needs to be exported because ueberzug spawns subprocesses
 [ -z "$PREVIEW_SIDE" ] && export PREVIEW_SIDE="${preview_side-left}"
-
 #used for thumbnail previews in ueberzug (getting lines + cols later is inconsistent)
 [ -z "$TTY_LINES" ] && export TTY_LINES="$(tput lines)"
 [ -z "$TTY_COLS" ] && export TTY_COLS="$(tput cols)"
-
+#variable used for when this process spawns subprocesses and there needs to be a unique value (ueberzug)
+#this could be any unique value, $$ is used because it is the most easily accessible unique value
+if [ -z "$PROC_ID" ] ; then
+	export PROC_ID="$$" 
+	echo "$$" >> "$pid_file"
+fi
 
 #dependency check
 dep_ck () {
@@ -213,37 +208,28 @@ format_fzf () {
 	date_len=14
 	url_len=12
 
-	#> Get the terminal size to adjust length accordingly
-	    #"terminal size" is the number of columns (characters that fit in a line)
-	t_size="$(stty size 2> /dev/null | cut -f2 -d' ')"
-	#t_size should only be empty if stty errored, and that only happens when using stdin
-	if [ -z "$t_size" ]; then
-	    printf "\e[31mWhen using stdin put - for the search query\033[000m\n"
-	    exit 2
-	fi
-
 	#*_len works the same as it does in format_ext_menu
 	#show title, channel
-	if [ $t_size -lt 75 ]; then
-		frac=$(((t_size - 1)/4))
+	if [ $TTY_COLS -lt 75 ]; then
+		frac=$(((TTY_COLS - 1)/4))
 		title_len=$((frac * 3))
 		channel_len=$((frac * 1 + 7))
 	#show title, channel, time
-	elif [ $t_size -lt 95 ]; then
-		frac=$(((t_size - 4)/8))
+	elif [ $TTY_COLS -lt 95 ]; then
+		frac=$(((TTY_COLS - 4)/8))
 		title_len=$((frac * 5 - 1))
 		channel_len=$((frac * 2 - 1))
 		dur_len=$((frac * 1 + 10))
 	#show title, channel, time, views
-	elif [ $t_size -lt 110 ]; then
-		frac=$(((t_size - 1)/9))
+	elif [ $TTY_COLS -lt 110 ]; then
+		frac=$(((TTY_COLS - 1)/9))
 		title_len=$((frac * 5 ))
 		channel_len=$((frac * 2 ))
 		dur_len=$((frac * 1))
 		view_len=$((frac * 1 + 7))
 	#show title, channel, time, views, date
 	else
-		frac=$(((t_size - 5)/11))
+		frac=$(((TTY_COLS - 5)/11))
 		title_len=$((frac * 5 - 1))
 		channel_len=$((frac * 2))
 		dur_len=$((frac * 1))
@@ -257,11 +243,7 @@ format_menu () {
 		#dep_ck fzf here because it is only necessary to use here
 		dep_ck "fzf"
 		menu_command='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS'
-		if [ $is_stdin -eq 0 ] ; then
-			format_fzf 
-		else 
-			format_ext_menu
-		fi
+		format_fzf 
 	else
 		# dmenu doesnt render tabs so removing it
 		menu_command='tr -d "$(printf "\t")" | '"$YTFZF_EXTMENU"
@@ -323,24 +305,20 @@ preview_img () {
 
 	thumb_width=$WIDTH
 	thumb_height=$((HEIGHT - 2))
+	#most common x, y positions
+	thumb_x=$(($TTY_COLS / 2 + 3))
+	thumb_y=10
 	case "$PREVIEW_SIDE" in
-	    right)
-		thumb_y=10
-		thumb_x=$(($TTY_COLS / 2 + 3))
-		;;
 	    left)
-		thumb_y=10
 		thumb_x=2
 		;;
 	    top)
 		thumb_height=$((HEIGHT - 5))
 		thumb_y=2
-		thumb_x=$(($TTY_COLS / 2 + 3))
 		;;
 	    bottom)
 		thumb_height=$((HEIGHT - 5))
 		thumb_y=$(($TTY_LINES / 2 + 3))
-		thumb_x=$(($TTY_COLS / 2 + 3))
 		;;
 	esac
 
@@ -481,24 +459,17 @@ scrape_yt () {
 ############################
 #> To get search query
 get_search_query () {
-	if [ $is_stdin -eq 1 ]; then
-		#appends stdin to search_query until the end of stdin is reached
-		while read line; do
-			search_query="$search_query $line"
-		done
-	else
-		#in case no query was provided
-		if [ -z "$search_query" ]; then
-			if [ $is_ext_menu -eq 1 ]; then 
-				#when using an external menu, the query will be done there
-				search_query="$(printf "" | $YTFZF_EXTMENU)"
-			else
-				#otherwise use the search prompt
-				printf "$search_prompt"
-				read search_query
-			fi
-			[ -z "$search_query" ] && exit 0
+	#in case no query was provided
+	if [ -z "$search_query" ]; then
+		if [ $is_ext_menu -eq 1 ]; then 
+			#when using an external menu, the query will be done there
+			search_query="$(printf "" | $YTFZF_EXTMENU)"
+		else
+			#otherwise use the search prompt
+			printf "$search_prompt"
+			read search_query
 		fi
+		[ -z "$search_query" ] && exit 0
 	fi
 }
 #> To select videos from videos_data
@@ -644,74 +615,76 @@ update_ytfzf () {
 #is used to know whether or not scraping the search page is necessary
 scrape=1
 #OPT
+parse_long_opt () {
+	opt="$1"
+	#if the option has a short version it calls this function with the opt as the shortopt
+	case "${opt}" in
+	        help) parse_opt "h" ;;
+
+		ext-menu) parse_opt "D" ;;
+
+		download) parse_opt "d" ;;
+
+		choose-from-history) parse_opt "H" ;;
+
+		clear-history) parse_opt "x" ;;
+
+		random-select) parase_opt "r" ;;
+		search) parse_opt "s" ;;
+
+
+		loop) parse_opt "l" ;;
+
+		thumbnails) parse_opt "t" ;;
+
+		link-only) parse_opt "L" ;;
+
+		video-count=*) parse_opt "n" "${opt#*=}" ;;
+
+		audio-only) parse_opt "m" ;;
+
+		auto-play) parse_opt "a" ;;
+
+		random-auto-play) parse_opt "r" ;;
+
+		upload-time=*) upload_date_filter="${opt#*=}" ;;
+		last-hour) upload_date_filter="last-hour" ;;
+		today) upload_date_filter="today" ;;
+		this-week) upload_date_filter="this-week" ;;
+		this-month) upload_date_filter="this-month" ;;
+		this-year) upload_date_filter="this-year" ;;
+
+		upload-sort=*) sort_by_filter="${opt#*=}" ;;
+		upload-date) sort_by_filter="upload-date" ;;
+		view-count) sort_by_filter="view-count" ;;
+		rating) sort_by_filter="rating" ;;
+
+		filter-id=*|sp=*) sp="${opt#*=}" ;;
+
+
+		previews=*) export PREVIEW_SIDE="${opt#*=}" ;;
+
+		update) update_ytfzf ;;
+
+		version) 
+		    printf "ytfzf: $YTFZF_VERSION\n"
+		    printf "youtube-dl: $(youtube-dl --version)\n"
+		    exit ;;
+				
+		*)
+		    printf "Illegal option --$opt\n"
+		    usageinfo
+		    exit 2 ;;
+	esac
+}
 parse_opt () {
 	#the first arg is the option
-	opt=$1
+	opt="$1"
 	#second arg is the optarg 
 	OPTARG="$2"
 	case ${opt} in
 		#Long options
-		-)
-			#if the option has a short version it calls this function with the opt as the shortopt
-			case "${OPTARG}" in
-			        help) parse_opt "h" ;;
-
-				ext-menu) parse_opt "D" ;;
-
-				download) parse_opt "d" ;;
-
-				choose-from-history) parse_opt "H" ;;
-
-				clear-history) parse_opt "x" ;;
-
-				random-select) parase_opt "r" ;;
-
-				search) parse_opt "s" ;;
-
-				loop) parse_opt "l" ;;
-
-				thumbnails) parse_opt "t" ;;
-
-				link-only) parse_opt "L" ;;
-
-				video-count=*) parse_opt "n" "${OPTARG#*=}" ;;
-
-				audio-only) parse_opt "m" ;;
-
-				auto-play) parse_opt "a" ;;
-
-				random-auto-play) parse_opt "r" ;;
-
-				upload-time=*) upload_date_filter="${OPTARG#*=}" ;;
-				last-hour) upload_date_filter="last-hour" ;;
-				today) upload_date_filter="today" ;;
-				this-week) upload_date_filter="this-week" ;;
-				this-month) upload_date_filter="this-month" ;;
-				this-year) upload_date_filter="this-year" ;;
-
-				upload-sort=*) sort_by_filter="${OPTARG#*=}" ;;
-				upload-date) sort_by_filter="upload-date" ;;
-				view-count) sort_by_filter="view-count" ;;
-				rating) sort_by_filter="rating" ;;
-
-				filter-id=*|sp=*) sp="${OPTARG#*=}" ;;
-
-
-				previews=*) export PREVIEW_SIDE="${OPTARG#*=}" ;;
-
-				update) update_ytfzf ;;
-
-				version) 
-				    printf "ytfzf: $YTFZF_VERSION\n"
-				    printf "youtube-dl: $(youtube-dl --version)\n"
-				    exit;
-				    ;;
-				
-				*)
-				    printf "Illegal option --$OPTARG\n"
-				    usageinfo
-				    exit 2 ;;
-			esac ;;
+		-)	parse_long_opt "$OPTARG" ;;
 		#Short options
 		h) 	helpinfo
 			exit ;;
@@ -740,8 +713,7 @@ parse_opt () {
 		t) 	show_thumbnails=1 ;;
 
 		v)	printf "ytfzf: $YTFZF_VERSION\n"
-			exit;
-			;;
+			exit ;;
 
 		L) 	show_link_only=1 ;;
 
@@ -763,11 +735,18 @@ while getopts "LhDmdfxHarltsvn:U:-:" opt; do
 done
 shift $((OPTIND-1))
 
-[ "$*" = "-" ] && is_stdin=1 || is_stdin=0
-search_query="$*"
-check_if_url "$search_query" 
+#read stdin if given
+if [ ! -t 0 -o "$*" = "-" ]; then
+	printf "Reading from stdin\n"
+	while read line
+	do
+	    search_query="$search_query $line"
+	done
+fi
+[ -n "$search_query" ] && is_stdin=1 || is_stdin=0
+check_if_url "${search_query:=$*}" 
 # If in auto select mode don't download thumbnails
-[ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0; 
+[ $auto_select -eq 1 -o $random_select -eq 1 ] && show_thumbnails=0; 
 
 #format the menu screen
 format_menu 
