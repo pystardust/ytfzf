@@ -83,6 +83,10 @@ show_thumbnails=0
 #same as -a
 auto_select=0
 
+#enable/disable selecting all results
+#same as -A
+select_all=0
+
 #enable/disable selecting a random result
 #same as -r
 random_select=0
