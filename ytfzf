@@ -735,10 +735,11 @@ while getopts "LhDmdfxHarltsvn:U:-:" opt; do
 done
 shift $((OPTIND-1))
 
+#if stdin is given and no input (including -) is given, throw error
+if [ ! -t 0 -a -z "$*" ]; then
+	printf "\033[31mERROR[#04]: Use - when reading from stdin\033[000m\n"
+	exit 1
 #read stdin if given
-if [ ! -t 0 -a "$*" != "-" ]; then
-    printf "\033[31mERROR[#04]: use - when reading from stdin\033[000m\n"
-    exit 1;
 elif [ "$*" = "-" ]; then
 	printf "Reading from stdin\n"
 	while read line
