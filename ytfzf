@@ -305,24 +305,20 @@ preview_img () {
 
 	thumb_width=$WIDTH
 	thumb_height=$((HEIGHT - 2))
+	#most common x, y positions
+	thumb_x=$(($TTY_COLS / 2 + 3))
+	thumb_y=10
 	case "$PREVIEW_SIDE" in
-	    right)
-		thumb_y=10
-		thumb_x=$(($TTY_COLS / 2 + 3))
-		;;
 	    left)
-		thumb_y=10
 		thumb_x=2
 		;;
 	    top)
 		thumb_height=$((HEIGHT - 5))
 		thumb_y=2
-		thumb_x=$(($TTY_COLS / 2 + 3))
 		;;
 	    bottom)
 		thumb_height=$((HEIGHT - 5))
 		thumb_y=$(($TTY_LINES / 2 + 3))
-		thumb_x=$(($TTY_COLS / 2 + 3))
 		;;
 	esac
 
