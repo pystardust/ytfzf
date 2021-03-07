@@ -737,7 +737,7 @@ shift $((OPTIND-1))
 
 #read stdin if given
 if [ ! -t 0 -a "$*" != "-" ]; then
-    printf "\033[31mERROR[#04]: use - when reading from stdin\n"
+    printf "\033[31mERROR[#04]: use - when reading from stdin\033[000m\n"
     exit 1;
 elif [ "$*" = "-" ]; then
 	printf "Reading from stdin\n"
