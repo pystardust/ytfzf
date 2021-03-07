@@ -347,11 +347,12 @@ preview_img () {
 
 download_thumbnails () {
 	#scrapes the urls of the thumbnails of the videos
-	thumb_urls="$(printf "%s" "$videos_json" |\
+	thumb_urls="$1"
+	[ -z "$thumb_urls" ] && thumb_urls="$(printf "%s" "$videos_json" |\
 		jq  '.thumbnail.thumbnails[0].url,.videoId' )"
 
 	[ $show_link_only -eq 0 ] && printf "Downloading Thumbnails.."
-    
+
 	i=0
 	while read line; do
 		if [ $((i % 2)) -eq 0 ]; then
@@ -454,9 +455,7 @@ scrape_subscriptions () {
 	    #sets a temp variable for previous videos, so none get overwritten
 	    #also shows what channel each video below is from
 	    temp_videos_data="$videos_data
----
-$channel_name
----"
+-----------------$channel_name----------------"
 	    #gets new videos and thumbnails
 	    videos_data="$(printf "%s" "$videos_json" |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,.publishedTimeText.simpleText,.videoId' |\
@@ -464,11 +463,16 @@ $channel_name
 	    #if there aren't videos
 	    [ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 	    
-	    [ $show_thumbnails -eq 1 ] && download_thumbnails
+	    thumbnail_count="$(($link_count * 2))"
+	    new_thumb_urls="$(printf "%s" "$videos_json" |\
+		jq  '.thumbnail.thumbnails[0].url,.videoId' | head -${thumbnail_count})"
+	    [ -z "$thumb_urls" ] && thumb_urls="$new_thumb_urls" || thumb_urls="$thumb_urls
+$new_thumb_urls"
 
 	    #adds the new videos to the previously gotten videos
 	    [ -n "$temp_videos_data" ] && videos_data="$(printf "%s\n" "$temp_videos_data" "$videos_data")"
 	done
+	[ $show_thumbnails -eq 1 ] && download_thumbnails "$thumb_urls"
 }
 scrape_yt () {
 	# needs search_query
