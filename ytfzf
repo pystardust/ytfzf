@@ -82,6 +82,8 @@ is_ext_menu=${is_ext_menu-0}
 show_thumbnails=${show_thumbnails-0}
 #auto select the first video (same as -a)
 auto_select=${auto_select-0}
+#select all results
+select_all=${select_all-0}
 #randomly select a video (same as -r)
 random_select=${random_select-0}
 #only show the selected link (same as -L)
@@ -135,6 +137,7 @@ printf "     -d, --download     <search-query>    Download to current directory\
 printf "     -f                 <search-query>    Show available formats before proceeding\n";
 printf "     -a, --auto-play    <search-query>    Auto play the first result, no selector\n";
 printf "     -r  --random-play  <search-query>    Auto play a random result, no selector\n";
+printf "     -A, --select-all   <search-query>    Selects all results\n";
 printf "     -n, --video-count= <video-count>     To specify number of videos to select with -a or -r\n";
 printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
 printf "     -s                 <search-query>    After the video ends make another search \n";
@@ -153,8 +156,9 @@ printf "                   In addition this overrides any filter provided throug
 printf "                   Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[000m\n";
 printf "                   This will filter by livestream\n";
 printf "\n";
-printf "     --update                             clones the latest commit and installs it\n";
+printf "     --update                             clones the latest stable commit and installs it\n";
 printf "                   on Arch ytfzf is available in the AUR\n";
+printf "     --update-unstable                    gets the latest commit and installs it (--update is safer)\n";
 printf "  Use - instead of <search-query> for stdin\n";
 printf "\n"
 printf "  Option usage:\n"
@@ -507,7 +511,9 @@ user_selection () {
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
-	if [ $auto_select -eq 1 ] ; then
+	if [ $select_all -eq 1 ] ; then
+		selected_data="$videos_data"
+	elif [ $auto_select -eq 1 ] ; then
 		selected_data="$(echo "$videos_data" | sed ${link_count}q )" ;
 	#picks n random videos
 	elif [ $random_select -eq 1 ] ; then
@@ -541,7 +547,8 @@ user_selection () {
 	$shorturls
 EOF
 	urls="$( printf "$urls" | sed 1d )"
-	selected_data="$( printf "$selected_data" | sed 1d )"
+	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
+	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
 
 	if [ $show_link_only -eq 1 ] ; then
 		echo "$urls"
@@ -633,8 +640,9 @@ clear_history () {
 }
 
 update_ytfzf () {
+	branch="$1"
 	updatefile="/tmp/ytfzf-update"
-	curl "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" > "$updatefile"
+	curl "https://raw.githubusercontent.com/pystardust/ytfzf/$branch/ytfzf" > "$updatefile"
 	chmod 755 "$updatefile"
 	sudo cp "$updatefile" "/usr/bin/ytfzf"
 	rm "$updatefile"
@@ -680,6 +688,8 @@ parse_opt () {
 
 				auto-play) parse_opt "a" ;;
 
+				select-all) parse_opt "A" ;;
+
 				random-auto-play) parse_opt "r" ;;
 
 				upload-time=*) upload_date_filter="${OPTARG#*=}" ;;
@@ -699,7 +709,8 @@ parse_opt () {
 
 				previews=*) export PREVIEW_SIDE="${OPTARG#*=}" ;;
 
-				update) update_ytfzf ;;
+				update) update_ytfzf "master" ;;
+				update-unstable) update_ytfzf "development" ;;
 
 				version) 
 				    printf "ytfzf: $YTFZF_VERSION\n"
@@ -730,6 +741,7 @@ parse_opt () {
 		x)	clear_history && exit ;;
 
 		a) 	auto_select=1 ;;
+		A)	select_all=1 ;;
 
 		r)	random_select=1 ;;
 
@@ -758,7 +770,7 @@ parse_opt () {
 	esac
 }
 
-while getopts "LhDmdfxHarltsvn:U:-:" opt; do
+while getopts "LhDmdfxHaArltsvn:U:-:" opt; do
     parse_opt "$opt" "$OPTARG"
 done
 shift $((OPTIND-1))
