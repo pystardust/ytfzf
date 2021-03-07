@@ -82,7 +82,7 @@ is_ext_menu=${is_ext_menu-0}
 show_thumbnails=${show_thumbnails-0}
 #auto select the first video (same as -a)
 auto_select=${auto_select-0}
-#select all results
+#select all results (same as -A)
 select_all=${select_all-0}
 #randomly select a video (same as -r)
 random_select=${random_select-0}
