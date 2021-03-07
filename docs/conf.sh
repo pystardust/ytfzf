@@ -108,6 +108,11 @@ show_format=0
 #same as --previews=
 preview_side="left"
 
+#instead of making a search query, get the latest videos from subscriptions
+#use link_count, to get more than 1 video from each channel
+#same as -S
+get_subscriptions=0
+
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
 #to get a filter id go to youtube search for something, choose the filter you want,
@@ -157,3 +162,5 @@ history_file="$YTFZF_CACHE/ytfzf_hst"
 #the file for writing the menu option that was chosen
 current_file="$YTFZF_CACHE/ytfzf_cur"
 
+#the file to store subscriptions
+subscriptions_file="$HOME/.config/ytfzf/subscriptions.json"

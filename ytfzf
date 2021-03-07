@@ -53,6 +53,7 @@ config_file="$config_dir/conf.sh"
 history_file="$YTFZF_CACHE/ytfzf_hst"
 current_file="$YTFZF_CACHE/ytfzf_cur"
 thumb_dir="$YTFZF_CACHE/thumb"
+subscriptions_file="${subscriptions_file-$config_dir/subscriptions.json}"
 
 #> stores the pid of running ytfzf sessions
 pid_file="$YTFZF_CACHE/.pid"
@@ -87,6 +88,8 @@ link_count=${link_count-1}
 search_again=${search_again-0}
 #filter id used when searching
 sp="${sp-}"
+#scrape subscriptions.json file instead of a search query
+get_subscriptions=0
 
 #ueberzug related variables
 #the side where thumbnails are shown
@@ -127,13 +130,14 @@ printf "                                          Doesn't work with -H -D\n";
 printf "     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf \n";
 printf "     -H, --choose-from-history            Choose from history \n";
 printf "     -x, --clear-history                  Delete history\n";
+printf "     -S                                   Get the latest videos from subscriptions"
 printf "     -m, --audio-only   <search-query>    Audio only (for music)\n";
 printf "     -d, --download     <search-query>    Download to current directory\n";
 printf "     -f                 <search-query>    Show available formats before proceeding\n";
 printf "     -a, --auto-play    <search-query>    Auto play the first result, no selector\n";
 printf "     -r  --random-play  <search-query>    Auto play a random result, no selector\n";
 printf "     -A, --select-all   <search-query>    Selects all results\n";
-printf "     -n, --video-count= <video-count>     To specify number of videos to select with -a or -r\n";
+printf "     -n, --video-count= <video-count>     To specify number of videos to select with -a, -r or -S\n";
 printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
@@ -405,6 +409,56 @@ get_sp_filter () {
 		sp="$filter_id"
 	fi
 }
+
+get_yt_json () {
+	#youtube has a bunch of data relating to videos in a json format, this scrapes that
+	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
+        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;')"
+}
+
+scrape_subscriptions () {
+	if [ ! -e "$subscriptions_file" ]; then
+		printf "\033[31mERROR[#05]: \"$subscriptions_file\" not found\033[000m\n"
+		exit 1
+	fi
+	#get the subscriptions json
+	subscriptions="$(cat "$subscriptions_file" | jq)"
+	#get each channel link
+	channel_links="$(echo "$subscriptions" | jq '.[].link' | tr '"' ' ')"
+	for link in $channel_links; do
+	    yt_html="$(
+		curl $link -s \
+		    -H 'authority: www.youtube.com' \
+		    -H "user-agent: $useragent" \
+		    -H "accept-language: en-US,en;q=0.9" \
+		    --compressed
+	    )"
+	    channel_name="$(echo "$yt_html" | pup 'title' | grep -o "\\s.*-" | tr '-' ' ')"
+	    #if there's no html
+	    if [ -z "$yt_html" ]; then
+		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
+		exit 1 
+	    fi
+	    
+	    get_yt_json
+	    #gets a list of videos
+	    videos_json="$(printf "%s" "$yt_json" | jq '..|.gridVideoRenderer?' | sed '/^null$/d')"
+	    #sets a temp variable for previous videos, so none get overwritten
+	    #also shows what channel each video below is from
+	    temp_videos_data="$videos_data
+---
+$channel_name
+---"
+	    #gets new videos and thumbnails
+	    videos_data="$(printf "%s" "$videos_json" |\
+		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,.publishedTimeText.simpleText,.videoId' |\
+		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/""$(printf '\t')""\|/g;p" | sed ${link_count}q)"
+	    [ $show_thumbnails -eq 1 ] && download_thumbnails
+
+	    #adds the new videos to the previously gotten videos
+	    [ -n "$temp_videos_data" ] && videos_data="$(printf "%s\n" "$temp_videos_data" "$videos_data")"
+	done
+}
 scrape_yt () {
 	# needs search_query
 	## Scrape data and store video information in videos_data ( and thumbnails download)
@@ -434,9 +488,7 @@ scrape_yt () {
 		exit 1 
 	fi
 
-	#youtube has a bunch of data relating to videos in a json format, this scrapes that
-	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
-        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;')"
+	get_yt_json
 
 	#if the data couldn't be found
 	if [ -z "$yt_json" ]; then  
@@ -720,6 +772,8 @@ parse_opt () {
 
 		s)	search_again=1 ;;
 
+		S)	get_subscriptions=1 ;;
+
 		l) 	YTFZF_LOOP=1 ;;
 
 		t) 	show_thumbnails=1 ;;
@@ -742,7 +796,7 @@ parse_opt () {
 	esac
 }
 
-while getopts "LhDmdfxHaArltsvn:U:-:" opt; do
+while getopts "LhDmdfxHaArltSsvn:U:-:" opt; do
     parse_opt "$opt" "$OPTARG"
 done
 shift $((OPTIND-1))
@@ -768,7 +822,9 @@ check_if_url "${search_query:=$*}"
 format_menu 
 
 #call scrape function
-if [ $scrape -eq 1 ]; then 
+if [ $get_subscriptions -eq 1 ]; then
+	scrape_subscriptions
+elif [ $scrape -eq 1 ]; then 
 	get_search_query
 	scrape_yt "$search_query"
 fi
