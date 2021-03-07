@@ -740,7 +740,8 @@ done
 shift $((OPTIND-1))
 
 #read stdin if given
-if [ ! -t 0 ]; then
+if [ ! -t 0 -o "$*" = "-" ]; then
+	printf "Reading from stdin\n"
 	while read line
 	do
 	    search_query="$search_query $line"
