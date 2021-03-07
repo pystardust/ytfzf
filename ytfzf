@@ -448,6 +448,7 @@ scrape_subscriptions () {
 	#get each channel link
 	channel_links="$(echo "$subscriptions" | jq '.[].link' | tr '"' ' ')"
 	for link in $channel_links; do
+	    echo "Downloading $link"
 	    get_yt_html "$link"
 	    #gets the channel name from title of page
 	    channel_name="$(echo "$yt_html" | pup 'title' | grep -o "\\s.*-" | tr '-' ' ')"
@@ -457,8 +458,8 @@ scrape_subscriptions () {
 	    videos_json="$(printf "%s" "$yt_json" | jq '..|.gridVideoRenderer?' | sed '/^null$/d')"
 	    #sets a temp variable for previous videos, so none get overwritten
 	    #also shows what channel each video below is from
-	    temp_videos_data="$videos_data
------------------$channel_name----------------"
+	    temp_videos_data="${videos_data------------Subscriptions-----------}
+------------$channel_name-----------"
 	    #gets new videos and thumbnails
 	    videos_data="$(printf "%s" "$videos_json" |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,.publishedTimeText.simpleText,.videoId' |\
