@@ -243,11 +243,7 @@ format_menu () {
 		#dep_ck fzf here because it is only necessary to use here
 		dep_ck "fzf"
 		menu_command='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS'
-		if [ $is_stdin -eq 0 ] ; then
-			format_fzf 
-		else
-			format_ext_menu
-		fi
+		format_fzf 
 	else
 		# dmenu doesnt render tabs so removing it
 		menu_command='tr -d "$(printf "\t")" | '"$YTFZF_EXTMENU"
