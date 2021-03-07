@@ -1,6 +1,12 @@
 PROG=ytfzf
 
-PREFIX = /usr/bin
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+    PREFIX = /usr/local/bin
+endif
+ifeq ($(UNAME), Linux)
+    PREFIX = /usr/bin
+endif
 
 install:
 	chmod 755 $(PROG)
