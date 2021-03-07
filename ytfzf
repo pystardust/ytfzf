@@ -736,7 +736,10 @@ done
 shift $((OPTIND-1))
 
 #read stdin if given
-if [ ! -t 0 -o "$*" = "-" ]; then
+if [ ! -t 0 -a "$*" != "-" ]; then
+    printf "\033[31mERROR[#04]: use - when reading from stdin\n"
+    exit 1;
+elif [ "$*" = "-" ]; then
 	printf "Reading from stdin\n"
 	while read line
 	do
@@ -745,7 +748,7 @@ if [ ! -t 0 -o "$*" = "-" ]; then
 fi
 [ -n "$search_query" ] && is_stdin=1 || is_stdin=0
 check_if_url "${search_query:=$*}" 
-# If in auto select mode don't download thumbnails
+# If in auto select mode dont download thumbnails
 [ $auto_select -eq 1 -o $random_select -eq 1 ] && show_thumbnails=0; 
 
 #format the menu screen
@@ -762,7 +765,7 @@ while true; do
 	play_url
 	save_before_exit
 	
-	#if looping and searching_again aren't on then exit
+	#if looping and searching_again arent on then exit
 	if [ $YTFZF_LOOP -eq 0 -a $search_again -eq 0 ] ; then
 		delete_thumbnails
 		exit
