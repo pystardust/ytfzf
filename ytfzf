@@ -254,27 +254,36 @@ format_menu () {
 		format_ext_menu
 	fi
 }
-#> Trucating and formatting the fields based on the decided lengths
-format_video_data () {
-	#creates a blob of text that follows this format
-	#title           | channel | video duration | video views | video upload date | url
-	printf "%s" "$*" | awk -F"$(printf '\t')" \
-	-v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
-	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
-}
 
+format_video_json () {
+    #in videos_json this finds the title, channel, view count, video length, video upload date, and the video id/url
+	#then this formats it to how it appears in the selection menu
+    videos_data="$(printf "%s" "$videos_json" |\
+	    jq -r '.[]| (
+		.title,
+		.channel,
+		.views,
+		.duration,
+		.date,
+		.videoID
+	    )' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g" | 
+		 awk -F"$(printf '\t')" \
+		    -v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
+		    '{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
+	    )"
+}
 
 ############################
 #   Video selection Menu   #
 ############################
 video_menu () {
 	#take input format it to the appropriate format, then pipe it into the menu
-	format_video_data "$*" | eval "$menu_command"
+	echo "$*" | eval "$menu_command"
 }
 video_menu_img () {
 	title_len=400
 	#for thumbnails, fzf is always used
-	format_video_data "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
+	echo "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview "sh $0 -U {}" \
         	--preview-window "$PREVIEW_SIDE:50%:noborder:wrap"
 }
@@ -352,7 +361,6 @@ download_thumbnails () {
 	while read line; do
 		if [ $((i % 2)) -eq 0 ]; then
 			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
-			echo "$line \n $url"
 		else
 			name="$line"
 			{ 
@@ -463,16 +471,7 @@ scrape_yt () {
 		}
 	]')"
 
-	#in that list this finds the title, channel, view count, video length, video upload date, and the video id/url
-	videos_data="$(printf "%s" "$videos_json" |\
-		jq -r '.[]| (
-			.title,
-			.channel,
-			.views,
-			.duration,
-			.date,
-			.videoID
-			)' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g")"
+	format_video_json
 
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
