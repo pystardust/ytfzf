@@ -454,7 +454,7 @@ scrape_subscriptions () {
 	    echo "Fetching $link" 
 	    get_yt_html "$link"
 	    #gets the channel name from title of page
-	    channel_name="$(echo "$yt_html" | pup 'title' | grep -o "\\s.*-" | tr '-' ' ')"
+	    channel_name="$(echo "$yt_html" | grep -o '<title>.*</title>' | sed 's/<\/\?title>//g' | sed 's/ - YouTube//')"
 	    #gets json of videos
 	    get_yt_json
 	    #gets a list of videos
@@ -473,8 +473,13 @@ scrape_subscriptions () {
 	    videos_data="$(printf "%s" "$videos_json" |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,.publishedTimeText.simpleText,.videoId' |\
 		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/""$(printf '\t')""\|/g;p" | sed ${link_count}q)"
+	    #if select all is on, keep all the results
+	    [ $select_all -eq 0 ] && videos_data="$(echo "$videos_data" | sed ${link_count}q)"
 	    #if there aren't videos
 	    [ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
+
+	    #run user selection on the currently found urls that way it runs -a, etc.. on each subscription instead of once
+	    [ $auto_select -eq 1 -o $random_select -eq 1 -o $select_all -eq 1 ] && user_selection
 	    
 	    thumbnail_count="$(($link_count * 2))"
 	    new_thumb_urls="$(printf "%s" "$videos_json" |\
@@ -484,7 +489,12 @@ $new_thumb_urls"
 
 	    #adds the new videos to the previously gotten videos
 	    [ -n "$temp_videos_data" ] && videos_data="$(printf "%s\n" "$temp_videos_data" "$videos_data")"
+
+	    #gets all subscription urls before playing them in video player and before showing links_only
+	    subscription_urls="$subscription_urls\n$urls"
+
 	done
+	[ $show_link_only -eq 1 ] && echo "$(echo "$subscription_urls" | sed 1d)" && exit
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$thumb_urls"
 }
 scrape_yt () {
@@ -607,7 +617,8 @@ EOF
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data="$( printf "$selected_data" | sed 1d )"
 
-	if [ $show_link_only -eq 1 ] ; then
+	#if getting subscriptions, this will echo urls too early
+	if [ $show_link_only -eq 1 -a $get_subscriptions -eq 0 ] ; then
 		echo "$urls"
 		exit
 	fi
@@ -622,6 +633,9 @@ EOF
 play_url () {
 	#> output the current track to current file before playing
 	[ $YTFZF_CUR -eq 1 ] && printf "$selected_data" > "$current_file" ;
+
+	#if the subscription_urls have word characters, then use them as the urls
+	[ -n "$(echo "$subscription_urls" | grep -o '\w')" ] && urls="$(echo "$subscription_urls" | sed 1d)"
 
 	#> The urls are quoted and placed one after the other for mpv to read
 	player_urls="\"$(printf "$urls" | awk  'ORS="\" \"" { print }' | sed 's/"$//' )"
