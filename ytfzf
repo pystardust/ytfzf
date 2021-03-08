@@ -305,7 +305,7 @@ stop_ueberzug () {
 }
 
 preview_img () {
-	shorturl="$(echo "$@" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
+	shorturl="$(echo "$*" | sed -E -e 's_^.*\|__')"
 
 	thumb_width=$WIDTH
 	thumb_height=$((HEIGHT - 2))
@@ -327,13 +327,13 @@ preview_img () {
 	esac
 
 	# In fzf the cols and lines are those of the preview pane
-	IMAGE="$thumb_dir/$shorturl.png"
+	IMAGE="$thumb_dir/${shorturl%% *}.png"
 	{   printf '{ "action": "add", "identifier": "%s", "path": "%s",' "$ID" "$IMAGE"
 	    printf '"x": %d, "y": %d, "scaler": "fit_contain",' $thumb_x $thumb_y
 	    printf '"width": %d, "height": %d }\n' "$thumb_width" "$thumb_height"
 	} > "$FIFO" 
-	echo "$@" |  tr -d '|' | sed "s/ *""$(printf '\t')""/""$(printf '\t')""/g" | awk -F"$(printf '\t')" \
-	'{ printf "\n%s\nChannel: %s\nViews: %s\nDuration: %s\nUploaded %s\n",$1,$2,$4,$3,$5}'
+	echo "$*" |  tr -d '|' | sed "s/ *""$(printf '\t')""/""$(printf '\t')""/g" | awk -F"$(printf '\t')" \
+	'{ printf "\n%s\nChannel: %s\nViews: %s\nDuration: %s\nUploaded %s\n",$1,$2,$3,$4,$5}'
 }
 
 
@@ -344,17 +344,20 @@ preview_img () {
 download_thumbnails () {
 	#scrapes the urls of the thumbnails of the videos
 	thumb_urls="$(printf "%s" "$videos_json" |\
-		jq  '.thumbnail.thumbnails[0].url,.videoId' )"
+		jq  -r '.[]|(.thumbs,.videoID)' )"
 
-	[ $show_link_only -eq 0 ] && printf "Downloading Thumbnails.."
+	[ $show_link_only -eq 0 ] && printf "Downloading Thumbnails"
     
 	i=0
 	while read line; do
 		if [ $((i % 2)) -eq 0 ]; then
-			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
+			url="$line.png"
 		else
-			name="$(echo "$line" | tr -d '"')"
-			{ curl -s "$url" > "$thumb_dir/$name.png" && [ $show_link_only -eq 0 ] && printf "."; } &
+			name="$line"
+			{ 
+				curl -s "$url" > "$thumb_dir/$name.png" 
+				[ $show_link_only -eq 0 ] && printf "."; 
+			} &
 		fi
 		i=$((i + 1))
 	done << EOF
@@ -445,11 +448,30 @@ scrape_yt () {
 	fi
 
 	#gets a list of videos
-	videos_json="$(printf "%s" "$yt_json" | jq '..|.videoRenderer?' | sed '/^null$/d')"
+	videos_json="$(printf "%s" "$yt_json" | jq '[ .contents| 
+	..|.videoRenderer? | 
+	select(. !=null) | 
+		{
+			title: .title.runs[0].text,
+			channel: .longBylineText.runs[0].text,
+			duration:.lengthText.simpleText,
+			views: .shortViewCountText.simpleText,
+			date: .publishedTimeText.simpleText,
+			videoID: .videoId,
+			thumbs: .thumbnail.thumbnails[0].url
+		}
+	]')"
+
 	#in that list this finds the title, channel, view count, video length, video upload date, and the video id/url
-	videos_data="$( printf "%s" "$videos_json" |\
-		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.lengthText.simpleText,.publishedTimeText.simpleText,.videoId' |\
-		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/""$(printf '\t')""\|/g;p")"
+	videos_data="$(printf "%s" "$videos_json" |\
+		jq -r '.[]| (
+			.title,
+			.channel,
+			.views,
+			.duration,
+			.date,
+			.videoID
+			)' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g")"
 
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
@@ -519,7 +541,7 @@ user_selection () {
 EOF
 	urls="$( printf "$urls" | sed 1d )"
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
-	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
+	selected_data="$( printf "$selected_data" | sed 1d )"
 
 	if [ $show_link_only -eq 1 ] ; then
 		echo "$urls"
