@@ -512,14 +512,14 @@ user_selection () {
 	selected_data=""
 	while read surl; do
 		[ -z "$surl" ] && continue
-		urls="$urls\nhttps://www.youtube.com/watch?v=$surl"
+		urls="${urls}$(printf '\n')https://www.youtube.com/watch?v=$surl"
 		selected_data="$selected_data\n$(echo "$videos_data" | grep -m1 -e "$surl" )"
 	done << EOF
 	$shorturls
 EOF
-	urls="$( printf "$urls" | sed 1d )"
+	urls="$( printf "%s" "$urls" | sed 1d )"
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
-	selected_data="$( printf "$selected_data" | sed 1d )"
+	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
 
 	if [ $show_link_only -eq 1 ] ; then
 		echo "$urls"
