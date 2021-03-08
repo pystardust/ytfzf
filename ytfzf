@@ -360,7 +360,6 @@ download_thumbnails () {
 	while read line; do
 		if [ $((i % 2)) -eq 0 ]; then
 			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
-			echo "$line \n $url"
 		else
 			name="$line"
 			{ 
@@ -458,11 +457,7 @@ get_video_data () {
 }
 
 scrape_subscriptions () {
-	#get the subscriptions json
-	subscriptions="$(cat "$subscriptions_file" | jq)"
-	#get each channel link
-	channel_links="$(echo "$subscriptions" | jq '.[].link' | tr '"' ' ')"
-	for link in $channel_links; do
+	for link in $*; do
 	    echo "Fetching $link" 
 	    get_yt_html "$link"
 	    #gets the channel name from title of page
@@ -499,6 +494,8 @@ scrape_subscriptions () {
 
 	    #run user selection on the currently found urls that way it runs -a, etc.. on each subscription instead of once
 	    [ $auto_select -eq 1 -o $random_select -eq 1 -o $select_all -eq 1 ] && user_selection
+	    #gets all subscription urls before playing them in video player and before showing links_only
+	    subscription_urls="$subscription_urls\n$urls"
 	    
 	    new_thumb_urls="$(printf "%s" "$videos_json" | jq -r '.[]|(.thumbs,.videoID)')"
 	    #adds new thumbnails to old thumbnails
@@ -507,8 +504,6 @@ $thumb_urls"
 	    #adds the new videos to the previously gotten videos
 	    [ -n "$temp_videos_data" ] && videos_data="$(printf "%s\n%s" "$temp_videos_data" "$videos_data")"
 
-	    #gets all subscription urls before playing them in video player and before showing links_only
-	    subscription_urls="$subscription_urls\n$urls"
 	done
 	[ $show_link_only -eq 1 ] && echo "$(echo "$subscription_urls" | sed 1d)" && exit
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$thumb_urls"
