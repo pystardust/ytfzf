@@ -512,8 +512,8 @@ user_selection () {
 	selected_data=""
 	while read surl; do
 		[ -z "$surl" ] && continue
-		urls="${urls}$(printf '\n')https://www.youtube.com/watch?v=$surl"
-		selected_data="$selected_data\n$(echo "$videos_data" | grep -m1 -e "$surl" )"
+		urls="$(printf '%s\n%s' "${urls}" "https://www.youtube.com/watch?v=$surl")"
+		selected_data="$(printf '%s\n%s' "$selected_data" "$(echo "$videos_data" | grep -m1 -e "$surl" )")"
 	done << EOF
 	$shorturls
 EOF
