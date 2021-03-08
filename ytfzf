@@ -441,6 +441,7 @@ get_yt_html () {
     fi
 }
 
+<<<<<<< HEAD
 get_video_data () {
 	#in that list this finds the title, channel, view count, video length, video upload date, and the video id/url
 	videos_data="$(printf "%s" "$videos_json" |\
@@ -456,6 +457,8 @@ get_video_data () {
 	    [ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 }
 
+=======
+>>>>>>> 139fc65c91c4b982b41ab7fa1bb71fdacc8482f1
 scrape_subscriptions () {
 	if [ ! -e "$subscriptions_file" ]; then
 		printf "\033[31mERROR[#05]: \"$subscriptions_file\" not found\033[000m\n"
@@ -473,6 +476,7 @@ scrape_subscriptions () {
 	    #gets json of videos
 	    get_yt_json
 	    #gets a list of videos
+<<<<<<< HEAD
 	    videos_json="$(printf "%s" "$yt_json" |\
 	    jq '[ .contents | ..|.gridVideoRenderer? | 
 	    select(. !=null) | 
@@ -493,10 +497,20 @@ scrape_subscriptions () {
 	    if [ $fancy_subscriptions_menu -eq 1 ]; then
 		temp_videos_data="${videos_data-------------Subscriptions------------}
 ------------$channel_name------------"
+=======
+	    videos_json="$(printf "%s" "$yt_json" | jq '..|.gridVideoRenderer?' | sed '/^null$/d')"
+
+	    #sets a temp variable for previous videos, so none get overwritten
+	    #also shows what channel each video below is from if fancy_subscriptions_menu is on
+	    if [ $fancy_subscriptions_menu -eq 1 ]; then
+		temp_videos_data="${videos_data------------Subscriptions-----------}
+------------$channel_name-----------"
+>>>>>>> 139fc65c91c4b982b41ab7fa1bb71fdacc8482f1
 	    else
 		temp_videos_data="$videos_data"
 	    fi
 
+<<<<<<< HEAD
 	    get_video_data
 
 	    #if not select all, or random select, get only the needed videos
@@ -504,19 +518,42 @@ scrape_subscriptions () {
 		videos_data="$(echo "$videos_data" | sed ${link_count}q)"
 		videos_json="$(echo "$videos_json" | jq '.[0:'$link_count']')"
 	    fi
+=======
+	    #gets new videos and thumbnails
+	    videos_data="$(printf "%s" "$videos_json" |\
+		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,.publishedTimeText.simpleText,.videoId' |\
+		sed 's/^"//;s/"$//;s/\\"//g' | sed -E -n ";N;N;N;N;N;s/\n/""$(printf '\t')""\|/g;p" | sed ${link_count}q)"
+	    #if select all is on, keep all the results
+	    [ $select_all -eq 0 ] && videos_data="$(echo "$videos_data" | sed ${link_count}q)"
+	    #if there aren't videos
+	    [ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
+>>>>>>> 139fc65c91c4b982b41ab7fa1bb71fdacc8482f1
 
 	    #run user selection on the currently found urls that way it runs -a, etc.. on each subscription instead of once
 	    [ $auto_select -eq 1 -o $random_select -eq 1 -o $select_all -eq 1 ] && user_selection
 	    
+<<<<<<< HEAD
 	    new_thumb_urls="$(printf "%s" "$videos_json" | jq -r '.[]|(.thumbs,.videoID)')"
 	    #adds new thumbnails to old thumbnails
 	    thumb_urls="$new_thumb_urls
 $thumb_urls"
+=======
+	    thumbnail_count="$(($link_count * 2))"
+	    new_thumb_urls="$(printf "%s" "$videos_json" |\
+		jq  '.thumbnail.thumbnails[0].url,.videoId' | head -${thumbnail_count})"
+	    [ -z "$thumb_urls" ] && thumb_urls="$new_thumb_urls" || thumb_urls="$thumb_urls
+$new_thumb_urls"
+
+>>>>>>> 139fc65c91c4b982b41ab7fa1bb71fdacc8482f1
 	    #adds the new videos to the previously gotten videos
 	    [ -n "$temp_videos_data" ] && videos_data="$(printf "%s\n" "$temp_videos_data" "$videos_data")"
 
 	    #gets all subscription urls before playing them in video player and before showing links_only
 	    subscription_urls="$subscription_urls\n$urls"
+<<<<<<< HEAD
+=======
+
+>>>>>>> 139fc65c91c4b982b41ab7fa1bb71fdacc8482f1
 	done
 	[ $show_link_only -eq 1 ] && echo "$(echo "$subscription_urls" | sed 1d)" && exit
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$thumb_urls"
