@@ -449,7 +449,7 @@ scrape_subscriptions () {
 	#get each channel link
 	channel_links="$(echo "$subscriptions" | jq '.[].link' | tr '"' ' ')"
 	for link in $channel_links; do
-	    echo "Fetching $link"
+	    echo "Fetching $link" 
 	    get_yt_html "$link"
 	    #gets the channel name from title of page
 	    channel_name="$(echo "$yt_html" | pup 'title' | grep -o "\\s.*-" | tr '-' ' ')"
@@ -815,7 +815,8 @@ done
 shift $((OPTIND-1))
 
 #if stdin is given and no input (including -) is given, throw error
-if [ ! -t 0 -a -z "$*" ]; then
+#also make sure it's not reading from ext_menu
+if [ ! -t 0 -a -z "$*" -a $is_ext_menu -eq 0 ]; then
 	printf "\033[31mERROR[#04]: Use - when reading from stdin\033[000m\n"
 	exit 1
 #read stdin if given
