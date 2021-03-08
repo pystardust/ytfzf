@@ -280,14 +280,6 @@ video_menu () {
 	#take input format it to the appropriate format, then pipe it into the menu
 	echo "$*" | eval "$menu_command"
 }
-video_menu_img () {
-	title_len=400
-	#for thumbnails, fzf is always used
-	echo "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
-		--layout=reverse --preview "sh $0 -U {}" \
-        	--preview-window "$PREVIEW_SIDE:50%:noborder:wrap"
-}
-
 
 ############################
 #       Image previews     #
@@ -417,6 +409,18 @@ get_sp_filter () {
 		sp="$filter_id"
 	fi
 }
+
+get_yt_json () {
+	#youtube has a bunch of data relating to videos in a json format, this scrapes that
+	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
+        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;')"
+	#if the data couldn't be found
+	if [ -z "$yt_json" ]; then  
+		print_error "\033[31mERROR[#02]: Couldn't find data on site.\033[000m\n"
+		exit 1
+	fi
+}
+
 scrape_yt () {
 	# needs search_query
 	## Scrape data and store video information in videos_data ( and thumbnails download)
@@ -446,15 +450,7 @@ scrape_yt () {
 		exit 1 
 	fi
 
-	#youtube has a bunch of data relating to videos in a json format, this scrapes that
-	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
-        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;')"
-
-	#if the data couldn't be found
-	if [ -z "$yt_json" ]; then  
-		print_error "\033[31mERROR[#02]: Couldn't find data on site.\033[000m\n"
-		exit 1
-	fi
+	get_yt_json
 
 	#gets a list of videos
 	videos_json="$(printf "%s" "$yt_json" | jq '[ .contents| 
@@ -513,9 +509,13 @@ user_selection () {
 		selected_data="$(echo "$videos_data" | shuf -n $link_count )"
 	#show thumbnail menu
 	elif [ $show_thumbnails -eq 1 ] ; then
-		dep_ck "ueberzug"
+		dep_ck "ueberzug" "fzf"
 		start_ueberzug
-		selected_data="$( video_menu_img "$videos_data" )"
+		#thumbnails only work in fzf, use fzf
+		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$(printf \"\t\")\" --nth=1,2 $FZF_DEFAULT_OPTS \
+		--layout=reverse --preview \"sh $0 -U {}\" \
+        	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
+		selected_data="$( video_menu "$videos_data" )"
 		stop_ueberzug 
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails 
