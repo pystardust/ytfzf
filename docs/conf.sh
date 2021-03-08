@@ -108,6 +108,11 @@ show_format=0
 #same as --previews=
 preview_side="left"
 
+#instead of making a search query, get the latest videos from subscriptions
+#use link_count, to get more than 1 video from each channel
+#same as -S
+get_subscriptions=0
+
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
 #to get a filter id go to youtube search for something, choose the filter you want,
@@ -151,8 +156,14 @@ sp=""
 #useragent when using curl on youtube
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
 
+#when this is off -a and -r will work with -S
+fancy_subscriptions_menu=1
+
 #the file for storing watch history
 history_file="$YTFZF_CACHE/ytfzf_hst"
+
+#the file to store subscriptions
+subscriptions_file="$HOME/.config/ytfzf/subscriptions.json"
 
 #the file for writing the menu option that was chosen
 current_file="$YTFZF_CACHE/ytfzf_cur"
