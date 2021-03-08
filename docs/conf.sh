@@ -156,6 +156,9 @@ sp=""
 #useragent when using curl on youtube
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
 
+#when this is off -a and -r will work with -S
+fancy_subscriptions_menu=1
+
 #the file for storing watch history
 history_file="$YTFZF_CACHE/ytfzf_hst"
 
