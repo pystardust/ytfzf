@@ -615,7 +615,11 @@ update_ytfzf () {
 	updatefile="/tmp/ytfzf-update"
 	curl "https://raw.githubusercontent.com/pystardust/ytfzf/$branch/ytfzf" > "$updatefile"
 	chmod 755 "$updatefile"
-	sudo cp "$updatefile" "/usr/bin/ytfzf"
+	if [ "$(uname)" = "Darwin" ]; then 
+	    sudo cp "$updatefile" "/usr/local/bin/ytfzf" 
+	else
+	    sudo cp "$updatefile" "/usr/bin/ytfzf"
+	fi
 	rm "$updatefile"
 	exit
 }
