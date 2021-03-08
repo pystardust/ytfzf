@@ -359,6 +359,7 @@ download_thumbnails () {
 	while read line; do
 		if [ $((i % 2)) -eq 0 ]; then
 			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
+			echo "$line \n $url"
 		else
 			name="$line"
 			{ 
@@ -545,7 +546,7 @@ scrape_yt () {
 			thumbs: .thumbnail.thumbnails[0].url
 		}
 	]')"
-
+  
 	get_video_data
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails
