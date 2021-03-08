@@ -133,8 +133,6 @@ printf "     -D, --ext-menu                       Use external menu(default dmen
 printf "     -H, --choose-from-history            Choose from history \n";
 printf "     -x, --clear-history                  Delete history\n";
 printf "     -S                                   Get the latest videos from subscriptions\n"
-printf "                   Only works with -a, -r when fancy_subscriptions_menu is 0\n";
-printf "                   Currently does not work with -D\n";
 printf "     -m, --audio-only   <search-query>    Audio only (for music)\n";
 printf "     -d, --download     <search-query>    Download to current directory\n";
 printf "     -f                 <search-query>    Show available formats before proceeding\n";
@@ -142,6 +140,7 @@ printf "     -a, --auto-play    <search-query>    Auto play the first result, no
 printf "     -r  --random-play  <search-query>    Auto play a random result, no selector\n";
 printf "     -A, --select-all   <search-query>    Selects all results\n";
 printf "     -n, --video-count= <video-count>     To specify number of videos to select with -a, -r or -S\n";
+printf "                   if -n is given with both -a/-r and -S, it will apply to both"
 printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
@@ -837,6 +836,9 @@ format_menu
 
 #call scrape function
 if [ $get_subscriptions -eq 1 ]; then
+	if [ $auto_select -eq 1 -o $random_select -eq 1 -o $select_all -eq 1 ]; then
+	    fancy_subscriptions_menu=0
+	fi
 	scrape_subscriptions
 elif [ $scrape -eq 1 ]; then 
 	get_search_query
