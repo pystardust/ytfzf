@@ -457,10 +457,6 @@ get_video_data () {
 }
 
 scrape_subscriptions () {
-	if [ ! -e "$subscriptions_file" ]; then
-		printf "\033[31mERROR[#05]: \"$subscriptions_file\" not found\033[000m\n"
-		exit 1
-	fi
 	#get the subscriptions json
 	subscriptions="$(cat "$subscriptions_file" | jq)"
 	#get each channel link
@@ -490,12 +486,7 @@ scrape_subscriptions () {
 	    #gets new videos and thumbnails
 	    #if select all is on, keep all the results
 
-	    if [ $fancy_subscriptions_menu -eq 1 ]; then
-		temp_videos_data="${videos_data-------------Subscriptions------------}
-------------$channel_name------------"
-	    else
-		temp_videos_data="$videos_data"
-	    fi
+	    temp_videos_data="$videos_data"
 
 	    get_video_data
 
@@ -513,7 +504,7 @@ scrape_subscriptions () {
 	    thumb_urls="$new_thumb_urls
 $thumb_urls"
 	    #adds the new videos to the previously gotten videos
-	    [ -n "$temp_videos_data" ] && videos_data="$(printf "%s\n" "$temp_videos_data" "$videos_data")"
+	    [ -n "$temp_videos_data" ] && videos_data="$(printf "%s\n%s" "$temp_videos_data" "$videos_data")"
 
 	    #gets all subscription urls before playing them in video player and before showing links_only
 	    subscription_urls="$subscription_urls\n$urls"
