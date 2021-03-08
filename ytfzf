@@ -350,7 +350,6 @@ preview_img () {
 
 download_thumbnails () {
 	#scrapes the urls of the thumbnails of the videos
-
 	[ -z "$1" ] && thumb_urls="$(printf "%s" "$videos_json" |\
 		jq  -r '.[]|(.thumbs,.videoID)' )"
 
@@ -360,6 +359,7 @@ download_thumbnails () {
 	while read line; do
 		if [ $((i % 2)) -eq 0 ]; then
 			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
+			echo "$line \n $url"
 		else
 			name="$line"
 			{ 
