@@ -255,6 +255,13 @@ format_menu () {
 	fi
 }
 
+format_video_data () {
+	printf "%s" "$videos_data" | awk -F"$(printf '\t')" \
+	    -v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
+	    '{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
+
+}
+
 format_video_json () {
     #in videos_json this finds the title, channel, view count, video length, video upload date, and the video id/url
 	#then this formats it to how it appears in the selection menu
@@ -266,11 +273,8 @@ format_video_json () {
 		.duration,
 		.date,
 		.videoID
-	    )' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g" | 
-		 awk -F"$(printf '\t')" \
-		    -v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
-		    '{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
-	    )"
+		)' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g")"
+    videos_data="$(format_video_data)"
 }
 
 ############################
@@ -616,6 +620,7 @@ get_history () {
 		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 		#removes duplicate values from $history_data
 		videos_data="$(echo "$hist_data" | uniq )"
+		format_video_data
 		scrape=0
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n";
