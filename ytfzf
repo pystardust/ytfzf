@@ -66,6 +66,8 @@ thumb_dir="$YTFZF_CACHE/thumb"
 search_prompt="${search_prompt-Search Youtube: }"
 #used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
+#instead of just a list of videos, add some titles
+fancy_subscriptions_menu=${fancy_subscriptions_menu-1}
 
 #Opt variables (can also be set in config)
 #use $YTFZF_EXT_MENU (same as -D)
@@ -130,7 +132,9 @@ printf "                                          Doesn't work with -H -D\n";
 printf "     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf \n";
 printf "     -H, --choose-from-history            Choose from history \n";
 printf "     -x, --clear-history                  Delete history\n";
-printf "     -S                                   Get the latest videos from subscriptions"
+printf "     -S                                   Get the latest videos from subscriptions\n"
+printf "                   Only works with -a, -r when fancy_subscriptions_menu is 0\n";
+printf "                   Currently does not work with -D\n";
 printf "     -m, --audio-only   <search-query>    Audio only (for music)\n";
 printf "     -d, --download     <search-query>    Download to current directory\n";
 printf "     -f                 <search-query>    Show available formats before proceeding\n";
@@ -448,7 +452,7 @@ scrape_subscriptions () {
 	#get each channel link
 	channel_links="$(echo "$subscriptions" | jq '.[].link' | tr '"' ' ')"
 	for link in $channel_links; do
-	    echo "Downloading $link"
+	    echo "Fetching $link"
 	    get_yt_html "$link"
 	    #gets the channel name from title of page
 	    channel_name="$(echo "$yt_html" | pup 'title' | grep -o "\\s.*-" | tr '-' ' ')"
@@ -456,10 +460,16 @@ scrape_subscriptions () {
 	    get_yt_json
 	    #gets a list of videos
 	    videos_json="$(printf "%s" "$yt_json" | jq '..|.gridVideoRenderer?' | sed '/^null$/d')"
+
 	    #sets a temp variable for previous videos, so none get overwritten
-	    #also shows what channel each video below is from
-	    temp_videos_data="${videos_data------------Subscriptions-----------}
+	    #also shows what channel each video below is from if fancy_subscriptions_menu is on
+	    if [ $fancy_subscriptions_menu -eq 1 ]; then
+		temp_videos_data="${videos_data------------Subscriptions-----------}
 ------------$channel_name-----------"
+	    else
+		temp_videos_data="$videos_data"
+	    fi
+
 	    #gets new videos and thumbnails
 	    videos_data="$(printf "%s" "$videos_json" |\
 		jq  '.title.runs[0].text,.longBylineText.runs[0].text,.shortViewCountText.simpleText,.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,.publishedTimeText.simpleText,.videoId' |\
