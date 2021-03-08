@@ -360,6 +360,7 @@ download_thumbnails () {
 	while read line; do
 		if [ $((i % 2)) -eq 0 ]; then
 			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
+			echo "$line \n $url"
 		else
 			name="$line"
 			{ 
@@ -611,12 +612,12 @@ user_selection () {
 	selected_data=""
 	while read surl; do
 		[ -z "$surl" ] && continue
-		urls="$urls\nhttps://www.youtube.com/watch?v=$surl"
-		selected_data="$selected_data\n$(echo "$videos_data" | grep -m1 -e "$surl" )"
+		urls="$(printf '%s\n%s' "${urls}" "https://www.youtube.com/watch?v=$surl")"
+		selected_data="$(printf '%s\n%s' "$selected_data" "$(echo "$videos_data" | grep -m1 -e "$surl" )")"
 	done << EOF
 	$shorturls
 EOF
-	urls="$( printf "$urls" | sed 1d )"
+	urls="$( printf "%s" "$urls" | sed 1d )"
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data="$( printf "$selected_data" | sed 1d )"
 
@@ -718,7 +719,11 @@ update_ytfzf () {
 	updatefile="/tmp/ytfzf-update"
 	curl "https://raw.githubusercontent.com/pystardust/ytfzf/$branch/ytfzf" > "$updatefile"
 	chmod 755 "$updatefile"
-	sudo cp "$updatefile" "/usr/bin/ytfzf"
+	if [ "$(uname)" = "Darwin" ]; then 
+	    sudo cp "$updatefile" "/usr/local/bin/ytfzf" 
+	else
+	    sudo cp "$updatefile" "/usr/bin/ytfzf"
+	fi
 	rm "$updatefile"
 	exit
 }
