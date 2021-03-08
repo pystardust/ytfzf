@@ -108,6 +108,22 @@ show_format=0
 #same as --previews=
 preview_side="left"
 
+#playlist to use instead of searching
+#same as -p <playlist>
+use_playlist=""
+
+#prints the selected data only
+#same as -V
+video_data_only=0
+
+#selected videos get added to playlist
+#same as -P <playlist>
+add_to_playlist=""
+
+#silent mode (only errors and requested data)
+#same as --silent
+silent=0
+
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
 #to get a filter id go to youtube search for something, choose the filter you want,

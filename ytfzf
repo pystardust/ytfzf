@@ -85,6 +85,14 @@ show_format=${show_format-0}
 link_count=${link_count-1}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
+#use playlist (same as -p)
+use_playlist="${use_playlist-}"
+#print the video data only
+video_data_only=${video_data_only-0}
+#selected video adds to playlist
+add_to_playlist="${add_to_playlist-}"
+#silent mode
+silent=${silent-0}
 #filter id used when searching
 sp="${sp-}"
 
@@ -126,6 +134,8 @@ printf "     -t, --thumbnails                     Show thumbnails (requires uebe
 printf "                                          Doesn't work with -H -D\n";
 printf "     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf \n";
 printf "     -H, --choose-from-history            Choose from history \n";
+printf "     -p, --playlist=    <playlist>        Use a local playlist\n";
+printf "     -V, --data-only                      Print the video data only (useful for creating playlists)\n";
 printf "     -x, --clear-history                  Delete history\n";
 printf "     -m, --audio-only   <search-query>    Audio only (for music)\n";
 printf "     -d, --download     <search-query>    Download to current directory\n";
@@ -150,6 +160,7 @@ printf "                   Filters may not work especially when the filter sorts
 printf "                   In addition this overrides any filter provided through options\n";
 printf "                   Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[000m\n";
 printf "                   This will filter by livestream\n";
+printf "     --silent                             Does only prints errors, and wanted data"
 printf "\n";
 printf "     --update                             clones the latest stable commit and installs it\n";
 printf "                   on Arch ytfzf is available in the AUR\n";
@@ -346,7 +357,7 @@ download_thumbnails () {
 	thumb_urls="$(printf "%s" "$videos_json" |\
 		jq  '.thumbnail.thumbnails[0].url,.videoId' )"
 
-	[ $show_link_only -eq 0 ] && printf "Downloading Thumbnails.."
+	[ $show_link_only -eq 0 -a $silent -eq 0 ] && printf "Downloading Thumbnails.."
     
 	i=0
 	while read line; do
@@ -501,7 +512,7 @@ user_selection () {
 	else
 		selected_data="$( video_menu "$videos_data" )"
 	fi
-	
+
 	#gets a list of video ids/urls from the selected data
 	shorturls="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
 	[ -z "$shorturls" ] && exit;
@@ -517,6 +528,15 @@ user_selection () {
 	done << EOF
 	$shorturls
 EOF
+	
+	if [ $video_data_only -eq 1 ]; then
+		echo "$selected_data"
+		exit
+	elif [ -n "$add_to_playlist" ]; then
+		echo "$selected_data" >> "$add_to_playlist"
+		exit
+	fi
+
 	urls="$( printf "$urls" | sed 1d )"
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
@@ -585,6 +605,13 @@ check_if_url () {
 		is_url=0
 	fi
 }
+
+#> Loads a playlist in videos_data
+get_playlist () {
+	videos_data="$(cat "$use_playlist")"
+	scrape=0
+}
+
 #> Loads history in videos_data
 get_history () {
 	if [ $YTFZF_HIST -eq 1 ]; then
@@ -677,6 +704,12 @@ parse_long_opt () {
 		update) update_ytfzf "master" ;;
 		update-unstable) update_ytfzf "development" ;;
 
+		silent) silent=1 ;;
+
+		playlist=*) parse_opt "p" "${opt#*=}" ;;
+
+		data-only) parse_opt "V" ;;
+
 		version) 
 		    printf "ytfzf: $YTFZF_VERSION\n"
 		    printf "youtube-dl: $(youtube-dl --version)\n"
@@ -731,6 +764,12 @@ parse_opt () {
 
 		n)	link_count="$OPTARG" ;;
 
+		p)	use_playlist="$OPTARG"
+			get_playlist ;;
+		P)	add_to_playlist="$OPTARG" ;;
+
+		V)	video_data_only=1 ;;
+
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
 			# Not to be used explicitly
@@ -742,7 +781,7 @@ parse_opt () {
 	esac
 }
 
-while getopts "LhDmdfxHaArltsvn:U:-:" opt; do
+while getopts "p:P:VLhDmdfxHaArltsvn:U:-:" opt; do
     parse_opt "$opt" "$OPTARG"
 done
 shift $((OPTIND-1))
