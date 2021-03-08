@@ -256,7 +256,7 @@ format_menu () {
 }
 
 format_video_data () {
-	printf "%s" "$videos_data" | awk -F"$(printf '\t')" \
+	printf "%s" "$*" | awk -F"$(printf '\t')" \
 	    -v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
 	    '{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
 
@@ -274,7 +274,6 @@ format_video_json () {
 		.date,
 		.videoID
 		)' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g")"
-    videos_data="$(format_video_data)"
 }
 
 ############################
@@ -282,7 +281,7 @@ format_video_json () {
 ############################
 video_menu () {
 	#take input format it to the appropriate format, then pipe it into the menu
-	echo "$*" | eval "$menu_command"
+	format_video_data "$*" | eval "$menu_command"
 }
 
 ############################
@@ -357,6 +356,7 @@ download_thumbnails () {
 	while read line; do
 		if [ $((i % 2)) -eq 0 ]; then
 			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
+			echo "$line \n $url"
 		else
 			name="$line"
 			{ 
@@ -620,7 +620,6 @@ get_history () {
 		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 		#removes duplicate values from $history_data
 		videos_data="$(echo "$hist_data" | uniq )"
-		format_video_data
 		scrape=0
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n";
