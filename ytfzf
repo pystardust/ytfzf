@@ -4,7 +4,7 @@
 #> https://github.com/pystardust/ytfzf
 ######################################
 
-YTFZF_VERSION="1.0.0"
+YTFZF_VERSION="1.0.1"
 
 ############################
 #         Defaults         #
@@ -705,8 +705,9 @@ parse_long_opt () {
 		update-unstable) update_ytfzf "development" ;;
 
 		version) 
-		    printf "ytfzf: $YTFZF_VERSION\n"
-		    printf "youtube-dl: $(youtube-dl --version)\n"
+		    printf "\033[32mytfzf:\033[000m $YTFZF_VERSION\n"
+		    printf "\033[32myoutube-dl:\033[00m $(youtube-dl --version)\n"
+		    command -v "fzf" 1>/dev/null && printf "\033[32mfzf:\033[000m $(fzf --version)\n"
 		    exit ;;
 				
 		*)
