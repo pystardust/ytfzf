@@ -522,7 +522,7 @@ user_selection () {
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$(printf \"\t\")\" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview \"sh $0 -U {}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
-		selected_data="$( video_menu "$videos_data" )"
+		selected_data="$( title_len=200 video_menu "$videos_data" )"
 		stop_ueberzug 
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails 
