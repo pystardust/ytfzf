@@ -502,7 +502,6 @@ $thumb_urls"
 	    [ -n "$temp_videos_data" ] && videos_data="$(printf "%s\n%s" "$temp_videos_data" "$videos_data")"
 
 	done
-	[ $show_link_only -eq 1 ] && exit
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$thumb_urls"
 }
 scrape_yt () {
@@ -616,7 +615,6 @@ EOF
 	#if getting subscriptions, this will echo urls too early
 	if [ $show_link_only -eq 1 ] ; then
 		echo "$urls"
-		[ $get_subscriptions -eq 0 ] && exit
 	fi
 
 	# select format if flag given
@@ -880,6 +878,7 @@ fi
 
 while true; do
 	user_selection
+	[ $show_link_only -eq 1 ] && exit
 	play_url
 	save_before_exit
 	
