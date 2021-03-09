@@ -467,12 +467,11 @@ scrape_channel () {
 	    }
 	]')"
 	
-	videos_data="$(printf "\n%s\n%s\n" "--------------------${channel_name}------------------------------------------------------" \
-		"$(get_video_data "$videos_json")" )"
+	videos_data="$(get_video_data "$videos_json" | head -${link_count} )"
 	
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
-	printf "%s" "$videos_data" >> "$tmp_video_data_file"
+	printf "$videos_data\n" >> "$tmp_video_data_file"
 	
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
@@ -701,9 +700,9 @@ update_ytfzf () {
 get_subscriptions () {
 	scrape=0
 	while read -r url; do
-		 scrape_channel "$url"  &
+		scrape_channel "$url" &
+		wait
 	done < "$subscriptions_file"
-	wait
 	videos_data="$(cat "$tmp_video_data_file")"
 }
 
