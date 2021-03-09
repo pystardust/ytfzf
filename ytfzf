@@ -456,7 +456,7 @@ get_video_data () {
 }
 
 scrape_subscriptions () {
-	for link in https://www.youtube.com/c/DistroTube/videos https://www.youtube.com/user/PewDiePie/videos; do
+	for link in $*; do
 	    echo "Fetching $link" 
 	    get_yt_html "$link"
 	    #gets the channel name from title of page
