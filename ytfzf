@@ -524,7 +524,6 @@ scrape_yt () {
 	printf "%s" "$videos_data\n" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
-	wait
 }
 
 
