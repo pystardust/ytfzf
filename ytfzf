@@ -440,10 +440,6 @@ get_yt_html () {
 	  -H 'accept-language: en-US,en;q=0.9' \
 	  --compressed
     )"
-    if [ -z "$yt_html" ]; then
-	    print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
-	    exit 1 
-    fi
 }
 
 get_video_data () {
@@ -457,14 +453,16 @@ get_video_data () {
 			.date,
 			.videoID
 			)' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g"
-	#if there aren't videos
-	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 }
 
 scrape_subscriptions () {
 	for link in $*; do
 	    echo "Fetching $link" 
 	    yt_html="$(get_yt_html "$link")"
+	    if [ -z "$yt_html" ]; then
+		    print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
+		    exit 1 
+	    fi
 	    #gets the channel name from title of page
 	    channel_name="$(echo "$yt_html" | grep -o '<title>.*</title>' | sed 's/<\/\?title>//g' | sed 's/ - YouTube//')"
 	    #gets json of videos
@@ -490,6 +488,8 @@ scrape_subscriptions () {
 	    temp_videos_data="$videos_data"
 
 	    videos_data="$(get_video_data "$videos_json")"
+	    #if there aren't videos
+	    [ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
 
 	    #if not select all, or random select, get only the needed videos
 	    if [ $select_all -eq 0 -a $random_select -eq 0 ]; then
@@ -525,6 +525,10 @@ scrape_yt () {
 	fi
 
 	yt_html="$(get_yt_html "https://www.youtube.com/results" "$*")"
+	if [ -z "$yt_html" ]; then
+		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
+		exit 1 
+	fi
 
 	yt_json="$(get_yt_json "$yt_html")"
 
@@ -550,6 +554,8 @@ scrape_yt () {
 	]')"
 
 	videos_data="$(get_video_data "$videos_json")"
+	#if there aren't videos
+	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$(printf "%s" "$videos_json" | jq  -r '.[]|(.thumbs,.videoID)' )"
 }
