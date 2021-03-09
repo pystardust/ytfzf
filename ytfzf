@@ -354,14 +354,12 @@ download_thumbnails () {
 			name="$line"
 			{ 
 				curl -s "$url" > "$thumb_dir/$name.png" 
-				[ "$show_link_only" -eq 0 ] && printf "."; 
 			} &
 		fi
 		i=$((i + 1))
 	done << EOF
 $thumb_urls
 EOF
-	wait && [ "$show_link_only" -eq 0 ] && echo ""
 
 }
 get_sp_filter () {
@@ -469,11 +467,12 @@ scrape_channel () {
 	    }
 	]')"
 	
-	videos_data="$(get_video_data "$videos_json")"
+	videos_data="$(printf "\n%s\n%s\n" "--------------------${channel_name}------------------------------------------------------" \
+		"$(get_video_data "$videos_json")" )"
 	
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
-	printf "%s" "$videos_data\n" >> "$tmp_video_data_file"
+	printf "%s" "$videos_data" >> "$tmp_video_data_file"
 	
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
@@ -526,6 +525,7 @@ scrape_yt () {
 	printf "%s" "$videos_data\n" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+	wait
 }
 
 
