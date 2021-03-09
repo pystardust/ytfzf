@@ -14,6 +14,8 @@ YTFZF_VERSION="1.0.1"
 #>reading the config file 
 config_dir="$HOME/.config/ytfzf"
 config_file="$config_dir/conf.sh"
+tmp_video_data_file="/tmp/ytfzf-subdata"
+printf "" > "$tmp_video_data_file"
 #source config file if exists
 [ -e "$config_file" ] && . "$config_file"
 
@@ -88,9 +90,8 @@ link_count=${link_count-1}
 search_again=${search_again-0}
 #filter id used when searching
 sp="${sp-}"
-#scrape subscriptions file instead of a search query
-get_subscriptions=0
-
+# Gets subscriptions from sub file if 1
+is_get_subscriptions=0
 #ueberzug related variables
 #the side where thumbnails are shown
 #needs to be exported because ueberzug spawns subprocesses
@@ -344,9 +345,6 @@ download_thumbnails () {
        #scrapes the urls of the thumbnails of the videos from the adjusted json
        thumb_urls="$(printf "%s" "$*" |\
                jq  -r '.[]|(.thumbs,.videoID)' )"
-
-	[ "$show_link_only" -eq 0 ] && printf "Downloading Thumbnails"
-    
 	i=0
 	while read -r line; do
 		if [ $((i % 2)) -eq 0 ]; then
@@ -474,6 +472,7 @@ scrape_channel () {
 	
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
+	printf "%s" "$videos_data\n" >> "$tmp_video_data_file"
 	
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
@@ -523,6 +522,7 @@ scrape_yt () {
 	videos_data="$(get_video_data "$videos_json")"
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
+	printf "%s" "$videos_data\n" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
@@ -567,7 +567,7 @@ user_selection () {
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$(printf \"\t\")\" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview \"sh $0 -U {}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
-		selected_data="$( video_menu "$videos_data" )"
+		selected_data="$( title_len=200 video_menu "$videos_data" )"
 		stop_ueberzug 
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails 
@@ -697,6 +697,15 @@ update_ytfzf () {
 	exit
 }
 
+get_subscriptions () {
+	scrape=0
+	while read -r url; do
+		 scrape_channel "$url"  &
+	done < "$subscriptions_file"
+	wait
+	videos_data="$(cat "$tmp_video_data_file")"
+}
+
 #is used to know whether or not scraping the search page is necessary
 scrape=1
 #OPT
@@ -798,7 +807,7 @@ parse_opt () {
 
 		s)	search_again=1 ;;
 
-		S)	get_subscriptions=1 ;;
+		S)	is_get_subscriptions=1 ;;
 
 		l) 	YTFZF_LOOP=1 ;;
 
@@ -841,17 +850,19 @@ elif [ "$*" = "-" ]; then
 	done
 fi
 check_if_url "${search_query:=$*}" 
+
 # If in auto select mode dont download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0; 
 
 #format the menu screen
 format_menu 
 
+[ "$is_get_subscriptions" -eq 1 ] && get_subscriptions
+
 if [ $scrape -eq 1 ]; then 
 	get_search_query
 	scrape_yt "$search_query"
 fi
-#scrape_channel "https://www.youtube.com/user/PewDiePie/videos"
 
 while true; do
 	user_selection
