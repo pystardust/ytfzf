@@ -567,7 +567,7 @@ get_search_query () {
 			search_query="$(printf "" | $YTFZF_EXTMENU)"
 		else
 			#otherwise use the search prompt
-			printf "%s" "$search_prompt"
+			printf "$search_prompt"
 			read -r search_query
 		fi
 		[ -z "$search_query" ] && exit 0
