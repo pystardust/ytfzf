@@ -265,7 +265,7 @@ format_video_data () {
 format_video_json () {
     #in videos_json this finds the title, channel, view count, video length, video upload date, and the video id/url
 	#then this formats it to how it appears in the selection menu
-    videos_data="$(printf "%s" "$videos_json" |\
+    printf "%s" "$*" |\
 	    jq -r '.[]| (
 		.title,
 		.channel,
@@ -273,7 +273,7 @@ format_video_json () {
 		.duration,
 		.date,
 		.videoID
-		)' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g")"
+		)' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g"
 }
 
 ############################
@@ -346,8 +346,8 @@ preview_img () {
 ############################
 
 download_thumbnails () {
-	#scrapes the urls of the thumbnails of the videos
-	thumb_urls="$(printf "%s" "$videos_json" |\
+	#scrapes the urls of the thumbnails of the videos from the adjusted json
+	thumb_urls="$(printf "%s" "$*" |\
 		jq  -r '.[]|(.thumbs,.videoID)' )"
 
 	[ $show_link_only -eq 0 ] && printf "Downloading Thumbnails"
@@ -356,7 +356,6 @@ download_thumbnails () {
 	while read line; do
 		if [ $((i % 2)) -eq 0 ]; then
 			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
-			echo "$line \n $url"
 		else
 			name="$line"
 			{ 
@@ -416,13 +415,8 @@ get_sp_filter () {
 
 get_yt_json () {
 	#youtube has a bunch of data relating to videos in a json format, this scrapes that
-	yt_json="$(printf "%s" "$yt_html" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
-        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;')"
-	#if the data couldn't be found
-	if [ -z "$yt_json" ]; then  
-		print_error "\033[31mERROR[#02]: Couldn't find data on site.\033[000m\n"
-		exit 1
-	fi
+	printf "%s" "$*" | sed -n '/var *ytInitialData/,$p' | tr -d '\n' |\
+        sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
 }
 
 scrape_yt () {
@@ -454,7 +448,13 @@ scrape_yt () {
 		exit 1 
 	fi
 
-	get_yt_json
+	yt_json="$(get_yt_json "$yt_html")"
+
+	#if the data couldn't be found
+	if [ -z "$yt_json" ]; then  
+		print_error "\033[31mERROR[#02]: Couldn't find data on site.\033[000m\n"
+		exit 1
+	fi
 
 	#gets a list of videos
 	videos_json="$(printf "%s" "$yt_json" | jq '[ .contents| 
@@ -471,12 +471,12 @@ scrape_yt () {
 		}
 	]')"
 
-	format_video_json
+	videos_data="$(format_video_json "$videos_json")"
 
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 
-	[ $show_thumbnails -eq 1 ] && download_thumbnails
+	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
 
 
@@ -533,7 +533,7 @@ user_selection () {
 	[ -z "$shorturls" ] && exit;
 
 	#for each url append the full url to the $urls string
-	#throught this loop, selected data is better formatted
+	#through this loop, the selected data which was truncated by formatting is retrived.
 	urls=""
 	selected_data=""
 	while read surl; do
