@@ -55,6 +55,7 @@ printf "" > "$tmp_video_data_file"
 history_file="$YTFZF_CACHE/ytfzf_hst"
 current_file="$YTFZF_CACHE/ytfzf_cur"
 thumb_dir="$YTFZF_CACHE/thumb"
+#> Stores urls of the video page of channels
 subscriptions_file="${subscriptions_file-$config_dir/subscriptions}"
 
 #> stores the pid of running ytfzf sessions
