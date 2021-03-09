@@ -4,7 +4,7 @@
 #> https://github.com/pystardust/ytfzf
 ######################################
 
-YTFZF_VERSION="1.0.0"
+YTFZF_VERSION="1.0.1"
 
 ############################
 #         Defaults         #
@@ -15,7 +15,7 @@ YTFZF_VERSION="1.0.0"
 config_dir="$HOME/.config/ytfzf"
 config_file="$config_dir/conf.sh"
 #source config file if exists
-[ -e $config_file ] && . "$config_file"
+[ -e "$config_file" ] && . "$config_file"
 
 #for each environment variable, check if it's set in environment,
     #if set in invironment, use that value
@@ -47,7 +47,7 @@ config_file="$config_dir/conf.sh"
 #enable/disable the use of FZF_DEFAULT_OPTS
 [ -z "$YTFZF_ENABLE_FZF_DEFAULT_OPTS" ] && YTFZF_ENABLE_FZF_DEFAULT_OPTS=${enable_fzf_default_opts-0}
 #clear FZF_DEFAULT_OPTS
-[ $YTFZF_ENABLE_FZF_DEFAULT_OPTS -eq 0 ] && FZF_DEFAULT_OPTS=""
+[ "$YTFZF_ENABLE_FZF_DEFAULT_OPTS" -eq 0 ] && FZF_DEFAULT_OPTS=""
 
 #> files and directories
 history_file="$YTFZF_CACHE/ytfzf_hst"
@@ -59,8 +59,8 @@ subscriptions_file="${subscriptions_file-$config_dir/subscriptions.json}"
 pid_file="$YTFZF_CACHE/.pid"
 thumb_dir="$YTFZF_CACHE/thumb"
 #> make folders that don't exist
-[ -d $YTFZF_CACHE ] || mkdir -p $YTFZF_CACHE
-[ -d $thumb_dir ] || mkdir -p $thumb_dir
+[ -d "$YTFZF_CACHE" ] || mkdir -p "$YTFZF_CACHE"
+[ -d "$thumb_dir" ] || mkdir -p "$thumb_dir"
 
 #> config settings 
 search_prompt="${search_prompt-Search Youtube: }"
@@ -110,7 +110,7 @@ fi
 #dependency check
 dep_ck () {
 	for dep in "$@"; do
-		command -v "$dep" 1>/dev/null || { printf "$dep not found. Please install it.\n" ; exit 2; }
+		command -v "$dep" 1>/dev/null || { printf "%s not found. Please install it.\n" "$dep" ; exit 2; }
 	done
 }
 dep_ck "jq" "youtube-dl";
@@ -126,7 +126,8 @@ helpinfo () {
 printf "Usage: %bytfzf [OPTIONS] %b<search-query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
 printf "  OPTIONS:\n"
 printf "     -h, --help                           Show this help text\n";
-printf "     -v, --version                        -v for ytfzf's version, --version for ytfzf + youtube-dl's version\n"; 
+printf "     -v, --version                        -v for ytfzf's version\n"; 
+printf "                                          --version for ytfzf + dependency's versions\n"
 printf "     -t, --thumbnails                     Show thumbnails (requires ueberzug)\n";
 printf "                                          Doesn't work with -H -D\n";
 printf "     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf \n";
@@ -145,22 +146,25 @@ printf "     -l, --loop         <search-query>    Loop: prompt selector again af
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
 printf "\n";
-printf "     --previews=       <left/right>      the side of the screen to show thumbnails\n";
-printf "     --upload-time=     <time-range>      Time range can be one of, last-hour, today, this-week, this-month, this-year\n";
-printf "                   You can also put the filter as it's own option eg: --today\n";
-printf "     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of, upload-date, view-count, rating\n";
-printf "                   You can also put the filter as it's own option eg: --upload-date\n";
-printf "     --filter-id=       <filter>          The id of the filter to use for video reults\n";
-printf "                   A filter id can be found by going to youtube searching, filtering how you want\n";
-printf "                   Then taking the value of the &sp= part of the url\n";
-printf "                   Filters may not work especially when the filter sorts for non-videos\n";
-printf "                   In addition this overrides any filter provided through options\n";
-printf "                   Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[000m\n";
-printf "                   This will filter by livestream\n";
+printf "     --previews=        <left/right>      the side of the screen to show thumbnails\n";
+printf "     --upload-time=     <time-range>      Time range can be one of, \n";
+printf "                                          last-hour, today, this-week, this-month, this-year\n"
+printf "                                          Filters can go directly: --today\n";
+printf "     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of\n";
+printf "                                          upload-date, view-count, rating\n";
+printf "                                          Filters can go directly: --upload-date\n";
+printf "     --filter-id=       <filter>          The id of the filter to use for video results\n";
+printf "         A filter id can be found by going to Youtube searching, filtering how you want\n";
+printf "         Then taking the value of the &sp= part of the url\n";
+printf "         Filters may not work especially when the filter sorts for non-videos\n";
+printf "         In addition this overrides any filter provided through options\n";
+printf "         Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[000m\n";
+printf "         This will filter by livestream\n";
 printf "\n";
 printf "     --update                             clones the latest stable commit and installs it\n";
-printf "                   on Arch ytfzf is available in the AUR\n";
+printf "                                          on Arch ytfzf is available in the AUR\n";
 printf "     --update-unstable                    gets the latest commit and installs it (--update is safer)\n";
+printf "\n";
 printf "  Use - instead of <search-query> for stdin\n";
 printf "\n"
 printf "  Option usage:\n"
@@ -181,7 +185,6 @@ printf "  To use rofi\n";
 printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
 printf "     YTFZF_ENABLE_FZF_DEFAULT_OPTS=0       1 : fzf will use FZF_DEFAULT_OPTS\n";
 printf "\n";
-printf "  For more details refer https://github.com/pystardust/ytfzf\n";
 }
 usageinfo () {
     printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
@@ -221,18 +224,18 @@ format_fzf () {
 
 	#*_len works the same as it does in format_ext_menu
 	#show title, channel
-	if [ $TTY_COLS -lt 75 ]; then
+	if [ "$TTY_COLS" -lt 75 ]; then
 		frac=$(((TTY_COLS - 1)/4))
 		title_len=$((frac * 3))
 		channel_len=$((frac * 1 + 7))
 	#show title, channel, time
-	elif [ $TTY_COLS -lt 95 ]; then
+	elif [ "$TTY_COLS" -lt 95 ]; then
 		frac=$(((TTY_COLS - 4)/8))
 		title_len=$((frac * 5 - 1))
 		channel_len=$((frac * 2 - 1))
 		dur_len=$((frac * 1 + 10))
 	#show title, channel, time, views
-	elif [ $TTY_COLS -lt 110 ]; then
+	elif [ "$TTY_COLS" -lt 110 ]; then
 		frac=$(((TTY_COLS - 1)/9))
 		title_len=$((frac * 5 ))
 		channel_len=$((frac * 2 ))
@@ -250,7 +253,7 @@ format_fzf () {
 }
 #> Formats the fields depending on which menu is needed. And assigns the menu command.
 format_menu () {
-	if [ $is_ext_menu -eq 0 ]; then
+	if [ "$is_ext_menu" -eq 0 ]; then
 		#dep_ck fzf here because it is only necessary to use here
 		dep_ck "fzf"
 		menu_command='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS'
@@ -261,15 +264,27 @@ format_menu () {
 		format_ext_menu
 	fi
 }
-#> Trucating and formatting the fields based on the decided lengths
+
 format_video_data () {
-	#creates a blob of text that follows this format
-	#title           | channel | video duration | video views | video upload date | url
 	printf "%s" "$*" | awk -F"$(printf '\t')" \
-	-v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
-	'{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
+	    -v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
+	    '{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
+
 }
 
+format_video_json () {
+    #in videos_json this finds the title, channel, view count, video length, video upload date, and the video id/url
+	#then this formats it to how it appears in the selection menu
+    printf "%s" "$*" |\
+	    jq -r '.[]| (
+		.title,
+		.channel,
+		.views,
+		.duration,
+		.date,
+		.videoID
+		)' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g"
+}
 
 ############################
 #   Video selection Menu   #
@@ -278,14 +293,6 @@ video_menu () {
 	#take input format it to the appropriate format, then pipe it into the menu
 	format_video_data "$*" | eval "$menu_command"
 }
-video_menu_img () {
-	title_len=400
-	#for thumbnails, fzf is always used
-	format_video_data "$*" | fzf -m --tabstop=1 --bind change:top --delimiter="$(printf "\t")" --nth=1,2 $FZF_DEFAULT_OPTS \
-		--layout=reverse --preview "sh $0 -U {}" \
-        	--preview-window "$PREVIEW_SIDE:50%:noborder:wrap"
-}
-
 
 ############################
 #       Image previews     #
@@ -317,7 +324,7 @@ preview_img () {
 	thumb_width=$WIDTH
 	thumb_height=$((HEIGHT - 2))
 	#most common x, y positions
-	thumb_x=$(($TTY_COLS / 2 + 3))
+	thumb_x=$((TTY_COLS / 2 + 3))
 	thumb_y=10
 	case "$PREVIEW_SIDE" in
 	    left)
@@ -329,7 +336,7 @@ preview_img () {
 		;;
 	    bottom)
 		thumb_height=$((HEIGHT - 5))
-		thumb_y=$(($TTY_LINES / 2 + 3))
+		thumb_y=$((TTY_LINES / 2 + 3))
 		;;
 	esac
 
@@ -352,24 +359,24 @@ download_thumbnails () {
 	#scrapes the urls of the thumbnails of the videos
 	thumb_urls="$1"
 
-	[ $show_link_only -eq 0 ] && printf "Downloading Thumbnails"
+	[ "$show_link_only" -eq 0 ] && printf "Downloading Thumbnails"
     
 	i=0
-	while read line; do
+	while read -r line; do
 		if [ $((i % 2)) -eq 0 ]; then
-			url="$(echo $line | sed -E 's/^"//;s/\.png.*/\.png/')" 
+			url="$(echo "$line" | sed -E 's/^"//;s/\.png.*/\.png/')" 
 		else
 			name="$line"
 			{ 
 				curl -s "$url" > "$thumb_dir/$name.png" 
-				[ $show_link_only -eq 0 ] && printf "."; 
+				[ "$show_link_only" -eq 0 ] && printf "."; 
 			} &
 		fi
 		i=$((i + 1))
 	done << EOF
 $thumb_urls
 EOF
-	wait && [ $show_link_only -eq 0 ] && echo ""
+	wait && [ "$show_link_only" -eq 0 ] && echo ""
 
 }
 get_sp_filter () {
@@ -555,35 +562,39 @@ scrape_yt () {
 get_search_query () {
 	#in case no query was provided
 	if [ -z "$search_query" ]; then
-		if [ $is_ext_menu -eq 1 ]; then 
+		if [ "$is_ext_menu" -eq 1 ]; then 
 			#when using an external menu, the query will be done there
 			search_query="$(printf "" | $YTFZF_EXTMENU)"
 		else
 			#otherwise use the search prompt
-			printf "$search_prompt"
-			read search_query
+			printf "%s" "$search_prompt"
+			read -r search_query
 		fi
 		[ -z "$search_query" ] && exit 0
 	fi
 }
 #> To select videos from videos_data
 user_selection () {
-	[ $is_url -eq 1 ] && return
+	[ "$is_url" -eq 1 ] && return
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
-	if [ $select_all -eq 1 ] ; then
+	if [ "$select_all" -eq 1 ] ; then
 		selected_data="$videos_data"
-	elif [ $auto_select -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | sed ${link_count}q )" ;
+	elif [ "$auto_select" -eq 1 ] ; then
+		selected_data="$(echo "$videos_data" | sed "${link_count}"q )" ;
 	#picks n random videos
-	elif [ $random_select -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | shuf -n $link_count )"
+	elif [ "$random_select" -eq 1 ] ; then
+		selected_data="$(echo "$videos_data" | shuf -n "$link_count" )"
 	#show thumbnail menu
-	elif [ $show_thumbnails -eq 1 ] ; then
-		dep_ck "ueberzug"
+	elif [ "$show_thumbnails" -eq 1 ] ; then
+		dep_ck "ueberzug" "fzf"
 		start_ueberzug
-		selected_data="$( video_menu_img "$videos_data" )"
+		#thumbnails only work in fzf, use fzf
+		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$(printf \"\t\")\" --nth=1,2 $FZF_DEFAULT_OPTS \
+		--layout=reverse --preview \"sh $0 -U {}\" \
+        	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
+		selected_data="$( video_menu "$videos_data" )"
 		stop_ueberzug 
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails 
@@ -593,14 +604,14 @@ user_selection () {
 	fi
 	
 	#gets a list of video ids/urls from the selected data
-	shorturls="$(echo "$selected_data" | sed -E -e 's_.*\|([^|]+) *$_\1_')"
+	shorturls="$(echo "$selected_data" | sed -E -e "s_.*\|([^|]+) *\$_\1_")"
 	[ -z "$shorturls" ] && exit;
 
 	#for each url append the full url to the $urls string
-	#throught this loop, selected data is better formatted
+	#through this loop, the selected data which was truncated by formatting is retrived.
 	urls=""
 	selected_data=""
-	while read surl; do
+	while read -r surl; do
 		[ -z "$surl" ] && continue
 		urls="$(printf '%s\n%s' "${urls}" "https://www.youtube.com/watch?v=$surl")"
 		selected_data="$(printf '%s\n%s' "$selected_data" "$(echo "$videos_data" | grep -m1 -e "$surl" )")"
@@ -609,30 +620,29 @@ user_selection () {
 EOF
 	urls="$( printf "%s" "$urls" | sed 1d )"
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
-	selected_data="$( printf "$selected_data" | sed 1d )"
+	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
 
-	#if getting subscriptions, this will echo urls too early
-	if [ $show_link_only -eq 1 ] ; then
+	if [ "$show_link_only" -eq 1 ] ; then
 		echo "$urls"
 	fi
 
 	# select format if flag given
-	if [ $show_format -eq 1 ]; then 
-		YTFZF_PREF="$(youtube-dl -F "$(printf "$urls" | sed 1q)" | sed '1,3d' | tac - |\
+	if [ "$show_format" -eq 1 ]; then 
+		YTFZF_PREF="$(youtube-dl -F "$(printf "%s" "$urls" | sed 1q)" | sed '1,3d' | tac - |\
 		eval "$menu_command" | sed -E 's/^([^ ]*) .*/\1/')"
-		[ -z $YTFZF_PREF  ] && exit;
+		[ -z "$YTFZF_PREF"  ] && exit;
 	fi	
 }
 play_url () {
 	#> output the current track to current file before playing
-	[ $YTFZF_CUR -eq 1 ] && printf "$selected_data" > "$current_file" ;
+	[ "$YTFZF_CUR" -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
 
 	#> The urls are quoted and placed one after the other for mpv to read
-	player_urls="\"$(printf "$urls" | awk  'ORS="\" \"" { print }' | sed 's/"$//' )"
+	player_urls="\"$(printf "%s" "$urls" | awk  'ORS="\" \"" { print }' | sed 's/"$//' )"
 	#> Play url with $player or $player_format based on options
 	#> if player format fails, then use normal player
 	[ -n "$YTFZF_PREF" ] && {
-		eval "$YTFZF_PLAYER_FORMAT"\'$YTFZF_PREF\'  "$player_urls"
+		eval "$YTFZF_PLAYER_FORMAT"\'"$YTFZF_PREF"\'  "$player_urls"
 	} || {
 		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "$player_urls"
                      # Ctr-C in MPV results in a return code of 4
@@ -643,19 +653,19 @@ play_url () {
 #> Checks if other sessions are running, if not then deletes thumbnails
 delete_thumbnails () {
 	session_count=0
-	while read pid; do
-		[ -d /proc/$pid ] && session_count=$(( session_count + 1 ))
+	while read -r pid; do
+		[ -d /proc/"$pid" ] && session_count=$(( session_count + 1 ))
 	done < "$pid_file"
 	if [ $session_count -eq 1 ] ; then
-		[ -d $thumb_dir ] && rm -r $thumb_dir
-		printf "" > $pid_file
+		[ -d "$thumb_dir" ] && rm -r "$thumb_dir"
+		printf "" > "$pid_file"
 	fi
 }
 #> Save and clean up before script exits
 save_before_exit () {
-	[ $is_url -eq 1 ] && exit
-	[ $YTFZF_HIST -eq 1 ] && printf "$selected_data\n" >> "$history_file" ;
-	[ $YTFZF_CUR -eq 1 ] && printf "" > "$current_file" ;
+	[ "$is_url" -eq 1 ] && exit
+	[ "$YTFZF_HIST" -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
+	[ "$YTFZF_CUR" -eq 1 ] && printf "" > "$current_file" ;
 }
 
 
@@ -666,8 +676,8 @@ save_before_exit () {
 check_if_url () {
 	# to check if given input is a url
 	url_regex='^https\?://.*'
-	echo "$1" | grep -q "$url_regex"
-	if [ $? -eq 0 ] ; then
+	
+	if { echo "$1" | grep -q "$url_regex"; } ; then
 		is_url=1
 		urls="$1"
 		scrape=0
@@ -677,7 +687,7 @@ check_if_url () {
 }
 #> Loads history in videos_data
 get_history () {
-	if [ $YTFZF_HIST -eq 1 ]; then
+	if [ "$YTFZF_HIST" -eq 1 ]; then
 		[ -e "$history_file" ] || touch "$history_file"
 		#gets history data in reverse order (makes it most recent to least recent)
 		hist_data="$(tac "$history_file")"
@@ -772,12 +782,13 @@ parse_long_opt () {
 		update-unstable) update_ytfzf "development" ;;
 
 		version) 
-		    printf "ytfzf: $YTFZF_VERSION\n"
-		    printf "youtube-dl: $(youtube-dl --version)\n"
+		    printf "\033[1mytfzf:\033[000m %s\n" "$YTFZF_VERSION"
+		    printf "\033[1myoutube-dl:\033[00m %s\n" "$(youtube-dl --version)"
+		    command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[000m %s\n" "$(fzf --version)"
 		    exit ;;
 				
 		*)
-		    printf "Illegal option --$opt\n"
+		    printf "Illegal option --%s\n" "$opt"
 		    usageinfo
 		    exit 2 ;;
 	esac
@@ -820,7 +831,7 @@ parse_opt () {
 
 		t) 	show_thumbnails=1 ;;
 
-		v)	printf "ytfzf: $YTFZF_VERSION\n"
+		v)	printf "ytfzf: %s\n" "$YTFZF_VERSION"
 			exit ;;
 
 		L) 	show_link_only=1 ;;
@@ -845,21 +856,20 @@ shift $((OPTIND-1))
 
 #if stdin is given and no input (including -) is given, throw error
 #also make sure it's not reading from ext_menu
-if [ ! -t 0 -a -z "$*" -a $is_ext_menu -eq 0 ]; then
+if [ ! -t 0 ] && [ -z "$*" ] && [ $is_ext_menu -eq 0 ]; then
 	printf "\033[31mERROR[#04]: Use - when reading from stdin\033[000m\n"
 	exit 1
 #read stdin if given
 elif [ "$*" = "-" ]; then
 	printf "Reading from stdin\n"
-	while read line
+	while read -r line
 	do
 	    search_query="$search_query $line"
 	done
 fi
-[ -n "$search_query" ] && is_stdin=1 || is_stdin=0
 check_if_url "${search_query:=$*}" 
 # If in auto select mode dont download thumbnails
-[ $auto_select -eq 1 -o $random_select -eq 1 ] && show_thumbnails=0; 
+[ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0; 
 
 #format the menu screen
 format_menu 
@@ -882,7 +892,7 @@ while true; do
 	save_before_exit
 	
 	#if looping and searching_again arent on then exit
-	if [ $YTFZF_LOOP -eq 0 -a $search_again -eq 0 ] ; then
+	if [ $YTFZF_LOOP -eq 0 ] && [ $search_again -eq 0 ] ; then
 		delete_thumbnails
 		exit
 	fi
