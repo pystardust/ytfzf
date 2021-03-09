@@ -708,9 +708,9 @@ parse_long_opt () {
 		update-unstable) update_ytfzf "development" ;;
 
 		version) 
-		    printf "\033[32mytfzf:\033[000m $YTFZF_VERSION\n"
-		    printf "\033[32myoutube-dl:\033[00m $(youtube-dl --version)\n"
-		    command -v "fzf" 1>/dev/null && printf "\033[32mfzf:\033[000m $(fzf --version)\n"
+		    printf "\033[1mytfzf:\033[000m $YTFZF_VERSION\n"
+		    printf "\033[1myoutube-dl:\033[00m $(youtube-dl --version)\n"
+		    command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[000m $(fzf --version)\n"
 		    exit ;;
 				
 		*)
