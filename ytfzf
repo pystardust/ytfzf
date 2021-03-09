@@ -53,7 +53,7 @@ config_file="$config_dir/conf.sh"
 history_file="$YTFZF_CACHE/ytfzf_hst"
 current_file="$YTFZF_CACHE/ytfzf_cur"
 thumb_dir="$YTFZF_CACHE/thumb"
-subscriptions_file="${subscriptions_file-$config_dir/subscriptions.json}"
+subscriptions_file="${subscriptions_file-$config_dir/subscriptions}"
 
 #> stores the pid of running ytfzf sessions
 pid_file="$YTFZF_CACHE/.pid"
@@ -66,8 +66,6 @@ thumb_dir="$YTFZF_CACHE/thumb"
 search_prompt="${search_prompt-Search Youtube: }"
 #used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
-#instead of just a list of videos, add some titles
-fancy_subscriptions_menu=${fancy_subscriptions_menu-1}
 
 #Opt variables (can also be set in config)
 #use $YTFZF_EXT_MENU (same as -D)
@@ -90,7 +88,7 @@ link_count=${link_count-1}
 search_again=${search_again-0}
 #filter id used when searching
 sp="${sp-}"
-#scrape subscriptions.json file instead of a search query
+#scrape subscriptions file instead of a search query
 get_subscriptions=0
 
 #ueberzug related variables
@@ -272,20 +270,6 @@ format_video_data () {
 
 }
 
-format_video_json () {
-    #in videos_json this finds the title, channel, view count, video length, video upload date, and the video id/url
-	#then this formats it to how it appears in the selection menu
-    printf "%s" "$*" |\
-	    jq -r '.[]| (
-		.title,
-		.channel,
-		.views,
-		.duration,
-		.date,
-		.videoID
-		)' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g"
-}
-
 ############################
 #   Video selection Menu   #
 ############################
@@ -319,11 +303,12 @@ stop_ueberzug () {
 }
 
 preview_img () {
-	shorturl="$(echo "$*" | sed -E -e 's_^.*\|__')"
+       shorturl="$(echo "$*" | sed -E -e 's_^.*\|__')"
 
-	thumb_width=$WIDTH
-	thumb_height=$((HEIGHT - 2))
-	#most common x, y positions
+       thumb_width=$WIDTH
+       thumb_height=$((HEIGHT - 2))
+       #most common x, y positions
+
 	thumb_x=$((TTY_COLS / 2 + 3))
 	thumb_y=10
 	case "$PREVIEW_SIDE" in
@@ -356,8 +341,9 @@ preview_img () {
 ############################
 
 download_thumbnails () {
-	#scrapes the urls of the thumbnails of the videos
-	thumb_urls="$1"
+       #scrapes the urls of the thumbnails of the videos from the adjusted json
+       thumb_urls="$(printf "%s" "$*" |\
+               jq  -r '.[]|(.thumbs,.videoID)' )"
 
 	[ "$show_link_only" -eq 0 ] && printf "Downloading Thumbnails"
     
@@ -455,58 +441,41 @@ get_video_data () {
 			)' | sed "N;N;N;N;N;s/\n/""$(printf '\t')""\|/g"
 }
 
-scrape_subscriptions () {
-	for link in $*; do
-	    echo "Fetching $link" 
-	    yt_html="$(get_yt_html "$link")"
-	    if [ -z "$yt_html" ]; then
-		    print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
-		    exit 1 
-	    fi
-	    #gets the channel name from title of page
-	    channel_name="$(echo "$yt_html" | grep -o '<title>.*</title>' | sed 's/<\/\?title>//g' | sed 's/ - YouTube//')"
-	    #gets json of videos
-	    yt_json="$(get_yt_json "$yt_html")"
-	    #gets a list of videos
-	    videos_json="$(printf "%s" "$yt_json" |\
-	    jq '[ .contents | ..|.gridVideoRenderer? | 
-	    select(. !=null) | 
-		{
-			title: .title.runs[0].text,
-			channel:"'"$channel_name"'",
-			duration:.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,
-			views: .shortViewCountText.simpleText,
-			date: .publishedTimeText.simpleText,
-			videoID: .videoId,
-			thumbs: .thumbnail.thumbnails[0].url,
-		}
-	    ]')"
+scrape_channel () {
+	yt_html="$(get_yt_html "$*")"
+	
+	if [ -z "$yt_html" ]; then
+	        print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[000m\n"
+	        exit 1 
+	fi
 
-	    #gets new videos and thumbnails
-	    #if select all is on, keep all the results
+	#gets the channel name from title of page
+	channel_name="$(echo "$yt_html" | grep -o '<title>.*</title>' | sed 's/<\/\?title>//g' | sed 's/ - YouTube//')"
 
-	    temp_videos_data="$videos_data"
+	#gets json of videos
+	yt_json="$(get_yt_json "$yt_html")"
 
-	    videos_data="$(get_video_data "$videos_json")"
-	    #if there aren't videos
-	    [ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
-
-	    #if not select all, or random select, get only the needed videos
-	    if [ $select_all -eq 0 -a $random_select -eq 0 ]; then
-		videos_data="$(echo "$videos_data" | sed ${link_count}q)"
-		videos_json="$(echo "$videos_json" | jq '.[0:'$link_count']')"
-	    fi
-
-	    #run user selection on the currently found urls that way it runs -a, etc.. on each subscription instead of once
-	    [ $auto_select -eq 1 -o $random_select -eq 1 -o $select_all -eq 1 ] && user_selection
-	    
-	    thumb_urls="$(printf "%s" "$videos_json" | jq -r '.[]|(.thumbs,.videoID)')"
-	    #adds the new videos to the previously gotten videos
-	    [ -n "$temp_videos_data" ] && videos_data="$(printf "%s\n%s" "$temp_videos_data" "$videos_data")"
-	    [ $show_thumbnails -eq 1 ] && download_thumbnails "$thumb_urls" &
-
-	done
-	wait
+	#gets a list of videos
+	videos_json="$(printf "%s" "$yt_json" |\
+	jq '[ .contents | ..|.gridVideoRenderer? | 
+	select(. !=null) | 
+	    {
+	    	title: .title.runs[0].text,
+	    	channel:"'"$channel_name"'",
+	    	duration:.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,
+	    	views: .shortViewCountText.simpleText,
+	    	date: .publishedTimeText.simpleText,
+	    	videoID: .videoId,
+	    	thumbs: .thumbnail.thumbnails[0].url,
+	    }
+	]')"
+	
+	videos_data="$(get_video_data "$videos_json")"
+	
+	#if there aren't videos
+	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
+	
+	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
 scrape_yt () {
 	# needs search_query
@@ -555,7 +524,7 @@ scrape_yt () {
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 
-	[ $show_thumbnails -eq 1 ] && download_thumbnails "$(printf "%s" "$videos_json" | jq  -r '.[]|(.thumbs,.videoID)' )"
+	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
 
 
@@ -878,16 +847,11 @@ check_if_url "${search_query:=$*}"
 #format the menu screen
 format_menu 
 
-#call scrape function
-if [ $get_subscriptions -eq 1 ]; then
-	if [ $auto_select -eq 1 -o $random_select -eq 1 -o $select_all -eq 1 ]; then
-	    fancy_subscriptions_menu=0
-	fi
-	scrape_subscriptions
-elif [ $scrape -eq 1 ]; then 
+if [ $scrape -eq 1 ]; then 
 	get_search_query
 	scrape_yt "$search_query"
 fi
+#scrape_channel "https://www.youtube.com/user/PewDiePie/videos"
 
 while true; do
 	user_selection
