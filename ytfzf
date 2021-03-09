@@ -467,8 +467,7 @@ scrape_channel () {
 	    }
 	]')"
 	
-	videos_data="$(printf "\n%s\n%s\n" "--------------------${channel_name}------------------------------------------------------" \
-		"$(get_video_data "$videos_json")" )"
+	videos_data="$(get_video_data "$videos_json")"
 	
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
