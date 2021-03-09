@@ -500,15 +500,13 @@ scrape_subscriptions () {
 	    #run user selection on the currently found urls that way it runs -a, etc.. on each subscription instead of once
 	    [ $auto_select -eq 1 -o $random_select -eq 1 -o $select_all -eq 1 ] && user_selection
 	    
-	    new_thumb_urls="$(printf "%s" "$videos_json" | jq -r '.[]|(.thumbs,.videoID)')"
-	    #adds new thumbnails to old thumbnails
-	    thumb_urls="$new_thumb_urls
-$thumb_urls"
+	    thumb_urls="$(printf "%s" "$videos_json" | jq -r '.[]|(.thumbs,.videoID)')"
 	    #adds the new videos to the previously gotten videos
 	    [ -n "$temp_videos_data" ] && videos_data="$(printf "%s\n%s" "$temp_videos_data" "$videos_data")"
+	    [ $show_thumbnails -eq 1 ] && download_thumbnails "$thumb_urls" &
 
 	done
-	[ $show_thumbnails -eq 1 ] && download_thumbnails "$thumb_urls"
+	wait
 }
 scrape_yt () {
 	# needs search_query
