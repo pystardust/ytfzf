@@ -121,7 +121,8 @@ helpinfo () {
 printf "Usage: %bytfzf [OPTIONS] %b<search-query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
 printf "  OPTIONS:\n"
 printf "     -h, --help                           Show this help text\n";
-printf "     -v, --version                        -v for ytfzf's version, --version for ytfzf + youtube-dl's version\n"; 
+printf "     -v, --version                        -v for ytfzf's version\n"; 
+printf "                                          --version for ytfzf + youtube-dl's version\n"
 printf "     -t, --thumbnails                     Show thumbnails (requires ueberzug)\n";
 printf "                                          Doesn't work with -H -D\n";
 printf "     -D, --ext-menu                       Use external menu(default dmenu) instead of fzf \n";
@@ -138,22 +139,25 @@ printf "     -l, --loop         <search-query>    Loop: prompt selector again af
 printf "     -s                 <search-query>    After the video ends make another search \n";
 printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
 printf "\n";
-printf "     --previews=       <left/right>      the side of the screen to show thumbnails\n";
-printf "     --upload-time=     <time-range>      Time range can be one of, last-hour, today, this-week, this-month, this-year\n";
-printf "                   You can also put the filter as it's own option eg: --today\n";
-printf "     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of, upload-date, view-count, rating\n";
-printf "                   You can also put the filter as it's own option eg: --upload-date\n";
-printf "     --filter-id=       <filter>          The id of the filter to use for video reults\n";
-printf "                   A filter id can be found by going to youtube searching, filtering how you want\n";
-printf "                   Then taking the value of the &sp= part of the url\n";
-printf "                   Filters may not work especially when the filter sorts for non-videos\n";
-printf "                   In addition this overrides any filter provided through options\n";
-printf "                   Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[000m\n";
-printf "                   This will filter by livestream\n";
+printf "     --previews=        <left/right>      the side of the screen to show thumbnails\n";
+printf "     --upload-time=     <time-range>      Time range can be one of, \n";
+printf "                                          last-hour, today, this-week, this-month, this-year\n"
+printf "                                          Filters can go directly: --today\n";
+printf "     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of\n";
+printf "                                          upload-date, view-count, rating\n";
+printf "                                          Filters can go directly: --upload-date\n";
+printf "     --filter-id=       <filter>          The id of the filter to use for video results\n";
+printf "         A filter id can be found by going to Youtube searching, filtering how you want\n";
+printf "         Then taking the value of the &sp= part of the url\n";
+printf "         Filters may not work especially when the filter sorts for non-videos\n";
+printf "         In addition this overrides any filter provided through options\n";
+printf "         Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[000m\n";
+printf "         This will filter by livestream\n";
 printf "\n";
 printf "     --update                             clones the latest stable commit and installs it\n";
-printf "                   on Arch ytfzf is available in the AUR\n";
+printf "                                          on Arch ytfzf is available in the AUR\n";
 printf "     --update-unstable                    gets the latest commit and installs it (--update is safer)\n";
+printf "\n";
 printf "  Use - instead of <search-query> for stdin\n";
 printf "\n"
 printf "  Option usage:\n"
@@ -174,7 +178,6 @@ printf "  To use rofi\n";
 printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
 printf "     YTFZF_ENABLE_FZF_DEFAULT_OPTS=0       1 : fzf will use FZF_DEFAULT_OPTS\n";
 printf "\n";
-printf "  For more details refer https://github.com/pystardust/ytfzf\n";
 }
 usageinfo () {
     printf "Usage: %bytfzf %b<search query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
