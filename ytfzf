@@ -775,7 +775,7 @@ done
 shift $((OPTIND-1))
 
 #if stdin is given and no input (including -) is given, throw error
-if [ ! -t 0 -a -z "$*" ]; then
+if [ ! -t 0 -a -z "$*" -a $is_ext_menu -eq 0 ]; then
 	printf "\033[31mERROR[#04]: Use - when reading from stdin\033[000m\n"
 	exit 1
 #read stdin if given
