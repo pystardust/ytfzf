@@ -781,10 +781,17 @@ while getopts "LhDmdfxHaArltsvn:U:-:" opt; do
 done
 shift $((OPTIND-1))
 
+#if both are true, it defaults to using fzf, and if fzf isn't installed it will throw an error
+#so print this error instead and set $show_thumbnails to 0
+if [ $is_ext_menu -eq 1 -a $show_thumbnails -eq 1 ]; then
+	printf "\033[31mCurrently thumbnails do not work in external menus\033[000m\n"
+	show_thumbnails=0
+fi
+
 #if stdin is given and no input (including -) is given, throw error
 if [ ! -t 0 ] && [ -z "$*" ] && [ $is_ext_menu -eq 0 ]; then
 	printf "\033[31mERROR[#04]: Use - when reading from stdin\033[000m\n"
-	exit 1
+	exit 2
 #read stdin if given
 elif [ "$*" = "-" ]; then
 	printf "Reading from stdin\n"
