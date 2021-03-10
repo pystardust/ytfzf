@@ -52,9 +52,9 @@ printf "" > "$tmp_video_data_file"
 [ "$YTFZF_ENABLE_FZF_DEFAULT_OPTS" -eq 0 ] && FZF_DEFAULT_OPTS=""
 
 #> files and directories
-history_file="$YTFZF_CACHE/ytfzf_hst"
-current_file="$YTFZF_CACHE/ytfzf_cur"
-thumb_dir="$YTFZF_CACHE/thumb"
+history_file="${history_file-$YTFZF_CACHE/ytfzf_hst}"
+current_file="${current_file-$YTFZF_CACHE/ytfzf_cur}"
+thumb_dir="${thumb_dir-$YTFZF_CACHE/thumb}"
 #> Stores urls of the video page of channels
 subscriptions_file="${subscriptions_file-$config_dir/subscriptions}"
 
@@ -467,7 +467,9 @@ scrape_channel () {
 	    }
 	]')"
 	
-	videos_data="$(get_video_data "$videos_json" | head -${link_count} )"
+	videos_data="$(get_video_data "$videos_json")"
+	#if select all or random select keep all the links so that they can all be selected
+	[ $select_all -eq 0 ] && videos_data="$(echo "$videos_data" | head -${link_count})"
 	
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
@@ -606,6 +608,7 @@ EOF
 	fi	
 }
 play_url () {
+	[ -n "$subscription_urls" ] && urls="$subscription_urls"
 	#> output the current track to current file before playing
 	[ "$YTFZF_CUR" -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
 
@@ -698,10 +701,16 @@ update_ytfzf () {
 
 get_subscriptions () {
 	scrape=0
+	#go through each link
 	while read -r url; do
-		scrape_channel "$url" &
-		wait
+		scrape_channel "$url"
+		#if anything that automatically selects is on, get the selected urls and store them for later
+		if [ $auto_select -eq 1 -o $random_select -eq 1 -o $select_all -eq 1 ]; then
+			user_selection
+			subscription_urls="$subscription_urls\n$urls"
+		fi
 	done < "$subscriptions_file"
+	subscription_urls="$(echo "$subscription_urls" | sed 1d)"
 	videos_data="$(cat "$tmp_video_data_file")"
 }
 
@@ -864,7 +873,7 @@ if [ $scrape -eq 1 ]; then
 fi
 
 while true; do
-	user_selection
+	[ -z "$subscription_urls" ] && user_selection
 	[ $show_link_only -eq 1 ] && exit
 	play_url
 	save_before_exit

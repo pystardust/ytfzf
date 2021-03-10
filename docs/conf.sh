@@ -108,6 +108,10 @@ show_format=0
 #same as --previews=
 preview_side="left"
 
+#instead of searching youtube, get the latest videos from your $subscriptions_file
+#same as -S
+is_get_subscriptions=0
+
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
 #to get a filter id go to youtube search for something, choose the filter you want,
@@ -157,3 +161,5 @@ history_file="$YTFZF_CACHE/ytfzf_hst"
 #the file for writing the menu option that was chosen
 current_file="$YTFZF_CACHE/ytfzf_cur"
 
+#the file to keep a list of subscriptions in
+subscriptions_file="$config_dir/subscriptions"
