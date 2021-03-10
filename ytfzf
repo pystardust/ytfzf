@@ -91,8 +91,13 @@ link_count=${link_count-1}
 sub_link_count=${sub_link_count-10}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
+#whether or not to show -----------channel------------ when looking at subscriptions
+fancy_subscriptions_menu=${fancy_subscriptions_menu-1}
 #filter id used when searching
 sp="${sp-}"
+#is used to know whether or not scraping the search page is necessary
+scrape="${scrape-yt_search}"
+
 #ueberzug related variables
 #the side where thumbnails are shown
 #needs to be exported because ueberzug spawns subprocesses
@@ -147,7 +152,8 @@ printf "\n";
 printf "  Subscriptions: to add a channel to subscptions, copy the channel's video page url\n";
 printf "                 and add it to ~/.config/ytfzf/subscriptions. Each url must be on a new line\n";
 printf "     -S,  --subs                          Get the latest 10 videos from subscriptions\n"
-printf "     --subs=<number>                      Get the latest <number> of videos from subscriptions\n"
+printf "     --subs=<number>                      Get the latest <number> of videos from subscriptions\n";
+printf "     --fancy-subs=                        whether or not to show ------channel------ in subscriptions (must be 1 or 0)\n";
 printf "\n"
 printf "     --previews=        <left/right>      the side of the screen to show thumbnails\n";
 printf "     --upload-time=     <time-range>      Time range can be one of, \n";
@@ -491,8 +497,12 @@ scrape_channel () {
 
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
-	printf "             -------%s-------\t\n%s\n" "$channel_name" \
-		"$videos_data" >> "$tmp_video_data_file"
+	if [ "$fancy_subscriptions_menu" -eq 1 ]; then
+		printf "             -------%s-------\t\n%s\n" "$channel_name" \
+			"$videos_data" >> "$tmp_video_data_file"
+	else
+		printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
+	fi
 	
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
@@ -739,8 +749,6 @@ bad_opt_arg () {
 	exit 2
 }
 
-#is used to know whether or not scraping the search page is necessary
-scrape="yt_search"
 #OPT
 parse_long_opt () {
 	opt="$1"
@@ -804,6 +812,9 @@ parse_long_opt () {
 			fi
 			parse_opt "S"
 			;;
+
+		fancy-subs) fancy_subscriptions_menu=1 ;;
+		fancy-subs=*) fancy_subscriptions_menu="${opt#*=}" ;;
 
 		version) 
 		    printf "\033[1mytfzf:\033[000m %s\n" "$YTFZF_VERSION"
@@ -882,7 +893,7 @@ while getopts "LhDmdfxHaArltSsvn:U:-:" opt; do
 done
 shift $((OPTIND-1))
 
-#if both are true, it defaults to using fzf, and if fzf isn't installed it will throw an error
+#if both are true, it defaults to using fzf, and if fzf isnt installed it will throw an error
 #so print this error instead and set $show_thumbnails to 0
 if [ $is_ext_menu -eq 1 -a $show_thumbnails -eq 1 ]; then
 	printf "\033[31mCurrently thumbnails do not work in external menus\033[000m\n"
@@ -890,7 +901,7 @@ if [ $is_ext_menu -eq 1 -a $show_thumbnails -eq 1 ]; then
 fi
 
 #if stdin is given and no input (including -) is given, throw error
-#also make sure it's not reading from ext_menu
+#also make sure its not reading from ext_menu
 if [ ! -t 0 ] && [ -z "$*" ] && [ $is_ext_menu -eq 0 ]; then
 	printf "\033[31mERROR[#04]: Use - when reading from stdin\033[000m\n"
 	exit 2
