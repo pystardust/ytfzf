@@ -108,6 +108,20 @@ show_format=0
 #same as --previews=
 preview_side="left"
 
+#the amount of links to get from each subscription
+#same as --sub=
+sub_link_count=10
+
+#whether or not to show --------------channel---------------- when viewing subscriptions
+#same as --fancy-subs=
+fancy_subscriptions_menu=1
+
+#where to source videos from
+#options are history, yt_subs, yt_search
+#history is the same as -H
+#yt_subs is the same as -S
+scrape="yt_search"
+
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
 #to get a filter id go to youtube search for something, choose the filter you want,
