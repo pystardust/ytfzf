@@ -87,6 +87,8 @@ show_link_only=${show_link_only-0}
 show_format=${show_format-0}
 #number of links to select with -a or -r (same as -n)
 link_count=${link_count-1}
+#number of videos to show in the subsciption menu
+sub_link_count=${sub_link_count-10}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
 #filter id used when searching
@@ -303,11 +305,17 @@ stop_ueberzug () {
 }
 
 preview_img () {
-       shorturl="$(echo "$*" | sed -E -e 's_^.*\|__')"
+	shorturl="$( printf "%s" "$*" | sed -E -n -e 's_^.*\|([^|]+) *_\1_p')"
 
-       thumb_width=$WIDTH
-       thumb_height=$((HEIGHT - 2))
-       #most common x, y positions
+       if [ -z "$shorturl" ] ; then
+	       printf '{ "action": "remove", "identifier": "%s" }\n' "$ID" > "$FIFO"
+	       return
+	fi
+
+
+	thumb_width=$WIDTH
+	thumb_height=$((HEIGHT - 2))
+	#most common x, y positions
 
 	thumb_x=$((TTY_COLS / 2 + 3))
 	thumb_y=10
@@ -432,6 +440,8 @@ get_video_data () {
 }
 
 scrape_channel () {
+	# needs channel url as $*
+	## Scrape data and store video information in videos_data ( and thumbnails )
 	yt_html="$(get_yt_html "$*")"
 	
 	if [ -z "$yt_html" ]; then
@@ -460,18 +470,19 @@ scrape_channel () {
 	    }
 	]')"
 	
+	videos_json="$(echo "$videos_json" | jq '.[0:'$sub_link_count']')"
 	videos_data="$(get_video_data "$videos_json")"
-	
+
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
-	printf "%s" "$videos_data" >> "$tmp_video_data_file"
+	printf "             -------%s-------\t\n%s\n" "$channel_name" \
+		"$videos_data" >> "$tmp_video_data_file"
 	
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
 scrape_yt () {
-	# needs search_query
-	## Scrape data and store video information in videos_data ( and thumbnails download)
-	## GETTING DATA
+	# needs search_query as $*
+	## Scrape data and store video information in videos_data ( and thumbnails )
 
 	#sp is the urlquery youtube uses for sorting videos
 	#only runs if --filter-id or --sp was unspecified
@@ -514,7 +525,7 @@ scrape_yt () {
 	videos_data="$(get_video_data "$videos_json")"
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
-	printf "%s" "$videos_data\n" >> "$tmp_video_data_file"
+	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	wait
@@ -542,16 +553,18 @@ get_search_query () {
 #> To select videos from videos_data
 user_selection () {
 	[ "$is_url" -eq 1 ] && return
+	#remove subscription separators
+	videos_data_clean="$(printf "%s" "$videos_data" | sed "/.*""$(printf "\t")""$/d" )"
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
 	if [ "$select_all" -eq 1 ] ; then
-		selected_data="$videos_data"
+		selected_data="$videos_data_clean"
 	elif [ "$auto_select" -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | sed "${link_count}"q )" ;
+		selected_data="$(printf "%s\n" "$videos_data_clean" | sed "${link_count}"q )" ;
 	#picks n random videos
 	elif [ "$random_select" -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | shuf -n "$link_count" )"
+		selected_data="$(printf "%s\n" "$videos_data_clean" | shuf -n "$link_count" )"
 	#show thumbnail menu
 	elif [ "$show_thumbnails" -eq 1 ] ; then
 		dep_ck "ueberzug" "fzf"
@@ -590,6 +603,7 @@ EOF
 
 	if [ "$show_link_only" -eq 1 ] ; then
 		echo "$urls"
+		exit
 	fi
 
 	# select format if flag given
@@ -754,6 +768,12 @@ parse_long_opt () {
 		update) update_ytfzf "master" ;;
 		update-unstable) update_ytfzf "development" ;;
 
+		sub) parse_opt "S" ;;
+		sub=*)	
+			sub_link_count="${opt#*=}" 
+			parse_opt "S"
+			;;
+
 		version) 
 		    printf "\033[1mytfzf:\033[000m %s\n" "$YTFZF_VERSION"
 		    printf "\033[1myoutube-dl:\033[00m %s\n" "$(youtube-dl --version)"
@@ -809,7 +829,8 @@ parse_opt () {
 
 		L) 	show_link_only=1 ;;
 
-		n)	link_count="$OPTARG" ;;
+		n)	link_count="$OPTARG" 
+			;;
 
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
@@ -871,7 +892,6 @@ esac
 
 while true; do
 	user_selection
-	[ $show_link_only -eq 1 ] && exit
 	play_url
 	save_before_exit
 	
