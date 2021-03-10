@@ -15,6 +15,8 @@ YTFZF_VERSION="1.0.1"
 config_dir="$HOME/.config/ytfzf"
 config_file="$config_dir/conf.sh"
 tmp_video_data_file="/tmp/ytfzf-subdata"
+tmp_video_urls_file="/tmp/ytfzf-seldata"
+printf "" > "$tmp_video_urls_file"
 printf "" > "$tmp_video_data_file"
 #source config file if exists
 [ -e "$config_file" ] && . "$config_file"
@@ -92,7 +94,7 @@ search_again=${search_again-0}
 #filter id used when searching
 sp="${sp-}"
 # Gets subscriptions from sub file if 1
-is_get_subscriptions=0
+is_get_subscriptions=${is_get_subscriptions-0}
 #ueberzug related variables
 #the side where thumbnails are shown
 #needs to be exported because ueberzug spawns subprocesses
@@ -470,6 +472,10 @@ scrape_channel () {
 	videos_data="$(get_video_data "$videos_json")"
 	#if select all or random select keep all the links so that they can all be selected
 	[ $select_all -eq 0 ] && videos_data="$(echo "$videos_data" | head -${link_count})"
+	if [ $auto_select -eq 1 -o $random_select -eq 1 ]; then
+	    user_selection
+	    echo "$urls" >> "$tmp_video_urls_file"
+	fi
 	
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
@@ -608,7 +614,7 @@ EOF
 	fi	
 }
 play_url () {
-	[ -n "$subscription_urls" ] && urls="$subscription_urls"
+	[ -n "$(cat "$tmp_video_urls_file")" ] && urls="$(cat "$tmp_video_urls_file")"
 	#> output the current track to current file before playing
 	[ "$YTFZF_CUR" -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
 
@@ -703,13 +709,9 @@ get_subscriptions () {
 	scrape=0
 	#go through each link
 	while read -r url; do
-		scrape_channel "$url"
-		#if anything that automatically selects is on, get the selected urls and store them for later
-		if [ $auto_select -eq 1 -o $random_select -eq 1 -o $select_all -eq 1 ]; then
-			user_selection
-			subscription_urls="$subscription_urls\n$urls"
-		fi
+		scrape_channel "$url" &
 	done < "$subscriptions_file"
+	wait
 	subscription_urls="$(echo "$subscription_urls" | sed 1d)"
 	videos_data="$(cat "$tmp_video_data_file")"
 }
@@ -873,7 +875,7 @@ if [ $scrape -eq 1 ]; then
 fi
 
 while true; do
-	[ -z "$subscription_urls" ] && user_selection
+	[ -z "$(cat "$tmp_video_urls_file")" ] && user_selection
 	[ $show_link_only -eq 1 ] && exit
 	play_url
 	save_before_exit
