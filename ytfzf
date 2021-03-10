@@ -69,6 +69,8 @@ thumb_dir="$YTFZF_CACHE/thumb"
 search_prompt="${search_prompt-Search Youtube: }"
 #used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
+#the format function to use when formatting the video menu text
+format_awk=${format_awk-'{ printf "%-"title_len"."title_len"s\t%-"channel_len"."channel_len"s\t%-"dur_len"."dur_len"s\t%-"view_len"."view_len"s\t%-"date_len"."date_len"s\t%-"url_len"."url_len"s\n",$1,$2,$4,$3,$5,$6}'}
 
 #Opt variables (can also be set in config)
 #use $YTFZF_EXT_MENU (same as -D)
@@ -276,9 +278,8 @@ format_menu () {
 
 format_video_data () {
 	printf "%s" "$*" | awk -F"$(printf '\t')" \
-	    -v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
-	    '{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
-
+	    -v title_len=$title_len -v channel_len=$channel_len -v dur_len=$dur_len -v view_len=$view_len -v date_len=$date_len -v url_len=$url_len \
+	    "$format_awk"
 }
 
 ############################

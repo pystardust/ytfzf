@@ -165,6 +165,16 @@ sp=""
 #useragent when using curl on youtube
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
 
+#the awk function to use when formatting the menu
+#x_len, is the distance between that and the next variable
+#$1 is the title
+#$2 is the channel name
+#$3 is the video duration
+#$4 is the video view count
+#$5 is the upload date
+#$6 is the video id
+format_awk='{ printf "%-"title_len"."title_len"s\t%-"channel_len"."channel_len"s\t%-"dur_len"."dur_len"s\t%-"view_len"."view_len"s\t%-"date_len"."date_len"s\t%-"url_len"."url_len"s\n",$1,$2,$4,$3,$5,$6}'
+
 #the file for storing watch history
 history_file="$YTFZF_CACHE/ytfzf_hst"
 
