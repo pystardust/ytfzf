@@ -122,6 +122,7 @@ first hit Q to save position and quit mpv, then choose your format using_
 
 ### Update log
 
+- Subscriptions
 - Now ytfzf can queue videos using fzf multiselect option. Press tab to select a video. All the videos will be lined up in mpv. Use `>` and `<` to traverse them.
 - Make continuous queries with `-s`
 - Thumbnails! Using Ueberzug. Inspired by [`fontpreview-ueberzug`](https://github.com/OliverLew/fontpreview-ueberzug).
@@ -243,6 +244,41 @@ _Default configuration can be set in the configuration file `~/.config/ytfzf/con
 	```
 
 	_If the preferred format is not available then it will revert back to auto selection._ [_Documentation for ytdl formats_](https://github.com/ytdl-org/youtube-dl#format-selection)
+
+## Subscriptions
+
+_Subscriptions are managed in subscription file: `~/.config/ytfzf/subscriptions`._
+
++ #### Adding a certain channel to your subscriptions. 
+
+1. Open the channel page on a browser and go to the vidoes tab (located right below the channel name and subscription count).
+2. Copy the url of videos page. And add it to your subscription file.
+3. The url for each subscription must be on a separate line.
+
+_The subscription file needs to have only the channels' video page url. Comments can be added with `#`_
+```
+# file : ~/.config/ytfzf/subscriptions
+## tech channels
+https://www.youtube.com/c/LukeSmithxyz/videos                   #luke smith
+https://www.youtube.com/channel/UCngn7SVujlvskHRvRKc1cTw/videos #bugswriter
+https://www.youtube.com/c/DistroTube/videos                     #distrotube
+https://www.youtube.com/c/MentalOutlaw/videos                   #mental outlaw
+```
+
++ #### To see subscriptions latest videos
+
+```
+ytfzf -S
+```
+
+This
+
+_This can be combined with other options like thumbnails, auto play_
+```
+ytfzf -tS
+```
+
+
 
 ## External-menu command
 
