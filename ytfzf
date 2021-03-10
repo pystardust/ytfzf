@@ -351,13 +351,18 @@ preview_img () {
 download_thumbnails () {
        #scrapes the urls of the thumbnails of the videos from the adjusted json
        thumb_urls="$(printf "%s" "$*" |\
-               jq  -r '.[]|.thumbs' )"
+	   jq  -r '.[]|(.thumbs,.videoID)' )"
+	i=0
 	while read -r line; do
-		url="$line"
-		name="$(echo "$url" | grep -o '\.com/vi/.*/' | sed 's/\.com\/vi\///' | tr -d '/' )"
-		{ 
-			curl -s "$url" > "$thumb_dir/$name.png" 
-		} &
+		if [ $((i % 2)) -eq 0 ]; then
+			url="$(echo "$line" | sed -E 's/^"//;s/\.png.*/\.png/')" 
+		else
+			name="$line"
+			{ 
+				curl -s "$url" > "$thumb_dir/$name.png" 
+			} &
+		fi
+		i=$((i + 1))
 	done << EOF
 $thumb_urls
 EOF
@@ -711,6 +716,13 @@ scrape_subscriptions () {
 	videos_data="$(cat "$tmp_video_data_file")"
 }
 
+bad_opt_arg () {
+	opt="$1"
+	arg="$2"
+	printf "%s\n" "$opt requires a numeric arg, but was given \"$OPTARG\""
+	exit 2
+}
+
 #is used to know whether or not scraping the search page is necessary
 scrape="yt_search"
 #OPT
@@ -771,6 +783,9 @@ parse_long_opt () {
 		sub) parse_opt "S" ;;
 		sub=*)	
 			sub_link_count="${opt#*=}" 
+			if [ -n "$(echo "$sub_link_count" | grep -o '[^0-9]')" ]; then
+				bad_opt_arg "--sub" "$sub_link_count"
+			fi
 			parse_opt "S"
 			;;
 
@@ -829,8 +844,11 @@ parse_opt () {
 
 		L) 	show_link_only=1 ;;
 
-		n)	link_count="$OPTARG" 
-			;;
+		n)	
+		    link_count="$OPTARG" 
+		    if [ -n "$(echo "$link_count" | grep -o '[^0-9]')" ]; then
+			bad_opt_arg "-n" "$link_count"
+		    fi ;;
 
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
