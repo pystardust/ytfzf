@@ -89,6 +89,8 @@ show_link_only=${show_link_only-0}
 show_format=${show_format-0}
 #number of links to select with -a or -r (same as -n)
 link_count=${link_count-1}
+#number of videos to show in the subsciption menu
+sub_link_count=${sub_link_count-10}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
 #filter id used when searching
@@ -308,11 +310,17 @@ stop_ueberzug () {
 }
 
 preview_img () {
-       shorturl="$(echo "$*" | sed -E -e 's_^.*\|__')"
+	shorturl="$( printf "%s" "$*" | sed -E -n -e 's_^.*\|([^|]+) *_\1_p')"
 
-       thumb_width=$WIDTH
-       thumb_height=$((HEIGHT - 2))
-       #most common x, y positions
+       if [ -z "$shorturl" ] ; then
+	       printf '{ "action": "remove", "identifier": "%s" }\n' "$ID" > "$FIFO"
+	       return
+	fi
+
+
+	thumb_width=$WIDTH
+	thumb_height=$((HEIGHT - 2))
+	#most common x, y positions
 
 	thumb_x=$((TTY_COLS / 2 + 3))
 	thumb_y=10
@@ -441,6 +449,8 @@ get_video_data () {
 }
 
 scrape_channel () {
+	# needs channel url as $*
+	## Scrape data and store video information in videos_data ( and thumbnails )
 	yt_html="$(get_yt_html "$*")"
 	
 	if [ -z "$yt_html" ]; then
@@ -469,6 +479,7 @@ scrape_channel () {
 	    }
 	]')"
 	
+	videos_json="$(echo "$videos_json" | jq '.[0:'$sub_link_count']')"
 	videos_data="$(get_video_data "$videos_json")"
 	#if select all or random select keep all the links so that they can all be selected
 	[ $select_all -eq 0 ] && videos_data="$(echo "$videos_data" | head -${link_count})"
@@ -476,17 +487,17 @@ scrape_channel () {
 	    user_selection
 	    echo "$urls" >> "$tmp_video_urls_file"
 	fi
-	
+
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
-	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
+	printf "             -------%s-------\n%s\n" "$channel_name" \
+		"$videos_data" >> "$tmp_video_data_file"
 	
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
 scrape_yt () {
-	# needs search_query
-	## Scrape data and store video information in videos_data ( and thumbnails download)
-	## GETTING DATA
+	# needs search_query as $*
+	## Scrape data and store video information in videos_data ( and thumbnails )
 
 	#sp is the urlquery youtube uses for sorting videos
 	#only runs if --filter-id or --sp was unspecified
@@ -529,7 +540,7 @@ scrape_yt () {
 	videos_data="$(get_video_data "$videos_json")"
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
-	printf "%s" "$videos_data\n" >> "$tmp_video_data_file"
+	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	wait
@@ -829,7 +840,9 @@ parse_opt () {
 
 		L) 	show_link_only=1 ;;
 
-		n)	link_count="$OPTARG" ;;
+		n)	link_count="$OPTARG" 
+			sub_link_count="$OPTARG"
+			;;
 
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
@@ -884,6 +897,7 @@ esac
 
 while true; do
 	[ -z "$(cat "$tmp_video_urls_file")" ] && user_selection
+	user_selection
 	play_url
 	save_before_exit
 	
