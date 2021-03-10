@@ -718,7 +718,6 @@ update_ytfzf () {
 }
 
 get_subscriptions () {
-	scrape=0
 	#go through each link
 	while read -r url; do
 		scrape_channel "$url" &
@@ -887,7 +886,7 @@ case "$scrape" in
 		get_search_query
 		scrape_yt "$search_query" ;;
 	"yt_subs")
-		scrape_subscriptions
+		get_subscriptions
 		;;
 	"history") 
 		get_history 
