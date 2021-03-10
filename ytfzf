@@ -718,8 +718,13 @@ update_ytfzf () {
 
 scrape_subscriptions () {
 	while read -r url; do
-		 scrape_channel "$url"  &
-	done < "$subscriptions_file"
+		scrape_channel "$url"  &
+	done << EOF
+$( sed \
+	-e "s/#.*//" \
+	-e "/^[[:space:]]*$/d" \
+	"$subscriptions_file")
+EOF
 	wait
 	videos_data="$(cat "$tmp_video_data_file")"
 }
