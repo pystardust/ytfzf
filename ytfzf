@@ -455,7 +455,15 @@ scrape_channel () {
 	fi
 
 	#gets the channel name from title of page
-	channel_name="$(echo "$yt_html" | grep -o '<title>.*</title>' | sed 's/<\/\?title>//g' | sed 's/ - YouTube//')"
+	channel_name="$(echo "$yt_html" | grep -o '<title>.*</title>' | sed 's/<\/\?title>//g' | sed 's/ - YouTube//' |\
+		sed \
+		-e "s/&apos;/'/g" \
+		-e "s/&#39;/'/g" \
+		-e "s/&quot;/\"/g" \
+		-e "s/&#34;/\"/g" \
+		-e "s/&amp;/\&/g" \
+		-e "s/&#38;/\&/g" 
+		)"
 
 	#gets json of videos
 	yt_json="$(get_yt_json "$yt_html")"
