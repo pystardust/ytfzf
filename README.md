@@ -339,7 +339,8 @@ YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
 ## Todo 📝
 
 * [ ] Playlists
-* [ ] Comments
+* [ ] More sites
+* [x] Subscriptions
 * [x] Icons
 
 ## Bugs ❌
