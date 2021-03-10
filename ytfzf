@@ -482,7 +482,7 @@ scrape_channel () {
 	videos_json="$(echo "$videos_json" | jq '.[0:'$sub_link_count']')"
 	videos_data="$(get_video_data "$videos_json")"
 	#if select all or random select keep all the links so that they can all be selected
-	[ $select_all -eq 0 ] && videos_data="$(echo "$videos_data" | head -${link_count})"
+	[ $select_all -eq 0 ] && videos_data="$(echo "$videos_data")"
 	if [ $auto_select -eq 1 -o $random_select -eq 1 ]; then
 	    user_selection
 	    echo "$urls" >> "$tmp_video_urls_file"
@@ -903,7 +903,6 @@ esac
 
 while true; do
 	[ -z "$(cat "$tmp_video_urls_file")" ] && user_selection
-	user_selection
 	play_url
 	save_before_exit
 	
