@@ -267,7 +267,7 @@ https://www.youtube.com/c/MentalOutlaw/videos                   #mental outlaw
 
 + #### To see subscriptions latest videos
 
-```
+```sh
 ytfzf -S
 # Defaults to 10 results from each channel
 ytfzf --sub=15
@@ -275,7 +275,7 @@ ytfzf --sub=15
 ```
 
 _This can be combined with other options like thumbnails_
-```
+```sh
 ytfzf -tS
 ```
 
