@@ -350,7 +350,7 @@ download_thumbnails () {
                jq  -r '.[]|.thumbs' )"
 	while read -r line; do
 		url="$line"
-		name="$(echo "$url" | grep -o '\.com/vi/.*/' | sed 's/\.com\/vi\///' | tr -d '/' )"
+		name="$(echo "$url" | grep -o '/vi/.*/' | sed 's/\/vi\///' | tr -d '/' )"
 		{ 
 			curl -s "$url" > "$thumb_dir/$name.png" 
 		} &
