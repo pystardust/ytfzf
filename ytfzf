@@ -480,7 +480,7 @@ scrape_channel () {
 
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
-	printf "             -------%s-------\n%s\n" "$channel_name" \
+	printf "             -------%s-------\t\n%s\n" "$channel_name" \
 		"$videos_data" >> "$tmp_video_data_file"
 	
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
@@ -558,16 +558,18 @@ get_search_query () {
 #> To select videos from videos_data
 user_selection () {
 	[ "$is_url" -eq 1 ] && return
+	#remove subscription separators
+	videos_data_clean="$(printf "%s" "$videos_data" | sed "/.*""$(printf "\t")""$/d" )"
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
 	if [ "$select_all" -eq 1 ] ; then
-		selected_data="$videos_data"
+		selected_data="$videos_data_clean"
 	elif [ "$auto_select" -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | sed "${link_count}"q )" ;
+		selected_data="$(printf "%s\n" "$videos_data_clean" | sed "${link_count}"q )" ;
 	#picks n random videos
 	elif [ "$random_select" -eq 1 ] ; then
-		selected_data="$(echo "$videos_data" | shuf -n "$link_count" )"
+		selected_data="$(printf "%s\n" "$videos_data_clean" | shuf -n "$link_count" )"
 	#show thumbnail menu
 	elif [ "$show_thumbnails" -eq 1 ] ; then
 		dep_ck "ueberzug" "fzf"
@@ -771,6 +773,12 @@ parse_long_opt () {
 		update) update_ytfzf "master" ;;
 		update-unstable) update_ytfzf "development" ;;
 
+		sub) parse_opt "S" ;;
+		sub=*)	
+			sub_link_count="${opt#*=}" 
+			parse_opt "S"
+			;;
+
 		version) 
 		    printf "\033[1mytfzf:\033[000m %s\n" "$YTFZF_VERSION"
 		    printf "\033[1myoutube-dl:\033[00m %s\n" "$(youtube-dl --version)"
@@ -827,7 +835,6 @@ parse_opt () {
 		L) 	show_link_only=1 ;;
 
 		n)	link_count="$OPTARG" 
-			sub_link_count="$OPTARG"
 			;;
 
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
