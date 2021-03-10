@@ -50,8 +50,8 @@ config_file="$config_dir/conf.sh"
 [ "$YTFZF_ENABLE_FZF_DEFAULT_OPTS" -eq 0 ] && FZF_DEFAULT_OPTS=""
 
 #> files and directories
-history_file="$YTFZF_CACHE/ytfzf_hst"
-current_file="$YTFZF_CACHE/ytfzf_cur"
+history_file="${history_file-$YTFZF_CACHE/ytfzf_hst}"
+current_file="${current_file-$YTFZF_CACHE/ytfzf_cur}"
 thumb_dir="$YTFZF_CACHE/thumb"
 
 #> stores the pid of running ytfzf sessions
