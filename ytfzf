@@ -347,13 +347,17 @@ preview_img () {
 download_thumbnails () {
        #scrapes the urls of the thumbnails of the videos from the adjusted json
        thumb_urls="$(printf "%s" "$*" |\
-               jq  -r '.[]|.thumbs' )"
+	   jq  -r '.[]|(.thumbs,.videoID)' )"
 	while read -r line; do
-		url="$line"
-		name="$(echo "$url" | grep -Po 'vi/\K.*(?=/)')"
-		{ 
-			curl -s "$url" > "$thumb_dir/$name.png" 
-		} &
+		if [ $((i % 2)) -eq 0 ]; then
+			url="$(echo "$line" | sed -E 's/^"//;s/\.png.*/\.png/')" 
+		else
+			name="$line"
+			{ 
+			    curl -s "$url" > "$thumb_dir/$name.png" 
+			} &
+		fi
+		i=$((i + 1))
 	done << EOF
 $thumb_urls
 EOF
