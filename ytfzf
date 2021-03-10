@@ -653,6 +653,15 @@ update_ytfzf () {
 	exit
 }
 
+
+bad_opt_arg () {
+	opt="$1"
+	arg="$2"
+	printf "%s\n" "$opt requires a numerical argument, but \"$arg\" was given"
+	exit 2;
+	fi
+}
+
 #is used to know whether or not scraping the search page is necessary
 scrape=1
 #OPT
@@ -763,12 +772,11 @@ parse_opt () {
 
 		L) 	show_link_only=1 ;;
 
-		n)	
-		    link_count="$OPTARG"
-		    if [ -n "$(echo "$link_count" | grep -o '[^0-9]')" ]; then
-			    printf "%s\n" "-n requires a numerical argument, but \"$OPTARG\" was given"
-			    exit 2;
-		    fi ;;
+		n)      
+			link_count="$OPTARG"
+			if [ -n "$(echo "$link_count" | grep -o '[^0-9]')" ]; then
+			    bad_opt_arg "-n" "$OPTARG"
+			fi ;;
 
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
