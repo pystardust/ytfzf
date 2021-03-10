@@ -269,11 +269,12 @@ https://www.youtube.com/c/MentalOutlaw/videos                   #mental outlaw
 
 ```
 ytfzf -S
+# Defaults to 10 results from each channel
+ytfzf --sub=15
+# To show 15 results instead
 ```
 
-This
-
-_This can be combined with other options like thumbnails, auto play_
+_This can be combined with other options like thumbnails_
 ```
 ytfzf -tS
 ```
