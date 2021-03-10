@@ -763,7 +763,12 @@ parse_opt () {
 
 		L) 	show_link_only=1 ;;
 
-		n)	link_count="$OPTARG" ;;
+		n)	
+		    link_count="$OPTARG"
+		    if [ -n "$(echo "$link_count" | grep -o '[^0-9]')" ]; then
+			    printf "%s\n" "-n requires a numerical argument, but \"$OPTARG\" was given"
+			    exit 2;
+		    fi ;;
 
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
