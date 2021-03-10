@@ -567,7 +567,7 @@ play_url () {
 	[ "$YTFZF_CUR" -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
 
 	#> The urls are quoted and placed one after the other for mpv to read
-	player_urls="\"$(printf "%s" "$urls" | awk  'ORS="\" \"" { print }' | sed 's/"$//' )"
+	player_urls="\"$(printf "%s" "$urls" | awk  'ORS="\" \"" { print }' | sed 's/"$//' | sed 's/ "" / /')"
 	#> Play url with $player or $player_format based on options
 	#> if player format fails, then use normal player
 	[ -n "$YTFZF_PREF" ] && {
@@ -608,7 +608,7 @@ check_if_url () {
 	
 	if { echo "$1" | grep -q "$url_regex"; } ; then
 		is_url=1
-		urls="$1"
+		urls="$(echo "$1" | tr ' ' '\n')"
 		scrape=0
 	else
 		is_url=0
