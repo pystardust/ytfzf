@@ -87,6 +87,8 @@ show_link_only=${show_link_only-0}
 show_format=${show_format-0}
 #number of links to select with -a or -r (same as -n)
 link_count=${link_count-1}
+#number of videos to show in the subsciption menu
+sub_link_count=${sub_link_count-10}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
 #filter id used when searching
@@ -473,11 +475,12 @@ scrape_channel () {
 	    }
 	]')"
 	
+	videos_json="$(echo "$videos_json" | jq '.[0:'$sub_link_count']')"
 	videos_data="$(get_video_data "$videos_json")"
-	
+
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
-	printf "             -------%s-------\t---\t---\t---\n%s\n" "$channel_name" \
+	printf "             -------%s-------\n%s\n" "$channel_name" \
 		"$videos_data" >> "$tmp_video_data_file"
 	
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
@@ -823,7 +826,9 @@ parse_opt () {
 
 		L) 	show_link_only=1 ;;
 
-		n)	link_count="$OPTARG" ;;
+		n)	link_count="$OPTARG" 
+			sub_link_count="$OPTARG"
+			;;
 
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
