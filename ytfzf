@@ -596,7 +596,7 @@ user_selection () {
 	fi
 	
 	#gets a list of video ids/urls from the selected data
-	shorturls="$(echo "$selected_data" | sed -E -e "s_.*\|([^|]+) *\$_\1_")"
+	shorturls="$(echo "$selected_data" | sed -E -n -e "s_.*\|([^|]+) *\$_\1_p")"
 	[ -z "$shorturls" ] && exit;
 
 	#for each url append the full url to the $urls string
