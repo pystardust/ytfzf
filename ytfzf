@@ -478,7 +478,7 @@ scrape_channel () {
 	
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
-	printf "%s" "$videos_data" >> "$tmp_video_data_file"
+	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 	
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
@@ -603,6 +603,7 @@ EOF
 
 	if [ "$show_link_only" -eq 1 ] ; then
 		echo "$urls"
+		exit
 	fi
 
 	# select format if flag given
@@ -875,7 +876,6 @@ fi
 
 while true; do
 	[ -z "$(cat "$tmp_video_urls_file")" ] && user_selection
-	[ $show_link_only -eq 1 ] && exit
 	play_url
 	save_before_exit
 	
