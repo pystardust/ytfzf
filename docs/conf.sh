@@ -112,6 +112,10 @@ preview_side="left"
 #same as -S
 is_get_subscriptions=0
 
+#the amount of videos to get from each subscription
+#same as --sub=
+sub_link_count=10
+
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
 #to get a filter id go to youtube search for something, choose the filter you want,
