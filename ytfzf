@@ -303,11 +303,17 @@ stop_ueberzug () {
 }
 
 preview_img () {
-       shorturl="$(echo "$*" | sed -E -e 's_^.*\|__')"
+	shorturl="$( printf "%s" "$*" | sed -E -n -e 's_^.*\|([^|]+) *_\1_p')"
 
-       thumb_width=$WIDTH
-       thumb_height=$((HEIGHT - 2))
-       #most common x, y positions
+       if [ -z "$shorturl" ] ; then
+	       printf '{ "action": "remove", "identifier": "%s" }\n' "$ID" > "$FIFO"
+	       return
+	fi
+
+
+	thumb_width=$WIDTH
+	thumb_height=$((HEIGHT - 2))
+	#most common x, y positions
 
 	thumb_x=$((TTY_COLS / 2 + 3))
 	thumb_y=10
@@ -437,6 +443,8 @@ get_video_data () {
 }
 
 scrape_channel () {
+	# needs channel url as $*
+	## Scrape data and store video information in videos_data ( and thumbnails )
 	yt_html="$(get_yt_html "$*")"
 	
 	if [ -z "$yt_html" ]; then
@@ -469,14 +477,14 @@ scrape_channel () {
 	
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
-	printf "%s" "$videos_data" >> "$tmp_video_data_file"
+	printf "             -------%s-------\t---\t---\t---\n%s\n" "$channel_name" \
+		"$videos_data" >> "$tmp_video_data_file"
 	
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 }
 scrape_yt () {
-	# needs search_query
-	## Scrape data and store video information in videos_data ( and thumbnails download)
-	## GETTING DATA
+	# needs search_query as $*
+	## Scrape data and store video information in videos_data ( and thumbnails )
 
 	#sp is the urlquery youtube uses for sorting videos
 	#only runs if --filter-id or --sp was unspecified
@@ -519,7 +527,7 @@ scrape_yt () {
 	videos_data="$(get_video_data "$videos_json")"
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
-	printf "%s" "$videos_data\n" >> "$tmp_video_data_file"
+	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	wait
@@ -595,6 +603,7 @@ EOF
 
 	if [ "$show_link_only" -eq 1 ] ; then
 		echo "$urls"
+		exit
 	fi
 
 	# select format if flag given
@@ -869,7 +878,6 @@ esac
 
 while true; do
 	user_selection
-	[ $show_link_only -eq 1 ] && exit
 	play_url
 	save_before_exit
 	
