@@ -52,8 +52,8 @@ printf "" > "$tmp_video_data_file"
 [ "$YTFZF_ENABLE_FZF_DEFAULT_OPTS" -eq 0 ] && FZF_DEFAULT_OPTS=""
 
 #> files and directories
-history_file="$YTFZF_CACHE/ytfzf_hst"
-current_file="$YTFZF_CACHE/ytfzf_cur"
+history_file="${history_file-$YTFZF_CACHE/ytfzf_hst}"
+current_file="${current_file-$YTFZF_CACHE/ytfzf_cur}"
 thumb_dir="$YTFZF_CACHE/thumb"
 #> Stores urls of the video page of channels
 subscriptions_file="${subscriptions_file-$config_dir/subscriptions}"
