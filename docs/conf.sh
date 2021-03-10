@@ -113,7 +113,7 @@ preview_side="left"
 sub_link_count=10
 
 #whether or not to show --------------channel---------------- when viewing subscriptions
-#same as --fancy-subs
+#same as --fancy-subs=
 fancy_subscriptions_menu=1
 
 #where to source videos from
