@@ -91,8 +91,6 @@ link_count=${link_count-1}
 search_again=${search_again-0}
 #filter id used when searching
 sp="${sp-}"
-# Gets subscriptions from sub file if 1
-is_get_subscriptions=0
 #ueberzug related variables
 #the side where thumbnails are shown
 #needs to be exported because ueberzug spawns subprocesses
@@ -653,7 +651,7 @@ check_if_url () {
 	if { echo "$1" | grep -q "$url_regex"; } ; then
 		is_url=1
 		urls="$1"
-		scrape=0
+		scrape=""
 	else
 		is_url=0
 	fi
@@ -667,7 +665,6 @@ get_history () {
 		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 		#removes duplicate values from $history_data
 		videos_data="$(echo "$hist_data" | uniq )"
-		scrape=0
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n";
 		exit;
@@ -697,8 +694,7 @@ update_ytfzf () {
 	exit
 }
 
-get_subscriptions () {
-	scrape=0
+scrape_subscriptions () {
 	while read -r url; do
 		 scrape_channel "$url"  &
 	done < "$subscriptions_file"
@@ -707,7 +703,7 @@ get_subscriptions () {
 }
 
 #is used to know whether or not scraping the search page is necessary
-scrape=1
+scrape="yt_search"
 #OPT
 parse_long_opt () {
 	opt="$1"
@@ -796,7 +792,7 @@ parse_opt () {
 
 		f) 	show_format=1 ;;
 
-		H)	get_history ;;
+		H)	scrape="history" ;;
 
 		x)	clear_history && exit ;;
 
@@ -807,7 +803,7 @@ parse_opt () {
 
 		s)	search_again=1 ;;
 
-		S)	is_get_subscriptions=1 ;;
+		S)	scrape="yt_subs" ;;
 
 		l) 	YTFZF_LOOP=1 ;;
 
@@ -857,12 +853,19 @@ check_if_url "${search_query:=$*}"
 #format the menu screen
 format_menu 
 
-[ "$is_get_subscriptions" -eq 1 ] && get_subscriptions
 
-if [ $scrape -eq 1 ]; then 
-	get_search_query
-	scrape_yt "$search_query"
-fi
+case "$scrape" in
+	"yt_search") 
+		get_search_query
+		scrape_yt "$search_query" ;;
+	"yt_subs")
+		scrape_subscriptions
+		;;
+	"history") 
+		get_history 
+		;;
+esac
+
 
 while true; do
 	user_selection
