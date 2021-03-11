@@ -470,7 +470,7 @@ get_search_query () {
 	if [ -z "$search_query" ]; then
 		if [ $is_ext_menu -eq 1 ]; then 
 			#when using an external menu, the query will be done there
-			search_query="$(printf "" | $YTFZF_EXTMENU)"
+			search_query="$(printf "" | eval "$YTFZF_EXTMENU" )"
 		else
 			#otherwise use the search prompt
 			printf "$search_prompt"
