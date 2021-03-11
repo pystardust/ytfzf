@@ -836,7 +836,7 @@ parse_long_opt () {
 		sub) parse_opt "S" ;;
 		sub=*)	
 			sub_link_count="${opt#*=}" 
-			is_non_number "$sub_link_count" bad_opt_arg "--sub" "$sub_link_count"
+			is_non_number "$sub_link_count" && bad_opt_arg "--sub" "$sub_link_count"
 			parse_opt "S"
 			;;
 
