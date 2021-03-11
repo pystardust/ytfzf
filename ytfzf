@@ -717,15 +717,27 @@ clear_history () {
 
 update_ytfzf () {
 	branch="$1"
-	updatefile="/tmp/ytfzf-update"
-	curl "https://raw.githubusercontent.com/pystardust/ytfzf/$branch/ytfzf" > "$updatefile"
-	chmod 755 "$updatefile"
-	if [ "$(uname)" = "Darwin" ]; then 
-	    sudo cp "$updatefile" "/usr/local/bin/ytfzf" 
+	#used for install
+	if [ "$branch" = "install" ]; then
+	    updatefile="./ytfzf"
+	#used for updating
 	else
-	    sudo cp "$updatefile" "/usr/bin/ytfzf"
+	    updatefile="/tmp/ytfzf-update"
+	    curl "https://raw.githubusercontent.com/pystardust/ytfzf/$branch/ytfzf" > "$updatefile"
+	    chmod 755 "$updatefile"
 	fi
-	rm "$updatefile"
+	#checks platform for install location
+	install_path="/usr/bin/ytfzf"
+	[ "$(uname)" = "Darwin" ] && install_path="/usr/local/bin/ytfzf"
+	sudo cp "$updatefile" "$install_path"
+	#when installing don't remove the downloaded copy
+	[ "$branch" != "install" ] && rm "$updatefile"
+	exit
+}
+uninstall_ytfzf () {
+	uninstall_path="/usr/bin/ytfzf"
+	[ "$(uname)" = "Darwin" ] && uninstall_path="/usr/local/bin/ytfzf"
+	sudo rm "$uninstall_path"
 	exit
 }
 
@@ -802,6 +814,8 @@ parse_long_opt () {
 		previews=*) export PREVIEW_SIDE="${opt#*=}" ;;
 
 		update) update_ytfzf "master" ;;
+		install) update_ytfzf "install" ;;
+		uninstall) uninstall_ytfzf ;;
 		update-unstable) update_ytfzf "development" ;;
 
 		sub) parse_opt "S" ;;

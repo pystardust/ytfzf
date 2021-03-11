@@ -176,16 +176,16 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 	cd ytfzf
 	```
 
-	- ##### Install with the Makefile
+	- ##### Install
 
 		```sh
-		sudo make install
+		./ytfzf --install
 		```
 
-	- ##### Uninstall with the Makefile
+	- ##### Uninstall
 
 		```sh
-		sudo make uninstall
+		ytfzf --uninstall
 		```
 
 + #### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
