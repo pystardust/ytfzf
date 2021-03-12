@@ -54,13 +54,12 @@ printf "" > "$tmp_video_data_file"
 #> files and directories
 history_file="${history_file-$YTFZF_CACHE/ytfzf_hst}"
 current_file="${current_file-$YTFZF_CACHE/ytfzf_cur}"
-thumb_dir="$YTFZF_CACHE/thumb"
+thumb_dir="${thumb_dir-$YTFZF_CACHE/thumb}"
 #> Stores urls of the video page of channels
 subscriptions_file="${subscriptions_file-$config_dir/subscriptions}"
 
 #> stores the pid of running ytfzf sessions
 pid_file="$YTFZF_CACHE/.pid"
-thumb_dir="$YTFZF_CACHE/thumb"
 #> make folders that don't exist
 [ -d "$YTFZF_CACHE" ] || mkdir -p "$YTFZF_CACHE"
 [ -d "$thumb_dir" ] || mkdir -p "$thumb_dir"
