@@ -148,7 +148,7 @@ basic_helpinfo () {
     printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
     printf "     -s, --search-again   <search-query>    After the video ends make another search \n";
     printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
-    printf "     --previews=        <left/right>      the side of the screen to show thumbnails\n";
+    printf "     --preview-side=    <left/right/top/bottom>      the side of the screen to show thumbnails\n";
     printf "\n"
     printf "  %bUse - instead of <search-query> for stdin%b\n" "\033[3m" "\033[0m"
     printf "\n";
@@ -981,7 +981,7 @@ fi
 #if stdin is given and no input (including -) is given, throw error
 #also make sure its not reading from ext_menu
 if [ ! -t 0 ] && [ -z "$*" ] && [ $is_ext_menu -eq 0 ]; then
-	printf "\033[31mERROR[#04]: Use - when reading from stdin\033[0m\n"
+	print_error "\033[31mERROR[#04]: Use - when reading from stdin\033[0m\n"
 	exit 2
 #read stdin if given
 elif [ "$*" = "-" ]; then
