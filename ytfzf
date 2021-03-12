@@ -743,6 +743,14 @@ EOF
 	videos_data="$(cat "$tmp_video_data_file")"
 }
 
+is_non_number () {
+    if [ -n "$(echo "$1" | grep -o '[^0-9]')" ]; then
+	return 0 
+    else
+	return 1
+    fi
+}
+
 bad_opt_arg () {
 	opt="$1"
 	arg="$2"
@@ -758,6 +766,9 @@ parse_long_opt () {
 	        help) parse_opt "h" ;;
 
 		ext-menu) parse_opt "D" ;;
+		ext-menu=*) 
+		    parse_opt "D" "${opt#*=}"
+		    is_non_number "$is_ext_menu" && bad_opt_arg "--ext-menu=" "$is_ext_menu" ;;
 
 		download) parse_opt "d" ;;
 
@@ -765,25 +776,44 @@ parse_long_opt () {
 
 		clear-history) parse_opt "x" ;;
 
-		random-select) parase_opt "r" ;;
 		search) parse_opt "s" ;;
-
+		search=*) 
+		    parse_opt "s" "${opt#*=}"
+		    is_non_number "$search_again" && bad_opt_arg "--search=" "$search_again" ;;
 
 		loop) parse_opt "l" ;;
+		loop=*) 
+		    parse_opt "l" "${opt#*=}"
+		    is_non_number "$YTFZF_LOOP" && bad_opt_arg "--loop=" "$YTFZF_LOOP" ;;
 
 		thumbnails) parse_opt "t" ;;
+		thumbnails=*) 
+		    parse_opt "t" "${opt#*=}" 
+		    is_non_number "$show_thumbnails" && bad_opt_arg "--thumbnails=" "$show_thumbnails" ;;
 
 		link-only) parse_opt "L" ;;
+		link-only=*) 
+		    parse_opt "L" "${opt#*=}"
+		    is_non_number "$show_link_only" && bad_opt_arg "--link-only=" "$show_link_only" ;;
 
 		video-count=*) parse_opt "n" "${opt#*=}" ;;
 
 		audio-only) parse_opt "m" ;;
 
 		auto-play) parse_opt "a" ;;
+		auto-play=*) 
+		    parse_opt "a" "${opt#*=}"
+		    is_non_number "$auto_select" && bad_opt_arg "--auto-play=" "$auto_select" ;;
     
 		select-all) parse_opt "A" ;;
+		select-all=*) 
+		    parse_opt "A" "${opt#*=}"
+		    is_non_number "$select_all" && bad_opt_arg "--select-all=" "$select_all" ;;
 
-		random-auto-play) parse_opt "r" ;;
+		random-play) parse_opt "r" ;;
+		random-play=*) 
+		    parse_opt "r" "${opt#*=}"
+		    is_non_number "$random_select" && bad_opt_arg "--random-play=" "$random_select" ;;
 
 		upload-time=*) upload_date_filter="${opt#*=}" ;;
 		last-hour) upload_date_filter="last-hour" ;;
@@ -799,7 +829,6 @@ parse_long_opt () {
 
 		filter-id=*|sp=*) sp="${opt#*=}" ;;
 
-
 		previews=*) export PREVIEW_SIDE="${opt#*=}" ;;
 
 		update) update_ytfzf "master" ;;
@@ -808,9 +837,7 @@ parse_long_opt () {
 		sub) parse_opt "S" ;;
 		sub=*)	
 			sub_link_count="${opt#*=}" 
-			if [ -n "$(echo "$sub_link_count" | grep -o '[^0-9]')" ]; then
-				bad_opt_arg "--sub" "$sub_link_count"
-			fi
+			is_non_number "$sub_link_count" && bad_opt_arg "--sub" "$sub_link_count"
 			parse_opt "S"
 			;;
 
@@ -841,7 +868,7 @@ parse_opt () {
 		h) 	helpinfo
 			exit ;;
 
-		D) 	is_ext_menu="1" ;;
+		D) 	is_ext_menu="${OPTARG:-1}" ;;
 
 		m) 	YTFZF_PREF="bestaudio" ;;
 
@@ -854,29 +881,28 @@ parse_opt () {
 
 		x)	clear_history && exit ;;
 
-		a) 	auto_select=1 ;;
-		A)	select_all=1 ;;
+		a)	auto_select=${OPTARG:-1} ;;
 
-		r)	random_select=1 ;;
+		A)	select_all=${OPTARG:-1} ;;
 
-		s)	search_again=1 ;;
+		r)	random_select=${OPTARG:-1} ;;
+
+		s)	search_again=${OPTARG:-1} ;;
 
 		S)	scrape="yt_subs" ;;
 
-		l) 	YTFZF_LOOP=1 ;;
+		l) 	YTFZF_LOOP=${OPTARG:-1} ;;
 
-		t) 	show_thumbnails=1 ;;
+		t) 	show_thumbnails=${OPTARG:-1} ;;
 
 		v)	printf "ytfzf: %s\n" "$YTFZF_VERSION"
 			exit ;;
 
-		L) 	show_link_only=1 ;;
+		L) 	show_link_only=${OPTARG:-1} ;;
 
 		n)	
 		    link_count="$OPTARG" 
-		    if [ -n "$(echo "$link_count" | grep -o '[^0-9]')" ]; then
-			bad_opt_arg "-n" "$link_count"
-		    fi ;;
+		    is_non_number "$link_count" && bad_opt_arg "-n" "$link_count" ;;
 
 		U) 	[ -p "$FIFO" ] && preview_img "$OPTARG"; exit;
 			# This option is reserved for the script, to show image previews
