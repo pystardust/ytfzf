@@ -71,7 +71,7 @@ enable_fzf_default_opts=0
 #any variables here can be set with options when running the command
 #see ytfzf --help for more info
 
-#enable/disable using the external menu
+#enable/disable using $external_menu
 #same as -D
 is_ext_menu=0
 
@@ -105,11 +105,11 @@ show_format=0
 
 #the side to show thumbnails
 #options are "left", "right", "top", "bottom"
-#same as --previews=
+#same as --priview-side=
 preview_side="left"
 
 #the amount of links to get from each subscription
-#same as --sub=
+#same as --subs=
 sub_link_count=10
 
 #whether or not to show --------------channel---------------- when viewing subscriptions
@@ -172,6 +172,21 @@ history_file="$YTFZF_CACHE/ytfzf_hst"
 current_file="$YTFZF_CACHE/ytfzf_cur"
 
 #when displaying thumbnails, use the text printed in this function to show the title, views, etc..
+#available default colors:
+    #c_red
+    #c_green
+    #c_yellow
+    #c_blue
+    #c_magenta
+    #c_cyan
+    #c_reset (sets it back to terminal defaults)
+#available variables
+    #title
+    #channel
+    #duration
+    #views
+    #date (video upload date)
+    #shorturl
 thumbnail_video_info_text () {
          printf "\n${c_cyan}%s" "$title"
          printf "\n${c_blue}Channel      ${c_green}%s" "$channel"

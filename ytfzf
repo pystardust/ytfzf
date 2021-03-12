@@ -145,7 +145,7 @@ basic_helpinfo () {
     printf "     -a, --auto-select    <search-query>    Auto play the first result, no selector\n";
     printf "     -r  --random-select  <search-query>    Auto play a random result, no selector\n";
     printf "     -A, --select-all   <search-query>    Selects all results\n";
-    printf "     -n, --video-count= <video-count>     To specify number of videos to select with -a, -r\n";
+    printf "     -n, --link-count=  <link-count>     To specify number of videos to select with -a, -r\n";
     printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
     printf "     -s                 <search-query>    After the video ends make another search \n";
     printf "     -L, --link-only    <search-query>    Prints the selected URL only, helpful for scripting\n";
@@ -222,7 +222,7 @@ c_yellow="\033[1;33m"
 c_blue="\033[1;34m"
 c_magenta="\033[1;35m"
 c_cyan="\033[1;36m"
-c_reset="\033[0m"
+c_reset="\033[000m"
 
 
 #> To determine the length of each field (title, channel ... etc)
@@ -833,7 +833,7 @@ parse_long_opt () {
 		    parse_opt "L" "${opt#*=}"
 		    is_non_number "$show_link_only" && bad_opt_arg "--link-only=" "$show_link_only" ;;
 
-		video-count=*) parse_opt "n" "${opt#*=}" ;;
+		link-count=*) parse_opt "n" "${opt#*=}" ;;
 
 		audio-only) parse_opt "m" ;;
 
