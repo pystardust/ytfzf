@@ -270,7 +270,7 @@ https://www.youtube.com/c/MentalOutlaw/videos                   #mental outlaw
 ```sh
 ytfzf -S
 # Defaults to 10 results from each channel
-ytfzf --sub=15
+ytfzf --subs=15
 # To show 15 results instead
 ```
 

@@ -171,3 +171,11 @@ history_file="$YTFZF_CACHE/ytfzf_hst"
 #the file for writing the menu option that was chosen
 current_file="$YTFZF_CACHE/ytfzf_cur"
 
+#when displaying thumbnails, use the text printed in this function to show the title, views, etc..
+thumbnail_video_info_text () {
+         printf "\n${c_cyan}%s" "$title"
+         printf "\n${c_blue}Channel      ${c_green}%s" "$channel"
+         printf "\n${c_blue}Duration     ${c_yellow}%s" "$duration"
+         printf "\n${c_blue}Views        ${c_magenta}%s" "$views"
+         printf "\n${c_blue}Date ${c_cyan}%s" "$date"
+}
