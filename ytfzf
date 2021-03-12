@@ -322,7 +322,7 @@ stop_ueberzug () {
     rm "$FIFO" > /dev/null 2>&1
 }
 
-if  [ -z "$(type thumbnail_video_info_text | grep 'function')" ] ; then
+if  [ -z "$(LANG=C type thumbnail_video_info_text | grep 'function')" ] ; then
     thumbnail_video_info_text () {
 	printf "\n${c_cyan}%s" "$title"
 	printf "\n${c_blue}Channel	${c_green}%s" "$channel"
