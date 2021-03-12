@@ -171,6 +171,9 @@ history_file="$YTFZF_CACHE/ytfzf_hst"
 #the file for writing the menu option that was chosen
 current_file="$YTFZF_CACHE/ytfzf_cur"
 
+#the folder where thumbnails are cached
+thumb_dir="$YTFZF_CACHE/thumb"
+
 #when displaying thumbnails, use the text printed in this function to show the title, views, etc..
 thumbnail_video_info_text () {
          printf "\n${c_cyan}%s" "$title"
