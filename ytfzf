@@ -746,16 +746,24 @@ clear_history () {
 update_ytfzf () {
 	branch="$1"
 	updatefile="/tmp/ytfzf-update"
-	curl "https://raw.githubusercontent.com/pystardust/ytfzf/$branch/ytfzf" > "$updatefile"
-	chmod 755 "$updatefile"
-	if [ "$(uname)" = "Darwin" ]; then
-	    sudo cp "$updatefile" "/usr/local/bin/ytfzf"
+	curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/$branch/ytfzf" -o "$updatefile"
+
+	if sed -n '1p' < "$updatefile" | grep -q '#!/bin/sh' ; then
+		chmod 755 "$updatefile"
+		if [ "$(uname)" = "Darwin" ]; then
+			sudo cp "$updatefile" "/usr/local/bin/ytfzf"
+		else
+			sudo cp "$updatefile" "/usr/bin/ytfzf"
+		fi
 	else
-	    sudo cp "$updatefile" "/usr/bin/ytfzf"
+		printf "%bFailed to update ytfzf. Try again later.%b" "$c_red" "$c_reset"
 	fi
+
 	rm "$updatefile"
 	exit
 }
+
+
 
 scrape_subscriptions () {
 	while read -r url; do
