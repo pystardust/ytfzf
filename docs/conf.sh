@@ -175,7 +175,7 @@ current_file="$YTFZF_CACHE/ytfzf_cur"
 thumb_dir="$YTFZF_CACHE/thumb"
 
 #when displaying thumbnails, use the text printed in this function to show the title, views, etc..
-#available default colors:
+#available default colors (note: they are be bolded):
     #c_red
     #c_green
     #c_yellow
@@ -189,7 +189,9 @@ thumb_dir="$YTFZF_CACHE/thumb"
     #duration
     #views
     #date (video upload date)
-    #shorturl
+    #shorturl (the video ID)
+#how this works:
+    #anything printed will stay on the screen in the fzf preview menu
 thumbnail_video_info_text () {
          printf "\n${c_cyan}%s" "$title"
          printf "\n${c_blue}Channel      ${c_green}%s" "$channel"
