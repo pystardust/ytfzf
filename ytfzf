@@ -323,6 +323,16 @@ stop_ueberzug () {
     rm "$FIFO" > /dev/null 2>&1
 }
 
+if  [ -z "$(type thumbnail_video_info_text | grep 'function')" ] ; then
+    thumbnail_video_info_text () {
+	printf "\n${c_cyan}%s" "$title"
+	printf "\n${c_blue}Channel	${c_green}%s" "$channel"
+	printf "\n${c_blue}Duration	${c_yellow}%s" "$duration"
+	printf "\n${c_blue}Views	${c_magenta}%s" "$views"
+	printf "\n${c_blue}Date	${c_cyan}%s" "$date"
+    }
+fi
+
 preview_img () {
 	preview_data="$( printf '%s' "$*" | sed "s/ *""$(printf '\t|')""/""$(printf '\t')""/g" )"
 	title="$( printf '%s' "$preview_data" | cut -d"$(printf '\t')" -f1 )"
@@ -338,8 +348,7 @@ preview_img () {
 	       return
 	fi
 
-	printf "\n${c_cyan}%s\n${c_blue}Channel  ${c_green}%s\n${c_blue}Duration ${c_yellow}%s\n${c_blue}Views    ${c_magenta}%s\n${c_blue}Date     ${c_cyan}%s${c_reset}" "$title" "$channel" "$duration" "$views" "$date"
-
+	thumbnail_video_info_text
 
 	thumb_width=$WIDTH
 	thumb_height=$((HEIGHT - 2))
