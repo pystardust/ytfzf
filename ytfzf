@@ -364,7 +364,8 @@ download_thumbnails () {
 	i=0
 	while read -r line; do
 		if [ $((i % 2)) -eq 0 ]; then
-			url="$(echo "$line" | sed -E 's/^"//;s/\.png.*/\.png/')" 
+			url="$line" 
+			sleep 0.002
 		else
 			name="$line"
 			{ 
