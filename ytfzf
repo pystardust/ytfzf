@@ -141,8 +141,8 @@ printf "     -x, --clear-history                  Delete history\n";
 printf "     -m, --audio-only   <search-query>    Audio only (for music)\n";
 printf "     -d, --download     <search-query>    Download to current directory\n";
 printf "     -f                 <search-query>    Show available formats before proceeding\n";
-printf "     -a, --auto-play    <search-query>    Auto play the first result, no selector\n";
-printf "     -r  --random-play  <search-query>    Auto play a random result, no selector\n";
+printf "     -a, --auto-select    <search-query>    Auto play the first result, no selector\n";
+printf "     -r  --random-select  <search-query>    Auto play a random result, no selector\n";
 printf "     -A, --select-all   <search-query>    Selects all results\n";
 printf "     -n, --video-count= <video-count>     To specify number of videos to select with -a, -r\n";
 printf "     -l, --loop         <search-query>    Loop: prompt selector again after video ends\n";
@@ -776,8 +776,8 @@ parse_long_opt () {
 
 		clear-history) parse_opt "x" ;;
 
-		search) parse_opt "s" ;;
-		search=*) 
+		search-again) parse_opt "s" ;;
+		search-again=*) 
 		    parse_opt "s" "${opt#*=}"
 		    is_non_number "$search_again" && bad_opt_arg "--search=" "$search_again" ;;
 
@@ -800,8 +800,8 @@ parse_long_opt () {
 
 		audio-only) parse_opt "m" ;;
 
-		auto-play) parse_opt "a" ;;
-		auto-play=*) 
+		auto-select) parse_opt "a" ;;
+		auto-select=*) 
 		    parse_opt "a" "${opt#*=}"
 		    is_non_number "$auto_select" && bad_opt_arg "--auto-play=" "$auto_select" ;;
     
@@ -810,8 +810,8 @@ parse_long_opt () {
 		    parse_opt "A" "${opt#*=}"
 		    is_non_number "$select_all" && bad_opt_arg "--select-all=" "$select_all" ;;
 
-		random-play) parse_opt "r" ;;
-		random-play=*) 
+		random-selcet) parse_opt "r" ;;
+		random-select=*) 
 		    parse_opt "r" "${opt#*=}"
 		    is_non_number "$random_select" && bad_opt_arg "--random-play=" "$random_select" ;;
 
@@ -834,8 +834,8 @@ parse_long_opt () {
 		update) update_ytfzf "master" ;;
 		update-unstable) update_ytfzf "development" ;;
 
-		sub) parse_opt "S" ;;
-		sub=*)	
+		subs) parse_opt "S" ;;
+		subs=*)	
 			sub_link_count="${opt#*=}" 
 			is_non_number "$sub_link_count" && bad_opt_arg "--sub" "$sub_link_count"
 			parse_opt "S"
