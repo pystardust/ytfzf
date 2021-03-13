@@ -335,7 +335,7 @@ stop_ueberzug () {
     rm "$FIFO" > /dev/null 2>&1
 }
 
-if ! type thumbnail_video_info_text > /dev/null; then
+if ! type thumbnail_video_info_text > /dev/null 2>&1 ; then
     thumbnail_video_info_text () {
 	printf "\n${c_cyan}%s" "$title"
 	printf "\n${c_blue}Channel	${c_green}%s" "$channel"
