@@ -108,7 +108,7 @@ scrape="${scrape-yt_search}"
 #this could be any unique value, $$ is used because it is the most easily accessible unique value
 if [ -z "$PROC_ID" ] ; then
 	export PROC_ID="$$"
-	echo "$$" >> "$pid_file"
+	printf "$$" >> "$pid_file"
 fi
 
 #dependency check
@@ -436,7 +436,7 @@ get_sp_filter () {
 	#another example is sort by filter + upload date filter only changes one character as well
 	if [ -n "$filter_id" ]; then
 		#gets the character in the filter_id that needs to be replaced if upload_date_filter is also given
-		upload_date_character="$(echo "$filter_id" | awk '{print substr($1, 8, 1)}')"
+		upload_date_character="$(printf "%s" "$filter_id" | awk '{print substr($1, 8, 1)}')"
 	fi
 
 	#For each of these, if upload_date_character is unset, the filter_id should be the normal filter
@@ -453,7 +453,7 @@ get_sp_filter () {
 	if [ -n "$upload_date_character" ]; then
 		#replaces the 8th character in the filter_id with the appropriate character
 		#the 8th character specifies the upload_date_filter
-		sp="$(echo "$filter_id" | sed "s/\\(.\\{7\\}\\)./\\1$upload_date_character/")"
+		sp="$(printf "%s" "$filter_id" | sed "s/\\(.\\{7\\}\\)./\\1$upload_date_character/")"
 	#otherwise set it to the filter_id
 	else
 		sp="$filter_id"
@@ -504,7 +504,7 @@ scrape_channel () {
 	fi
 
 	#gets the channel name from title of page
-	channel_name="$(echo "$yt_html" | grep -o '<title>.*</title>' | sed 's/<\/\?title>//g' | sed 's/ - YouTube//' |\
+	channel_name="$(printf "%s" "$yt_html" | grep -o '<title>.*</title>' | sed 's/<\/\?title>//g' | sed 's/ - YouTube//' |\
 		sed \
 		-e "s/&apos;/'/g" \
 		-e "s/&#39;/'/g" \
@@ -532,7 +532,7 @@ scrape_channel () {
 	    }
 	]')"
 
-	videos_json="$(echo "$videos_json" | jq '.[0:'$sub_link_count']')"
+	videos_json="$(printf "%s" "$videos_json" | jq '.[0:'$sub_link_count']')"
 	videos_data="$(get_video_data "$videos_json")"
 
 	#if there aren't videos
@@ -668,7 +668,7 @@ EOF
 	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
 
 	if [ "$show_link_only" -eq 1 ] ; then
-		echo "$urls"
+		printf "%s" "$urls"
 		exit
 	fi
 
@@ -723,9 +723,9 @@ check_if_url () {
 	# to check if given input is a url
 	url_regex='^https\?://.*'
 
-	if { echo "$1" | grep -q "$url_regex"; } ; then
+	if { printf "%s" "$1" | grep -q "$url_regex"; } ; then
 		is_url=1
-		urls="$(echo "$1" | tr ' ' '\n')"
+		urls="$(printf "%s" "$1" | tr ' ' '\n')"
 		scrape=""
 	else
 		is_url=0
@@ -747,7 +747,7 @@ get_history () {
 }
 clear_history () {
 	if [ -e "$history_file" ]; then
-		echo "" > "$history_file"
+		printf "" > "$history_file"
 		printf "History has been cleared\n"
 	else
 		printf "\033[31mHistory file not found, history not cleared\033[0m\n"
@@ -791,7 +791,7 @@ EOF
 }
 
 is_non_number () {
-    if [ -n "$(echo "$1" | grep -o '[^0-9]')" ]; then
+    if [ -n "$(printf "%s" "$1" | grep -o '[^0-9]')" ]; then
 	return 0
     else
 	return 1
