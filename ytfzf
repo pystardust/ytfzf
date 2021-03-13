@@ -128,8 +128,8 @@ dep_ck "jq" "youtube-dl";
 ############################
 
 basic_helpinfo () {
-    printf "Usage: %bytfzf [OPTIONS...] %b<search-query>%b\n" "\033[1;32m" "\033[1;33m" "\033[0m";
-    printf "  %bOPTIONS%b:\n" "\033[4m" "\033[0m"
+    printf "Usage: ytfzf [OPTIONS...] <search-query>\n";
+    printf "  OPTIONS:\n" 
     printf "     -h, --help                             Show this help text\n";
     printf "     -v, --version                          -v for ytfzf's version\n";
     printf "                                            --version for ytfzf + dependency's versions\n"
@@ -150,9 +150,9 @@ basic_helpinfo () {
     printf "     -L, --link-only      <search-query>    Prints the selected URL only, helpful for scripting\n";
     printf "     --preview-side=      <left/right/top/bottom>    the side of the screen to show thumbnails\n";
     printf "\n"
-    printf "  %bUse - instead of <search-query> for stdin%b\n" "\033[3m" "\033[0m"
+    printf "  Use - instead of <search-query> for stdin\n" 
     printf "\n";
-    printf "  %bOption usage%b:\n" "\033[4m" "\033[0m"
+    printf "  Option usage:\n" 
     printf "     ytfzf -fDH                           to show history using external \n"
     printf "                                          menu and show formats\n"
     printf "     ytfzf -fD --choose-from-history      same as above\n"
@@ -161,13 +161,13 @@ basic_helpinfo () {
 
 all_help_info () {
     basic_helpinfo
-    printf "  %bSubscriptions%b: to add a channel to subscptions, copy the channel's video page url\n" "\033[4m" "\033[0m"
+    printf "  Subscriptions: to add a channel to subscptions, copy the channel's video page url\n" 
     printf "                 and add it to ~/.config/ytfzf/subscriptions. Each url must be on a new line\n";
     printf "     -S,  --subs                          Get the latest 10 videos from subscriptions\n"
     printf "     --subs=<number>                      Get the latest <number> of videos from subscriptions\n";
     printf "     --fancy-subs=                        whether or not to show ------channel------ in subscriptions (must be 1 or 0)\n";
     printf "\n"
-    printf "  %bFilters%b: different ways to filter videos in search\n" "\033[4m" "\033[0m"
+    printf "  Filters: different ways to filter videos in search\n" 
     printf "     --upload-time=     <time-range>      Time range can be one of, \n";
     printf "                                          last-hour, today, this-week, this-month, this-year\n"
     printf "                                          Filters can go directly: --today\n";
@@ -182,16 +182,16 @@ all_help_info () {
     printf "         Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[0m\n";
     printf "         This will filter by livestream\n";
     printf "\n";
-    printf "  %bUpdate%b:\n" "\033[4m" "\033[0m"
+    printf "  Update:\n" 
     printf "     --update                             clones the latest stable commit and installs it\n";
     printf "                                          on Arch ytfzf is available in the AUR\n";
     printf "     --update-unstable                    gets the latest commit and installs it (--update is safer)\n";
     printf "\n";
     printf "\n"
     printf "  Defaults can be modified through ENV variables or the config file\n";
-    printf "  %bthe default config file can be found at https://github.com/pystardust/ytfzf/blob/master/docs/conf.sh%b\n" "\033[3m" "\033[0m"
+    printf "  the default config file can be found at https://github.com/pystardust/ytfzf/blob/master/docs/conf.sh%b\n"
     printf "\n"
-    printf "  %bEnvironment Variables%b:\n" "\033[4m" "\033[0m"
+    printf "  Environment Variables:\n" 
     printf "     YTFZF_HIST=1                          0 : off history\n";
     printf "     YTFZF_CACHE=~/.cache/ytfzf\n";
     printf "     YTFZF_LOOP=0                          1 : loop the selection prompt\n";
@@ -916,7 +916,7 @@ parse_opt () {
 		-)	parse_long_opt "$OPTARG" ;;
 		#Short options
 		h) 	basic_helpinfo
-			printf "%btype --help-all for more info%b\n" "\033[3m" "\033[0m"
+			printf "type --help-all for more info\n"
 			exit ;;
 
 		D) 	is_ext_menu="${OPTARG:-1}" ;;
