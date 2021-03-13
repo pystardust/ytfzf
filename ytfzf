@@ -649,7 +649,7 @@ user_selection () {
 	fi
 
 	#gets a list of video ids/urls from the selected data
-	shorturls="$(echo "$selected_data" | sed -E -n -e "s_.*\|([^|]+) *\$_\1_p")"
+	shorturls="$(printf "%s" "$selected_data" | sed -E -n -e "s_.*\|([^|]+) *\$_\1_p")"
 	[ -z "$shorturls" ] && exit;
 
 	#for each url append the full url to the $urls string
@@ -659,7 +659,7 @@ user_selection () {
 	while read -r surl; do
 		[ -z "$surl" ] && continue
 		urls="$(printf '%s\n%s' "${urls}" "https://www.youtube.com/watch?v=$surl")"
-		selected_data="$(printf '%s\n%s' "$selected_data" "$(echo "$videos_data" | grep -m1 -e "$surl" )")"
+		selected_data="$(printf '%s\n%s' "$selected_data" "$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )")"
 	done << EOF
 	$shorturls
 EOF
@@ -739,7 +739,7 @@ get_history () {
 		hist_data="$(tac "$history_file")"
 		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 		#removes duplicate values from $history_data
-		videos_data="$(echo "$hist_data" | uniq )"
+		videos_data="$(printf "%s" "$hist_data" | uniq )"
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n";
 		exit;
