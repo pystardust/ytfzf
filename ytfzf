@@ -391,11 +391,10 @@ download_thumbnails () {
 	while read -r line; do
 		if [ $((i % 2)) -eq 0 ]; then
 			url="$line"
-			sleep 0.002
 		else
 			name="$line"
 			{
-				curl -s "$url" > "$thumb_dir/$name.png"
+				curl -s "$url" -G --data-urlencode "sqp=" > "$thumb_dir/$name.png"
 			} &
 		fi
 		i=$((i + 1))
