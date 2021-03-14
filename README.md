@@ -22,8 +22,6 @@
 
 ## Table of Contents
 
-_These links will take you where you want to go with the snap of a finger_
-
 - [`Features`](#Features)
 - [`Usage instruction`](#Usage-Instructions)
 - [`Examples`](#Examples)
@@ -48,137 +46,138 @@ _Videos can be selected using fzf, dmenu or rofi._
 
 > To quit the script you can press `ESC` or `^C` in the video selection prompt.
 
-+ #### **Config file**: 
+### **Config file**: 
 `~/.config/ytfzf/conf.sh`, [`example config file`](docs/conf.sh). 
 
 ***Any variable change mentioned below can be exported, or added to the config file.***
 
-+ #### **Thumbnails**: 
-requires ueberzug (works only on X11), _doesn't work on wayland and macos_
+### **Thumbnails**: 
+requires ueberzug (works only on X11), _doesn't work on wayland and macos_.
 
-	```sh
-	ytfzf -t <search-query>
-	```
+```sh
+ytfzf -t <search-query>
+```
 
 
 > Thumbnails preview side could be changed to the right with `--preview-side=right`
 
-+ #### **History**: 
+### **History**: 
 
-	```sh
-	ytfzf -H
-	```
+```sh
+ytfzf -H
+```
 
-	+ clear history
++ clear history
 
-	```sh
-	ytfzf -x
-	```
+```sh
+ytfzf -x
+```
 
-	+ History file: `~/.cache/ytfzf/ytfzf_hst`
++ History file: `~/.cache/ytfzf/ytfzf_hst`
 
 > History is enabled by default. To turn it off you can export `YTFZF_HIST=0` or set add it to the config file.
 
-+ #### **External menu**
+### **External menu**
 
 	+ `-D`: To use external menu
 
 By default the external menu is set to `dmenu -i -l 30`. This can be changed to `rofi`
 
-	```sh
-	YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
-	```
+```sh
+YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
+```
 
 > The width of external menu can be adjusted with `YTFZF_EXTMENU_LEN=220`.
 
-+ #### **Format-selction and download**
+### **Format-selction and download**
 
-	+ Video format can be set as per [youtube-dl formatting](https://github.com/ytdl-org/youtube-dl#format-selection).
+Video format can be set as per [youtube-dl formatting](https://github.com/ytdl-org/youtube-dl#format-selection).
 
-	```sh
-	YTFZF_PREF="22"                   # 22 for 720p
-	```
+```sh
+YTFZF_PREF="22"                   # 22 for 720p
+```
 
-	+ `-f`: To view and select available formats.
-	+ `-m`: (audio-only) Only audio format (best audio)
++ `-f`: To view and select available formats.
++ `-m`: (audio-only) Only audio format (best audio)
 
-	+ `-d`: (download) To **download** a video instead of playing it.
++ `-d`: (download) To **download** a video instead of playing it.
 
-+ #### **Multi-selection**: 
-multiple videos can be queued up using `fzf`'s auto multi-selection (tab). To traverse between selected videos use `<` and `>`.
+### **Multi-selection**: 
+Multiple videos can be queued up using `fzf`'s auto multi-selection (tab). To traverse between selected videos use `<` and `>`.
 
-+ #### **Looping, Searches**
+### **Looping, Searches**
 
-	+ `-l`: (loop) would prompt the video menu every time a video finishes. Press `ESC` or `^C` to exit loop.
-	+ `-s`: (search-again) would ask for another search query as the video ends.
++ `-l`: (loop) would prompt the video menu every time a video finishes. Press `ESC` or `^C` to exit loop.
++ `-s`: (search-again) would ask for another search query as the video ends.
 
-+ #### **Auto and random selection**
+### **Auto and random selection**
 To select videos *without video prompt*, if multiple videos are selected then they would play one after the other. The variable **n** represents the link count. Which is 1 by default.
 
-	+ `-A`: (select-all) selects all the videos.
-	+ `-a`: (auto-selection) selects the first **n**(=1) result.
-	+ `-r`: (auto-selection) Randomly selects **n**(=1) results (shuffles them).
++ `-A`: (select-all) selects all the videos.
++ `-a`: (auto-selection) selects the first **n**(=1) result.
++ `-r`: (auto-selection) Randomly selects **n**(=1) results (shuffles them).
 
-	+ `-n <number>` : (link-count) Set **n** the number of links to be selected.
++ `-n <number>` : (link-count) Set **n** the number of links to be selected.
 
-+ #### **Subscriptions**
+### **Subscriptions**
 
 Subscriptions are managed in subscription file: `~/.config/ytfzf/subscriptions`.
 
-	+ Adding a certain channel to subscriptions
+#### Adding a certain channel to subscriptions
 	
-	1. Open the channel page on a browser and go to the vidoes tab (located right below the channel name and subscription count).
-	2. Copy the url of videos page. And add it to your subscription file.
-	3. The url for each subscription must be on a separate line.
+1. Open the channel page on a browser and go to the vidoes tab (located right below the channel name and subscription count).
+2. Copy the url of videos page. And add it to your subscription file.
+3. The url for each subscription must be on a separate line.
 	
 _The subscription file needs to have only the channels' video page url. Comments can be added with `#`_
 
-	```
-	# file : ~/.config/ytfzf/subscriptions
-	## tech channels
-	https://www.youtube.com/c/LukeSmithxyz/videos                   # luke smith
-	https://www.youtube.com/channel/UCngn7SVujlvskHRvRKc1cTw/videos # bugswriter
-	https://www.youtube.com/c/DistroTube/videos                     # distrotube
-	https://www.youtube.com/c/MentalOutlaw/videos                   # mental outlaw
-	```
+```
+# file : ~/.config/ytfzf/subscriptions
+## tech channels
+https://www.youtube.com/c/LukeSmithxyz/videos                   # luke smith
+https://www.youtube.com/channel/UCngn7SVujlvskHRvRKc1cTw/videos # bugswriter
+https://www.youtube.com/c/DistroTube/videos                     # distrotube
+https://www.youtube.com/c/MentalOutlaw/videos                   # mental outlaw
+```
 	
 To see subscriptions' latest videos
-	
-	```sh
-	# Defaults to 10 results from each channel
-	ytfzf -S
 
-	# To show 15 results instead
-	ytfzf --subs=15
-	```
-	
+```sh
+# Defaults to 10 results from each channel
+ytfzf -S
+
+# To show 15 results instead
+ytfzf --subs=15
+```
+
 _This can be combined with other options like thumbnails_
 
-	```sh
-	ytfzf -tS
-	```
+```sh
+ytfzf -tS
+```
 
-+ #### **Custom Player**
+### **Custom Player**
 By default, `ytfzf` uses `mpv`. Custom player should have the ability to launch youtube links (example: `vlc`).
 
-	```sh
-	# example: using devour
-	FZF_PLAYER="devour mpv"
-	YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
-	```
+```sh
+# example: using devour
+FZF_PLAYER="devour mpv"
+YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
+```
 
 
-+ #### **Misc**
+### **Misc**
 
-	+ The currently playing video details are stored in `~/.cache/ytfzf_cur` (for status bar modules)
++ The currently playing video details are stored in `~/.cache/ytfzf_cur` (for status bar modules)
 
-	+ Files and directories used by ytfzf can be set in the config file
-	```sh
-	cache_dir="$HOME/.cache/ytfzf"
-	history_file="$YTFZF_CACHE/ytfzf_hst"
-	current_file="$YTFZF_CACHE/ytfzf_cur"
-	thumb_dir="$YTFZF_CACHE/thumb"
-	```
++ Files and directories used by ytfzf can be set in the config file
+
+```sh
+cache_dir="$HOME/.cache/ytfzf"
+history_file="$YTFZF_CACHE/ytfzf_hst"
+current_file="$YTFZF_CACHE/ytfzf_cur"
+thumb_dir="$YTFZF_CACHE/thumb"
+```
 
 ### Useful mpv key bindings
 
@@ -268,14 +267,14 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
 ## Installation
 
-+ #### Installation by direct download
+### Installation by direct download
 
 	```sh
 	sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf
 	sudo chmod +x /usr/bin/ytfzf
 	```
 
-+ #### Installation by cloning the repository
+#### Installation by cloning the repository
 
 	```sh
 	git clone https://github.com/pystardust/ytfzf
@@ -294,11 +293,11 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 		sudo make uninstall
 		```
 
-+ #### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
+### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
 
 		yay -S ytfzf-git
 
-+ #### Gentoo users can install ytfzf from the [nitratesky](https://github.com/VTimofeenko/nitratesky) overlay
+### Gentoo users can install ytfzf from the [nitratesky](https://github.com/VTimofeenko/nitratesky) overlay
 
 		eselect repository enable nitratesky
 		emerge -a1 net-misc/ytfzf
