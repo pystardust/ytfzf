@@ -267,37 +267,37 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
 ## Installation
 
-### Installation by direct download
+#### Installation by direct download
 
-	```sh
-	sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf
-	sudo chmod +x /usr/bin/ytfzf
-	```
+```sh
+sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf
+sudo chmod +x /usr/bin/ytfzf
+```
 
 #### Installation by cloning the repository
 
-	```sh
-	git clone https://github.com/pystardust/ytfzf
-	cd ytfzf
-	```
+```sh
+git clone https://github.com/pystardust/ytfzf
+cd ytfzf
+```
 
-	- ##### Install with the Makefile
++ Install with the Makefile
 
-		```sh
-		sudo make install
-		```
+```sh
+sudo make install
+```
 
-	- ##### Uninstall with the Makefile
++ Uninstall with the Makefile
 
-		```sh
-		sudo make uninstall
-		```
+```sh
+sudo make uninstall
+```
 
-### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
+#### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
 
 		yay -S ytfzf-git
 
-### Gentoo users can install ytfzf from the [nitratesky](https://github.com/VTimofeenko/nitratesky) overlay
+#### Gentoo users can install ytfzf from the [nitratesky](https://github.com/VTimofeenko/nitratesky) overlay
 
 		eselect repository enable nitratesky
 		emerge -a1 net-misc/ytfzf
