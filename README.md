@@ -48,42 +48,50 @@ _Videos can be selected using fzf, dmenu or rofi._
 
 > To quit the script you can press `ESC` or `^C` in the video selection prompt.
 
-+ **Config file**: `~/.config/ytfzf/conf.sh`, [`example config file`](docs/conf.sh). 
++ #### **Config file**: 
+`~/.config/ytfzf/conf.sh`, [`example config file`](docs/conf.sh). 
 
 ***Any variable change mentioned below can be exported, or added to the config file.***
 
-+ **Thumbnails**: requires ueberzug (works only on X11), _doesn't work on wayland and macos_
++ #### **Thumbnails**: 
+requires ueberzug (works only on X11), _doesn't work on wayland and macos_
 
+	```sh
 	ytfzf -t <search-query>
+	```
 
 
 > Thumbnails preview side could be changed to the right with `--preview-side=right`
 
-+ **History**: 
++ #### **History**: 
 
+	```sh
 	ytfzf -H
+	```
 
 	+ clear history
 
+	```sh
 	ytfzf -x
+	```
 
 	+ History file: `~/.cache/ytfzf/ytfzf_hst`
 
 > History is enabled by default. To turn it off you can export `YTFZF_HIST=0` or set add it to the config file.
 
-+ **External menu**
++ #### **External menu**
 
 	+ `-D`: To use external menu
 
-	+ By default the external menu is set to `dmenu -i -l 30`. This can be changed to `rofi`
+By default the external menu is set to `dmenu -i -l 30`. This can be changed to `rofi`
 
 	```sh
 	YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
 	```
 
-	+ The width of external menu can be adjusted with `YTFZF_EXTMENU_LEN=220`.
+> The width of external menu can be adjusted with `YTFZF_EXTMENU_LEN=220`.
 
-+ **Format-selction and download**
++ #### **Format-selction and download**
 
 	+ Video format can be set as per [youtube-dl formatting](https://github.com/ytdl-org/youtube-dl#format-selection).
 
@@ -96,14 +104,15 @@ _Videos can be selected using fzf, dmenu or rofi._
 
 	+ `-d`: (download) To **download** a video instead of playing it.
 
-+ **Multi-selection**: multiple videos can be queued up using `fzf`'s auto multi-selection (tab). To traverse between selected videos use `<` and `>`.
++ #### **Multi-selection**: 
+multiple videos can be queued up using `fzf`'s auto multi-selection (tab). To traverse between selected videos use `<` and `>`.
 
-+ **Looping, Searches**
++ #### **Looping, Searches**
 
 	+ `-l`: (loop) would prompt the video menu every time a video finishes. Press `ESC` or `^C` to exit loop.
 	+ `-s`: (search-again) would ask for another search query as the video ends.
 
-+ **Auto and random selection**
++ #### **Auto and random selection**
 To select videos *without video prompt*, if multiple videos are selected then they would play one after the other. The variable **n** represents the link count. Which is 1 by default.
 
 	+ `-A`: (select-all) selects all the videos.
@@ -112,7 +121,7 @@ To select videos *without video prompt*, if multiple videos are selected then th
 
 	+ `-n <number>` : (link-count) Set **n** the number of links to be selected.
 
-+ **Subscriptions**
++ #### **Subscriptions**
 
 Subscriptions are managed in subscription file: `~/.config/ytfzf/subscriptions`.
 
@@ -127,13 +136,13 @@ _The subscription file needs to have only the channels' video page url. Comments
 	```
 	# file : ~/.config/ytfzf/subscriptions
 	## tech channels
-	https://www.youtube.com/c/LukeSmithxyz/videos                   #luke smith
-	https://www.youtube.com/channel/UCngn7SVujlvskHRvRKc1cTw/videos #bugswriter
-	https://www.youtube.com/c/DistroTube/videos                     #distrotube
-	https://www.youtube.com/c/MentalOutlaw/videos                   #mental outlaw
+	https://www.youtube.com/c/LukeSmithxyz/videos                   # luke smith
+	https://www.youtube.com/channel/UCngn7SVujlvskHRvRKc1cTw/videos # bugswriter
+	https://www.youtube.com/c/DistroTube/videos                     # distrotube
+	https://www.youtube.com/c/MentalOutlaw/videos                   # mental outlaw
 	```
 	
-	+ To see subscriptions' latest videos
+To see subscriptions' latest videos
 	
 	```sh
 	# Defaults to 10 results from each channel
@@ -144,11 +153,12 @@ _The subscription file needs to have only the channels' video page url. Comments
 	```
 	
 _This can be combined with other options like thumbnails_
+
 	```sh
 	ytfzf -tS
 	```
 
-+ **Custom Player**
++ #### **Custom Player**
 By default, `ytfzf` uses `mpv`. Custom player should have the ability to launch youtube links (example: `vlc`).
 
 	```sh
@@ -158,7 +168,7 @@ By default, `ytfzf` uses `mpv`. Custom player should have the ability to launch 
 	```
 
 
-+ **Misc**
++ #### **Misc**
 
 	+ The currently playing video details are stored in `~/.cache/ytfzf_cur` (for status bar modules)
 
