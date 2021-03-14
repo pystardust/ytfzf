@@ -108,7 +108,7 @@ scrape="${scrape-yt_search}"
 #this could be any unique value, $$ is used because it is the most easily accessible unique value
 if [ -z "$PROC_ID" ] ; then
 	export PROC_ID="$$"
-	printf "$$" >> "$pid_file"
+	printf "$$\n" >> "$pid_file"
 fi
 
 #dependency check
