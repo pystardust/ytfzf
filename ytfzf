@@ -607,7 +607,7 @@ get_search_query () {
 	if [ -z "$search_query" ]; then
 		if [ "$is_ext_menu" -eq 1 ]; then
 			#when using an external menu, the query will be done there
-			search_query="$(printf "" | $YTFZF_EXTMENU)"
+			search_query="$(printf "" | eval "$YTFZF_EXTMENU" )"
 		else
 			#otherwise use the search prompt
 			printf "$search_prompt"
@@ -673,8 +673,9 @@ EOF
 	fi
 
 	# select format if flag given
-	if [ "$show_format" -eq 1 ]; then
-		YTFZF_PREF="$(youtube-dl -F "$(printf "%s" "$urls" | sed 1q)" | sed '1,3d' | tac - |\
+
+	if [ $show_format -eq 1 ]; then 
+		YTFZF_PREF="$(youtube-dl -F "$(printf "$urls" | sed 1q)" | sed '1,3d' | sed '1!G; h; $!d' |\
 		eval "$menu_command" | sed -E 's/^([^ ]*) .*/\1/')"
 		[ -z "$YTFZF_PREF"  ] && exit;
 	fi
@@ -736,7 +737,7 @@ get_history () {
 	if [ "$YTFZF_HIST" -eq 1 ]; then
 		[ -e "$history_file" ] || touch "$history_file"
 		#gets history data in reverse order (makes it most recent to least recent)
-		hist_data="$(tac "$history_file")"
+		hist_data="$( sed '1!G; h; $!d' "$history_file" )"
 		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 		#removes duplicate values from $history_data
 		videos_data="$(echo "$hist_data" | uniq )"
