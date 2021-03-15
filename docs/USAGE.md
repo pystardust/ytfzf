@@ -6,7 +6,20 @@ ytfzf [Options] <search-query>
 
 > To quit the script you can press `ESC` or `^C` in the video selection prompt.
 
-_Configuration file: `~/.config/ytfzf/conf.sh`, [sample config](docs/conf.sh), setting can be tweaked here or you can export the variables shown blow._
+## Configurations
+
+_You can create a configuration file to manage the different value instead of exporting them._
+
+
+**The configuration file should be:**
+
+```
+~/.config/ytfzf/conf.sh
+```
+
+If you wish to find inspiration and see and example you can take a look at the [`sample configuration file`](docs/conf.sh)
+
+---
 
 + ### Thumbnails
 

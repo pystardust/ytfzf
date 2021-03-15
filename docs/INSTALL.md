@@ -37,7 +37,7 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 	_At the moment thumbnail previews aren't working on MacOS_
 
 
-## Installation options
+## Installation-Options
 
 
 1. #### Installation by direct download

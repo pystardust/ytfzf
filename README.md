@@ -22,10 +22,12 @@
 
 ## Table of Contents
 
-- [`Dependencies`](docs/INSTALL.md)
-- [`Installation`](docs/INSTALL.md)
+- [`Dependencies`](docs/INSTALL.md/#Dependencies)
+- [`Installation`](docs/INSTALL.md/#Installation-Options)
 - [`Usage Instruction`](docs/USAGE.md/#Usage-Instructions)
+- [`Usage Instruction`](docs/USAGE.md/#Configurations)
 - [`Subscriptions`](docs/USAGE.md/#Subscriptions)
+- [`Update Log`](#Update-Log)
 - [`Examples`](#Examples)
 - [`Todo`](#Todo)
 - [`Bugs`](#Bugs)
@@ -38,7 +40,7 @@
 - Format selection
 - Queue multiple videos
 
-## Update Log
+## Update-Log
 
 * We have now added Subscriptions which allows you to search between videos of subscribed channels easily
 * Now ytfzf can queue videos using fzf multiselect option. Press tab to select a video. All the videos will be lined up in mpv. Use `>` and `<` to traverse them.
