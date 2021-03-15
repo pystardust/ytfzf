@@ -148,6 +148,8 @@ basic_helpinfo () {
     printf "     -l, --loop           <search-query>    Loop: prompt selector again after video ends\n";
     printf "     -s, --search-again   <search-query>    After the video ends make another search \n";
     printf "     -L, --link-only      <search-query>    Prints the selected URL only, helpful for scripting\n";
+    printf "     -o, --selection-only <search-query>    Prints the selected data only\n"
+    printf "     --data-file          <file>            reads a file that has video data formatted like \$history_file\n";
     printf "     --preview-side=      <left/right/top/bottom>    the side of the screen to show thumbnails\n";
     printf "\n"
     printf "  Use - instead of <search-query> for stdin\n" 
@@ -552,7 +554,7 @@ scrape_yt () {
 
 	#sp is the urlquery youtube uses for sorting videos
 	#only runs if --filter-id or --sp was unspecified
-	if [ -z "$sp" ]; then
+	if [ -z "$sp" ] && ([ -n "$sort_by_filter" ] || [ -n "$upload_date_filter" ]); then
 		get_sp_filter
 	else
 		#youtube puts in %253d one ore more times in the filter id, it doesn't seem useful, so we are removing it if it's in the filter
@@ -670,6 +672,9 @@ EOF
 	if [ "$show_link_only" -eq 1 ] ; then
 		printf "%s" "$urls"
 		exit
+	elif [ "$show_selection_only" -eq 1 ]; then
+		printf "%s\n" "$selected_data"
+		exit
 	fi
 
 	# select format if flag given
@@ -733,18 +738,14 @@ check_if_url () {
 	fi
 }
 #> Loads history in videos_data
-get_history () {
-	if [ "$YTFZF_HIST" -eq 1 ]; then
-		[ -e "$history_file" ] || touch "$history_file"
-		#gets history data in reverse order (makes it most recent to least recent)
-		hist_data="$( sed '1!G; h; $!d' "$history_file" )"
-		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
-		#removes duplicate values from $history_data
-		videos_data="$(printf "%s" "$hist_data" | uniq )"
-	else
-		printf "History is not enabled. Please enable it to use this option (-H).\n";
-		exit;
-	fi
+read_file () {
+	file="$1"
+	reverse="$2"
+	#gets file data in reverse order (makes it most recent to least recent)
+	[ "$reverse" -eq 1 ] && data="$( sed '1!G; h; $!d' "$file" )" || data="$(cat "$file")"
+	[ -z "$data" ] && printf "$file is empty!\n" && exit;
+	#removes duplicate values from $file
+	videos_data="$(echo "$data" | uniq )"
 }
 clear_history () {
 	if [ -e "$history_file" ]; then
@@ -847,6 +848,13 @@ parse_long_opt () {
 		    parse_opt "L" "${opt#*=}"
 		    is_non_number "$show_link_only" && bad_opt_arg "--link-only=" "$show_link_only" ;;
 
+		selection-only) parse_opt "o" ;;
+		selection-only=*)
+		    parse_opt "o" "${opt#*=}"
+		    is_non_number "$show_selection_only" && bad_opt_arg "--selection-only=" "$show_selection_only" ;;
+
+		data-file=*) data_file="${opt#*=}" scrape="file" ;;
+
 		link-count=*) parse_opt "n" "${opt#*=}" ;;
 
 		audio-only) parse_opt "m" ;;
@@ -867,16 +875,10 @@ parse_long_opt () {
 		    is_non_number "$random_select" && bad_opt_arg "--random-play=" "$random_select" ;;
 
 		upload-time=*) upload_date_filter="${opt#*=}" ;;
-		last-hour) upload_date_filter="last-hour" ;;
-		today) upload_date_filter="today" ;;
-		this-week) upload_date_filter="this-week" ;;
-		this-month) upload_date_filter="this-month" ;;
-		this-year) upload_date_filter="this-year" ;;
+		last-hour|today|this-week|this-month|this-year) upload_date_filter="$opt" ;;
 
 		upload-sort=*) sort_by_filter="${opt#*=}" ;;
-		upload-date) sort_by_filter="upload-date" ;;
-		view-count) sort_by_filter="view-count" ;;
-		rating) sort_by_filter="rating" ;;
+		upload-date|view-count|rating) sort_by_filter="$opt" ;;
 
 		filter-id=*|sp=*) sp="${opt#*=}" ;;
 
@@ -952,6 +954,8 @@ parse_opt () {
 
 		L) 	show_link_only=${OPTARG:-1} ;;
 
+		o)	show_selection_only="${OPTARG:-1}" ;;
+
 		n)
 		    link_count="$OPTARG"
 		    is_non_number "$link_count" && bad_opt_arg "-n" "$link_count" ;;
@@ -967,7 +971,7 @@ parse_opt () {
 	esac
 }
 
-while getopts "LhDmdfxHaArltSsvn:U:-:" opt; do
+while getopts "LhDmdfxHaArltSsvon:U:-:" opt; do
     parse_opt "$opt" "$OPTARG"
 done
 shift $((OPTIND-1))
@@ -1005,11 +1009,18 @@ case "$scrape" in
 	"yt_search")
 		get_search_query
 		scrape_yt "$search_query" ;;
-	"yt_subs")
-		scrape_subscriptions
-		;;
+	"yt_subs") 
+	    scrape_subscriptions ;;
+	"file") 
+	    read_file "$data_file" 0 ;;
 	"history")
-		get_history
+		if [ "$YTFZF_HIST" -eq 1 ]; then
+			[ -e "$history_file" ] || touch "$history_file"
+			read_file "$history_file" 1
+		else
+			printf "History is not enabled. Please enable it to use this option (-H).\n";
+			exit;
+		fi
 		;;
 esac
 
