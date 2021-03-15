@@ -9,7 +9,7 @@
 	<a href="https://discord.gg/TM4xy6J3"><img src="https://img.shields.io/discord/815609275644117022?color=yellow&logo=discord&style=flat-square" alt="Discord"></a>
     <br />
     <br />
-    <i>A POSIX script that helps you find Youtube videos (without API) and opens/downloads them using mpv/youtube-dl</i> 
+    <i>A POSIX script that helps you find Youtube videos (without API) and opens/downloads them using mpv/youtube-dl</i>
 	<hr>
 </p>
 
@@ -27,12 +27,13 @@
 <li><a href="#Installation"><code>Installation</code></a></li>
 <li><a href="#Usage-Instructions"><code>Usage instruction</code></a></li>
 <li><a href="#Subscriptions"><code>Subscriptions</code></a></li>
-<li><a href="#Examples"><code>Examples</code></a></li>	
+<li><a href="#Examples"><code>Examples</code></a></li>
 </ul>
 </div>
 <div style="float: right; width: 40%;">
 <h2>Features</h2>
 <ul>
+<li>Subscriptions</li>
 <li>Thumbnails</li>
 <li>History</li>
 <li>Download</li>
@@ -51,7 +52,7 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 * [`fzf`](https://github.com/junegunn/fzf) (Optional) - _for menu_
 * [`ueberzug`](https://github.com/seebye/ueberzug) (Optional) - _for thumbnails_
 
-> Thumbnails only work with fzf and Ueberzug as of now.
+> Thumbnails only work with `fzf` and `Ueberzug` as of now.
 
 + #### Arch based
 
@@ -82,7 +83,6 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
 #### Fast installation options
 
-_Those are three easy ways to install install the script. On some OS (such as MacOS) `Installation by direct download` might require you to change the installation path from  `/usr/bin/` to `/usr/local/bin/`_ 
 
 1. ##### Installation by direct download
 
@@ -90,6 +90,8 @@ _Those are three easy ways to install install the script. On some OS (such as Ma
 	sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf
 	sudo chmod +x /usr/bin/ytfzf
 	```
+
+   _MacOS users might need to change their installation path from  `/usr/bin/` to `/usr/local/bin/`_
 
 2. ##### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
 
@@ -104,7 +106,7 @@ _Those are three easy ways to install install the script. On some OS (such as Ma
 	emerge -a1 net-misc/ytfzf
 	```
 
-#### Installation by cloning the repository 
+#### Installation by cloning the repository
 
 ```sh
 git clone https://github.com/pystardust/ytfzf
@@ -125,7 +127,6 @@ sudo make uninstall
 
 ## Usage-Instructions
 
-_You can create a configuration `~/.config/ytfzf/conf.sh`, and you can take inspiration from the example one [here](docs/conf.sh), or you can export the value for whicever value shown below_
 
 ```sh
 ytfzf [Options] <search-query>
@@ -133,63 +134,64 @@ ytfzf [Options] <search-query>
 
 > To quit the script you can press `ESC` or `^C` in the video selection prompt.
 
+_Configuration file: `~/.config/ytfzf/conf.sh`, [sample config](docs/conf.sh), setting can be tweaked here or you can export the variables shown blow._
+
 + ### Thumbnails
 
-	_Showing thumbnails requires ueberzug (which works only on X11), thous it is not supported on MacOS_.
-	
+	_Showing thumbnails requires ueberzug (which works only on X11, not supported on Wayland and MacOS)_.
+
 	```sh
 	ytfzf -t <search-query>
 	```
-	
+
 	> Thumbnails preview side could be changed to the right with `--preview-side=right`
 
 + ### History
-	_Ytfzf save your history by default, more instructions are below_
 
 	- Show history
 
 		```sh
 		ytfzf -H
 		```
-	
+
 	- Clear history
-	
+
 		```sh
 		ytfzf -x
 		```
 
 	- History file: `~/.cache/ytfzf/ytfzf_hst`
 
-	> History is enabled by default. To turn it off you can export `YTFZF_HIST=0` or set add it to the config file.
+	> History is enabled by default. To turn it off you can export `YTFZF_HIST=0` or set it in the config file.
 
 + ### External menu
 
 	Use the `-D` flag: To use external menu
-	
+
 	By default the external menu is set to `dmenu -i -l 30`. This can be changed to `rofi`
-	
+
 	```sh
 	YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
 	```
-	
+
 	> The width of external menu can be adjusted with `YTFZF_EXTMENU_LEN=220`.
 
-+ ### Format-selction and download
++ ### Format-selection and download
 
 	_Video format can be set as per [youtube-dl formatting](https://github.com/ytdl-org/youtube-dl#format-selection)._
-	
+
 	```sh
 	YTFZF_PREF="22"	# 22 set a resolution of 720p
 	```
 
 	+ `-f`: To view and select available formats.
 	+ `-m`: (audio-only) Only audio format (best audio)
-	
+
 	+ `-d`: (download) To **download** a video instead of playing it.
-	
+
 + ### Multi-selection
-	
-	_Multiple videos can be queued up using `fzf`'s auto multi-selection (tab). To traverse between selected videos use `<` and `>`._
+
+   Multiple videos can be queued up using `fzf`'s auto multi-selection (tab). To traverse between selected videos use `<` and `>`.
 
 + ### Looping, Searches
 
@@ -198,15 +200,15 @@ ytfzf [Options] <search-query>
 
 + ### Auto and random selection
 
-	_To select videos *without video prompt*, if multiple videos are selected then they would play one after the other. The variable **n** represents the link count. Which is 1 by default._
-	
+   To select videos *without video prompt*, if multiple videos are selected then they would play one after the other. The variable **n** represents the link count. Which is 1 by default.
+
 	+ `-A`: (select-all) selects all the videos.
 	+ `-a`: (auto-selection) selects the first **n**(=1) result.
 	+ `-r`: (auto-selection) Randomly selects **n**(=1) results (shuffles them).
 	+ `-n <number>` : (link-count) Set **n** the number of links to be selected.
 
 + ### Custom Player
-	
+
 	_By default, `ytfzf` uses `mpv`. Custom player should have the ability to launch youtube links (example: `vlc`)._
 
 	```sh
@@ -218,27 +220,27 @@ ytfzf [Options] <search-query>
 + ### Misc
 
 	- The currently playing video details are stored in `~/.cache/ytfzf/ytfzf_cur` (for status bar modules)
-	
 	- Files and directories used by ytfzf can be set in the config file
-	
+
 	```sh
 	cache_dir="$HOME/.cache/ytfzf"
 	history_file="$YTFZF_CACHE/ytfzf_hst"
 	current_file="$YTFZF_CACHE/ytfzf_cur"
 	thumb_dir="$YTFZF_CACHE/thumb"
 	```
-	
+
 	#### Useful mpv key bindings
-	
+
 	- `f`    :  full screen
 	- `j`,`J`:  cycle subtitles (also works with audio, if the music video has subtitles)
 	- `L`    :  single-loop
-	
+
 
 ## Subscriptions
 
 Subscriptions are managed in subscription file: `~/.config/ytfzf/subscriptions`.
-	#### Adding a certain channel to subscriptions
+
++ #### Adding a certain channel to subscriptions
 
 - Open the page of the channel you are interested in on a browser and go to the videos tab (located right below the channel name and subscription count).
 - Copy the url of videos page. And add it to your subscription file.
