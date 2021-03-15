@@ -1,4 +1,4 @@
-# Usage Instructions
+# Usage-Instructions
 
 ```sh
 ytfzf [Options] <search-query>

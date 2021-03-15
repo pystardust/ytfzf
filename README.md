@@ -13,9 +13,9 @@
 	<hr>
 </p>
 
-<h2 align="center">
+<h1 align="center">
 	This is a little showcase
-</h2>
+</h1>
 <p align="center">
 <img src=.assets/ytfzf.gif width="100%">
 </p>
@@ -24,9 +24,9 @@
 
 - [`Dependencies`](docs/INSTALL.md)
 - [`Installation`](docs/INSTALL.md)
-- [`Usage Instruction`](docs/USAGE.md)
-- [`Subscriptions`](#docs/USAGE.md/#Subscriptions)
-- [`Examples`](#Exambles)
+- [`Usage Instruction`](docs/USAGE.md/#Usage-Instructions)
+- [`Subscriptions`](docs/USAGE.md/#Subscriptions)
+- [`Examples`](#Examples)
 - [`Todo`](#Todo)
 - [`Bugs`](#Bugs)
 
@@ -78,14 +78,14 @@ first hit Q to save position and quit mpv, then choose your format using_
 
 	  ytfzf -faH
 
-## Todo 📝
+## Todo
 
 * [ ] Playlists
 * [ ] More sites
 * [x] Subscriptions
 * [x] Thumbnails
 
-## Bugs ❌
+## Bugs
 
 * _dwm with swallow patch: Images don't render when looped (ie, option -l)_
 - _If thubnails are not working `.Xautority` might be causing it. Try deleting `.Xauthority` and relogging._
