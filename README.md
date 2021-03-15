@@ -98,4 +98,4 @@ first hit Q to save position and quit mpv, then choose your format using_
 ## Bugs
 
 * _dwm with swallow patch: Images don't render when looped (ie, option -l)_
-- _If thubnails are not working `.Xautority` might be causing it. Try deleting `.Xauthority` and relogging._
+- _If thumbnails are not working `.Xauthority` might be causing it. Try deleting `.Xauthority` and relogging._
