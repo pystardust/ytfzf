@@ -21,11 +21,11 @@
 </p>
 
 ## Fast installation
-_Detail information for different OS can be found in the [here](docs/INSTALL.md)_
+
+_This one-line installation does not support every OS, detail information for different OS can be found in the [here](docs/INSTALL.md)_
 
 ```sh
-sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf
-sudo chmod +x /usr/bin/ytfzf
+sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf && sudo chmod +x /usr/bin/ytfzf
 ```
 
 ## Table of Contents
