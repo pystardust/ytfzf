@@ -25,7 +25,7 @@
 - [`Dependencies`](docs/INSTALL.md/#Dependencies)
 - [`Installation`](docs/INSTALL.md/#Installation-Options)
 - [`Usage Instruction`](docs/USAGE.md/#Usage-Instructions)
-- [`Usage Instruction`](docs/USAGE.md/#Configurations)
+- [`Configurations`](docs/USAGE.md/#Configurations)
 - [`Subscriptions`](docs/USAGE.md/#Subscriptions)
 - [`Update Log`](#Update-Log)
 - [`Examples`](#Examples)
