@@ -43,8 +43,7 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 1. #### Installation by direct download
 
 	```sh
-	sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf
-	sudo chmod +x /usr/bin/ytfzf
+	sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf && sudo chmod +x /usr/bin/ytfzf
 	```
 
    _MacOS users might need to change their installation path from  `/usr/bin/` to `/usr/local/bin/`_
