@@ -754,7 +754,7 @@ read_file () {
 	local file="$1"
 	local reverse="$2"
 	#gets file data in reverse order (makes it most recent to least recent)
-	[ "$reverse" -eq 1 ] && data="$( sed '1!G; h; $!d' "$file" )" || data="$(cat "$file")"
+	local data="$([ "$reverse" -eq 1 ] && sed '1!G; h; $!d' "$file" || cat "$file")"
 	[ -z "$data" ] && printf "$file is empty!\n" && exit;
 	#removes duplicate values from $file
 	videos_data="$(echo "$data" | uniq )"
