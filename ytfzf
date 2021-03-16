@@ -398,6 +398,7 @@ preview_img () {
 
 download_thumbnails () {
        #scrapes the urls of the thumbnails of the videos from the adjusted json
+	[ "$show_link_only" -eq 0 ] && printf "Downloading Thumbnails...\n"
        local thumb_urls="$(printf "%s" "$*" |\
 	   jq  -r '.[]|(.thumbs,.videoID)' )"
 	i=0
@@ -567,6 +568,8 @@ scrape_yt () {
 		sp="${sp%%%*}"
 	fi
 
+	[ "$show_link_only" -eq 0 ] && printf "Scraping Youtube...\n"
+
 	local yt_html="$(get_yt_html "https://www.youtube.com/results" "$*")"
 	if [ -z "$yt_html" ]; then
 		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[0m\n"
@@ -689,6 +692,8 @@ EOF
 }
 play_url () {
 	#> output the current track to current file before playing
+	[ "$show_link_only" -eq 0 ] && printf "Opening Player: %s\n" "$YTFZF_PLAYER"
+
 	[ "$YTFZF_CUR" -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
 
 	#> The urls are quoted and placed one after the other for mpv to read
