@@ -679,7 +679,7 @@ EOF
 	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
 
 	if [ "$show_link_only" -eq 1 ] ; then
-		printf "%s" "$selected_urls"
+		printf "%s\n" "$selected_urls"
 		exit
 	fi
 
@@ -1023,6 +1023,10 @@ case "$scrape" in
 		;;
 	"history")
 		get_history
+		;;
+	*)
+		printf "\033[31mEERROR[#05]: scrape is set to an invalid option, it is set to "$scrape" but must be set to one of 'yt_search', 'yt_subs', 'history'\033[0m\n"
+		exit 2
 		;;
 esac
 
