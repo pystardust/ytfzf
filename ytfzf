@@ -400,7 +400,7 @@ preview_img () {
 
 download_thumbnails () {
        #scrapes the urls of the thumbnails of the videos from the adjusted json
-	[ "$show_link_only" -eq 0 ] && printf "Downloading Thumbnails...\n"
+	[ "$show_link_only" -eq 0 ] && [ "$show_selection_only" -eq 0 ] && printf "Downloading Thumbnails...\n"
        local thumb_urls="$(printf "%s" "$*" |\
 	   jq  -r '.[]|(.thumbs,.videoID)' )"
 	i=0
@@ -570,7 +570,7 @@ scrape_yt () {
 		sp="${sp%%%*}"
 	fi
 
-	[ "$show_link_only" -eq 0 ] && printf "Scraping Youtube...\n"
+	[ "$show_link_only" -eq 0 ] && [ "$show_selection_only" -eq 0 ] && printf "Scraping Youtube...\n"
 
 	local yt_html="$(get_yt_html "https://www.youtube.com/results" "$*")"
 	if [ -z "$yt_html" ]; then
@@ -754,7 +754,11 @@ read_file () {
 	local file="$1"
 	local reverse="$2"
 	#gets file data in reverse order (makes it most recent to least recent)
-	local data="$([ "$reverse" -eq 1 ] && sed '1!G; h; $!d' "$file" || cat "$file")"
+	if [ "$reverse" -eq 1 ]; then
+	    local data="$(sed '1!G; h; $!d' > /dev/null 2>&1)"
+	else
+	    local data="$(cat "$file" > /dev/null 2>&1)"
+	fi
 	[ -z "$data" ] && printf "$file is empty!\n" && exit;
 	#removes duplicate values from $file
 	videos_data="$(echo "$data" | uniq )"
@@ -1028,7 +1032,6 @@ case "$scrape" in
 	    read_file "$data_file" 0 ;;
 	"history")
 		if [ "$YTFZF_HIST" -eq 1 ]; then
-			[ -e "$history_file" ] || touch "$history_file"
 			read_file "$history_file" 1
 		else
 			printf "History is not enabled. Please enable it to use this option (-H).\n";
