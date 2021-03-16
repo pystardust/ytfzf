@@ -496,10 +496,9 @@ get_video_data () {
 scrape_channel () {
 	# needs channel url as $*
 	## Scrape data and store video information in videos_data ( and thumbnails )
+	videos_url="$*"
 	if [ -z "$(printf "%s" "$*" | grep -o '\(/videos\)$')" ]; then
-		videos_url="$*/videos"
-	else
-		videos_url="$*"
+		videos_url="${videos_url}/videos"
 	fi
 	yt_html="$(get_yt_html "$videos_url")"
 
