@@ -99,6 +99,10 @@ link_count=1
 #same as -L
 show_link_only=0
 
+#enable/disable showing only the selected video's data
+#same as -o
+show_selection_only=0
+
 #enable/disable showing the different video formats
 #same as -f
 show_format=0
@@ -117,10 +121,14 @@ sub_link_count=10
 fancy_subscriptions_menu=1
 
 #where to source videos from
-#options are history, yt_subs, yt_search
+#options are history, yt_subs, yt_search, file
 #history is the same as -H
 #yt_subs is the same as -S
+#file is the same as --data-file= (data_file must be set for this to work)
 scrape="yt_search"
+
+#data file is a path to a file that has the same layout as $history_file
+data_file=""
 
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
