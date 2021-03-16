@@ -501,7 +501,7 @@ scrape_channel () {
 	if [ -z "$(printf "%s" "$*" | grep -o '\(/videos\)$')" ]; then
 		videos_url="${videos_url}/videos"
 	fi
-	local yt_html="$(get_yt_html "$*")"
+	local yt_html="$(get_yt_html "$videos_url")"
 
 	if [ -z "$yt_html" ]; then
 	        print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[0m\n"
