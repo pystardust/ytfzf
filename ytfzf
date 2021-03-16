@@ -74,6 +74,8 @@ useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML
 is_ext_menu=${is_ext_menu-0}
 #show thumbnails (same as -t)
 show_thumbnails=${show_thumbnails-0}
+# 0: better thumbnails (slower), 1: low res thumbnails (faster)
+thumbnail_quality=${thumbnail_quality-1}
 #auto select the first video (same as -a)
 auto_select=${auto_select-0}
 #select all results (same as -A)
@@ -133,8 +135,9 @@ basic_helpinfo () {
     printf "     -h, --help                             Show this help text\n";
     printf "     -v, --version                          -v for ytfzf's version\n";
     printf "                                            --version for ytfzf + dependency's versions\n"
-    printf "     -t, --thumbnails                       Show thumbnails (requires ueberzug)\n";
+    printf "     -t, --show-thumbnails                       Show thumbnails (requires ueberzug)\n";
     printf "                                            Doesn't work with -H -D\n";
+    printf "     --thumbnail-quality=<0,1>              0: low quality (faster), 1: default\n"
     printf "     -D, --ext-menu                         Use external menu(default dmenu) instead of fzf \n";
     printf "     -H, --choose-from-history              Choose from history \n";
     printf "     -x, --clear-history                    Delete history\n";
@@ -399,10 +402,17 @@ preview_img () {
 ############################
 
 download_thumbnails () {
-       #scrapes the urls of the thumbnails of the videos from the adjusted json
-	[ "$show_link_only" -eq 0 ] && [ "$show_selection_only" -eq 0 ] && printf "Downloading Thumbnails...\n"
+  #scrapes the urls of the thumbnails of the videos from the adjusted json
+	if [ "$thumbnail_quality" -eq 1 ]; then
+		image_download () curl -s "$url" -G --data-urlencode "sqp=" > "$thumb_dir/$name.png"
+	else
+		image_download () curl -s "$url"  > "$thumb_dir/$name.png"
+	fi
+  
+  [ "$show_link_only" -eq 0 ] && [ "$show_selection_only" -eq 0 ] && printf "Downloading Thumbnails...\n"
        local thumb_urls="$(printf "%s" "$*" |\
-	   jq  -r '.[]|(.thumbs,.videoID)' )"
+     jq  -r '.[]|(.thumbs,.videoID)' )"
+     
 	i=0
 	while read -r line; do
 		if [ $((i % 2)) -eq 0 ]; then
@@ -411,11 +421,11 @@ download_thumbnails () {
 		else
 			local name="$line"
 			{
-				curl -s "$url" -G --data-urlencode "sqp=" > "$thumb_dir/$name.png"
+				image_download
 			} &
 		fi
 		i=$((i + 1))
-	done << EOF
+done << EOF
 $thumb_urls
 EOF
 
@@ -681,7 +691,7 @@ EOF
 	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
 
 	if [ "$show_link_only" -eq 1 ] ; then
-		printf "%s" "$selected_urls"
+		printf "%s\n" "$selected_urls"
 		exit
 	elif [ "$show_selection_only" -eq 1 ]; then
 		printf "%s\n" "$selected_data"
@@ -810,10 +820,10 @@ EOF
 }
 
 is_non_number () {
-    if [ -n "$(printf "%s" "$1" | grep -o '[^0-9]')" ]; then
-	return 0
-    else
+    if printf "%s" "$1" | grep -q '^[0-9]*$';  then
 	return 1
+    else
+	return 0
     fi
 }
 
@@ -859,6 +869,11 @@ parse_long_opt () {
 		show-thumbnails=*)
 		    parse_opt "t" "${opt#*=}"
 		    is_non_number "$show_thumbnails" && bad_opt_arg "--thumbnails=" "$show_thumbnails" ;;
+
+		thumbnail-quality=*)
+			parse_opt "t"
+			thumbnail_quality="${opt#*=}"
+			is_non_number "$thumbnail_quality" && bad_opt_arg "--thumbnail-quality=" "$thumbnail_quality" ;;
 
 		show-link-only) parse_opt "L" ;;
 		show-link-only=*)
