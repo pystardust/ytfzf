@@ -299,11 +299,37 @@ format_menu () {
 	fi
 }
 
-format_video_data () {
-	printf "%s" "$*" | awk -F"$(printf '\t')" \
-	    -v A=$title_len -v B=$channel_len -v C=$dur_len -v D=$view_len -v E=$date_len -v F=$url_len \
-	    '{ printf "%-"A"."A"s\t%-"B"."B"s\t%-"C"."C"s\t%-"D"."D"s\t%-"E"."E"s\t%-"F"."F"s\n",$1,$2,$4,$3,$5,$6}'
+function_exists () {
+	if type $1 > /dev/null 2>&1; then
+	    return 0
+	else
+	    return 1
+	fi
+}
 
+if ! function_exists 'video_info_text'; then
+	video_info_text () {
+		printf "%-${title_len}.${title_len}s\t" "$title"
+		printf "%-${channel_len}.${channel_len}s\t" "$channel"
+		printf "%-${dur_len}.${dur_len}s\t" "$duration"
+		printf "%-${view_len}.${view_len}s\t" "$views"
+		printf "%-${date_len}.${date_len}s\t" "$upload_date"
+		printf "%-${url_len}.${url_len}s\t" "$shorturl"
+		printf "\n"
+	}
+fi
+format_video_data () {
+	while read -r line; do
+	    local title="$(printf "%s" "$line" | cut -f1)"
+	    local channel="$(printf "%s" "$line" | cut -f2)"
+	    local duration="$(printf "%s" "$line" | cut -f3)"
+	    local views="$(printf "%s" "$line" | cut -f4)"
+	    local upload_date="$(printf "%s" "$line" | cut -f5)"
+	    local shorturl="$(printf "%s" "$line" | cut -f6)"
+	    video_info_text
+	done << EOF
+$*
+EOF
 }
 
 ############################
@@ -338,7 +364,7 @@ stop_ueberzug () {
     rm "$FIFO" > /dev/null 2>&1
 }
 
-if ! type thumbnail_video_info_text > /dev/null 2>&1 ; then
+if ! function_exists 'thumbnail_video_info_text' ; then
     thumbnail_video_info_text () {
 	printf "\n${c_cyan}%s" "$title"
 	printf "\n${c_blue}Channel	${c_green}%s" "$channel"
@@ -350,12 +376,12 @@ fi
 
 preview_img () {
 	local preview_data="$( printf '%s' "$*" | sed "s/ *""$(printf '\t|')""/""$(printf '\t')""/g" )"
-	local title="$( printf '%s' "$preview_data" | cut -d"$(printf '\t')" -f1 )"
-	local channel="$( printf '%s' "$preview_data" | cut -d"$(printf '\t')" -f2 )"
-	local duration="$( printf '%s' "$preview_data" | cut -d"$(printf '\t')" -f3 )"
-	local views="$( printf '%s' "$preview_data" | cut -d"$(printf '\t')" -f4 )"
-	local date="$( printf '%s' "$preview_data" | cut -d"$(printf '\t')" -f5 )"
-	local shorturl="$( printf '%s' "$preview_data" | cut -d"$(printf '\t')" -f6 | sed 's/ *//g' )"
+	local title="$( printf '%s' "$preview_data" | cut -f1 )"
+	local channel="$( printf '%s' "$preview_data" | cut -f2 )"
+	local duration="$( printf '%s' "$preview_data" | cut -f3 )"
+	local views="$( printf '%s' "$preview_data" | cut -f4 )"
+	local date="$( printf '%s' "$preview_data" | cut -f5 )"
+	local shorturl="$( printf '%s' "$preview_data" | cut -f6 | sed 's/ *//g' )"
 
        if [ -z "${shorturl}" ] ; then
 	       printf "\n${c_cyan}%s${c_reset}\n" "$title"
