@@ -638,7 +638,6 @@ get_search_query () {
 }
 #> To select videos from videos_data
 user_selection () {
-	[ "$is_url" -eq 1 ] && return
 	#remove subscription separators
 	local videos_data_clean="$(printf "%s" "$videos_data" | sed "/.*""$(printf "\t")""$/d" )"
 
@@ -667,7 +666,9 @@ user_selection () {
 	else
 		selected_data="$( video_menu "$videos_data" )"
 	fi
+}
 
+format_user_selection () {
 	#gets a list of video ids/urls from the selected data
 	local shorturls="$(printf "%s" "$selected_data" | sed -E -n -e "s_.*\|([^|]+) *\$_\1_p")"
 	[ -z "$shorturls" ] && exit;
@@ -687,11 +688,16 @@ EOF
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
 
+}
+
+print_data () {
 	if [ "$show_link_only" -eq 1 ] ; then
 		printf "%s\n" "$selected_urls"
 		exit
 	fi
+}
 
+get_video_format () {
 	# select format if flag given
 	if [ $show_format -eq 1 ]; then 
 		YTFZF_PREF="$(youtube-dl -F "$(printf "$selected_urls" | sed 1q)" | sed '1,3d' | sed '1!G; h; $!d' |\
@@ -699,6 +705,7 @@ EOF
 		[ -z "$YTFZF_PREF"  ] && exit;
 	fi
 }
+
 play_url () {
 	#> output the current track to current file before playing
 	[ "$show_link_only" -eq 0 ] && printf "Opening Player: %s\n" "$YTFZF_PLAYER"
@@ -748,7 +755,7 @@ check_if_url () {
 	if { printf "%s" "$1" | grep -q "$url_regex"; } ; then
 		is_url=1
 		selected_urls="$(printf "%s" "$1" | tr ' ' '\n')"
-		scrape=""
+		scrape="url"
 	else
 		is_url=0
 	fi
@@ -796,8 +803,6 @@ update_ytfzf () {
 	rm "$updatefile"
 	exit
 }
-
-
 
 scrape_subscriptions () {
 	while read -r url; do
@@ -1038,11 +1043,21 @@ case "$scrape" in
 	"history")
 		get_history
 		;;
+	"url") ;;
+	*)
+	    printf "\033[31mError: \$scrape set to bad option, set to '$scrape'${c_reset}\n"
+	    exit 1 ;;
+
 esac
 
 
 while true; do
-	user_selection
+	if [ "$is_url" -eq 0 ]; then
+		user_selection
+		format_user_selection
+	fi
+	print_data
+	get_video_format
 	play_url
 	save_before_exit
 
