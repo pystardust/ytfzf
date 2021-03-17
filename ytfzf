@@ -411,7 +411,7 @@ download_thumbnails () {
 	local thumb_urls="$(printf "%s" "$*" |\
 	jq  -r '.[]|(.thumbs,.videoID)' )"
 	i=0
-	while read -r line; do
+	for line in $thumb_urls; do
 		if [ $((i % 2)) -eq 0 ]; then
 			local url="$line"
 			sleep 0.001
@@ -422,9 +422,7 @@ download_thumbnails () {
 			} &
 		fi
 		i=$((i + 1))
-done << EOF
-$thumb_urls
-EOF
+done 
 
 }
 get_sp_filter () {
@@ -677,13 +675,11 @@ format_user_selection () {
 	#through this loop, the selected data which was truncated by formatting is retrived.
 	selected_urls=""
 	selected_data=""
-	while read -r surl; do
+	for surl in $shorturls; do
 		[ -z "$surl" ] && continue
 		selected_urls="$(printf '%s\n%s' "$selected_urls" "https://www.youtube.com/watch?v=$surl")"
 		selected_data="$(printf '%s\n%s' "$selected_data" "$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )")"
-	done << EOF
-	$shorturls
-EOF
+	done 
 	selected_urls="$( printf "%s" "$selected_urls" | sed 1d )"
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
