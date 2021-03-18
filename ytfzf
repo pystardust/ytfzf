@@ -1065,7 +1065,10 @@ case "$scrape" in
 	"history")
 		get_history
 		;;
-	"url") ;;
+	"url") 
+	    play_url
+	    exit
+	    ;;
 	*)
 	    printf "\033[31mError: \$scrape set to bad option, set to '$scrape'${c_reset}\n"
 	    exit 1 ;;
@@ -1074,10 +1077,8 @@ esac
 
 
 while true; do
-	if [ "$is_url" -eq 0 ]; then
-		user_selection
-		format_user_selection
-	fi
+	user_selection
+	format_user_selection
 	print_data
 	get_video_format
 	play_url
