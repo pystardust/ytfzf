@@ -313,19 +313,14 @@ if ! function_exists 'video_info_text'; then
 		printf "%-${channel_len}.${channel_len}s\t" "$channel"
 		printf "%-${dur_len}.${dur_len}s\t" "$duration"
 		printf "%-${view_len}.${view_len}s\t" "$views"
-		printf "%-${date_len}.${date_len}s\t" "$upload_date"
+		printf "%-${date_len}.${date_len}s\t" "$date"
 		printf "%-${url_len}.${url_len}s\t" "$shorturl"
 		printf "\n"
 	}
 fi
 format_video_data () {
-	while read -r line; do
-	    local title="$(printf "%s" "$line" | cut -f1)"
-	    local channel="$(printf "%s" "$line" | cut -f2)"
-	    local duration="$(printf "%s" "$line" | cut -f3)"
-	    local views="$(printf "%s" "$line" | cut -f4)"
-	    local upload_date="$(printf "%s" "$line" | cut -f5)"
-	    local shorturl="$(printf "%s" "$line" | cut -f6)"
+	local title channel duration views date shorturl IFS="$(printf "\t")"
+	while read -r title channel views duration date shorturl; do
 	    video_info_text
 	done << EOF
 $*
@@ -376,12 +371,11 @@ fi
 
 preview_img () {
 	local preview_data="$( printf '%s' "$*" | sed "s/ *""$(printf '\t|')""/""$(printf '\t')""/g" )"
-	local title="$( printf '%s' "$preview_data" | cut -f1 )"
-	local channel="$( printf '%s' "$preview_data" | cut -f2 )"
-	local duration="$( printf '%s' "$preview_data" | cut -f3 )"
-	local views="$( printf '%s' "$preview_data" | cut -f4 )"
-	local date="$( printf '%s' "$preview_data" | cut -f5 )"
-	local shorturl="$( printf '%s' "$preview_data" | cut -f6 | sed 's/ *//g' )"
+
+	local title channel duration views date shorturl IFS="$(printf "\t")"
+	read -r title channel duration views date shorturl << EOF
+$preview_data
+EOF
 
        if [ -z "${shorturl}" ] ; then
 	       printf "\n${c_cyan}%s${c_reset}\n" "$title"
