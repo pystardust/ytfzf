@@ -859,9 +859,8 @@ parse_long_opt () {
 		    all_help_info 
 		    exit ;;
 
-		is-ext-menu) parse_opt "D" ;;
-		is-ext-menu=*)
-		    parse_opt "D" "${opt#*=}"
+		is-ext-menu|is-ext-menu=*) 
+		    [ "$opt" = "is-ext-menu" ] && parse_opt "D" || parse_opt "D" "${opt#*=}"
 		    is_non_number "$is_ext_menu" && bad_opt_arg "--ext-menu=" "$is_ext_menu" ;;
 
 		download) parse_opt "d" ;;
@@ -870,19 +869,16 @@ parse_long_opt () {
 
 		clear-history) parse_opt "x" ;;
 
-		search-again) parse_opt "s" ;;
-		search-again=*) 
-		    parse_opt "s" "${opt#*=}"
+		search-again|search-again=*) 
+		    [ "$opt" = 'search-again' ] && parse_opt "s" || parse_opt "s" "${opt#*=}"
 		    is_non_number "$search_again" && bad_opt_arg "--search=" "$search_again" ;;
 
-		loop) parse_opt "l" ;;
-		loop=*)
-		    parse_opt "l" "${opt#*=}"
+		loop|loop=*)
+		    [ "$opt" = 'loop' ] && parse_opt "l" || parse_opt "l" "${opt#*=}"
 		    is_non_number "$YTFZF_LOOP" && bad_opt_arg "--loop=" "$YTFZF_LOOP" ;;
 
-		show-thumbnails) parse_opt "t" ;;
-		show-thumbnails=*)
-		    parse_opt "t" "${opt#*=}"
+		show-thumbnails|show-thumbnails=*) 
+		    [ "$opt" = 'show-thumbnails' ] && parse_opt "t" || parse_opt "t" "${opt#*=}"
 		    is_non_number "$show_thumbnails" && bad_opt_arg "--thumbnails=" "$show_thumbnails" ;;
 
 		thumbnail-quality=*)
@@ -890,41 +886,31 @@ parse_long_opt () {
 			thumbnail_quality="${opt#*=}"
 			is_non_number "$thumbnail_quality" && bad_opt_arg "--thumbnail-quality=" "$thumbnail_quality" ;;
 
-		show-link-only) parse_opt "L" ;;
-		show-link-only=*)
-		    parse_opt "L" "${opt#*=}"
+		show-link-only|show-link-only=*)
+		    [ "$opt" = 'show-link-only' ] && parse_opt "L" || parse_opt "L" "${opt#*=}"
 		    is_non_number "$show_link_only" && bad_opt_arg "--link-only=" "$show_link_only" ;;
 
 		link-count=*) parse_opt "n" "${opt#*=}" ;;
 
 		audio-only) parse_opt "m" ;;
 
-		auto-select) parse_opt "a" ;;
-		auto-select=*) 
-		    parse_opt "a" "${opt#*=}"
+		auto-select|auto-select=*)
+		    [ "$opt" = 'auto-select' ] && parse_opt "a" || parse_opt "a" "${opt#*=}"
 		    is_non_number "$auto_select" && bad_opt_arg "--auto-play=" "$auto_select" ;;
 
-		select-all) parse_opt "A" ;;
-		select-all=*)
-		    parse_opt "A" "${opt#*=}"
+		select-all|select-all=*)
+		    [ "$opt" = 'select-all' ] && parse_opt "A" || parse_opt "A" "${opt#*=}"
 		    is_non_number "$select_all" && bad_opt_arg "--select-all=" "$select_all" ;;
 
-		random-select) parse_opt "r" ;;
-		random-select=*) 
-		    parse_opt "r" "${opt#*=}"
+		random-select|random-select=*)
+		    [ "$opt" = 'random-select' ] && parse_opt "r" || parse_opt "r" "${opt#*=}"
 		    is_non_number "$random_select" && bad_opt_arg "--random-play=" "$random_select" ;;
 
 		upload-time=*) upload_date_filter="${opt#*=}" ;;
-		last-hour) upload_date_filter="last-hour" ;;
-		today) upload_date_filter="today" ;;
-		this-week) upload_date_filter="this-week" ;;
-		this-month) upload_date_filter="this-month" ;;
-		this-year) upload_date_filter="this-year" ;;
+		last-hour|today|this-week|this-month|this-year) upload_date_filter="$opt" ;;
 
 		upload-sort=*) sort_by_filter="${opt#*=}" ;;
-		upload-date) sort_by_filter="upload-date" ;;
-		view-count) sort_by_filter="view-count" ;;
-		rating) sort_by_filter="rating" ;;
+		upload-date|view-count|rating) sort_by_filter="$opt" ;;
 
 		filter-id=*|sp=*) sp="${opt#*=}" ;;
 
