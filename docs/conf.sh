@@ -195,14 +195,13 @@ thumb_dir="$YTFZF_CACHE/thumb"
     #date (video upload date)
     #date_len, the vailable tty columns for $date
     #shorturl (the video ID)
-    #url_len, the available tty columns for $shroturl
 video_info_text() {
 	printf "%-${title_len}.${title_len}s\t" "$title"
 	printf "%-${channel_len}.${channel_len}s\t" "$channel"
 	printf "%-${dur_len}.${dur_len}s\t" "$duration"
 	printf "%-${view_len}.${view_len}s\t" "$views"
 	printf "%-${date_len}.${date_len}s\t" "$upload_date"
-	printf "%-${url_len}.${url_len}s\t" "$shorturl"
+	printf "%s\t" "$shorturl"
 	printf "\n"
 }
 
