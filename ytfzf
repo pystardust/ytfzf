@@ -846,11 +846,8 @@ EOF
 }
 
 is_non_number () {
-    if printf "%s" "$1" | grep -q '^[0-9]*$';  then
-	return 1
-    else
-	return 0
-    fi
+    printf "%s" "$1" | grep -Eq '[^0-9]+'
+    return $?
 }
 
 bad_opt_arg () {
