@@ -613,10 +613,6 @@ scrape_yt () {
 	    select(. !=null) |
 		{
 			title: .title.simpleText,
-			channel: .title.simpleText,
-			duration: "'"NA"'",
-			views: "'"NA"'",
-			date: "'"NA"'",
 			videoID: .channelId,
 			thumbs: .thumbnail.thumbnails[0].url
 		}
