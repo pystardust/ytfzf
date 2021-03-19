@@ -633,10 +633,10 @@ scrape_yt () {
 		}
 	]')"
 
-	videos_data="$(get_video_data "$videos_json")
-$(get_video_data "$channels_json")"
+	videos_data="$(get_video_data "$videos_json")"
+	channels_data="$(get_video_data "$channels_json")"
 	#if there aren't videos
-	[ -z "$videos_data" ] && { printf "No results found. Try different keywords.\n"; exit 1;}
+	[ -z "$videos_data" ] || [ -z "$channels_data" ] && { printf "No results found. Try different keywords.\n"; exit 1;}
 	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
@@ -684,13 +684,15 @@ user_selection () {
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$(printf \"\t\")\" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview \"sh $0 -U {}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
-		selected_data="$( title_len=200 video_menu "$videos_data")"
+		selected_data="$( title_len=200 video_menu "$videos_data
+$channels_data" )"
 		stop_ueberzug
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails
 	#show regular menu
 	else
-		selected_data="$( video_menu "$videos_data")"
+		selected_data="$( video_menu "$videos_data
+$channels_data")"
 	fi
 }
 
