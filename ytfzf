@@ -704,11 +704,8 @@ format_user_selection () {
 	selected_data=""
 	for surl in $shorturls; do
 		[ -z "$surl" ] && continue
-		if [ "${#surl}" -eq 11 ]; then
-		    selected_urls="$(printf '%s\n%s' "$selected_urls" "https://www.youtube.com/watch?v=$surl")"
-		else
-		    selected_urls="$(printf '%s\n%s' "$selected_urls" "https://www.youtube.com/channel/$surl/videos")"
-		fi
+		[ "${#surl}" -eq 11 ] && link="/watch?v=$surl" || link="/channel/$surl/videos"
+		selected_urls="$(printf '%s\n%s' "$selected_urls" "https://www.youtube.com$link")"
 		selected_data="$(printf '%s\n%s' "$selected_data" "$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )")"
 	done 
 	selected_urls="$( printf "%s" "$selected_urls" | sed 1d )"
