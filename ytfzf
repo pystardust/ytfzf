@@ -297,11 +297,8 @@ format_menu () {
 }
 
 function_exists () {
-	if type $1 > /dev/null 2>&1; then
-	    return 0
-	else
-	    return 1
-	fi
+	type $1 > /dev/null 2>&1
+	return $?
 }
 
 if ! function_exists 'video_info_text'; then
@@ -1070,30 +1067,27 @@ case "$scrape" in
 	    exit 1 ;;
 esac
 
-main () {
-    while true; do
-	    user_selection
-	    format_user_selection
-	    print_data
-	    get_video_format
-	    if [ -n "$(printf "%s" "$selected_urls" | grep -o '/videos$')" ]; then
-		    sub_link_count=100 scrape_subscriptions "$selected_urls"
-		    main
-	    fi
-	    play_url
-	    save_before_exit
-    
-	    #if looping and searching_again arent on then exit
-	    if [ $YTFZF_LOOP -eq 0 ] && [ $search_again -eq 0 ] ; then
-		    delete_thumbnails
-		    exit
-	    fi
-    
-	    #if -s was specified make another search query
-	    if [ $search_again -eq 1 ]; then
-		    search_query="" get_search_query
-		    scrape_yt "$search_query"
-	    fi
-    done
-}
-main
+while true; do
+	user_selection
+	format_user_selection
+	print_data
+	get_video_format
+	if [ -n "$(printf "%s" "$selected_urls" | grep -o '/videos$')" ]; then
+		sub_link_count=100 scrape_subscriptions "$selected_urls"
+		channels_data="" continue
+	fi
+	play_url
+	save_before_exit
+   
+	#if looping and searching_again arent on then exit
+	if [ $YTFZF_LOOP -eq 0 ] && [ $search_again -eq 0 ] ; then
+		delete_thumbnails
+		exit
+	fi
+   
+	#if -s was specified make another search query
+	if [ $search_again -eq 1 ]; then
+		search_query="" get_search_query
+		scrape_yt "$search_query"
+	fi
+done
