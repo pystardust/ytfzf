@@ -636,7 +636,7 @@ scrape_yt () {
 	videos_data="$(get_video_data "$videos_json")"
 	channels_data="$(get_video_data "$channels_json")"
 	#if there aren't videos
-	[ -z "$videos_data" ] || [ -z "$channels_data" ] && { printf "No results found. Try different keywords.\n"; exit 1;}
+	[ -z "$videos_data" ] && [ -z "$channels_data" ] && { printf "No results found. Try different keywords.\n"; exit 1;}
 	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
