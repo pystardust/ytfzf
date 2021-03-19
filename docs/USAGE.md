@@ -17,7 +17,7 @@ _You can create a configuration file to manage the different value instead of ex
 ~/.config/ytfzf/conf.sh
 ```
 
-If you wish to find inspiration and see and example you can take a look at the [`sample configuration file`](docs/conf.sh)
+If you wish to find inspiration and see an example you can take a look at the [`sample configuration file`](conf.sh)
 
 ---
 
