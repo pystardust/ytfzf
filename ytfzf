@@ -308,14 +308,25 @@ if ! function_exists 'video_info_text'; then
 		printf "%-${dur_len}.${dur_len}s\t" "$duration"
 		printf "%-${view_len}.${view_len}s\t" "$views"
 		printf "%-${date_len}.${date_len}s\t" "$date"
-		printf "%s\t" "$shorturl"
+		printf "%s" "$shorturl"
 		printf "\n"
 	}
 fi
+
+channel_info_text () {
+	printf "%-${title_len}.${title_len}s\t" "[Channel] $title"
+	printf "%-${channel_len}.${channel_len}s\t" "|"
+	printf "%-${dur_len}.${dur_len}s\t" "|"
+	printf "%-${view_len}.${view_len}s\t" "|"
+	printf "%-${date_len}.${date_len}s\t" "|"
+	printf "%s" "$shorturl"
+	printf "\n"
+}
+
 format_video_data () {
 	local title channel duration views date shorturl IFS="$(printf "\t")"
 	while read -r title channel views duration date shorturl; do
-	    video_info_text
+		[  "${channel%% *}" = "|null" ] && channel_info_text || video_info_text
 	done << EOF
 $*
 EOF
@@ -633,7 +644,7 @@ scrape_yt () {
 	videos_data="$(get_video_data "$videos_json")"
 	channels_data="$(get_video_data "$channels_json")"
 	#if there aren't videos
-	[ -z "$videos_data" ] && [ -z "$channels_data" ] && { printf "No results found. Try different keywords.\n"; exit 1;}
+	[ -z "${videos_data}${channels_data}" ] && { printf "No results found. Try different keywords.\n"; exit 1;}
 	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
@@ -662,7 +673,8 @@ get_search_query () {
 #> To select videos from videos_data
 user_selection () {
 	#remove subscription separators
-	local videos_data_clean="$(printf "%s" "$videos_data" | sed "/.*""$(printf "\t")""$/d" )"
+	local videos_data_clean="$(printf "%s" "$videos_data" \
+		| sed   -e '/'"$(printf "\t")"'$/d')"
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
@@ -678,18 +690,16 @@ user_selection () {
 		dep_ck "ueberzug" "fzf"
 		start_ueberzug
 		#thumbnails only work in fzf, use fzf
-		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$(printf \"\t\")\" --nth=1,2 $FZF_DEFAULT_OPTS \
-		--layout=reverse --preview \"sh $0 -U {}\" \
-        	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
-		selected_data="$( title_len=200 video_menu "$videos_data
-$channels_data" )"
+		menu_command='fzf -m --tabstop=1 --bind change:top --delimiter="'"$(printf "\t")"'" --nth=1,2 $FZF_DEFAULT_OPTS \
+			--layout=reverse --preview "sh "'"$0"'" -U {}" \
+			--preview-window "$PREVIEW_SIDE:50%:noborder:wrap"'
+					selected_data="$( title_len=200 video_menu "$(printf "%s\n%s" "$channels_data" "$videos_data" )" )"
 		stop_ueberzug
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails
 	#show regular menu
 	else
-		selected_data="$( video_menu "$videos_data
-$channels_data")"
+		selected_data="$( video_menu "$(printf "%s\n%s" "$channels_data" "$videos_data" )" )"
 	fi
 }
 
@@ -720,13 +730,13 @@ print_data () {
 	fi
 }
 
-get_video_format () {
+video_format_selection () {
 	# select format if flag given
-	if [ $show_format -eq 1 ]; then 
-		YTFZF_PREF="$(youtube-dl -F "$(printf "$selected_urls" | sed 1q)" | sed '1,3d' | sed '1!G; h; $!d' |\
+	[ $show_format -eq 1 ] || return 0
+	YTFZF_PREF="$(youtube-dl -F "$(printf "$selected_urls" | sed 1q)" |\
+		sed '1,3d' | sed '1!G; h; $!d' |\
 		eval "$menu_command" | sed -E 's/^([^ ]*) .*/\1/')"
-		[ -z "$YTFZF_PREF"  ] && exit;
-	fi
+	[ -z "$YTFZF_PREF"  ] && exit;
 }
 
 play_url () {
@@ -783,6 +793,20 @@ check_if_url () {
 		is_url=0
 	fi
 }
+
+check_channel () {
+	local channel_urls="$(printf "%s" "$selected_urls" | grep '/videos$')"
+	if [ -n "$channel_urls" ]; then
+		echo "Scraping channel"
+		videos_data=""
+		fancy_subscriptions_menu=0
+		sub_link_count=100 scrape_subscriptions "$channel_urls"
+		return 0
+	else
+		return 1
+	fi
+}
+
 #> Loads history in videos_data
 get_history () {
 	if [ "$YTFZF_HIST" -eq 1 ]; then
@@ -1065,11 +1089,8 @@ while true; do
 	user_selection
 	format_user_selection
 	print_data
-	get_video_format
-	if [ -n "$(printf "%s" "$selected_urls" | grep -o '/videos$')" ]; then
-		sub_link_count=100 scrape_subscriptions "$selected_urls"
-		channels_data="" continue
-	fi
+	video_format_selection
+	check_channel && continue
 	play_url
 	save_before_exit
    
