@@ -166,13 +166,13 @@ sp=""
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
 
 #the file for storing watch history
-history_file="$YTFZF_CACHE/ytfzf_hst"
+history_file="$cache_dir/ytfzf_hst"
 
 #the file for writing the menu option that was chosen
-current_file="$YTFZF_CACHE/ytfzf_cur"
+current_file="$cache_dir/ytfzf_cur"
 
 #the folder where thumbnails are cached
-thumb_dir="$YTFZF_CACHE/thumb"
+thumb_dir="$cache_dir/thumb"
 
 #when using the menu, use the text printed in this function to display all the info, $shorturl must be present in order to work
 #available default colors (note: they are be bolded):
