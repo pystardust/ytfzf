@@ -128,8 +128,8 @@ dep_ck "jq" "youtube-dl";
 ############################
 
 basic_helpinfo () {
-    printf "Usage: ytfzf [OPTIONS...] <search-query>\n";
-    printf "  OPTIONS:\n" 
+	printf "\n${bold}${underline}Usage: ytfzf [OPTIONS...] <search-query>${c_reset}\n\n";
+    printf "  ${bold}OPTIONS:${c_reset}\n" 
     printf "     -h, --help                             Show this help text\n";
     printf "     -v, --version                          -v for ytfzf's version\n";
     printf "                                            --version for ytfzf + dependency's versions\n"
@@ -150,11 +150,10 @@ basic_helpinfo () {
     printf "     -L, --link-only      <search-query>    Prints the selected URL only, helpful for scripting\n";
     printf "     --preview-side=      <left/right/top/bottom>    the side of the screen to show thumbnails\n";
     printf "\n"
-    printf "  Use - instead of <search-query> for stdin\n" 
+    printf "  ${underline}Use - instead of <search-query> for stdin${c_reset}\n" 
     printf "\n";
-    printf "  Option usage:\n" 
-    printf "     ytfzf -fDH                           to show history using external \n"
-    printf "                                          menu and show formats\n"
+    printf "  ${bold}Option usage:${c_reset}\n"
+    printf "     ytfzf -fDH                           show history and format using external menu\n"
     printf "     ytfzf -fD --choose-from-history      same as above\n"
     printf "\n"
 }
@@ -182,7 +181,7 @@ all_help_info () {
     printf "         Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[0m\n";
     printf "         This will filter by livestream\n";
     printf "\n";
-    printf "  Update:\n" 
+    printf "  ${bold}Update:\n${c_reset}" 
     printf "     --update                             clones the latest stable commit and installs it\n";
     printf "                                          on Arch ytfzf is available in the AUR\n";
     printf "     --update-unstable                    gets the latest commit and installs it (--update is safer)\n";
@@ -191,7 +190,7 @@ all_help_info () {
     printf "  Defaults can be modified through ENV variables or the config file\n";
     printf "  the default config file can be found at https://github.com/pystardust/ytfzf/blob/master/docs/conf.sh%b\n"
     printf "\n"
-    printf "  Environment Variables:\n" 
+    printf "  ${bold}Environment Variables:\n${c_reset}" 
     printf "     YTFZF_HIST=1                          0 : off history\n";
     printf "     YTFZF_CACHE=~/.cache/ytfzf\n";
     printf "     YTFZF_LOOP=0                          1 : loop the selection prompt\n";
@@ -201,7 +200,7 @@ all_help_info () {
     printf "     YTFZF_CONFIG_DIR='~/.config/ytfzf'    The directory to store config files\n";
     printf "     YTFZF_CONFIG_FILE='\$YTFZF_CONFIG_DIR/conf.sh'   The configuration file\n";
     printf "     YTFZF_EXTMENU=' dmenu -i -l 30'\n";
-    printf "  To use rofi\n";
+    printf "  ${bold}To use rofi${c_reset}\n\n";
     printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
     printf "\n";
 }
@@ -228,7 +227,8 @@ c_blue="\033[1;34m"
 c_magenta="\033[1;35m"
 c_cyan="\033[1;36m"
 c_reset="\033[0m"
-
+underline="\033[4;m"
+bold="\033[1;m"
 
 #> To determine the length of each field (title, channel ... etc)
 format_ext_menu () {
@@ -917,7 +917,7 @@ parse_opt () {
 		-)	parse_long_opt "$OPTARG" ;;
 		#Short options
 		h) 	basic_helpinfo
-			printf "type --help-all for more info\n"
+			printf "${bold}${c_yellow}type --help-all for more info${c_reset}\n"
 			exit ;;
 
 		D) 	is_ext_menu="${OPTARG:-1}" ;;
