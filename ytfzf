@@ -247,14 +247,11 @@ format_ext_menu () {
 	view_len=$((frac * 1))
 	#video upload date space
 	date_len=$((frac * 3/2 + 100 ))
-	#url space
-	url_len=12
 }
 format_fzf () {
 	dur_len=7
 	view_len=10
 	date_len=14
-	url_len=12
 
 	#*_len works the same as it does in format_ext_menu
 	#show title, channel
@@ -300,11 +297,8 @@ format_menu () {
 }
 
 function_exists () {
-	if type $1 > /dev/null 2>&1; then
-	    return 0
-	else
-	    return 1
-	fi
+	type $1 > /dev/null 2>&1
+	return $?
 }
 
 if ! function_exists 'video_info_text'; then
@@ -314,7 +308,7 @@ if ! function_exists 'video_info_text'; then
 		printf "%-${dur_len}.${dur_len}s\t" "$duration"
 		printf "%-${view_len}.${view_len}s\t" "$views"
 		printf "%-${date_len}.${date_len}s\t" "$date"
-		printf "%-${url_len}.${url_len}s\t" "$shorturl"
+		printf "%s\t" "$shorturl"
 		printf "\n"
 	}
 fi
@@ -611,6 +605,16 @@ scrape_yt () {
 		exit 1
 	fi
 
+	local channels_json="$(printf "%s" "$yt_json" | jq '[ .contents|
+	    ..|.channelRenderer? |
+	    select(. !=null) |
+		{
+			title: .title.simpleText,
+			videoID: .channelId,
+			thumbs: .thumbnail.thumbnails[0].url
+		}
+	    ]')"
+
 	#gets a list of videos
 	local videos_json="$(printf "%s" "$yt_json" | jq '[ .contents|
 	..|.videoRenderer? |
@@ -627,8 +631,9 @@ scrape_yt () {
 	]')"
 
 	videos_data="$(get_video_data "$videos_json")"
+	channels_data="$(get_video_data "$channels_json")"
 	#if there aren't videos
-	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
+	[ -z "$videos_data" ] && [ -z "$channels_data" ] && { printf "No results found. Try different keywords.\n"; exit 1;}
 	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
@@ -676,19 +681,21 @@ user_selection () {
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$(printf \"\t\")\" --nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview \"sh $0 -U {}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
-		selected_data="$( title_len=200 video_menu "$videos_data" )"
+		selected_data="$( title_len=200 video_menu "$videos_data
+$channels_data" )"
 		stop_ueberzug
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails
 	#show regular menu
 	else
-		selected_data="$( video_menu "$videos_data" )"
+		selected_data="$( video_menu "$videos_data
+$channels_data")"
 	fi
 }
 
 format_user_selection () {
 	#gets a list of video ids/urls from the selected data
-	local shorturls="$(printf "%s" "$selected_data" | sed -E -n -e "s_.*\|([^|]+) *\$_\1_p")"
+	local shorturls="$(printf "%s" "$selected_data" | cut -f6 | sed 's/|//')"
 	[ -z "$shorturls" ] && exit;
 
 	#for each url append the full url to the $urls string
@@ -697,13 +704,13 @@ format_user_selection () {
 	selected_data=""
 	for surl in $shorturls; do
 		[ -z "$surl" ] && continue
-		selected_urls="$(printf '%s\n%s' "$selected_urls" "https://www.youtube.com/watch?v=$surl")"
+		[ "${#surl}" -eq 11 ] && link="/watch?v=$surl" || link="/channel/$surl/videos"
+		selected_urls="$(printf '%s\n%s' "$selected_urls" "https://www.youtube.com$link")"
 		selected_data="$(printf '%s\n%s' "$selected_data" "$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )")"
 	done 
 	selected_urls="$( printf "%s" "$selected_urls" | sed 1d )"
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
-
 }
 
 print_data () {
@@ -821,25 +828,26 @@ update_ytfzf () {
 }
 
 scrape_subscriptions () {
+	channels="$*"
+	if [ -z "$channels" ]; then
+	    channels="$( sed \
+			-e "s/#.*//" \
+			-e "/^[[:space:]]*$/d" \
+			-e "s/[[:space:]]*$//" \
+			"$subscriptions_file")"
+	fi
 	while read -r url; do
 		scrape_channel "$url"  &
 	done << EOF
-$( sed \
-	-e "s/#.*//" \
-	-e "/^[[:space:]]*$/d" \
-	-e "s/[[:space:]]*$//" \
-	"$subscriptions_file")
+$channels
 EOF
 	wait
 	videos_data="$(cat "$tmp_video_data_file")"
 }
 
 is_non_number () {
-    if printf "%s" "$1" | grep -q '^[0-9]*$';  then
-	return 1
-    else
-	return 0
-    fi
+    printf "%s" "$1" | grep -Eq '[^0-9]+'
+    return $?
 }
 
 bad_opt_arg () {
@@ -1034,42 +1042,43 @@ check_if_url "${search_query:=$*}"
 #format the menu screen
 format_menu
 
-
 case "$scrape" in
-	"yt_search")
-		get_search_query
-		scrape_yt "$search_query" ;;
-	"yt_subs")
-		scrape_subscriptions
-		;;
-	"history")
-		get_history
-		;;
-	"url") 
+   "yt_search")
+	    get_search_query
+	    scrape_yt "$search_query" ;;
+    "yt_subs")
+	    scrape_subscriptions
+	    ;;
+    "history")
+	    get_history
+	    ;;
+    "url") 
 	    play_url
 	    exit
 	    ;;
-	*)
+    *)
 	    printf "\033[31mError: \$scrape set to bad option, set to '$scrape'${c_reset}\n"
 	    exit 1 ;;
-
 esac
-
 
 while true; do
 	user_selection
 	format_user_selection
 	print_data
 	get_video_format
+	if [ -n "$(printf "%s" "$selected_urls" | grep -o '/videos$')" ]; then
+		sub_link_count=100 scrape_subscriptions "$selected_urls"
+		channels_data="" continue
+	fi
 	play_url
 	save_before_exit
-
+   
 	#if looping and searching_again arent on then exit
 	if [ $YTFZF_LOOP -eq 0 ] && [ $search_again -eq 0 ] ; then
 		delete_thumbnails
 		exit
 	fi
-
+   
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
 		search_query="" get_search_query
