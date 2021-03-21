@@ -313,15 +313,17 @@ if ! function_exists 'video_info_text'; then
 	}
 fi
 
-channel_info_text () {
-	printf "%-${title_len}.${title_len}s\t" "[Channel] $title"
-	printf "%-${channel_len}.${channel_len}s\t" "|"
-	printf "%-${dur_len}.${dur_len}s\t" "|"
-	printf "%-${view_len}.${view_len}s\t" "|"
-	printf "%-${date_len}.${date_len}s\t" "|"
-	printf "%s" "$shorturl"
-	printf "\n"
-}
+if ! function_exists 'channel_info_text'; then
+	channel_info_text () {
+	    printf "%-${title_len}.${title_len}s\t" "[Channel] $title"
+	    printf "%-${channel_len}.${channel_len}s\t" "|"
+	    printf "%-${dur_len}.${dur_len}s\t" "|"
+	    printf "%-${view_len}.${view_len}s\t" "|"
+	    printf "%-${date_len}.${date_len}s\t" "|"
+	    printf "%s" "$shorturl"
+	    printf "\n"
+	}
+fi
 
 format_video_data () {
 	local title channel duration views date shorturl IFS="$(printf "\t")"
