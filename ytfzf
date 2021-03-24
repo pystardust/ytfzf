@@ -422,9 +422,13 @@ EOF
 download_thumbnails () {
        #scrapes the urls of the thumbnails of the videos from the adjusted json
 	if [ "$thumbnail_quality" -eq 1 ]; then
-		image_download () curl -s "$url" -G --data-urlencode "sqp=" > "$thumb_dir/$name.png"
+		image_download (){
+		    curl -s "$url" -G --data-urlencode "sqp=" > "$thumb_dir/$name.png"
+		}
 	else
-		image_download () curl -s "$url"  > "$thumb_dir/$name.png"
+		image_download (){
+		    curl -s "$url"  > "$thumb_dir/$name.png"
+		}
 	fi
 
 	[ "$show_link_only" -eq 0 ] && printf "Downloading Thumbnails...\n"
