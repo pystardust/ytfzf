@@ -29,6 +29,8 @@ printf "" > "$tmp_video_data_file"
 [ -z "$YTFZF_LOOP" ] && YTFZF_LOOP=${enable_loop-0}
 #enable/disable outputting current track to $current_file
 [ -z "$YTFZF_CUR" ] && YTFZF_CUR=${enable_cur-1}
+#enable/disable notification
+[ -z "$YTFZF_NOTI" ] && YTFZF_NOTI=${enable_noti-1}
 #the cache directory
 [ -z "$YTFZF_CACHE" ] && YTFZF_CACHE="${cache_dir-$HOME/.cache/ytfzf}"
 #video type preference (mp4/1080p, mp4/720p, etc..)
@@ -151,6 +153,7 @@ basic_helpinfo () {
     printf "     -l, --loop           <search-query>    Loop: prompt selector again after video ends\n";
     printf "     -s, --search-again   <search-query>    After the video ends make another search \n";
     printf "     -L, --link-only      <search-query>    Prints the selected URL only, helpful for scripting\n";
+    printf "     -N, --notification   <0,1>  			Send notification when play video\n";
     printf "     --preview-side=      <left/right/top/bottom>    the side of the screen to show thumbnails\n";
     printf "\n"
     printf "  Use - instead of <search-query> for stdin\n" 
@@ -206,6 +209,7 @@ all_help_info () {
     printf "     YTFZF_EXTMENU=' dmenu -i -l 30'\n";
     printf "  To use rofi\n";
     printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
+    printf "     YTFZF_NOTI=1						   0 : turn off notification\n";
     printf "\n";
 }
 
@@ -422,9 +426,13 @@ EOF
 download_thumbnails () {
        #scrapes the urls of the thumbnails of the videos from the adjusted json
 	if [ "$thumbnail_quality" -eq 1 ]; then
-		image_download () curl -s "$url" -G --data-urlencode "sqp=" > "$thumb_dir/$name.png"
+		image_download () {
+			curl -s "$url" -G --data-urlencode "sqp=" > "$thumb_dir/$name.png"
+		}
 	else
-		image_download () curl -s "$url"  > "$thumb_dir/$name.png"
+		image_download () {
+ 			curl -s "$url"  > "$thumb_dir/$name.png"
+		}
 	fi
 
 	[ "$show_link_only" -eq 0 ] && printf "Downloading Thumbnails...\n"
@@ -728,6 +736,8 @@ play_url () {
 
 	[ "$YTFZF_CUR" -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
 
+	[ "$YTFZF_NOTI" -eq 1 ] && send_notify ;
+
 	#> The urls are quoted and placed one after the other for mpv to read
 	local player_urls="\"$(printf "%s" "$selected_urls" | awk  'ORS="\" \"" { print }' | sed 's/"$//' | sed 's/ "" / /')"
 	#> Play url with $player or $player_format based on options
@@ -798,6 +808,17 @@ clear_history () {
 		printf "\033[31mHistory file not found, history not cleared\033[0m\n"
 		exit 1
 	fi
+}
+
+send_notify () {
+	video_name=$(printf "$selected_data" | awk -F'|' '{print $1}')
+	video_channel=$(printf "$selected_data" | awk -F'|' '{print $2}')
+	if [ $show_thumbnails -eq 1 ]; then
+		video_thumb="$thumb_dir/$(printf "$selected_data" | awk -F'|' '{print $6}').png"
+	else
+		video_thumb="$config_dir/default_thumb.png"
+	fi
+	notify-send "Current playing" "$(printf "$video_name\nChannel: $video_channel")" -i $video_thumb
 }
 
 update_ytfzf () {
@@ -929,6 +950,8 @@ parse_long_opt () {
 		fancy-subs) fancy_subscriptions_menu=1 ;;
 		fancy-subs=*) fancy_subscriptions_menu="${opt#*=}" ;;
 
+		notification) parse_opt "N" ;;
+
 		version)
 		    printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
 		    printf "\033[1myoutube-dl:\033[0m %s\n" "$(youtube-dl --version)"
@@ -995,13 +1018,15 @@ parse_opt () {
 			# Not to be used explicitly
 			;;
 
+		N)	YTFZF_NOTI=${optarg:-1} ;;
+
 		*)
 			usageinfo
 			exit 2 ;;
 	esac
 }
 
-while getopts "LhDmdfxHaArltSsvn:U:-:" OPT; do
+while getopts "LhDmdfxHaArltSsvnN:U:-:" OPT; do
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
