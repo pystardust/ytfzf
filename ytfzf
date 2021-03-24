@@ -811,14 +811,20 @@ clear_history () {
 }
 
 send_notify () {
+	number_video=`expr $(cat $current_file | wc -l) + 1`
 	video_name=$(printf "$selected_data" | awk -F'|' '{print $1}')
 	video_channel=$(printf "$selected_data" | awk -F'|' '{print $2}')
-	if [ $show_thumbnails -eq 1 ]; then
+	if [ $show_thumbnails -eq 1 ] && [ $number_video -lt 2 ]; then
 		video_thumb="$thumb_dir/$(printf "$selected_data" | awk -F'|' '{print $6}').png"
+		message="$(printf "$video_name\nChannel: $video_channel")"
+	elif [ $number_video -gt 1 ]; then
+		video_thumb="$config_dir/default_thumb.png"
+		message="Added $number_video video to play queue"
 	else
+		message="$(printf "$video_name\nChannel: $video_channel")"
 		video_thumb="$config_dir/default_thumb.png"
 	fi
-	notify-send "Current playing" "$(printf "$video_name\nChannel: $video_channel")" -i $video_thumb
+	notify-send "Current playing" "$message" -i $video_thumb
 }
 
 update_ytfzf () {
