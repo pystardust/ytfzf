@@ -15,7 +15,6 @@ YTFZF_VERSION="1.1.0"
 config_dir="${YTFZF_CONFIG_DIR-$HOME/.config/ytfzf}"
 config_file="${YTFZF_CONFIG_FILE-$config_dir/conf.sh}"
 tmp_video_data_file="/tmp/ytfzf-subdata"
-printf "" > "$tmp_video_data_file"
 #source config file if exists
 [ -e "$config_file" ] && . "$config_file"
 
@@ -686,6 +685,7 @@ user_selection () {
 	    #since we know that channels_data is first and it's empty
 	    local full_data="$videos_data"
 	fi
+	[ "$use_results_button" -eq 1 ] && full_data="$(printf "RESULTS\n%s" "$full_data")"
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
@@ -809,8 +809,9 @@ check_channel () {
 	local channel_urls="$(printf "%s" "$selected_urls" | grep '/videos$')"
 	if [ -n "$channel_urls" ]; then
 		echo "Scraping channel"
-		videos_data=""
+		videos_data="" 
 		fancy_subscriptions_menu=0
+		use_results_button=1
 		sub_link_count=100 scrape_subscriptions "$channel_urls"
 		return 0
 	else
@@ -1077,27 +1078,38 @@ check_if_url "${search_query:=$*}"
 #format the menu screen
 format_menu
 
-case "$scrape" in
-   "yt_search")
-	    get_search_query
-	    scrape_yt "$search_query" ;;
-    "yt_subs")
-	    scrape_subscriptions
-	    ;;
-    "history")
-	    get_history
-	    ;;
-    "url") 
-	    play_url
-	    exit
-	    ;;
-    *)
-	    printf "\033[31mError: \$scrape set to bad option, set to '$scrape'${c_reset}\n"
-	    exit 1 ;;
-esac
+scrape_fn () {
+	case "$scrape" in
+	    "yt_search")
+		    use_results_button=0
+		    get_search_query
+		    scrape_yt "$search_query" ;;
+	    "yt_subs")
+		    scrape_subscriptions
+		    ;;
+	    "history")
+		    get_history
+		    ;;
+	    "url") 
+		    play_url
+		    exit
+		    ;;
+	    *)
+		    printf "\033[31mError: \$scrape set to bad option, set to '$scrape'${c_reset}\n"
+		    exit 1 ;;
+	esac
+}
+scrape_fn
 
 while true; do
+	#clears data
+	printf "" > "$tmp_video_data_file"
 	user_selection
+	#if selected the results page scrape what was originally scraped
+	if [ "$(printf "%s" "$selected_data" | grep -o '\w*')" = "RESULTS" ]; then
+		scrape_fn
+		continue
+	fi
 	format_user_selection
 	print_data
 	video_format_selection
@@ -1114,6 +1126,6 @@ while true; do
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
 		search_query="" get_search_query
-		scrape_yt "$search_query"
+		scrape_fn
 	fi
 done

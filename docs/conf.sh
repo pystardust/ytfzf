@@ -224,6 +224,7 @@ thumbnail_video_info_text () {
 }
 
 #when displaying a result that is a channel it will use this function
+#$shorturl must be printed last, and there must be 5 \t before it
 #available variables
     #title, the name of the channel
     #title_len, the available tty columns for $title
