@@ -34,6 +34,11 @@ cache_dir="$HOME/.cache/ytfzf"
 #(YTFZF_CUR)
 enable_cur=1
 
+#enable/disable notification when play video
+#the notification is send via send-notify
+#(YTFZF_NOTI)
+enable_noti=1
+
 #the format of the video (1080p, 720p, etc)
 #uses the youtube-dl preference system
 #must be a number eg: 22 is 720p
