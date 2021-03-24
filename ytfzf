@@ -678,6 +678,15 @@ user_selection () {
 	local videos_data_clean="$(printf "%s" "$videos_data" \
 		| sed   -e '/'"$(printf "\t")"'$/d')"
 
+	#if we assume that all are not empty, it makes it easier to remove them later when there are more than just channels_data and videos_data
+	local full_data="$(printf "%s\n%s" "$channels_data" "$videos_data")"
+	if [ -z "$channels_data" ]; then
+	    #instead of doing this we could do
+	    #local full_data="$(printf "%s" "$full_data" | sed 1d)"
+	    #since we know that channels_data is first and it's empty
+	    local full_data="$videos_data"
+	fi
+
 	#$selected_data is the video the user picked
 	#picks the first n videos
 	if [ "$select_all" -eq 1 ] ; then
@@ -695,13 +704,13 @@ user_selection () {
 		menu_command='fzf -m --tabstop=1 --bind change:top --delimiter="'"$(printf "\t")"'" --nth=1,2 $FZF_DEFAULT_OPTS \
 			--layout=reverse --preview "sh "'"$0"'" -U {}" \
 			--preview-window "$PREVIEW_SIDE:50%:noborder:wrap"'
-					selected_data="$( title_len=200 video_menu "$(printf "%s\n%s" "$channels_data" "$videos_data" )" )"
+		selected_data="$( title_len=200 video_menu "$full_data" )"
 		stop_ueberzug
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && delete_thumbnails
 	#show regular menu
 	else
-		selected_data="$( video_menu "$(printf "%s\n%s" "$channels_data" "$videos_data" )" )"
+		selected_data="$( video_menu "$full_data" )"
 	fi
 }
 
