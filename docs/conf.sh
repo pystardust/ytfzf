@@ -34,6 +34,11 @@ cache_dir="$HOME/.cache/ytfzf"
 #(YTFZF_CUR)
 enable_cur=1
 
+#enable(1)/disable(0) notification when play video
+#the notification is send via send-notify
+#(YTFZF_NOTI)
+enable_noti=0
+
 #the format of the video (1080p, 720p, etc)
 #uses the youtube-dl preference system
 #must be a number eg: 22 is 720p
@@ -174,6 +179,39 @@ current_file="$cache_dir/ytfzf_cur"
 #the folder where thumbnails are cached
 thumb_dir="$cache_dir/thumb"
 
+#when using the menu, use the text printed in this function to display all the info, $shorturl must be present in order to work
+#available default colors (note: they are be bolded):
+    #c_red
+    #c_green
+    #c_yellow
+    #c_blue
+    #c_magenta
+    #c_cyan
+    #c_reset (sets it back to terminal defaults)
+#available variables
+    #title
+    #title_len, the available tty columns for $title
+    #channel
+    #channel_len, the available tty columns for $channel
+    #duration
+    #dur_len, the available tty columns for $duration
+    #views
+    #view_len, the available tty columns for $views
+    #date (video upload date)
+    #date_len, the vailable tty columns for $date
+    #shorturl (the video ID)
+    #url_len, the available tty columns for $shroturl
+video_info_text() {
+	printf "%-${title_len}.${title_len}s\t" "$title"
+	printf "%-${channel_len}.${channel_len}s\t" "$channel"
+	printf "%-${dur_len}.${dur_len}s\t" "$duration"
+	printf "%-${view_len}.${view_len}s\t" "$views"
+	printf "%-${date_len}.${date_len}s\t" "$date"
+	printf "%-${url_len}.${url_len}s\t" "$shorturl"
+	printf "\n"
+}
+
+
 #when displaying thumbnails, use the text printed in this function to show the title, views, etc..
 #available default colors (note: they are be bolded):
     #c_red
@@ -197,5 +235,5 @@ thumbnail_video_info_text () {
          printf "\n${c_blue}Channel      ${c_green}%s" "$channel"
          printf "\n${c_blue}Duration     ${c_yellow}%s" "$duration"
          printf "\n${c_blue}Views        ${c_magenta}%s" "$views"
-         printf "\n${c_blue}Date ${c_cyan}%s" "$date"
+         printf "\n${c_blue}Date         ${c_cyan}%s" "$date"
 }
