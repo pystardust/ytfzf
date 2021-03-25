@@ -4,7 +4,7 @@
 #> https://github.com/pystardust/ytfzf
 ######################################
 
-YTFZF_VERSION="1.1.0"
+YTFZF_VERSION="1.1.1"
 
 ############################
 #         Defaults         #
@@ -138,7 +138,7 @@ basic_helpinfo () {
     printf "     -v, --version                          -v for ytfzf's version\n";
     printf "                                            --version for ytfzf + dependency's versions\n"
     printf "     -t, --show-thumbnails                  Show thumbnails (requires ueberzug)\n";
-    printf "     -N, --notification                     Send notification when play video\n";
+    printf "     -N, --notification                     Send notification when playing video\n";
     printf "                                            Doesn't work with -H -D\n";
     printf "     --thumbnail-quality=<0,1>              0: low quality (faster), 1: default\n"
     printf "     -D, --ext-menu                         Use external menu(default dmenu) instead of fzf \n";

@@ -211,6 +211,7 @@ video_info_text() {
 	printf "\n"
 }
 
+
 #when displaying thumbnails, use the text printed in this function to show the title, views, etc..
 #available default colors (note: they are be bolded):
     #c_red
