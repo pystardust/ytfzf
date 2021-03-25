@@ -34,6 +34,11 @@ cache_dir="$HOME/.cache/ytfzf"
 #(YTFZF_CUR)
 enable_cur=1
 
+#enable(1)/disable(0) notification when play video
+#the notification is send via send-notify
+#(YTFZF_NOTI)
+enable_noti=0
+
 #the format of the video (1080p, 720p, etc)
 #uses the youtube-dl preference system
 #must be a number eg: 22 is 720p
@@ -166,13 +171,13 @@ sp=""
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
 
 #the file for storing watch history
-history_file="$YTFZF_CACHE/ytfzf_hst"
+history_file="$cache_dir/ytfzf_hst"
 
 #the file for writing the menu option that was chosen
-current_file="$YTFZF_CACHE/ytfzf_cur"
+current_file="$cache_dir/ytfzf_cur"
 
 #the folder where thumbnails are cached
-thumb_dir="$YTFZF_CACHE/thumb"
+thumb_dir="$cache_dir/thumb"
 
 #available default colors (note: they are be bolded):
     #c_red
@@ -205,6 +210,7 @@ video_info_text() {
 	printf "\n"
 }
 
+
 #when displaying thumbnails, use the text printed in this function to show the title, views, etc..
 #available variables
     #title
@@ -220,7 +226,7 @@ thumbnail_video_info_text () {
          printf "\n${c_blue}Channel      ${c_green}%s" "$channel"
          printf "\n${c_blue}Duration     ${c_yellow}%s" "$duration"
          printf "\n${c_blue}Views        ${c_magenta}%s" "$views"
-         printf "\n${c_blue}Date ${c_cyan}%s" "$date"
+         printf "\n${c_blue}Date         ${c_cyan}%s" "$date"
 }
 
 #when displaying a result that is a channel it will use this function

@@ -4,7 +4,7 @@
 #> https://github.com/pystardust/ytfzf
 ######################################
 
-YTFZF_VERSION="1.1.0"
+YTFZF_VERSION="1.1.1"
 
 ############################
 #         Defaults         #
@@ -28,6 +28,8 @@ tmp_video_data_file="/tmp/ytfzf-subdata"
 [ -z "$YTFZF_LOOP" ] && YTFZF_LOOP=${enable_loop-0}
 #enable/disable outputting current track to $current_file
 [ -z "$YTFZF_CUR" ] && YTFZF_CUR=${enable_cur-1}
+#enable/disable notification
+[ -z "$YTFZF_NOTI" ] && YTFZF_NOTI=${enable_noti-0}
 #the cache directory
 [ -z "$YTFZF_CACHE" ] && YTFZF_CACHE="${cache_dir-$HOME/.cache/ytfzf}"
 #video type preference (mp4/1080p, mp4/720p, etc..)
@@ -134,7 +136,8 @@ basic_helpinfo () {
     printf "     -h, --help                             Show this help text\n";
     printf "     -v, --version                          -v for ytfzf's version\n";
     printf "                                            --version for ytfzf + dependency's versions\n"
-    printf "     -t, --show-thumbnails                       Show thumbnails (requires ueberzug)\n";
+    printf "     -t, --show-thumbnails                  Show thumbnails (requires ueberzug)\n";
+    printf "     -N, --notification                     Send notification when playing video\n";
     printf "                                            Doesn't work with -H -D\n";
     printf "     --thumbnail-quality=<0,1>              0: low quality (faster), 1: default\n"
     printf "     -D, --ext-menu                         Use external menu(default dmenu) instead of fzf \n";
@@ -205,6 +208,7 @@ all_help_info () {
     printf "     YTFZF_EXTMENU=' dmenu -i -l 30'\n";
     printf "  To use rofi\n";
     printf "     YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'\n";
+    printf "     YTFZF_NOTI=1						   0 : turn off notification\n";
     printf "\n";
 }
 
@@ -428,9 +432,13 @@ EOF
 download_thumbnails () {
        #scrapes the urls of the thumbnails of the videos from the adjusted json
 	if [ "$thumbnail_quality" -eq 1 ]; then
-		image_download () curl -s "$url" -G --data-urlencode "sqp=" > "$thumb_dir/$name.png"
+		image_download () {
+			curl -s "$url" -G --data-urlencode "sqp=" > "$thumb_dir/$name.png"
+		}
 	else
-		image_download () curl -s "$url"  > "$thumb_dir/$name.png"
+		image_download () {
+ 			curl -s "$url"  > "$thumb_dir/$name.png"
+		}
 	fi
 
 	[ "$show_link_only" -eq 0 ] && printf "Downloading Thumbnails...\n"
@@ -756,6 +764,8 @@ play_url () {
 
 	[ "$YTFZF_CUR" -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
 
+	[ "$YTFZF_NOTI" -eq 1 ] && send_notify "$selected_data" ;
+
 	#> The urls are quoted and placed one after the other for mpv to read
 	local player_urls="\"$(printf "%s" "$selected_urls" | awk  'ORS="\" \"" { print }' | sed 's/"$//' | sed 's/ "" / /')"
 	#> Play url with $player or $player_format based on options
@@ -841,6 +851,24 @@ clear_history () {
 		printf "\033[31mHistory file not found, history not cleared\033[0m\n"
 		exit 1
 	fi
+}
+
+send_notify () {
+	local number_video video_name video_channel message video_thumb
+	number_video="$(printf "%s\n" "$*" | wc -l)"
+	video_name="$(printf "%s" "$*" | cut -d'|' -f1 )"
+	video_channel="$(printf "%s" "$*" | cut -d'|' -f2)"
+	if [ "$show_thumbnails" -eq 1 ] && [ "$number_video" -eq 1 ]; then
+		video_thumb="$thumb_dir/$(printf "%s" "$selected_data" | cut -d'|' -f6).png"
+		message="$(printf "$video_name\nChannel: $video_channel")"
+	elif [ $number_video -gt 1 ]; then
+		video_thumb="$config_dir/default_thumb.png"
+		message="Added $number_video video to play queue"
+	else
+		message="$(printf "$video_name\nChannel: $video_channel")"
+		video_thumb="$config_dir/default_thumb.png"
+	fi
+	notify-send "Current playing" "$message" -i "$video_thumb"
 }
 
 update_ytfzf () {
@@ -973,6 +1001,8 @@ parse_long_opt () {
 		fancy-subs) fancy_subscriptions_menu=1 ;;
 		fancy-subs=*) fancy_subscriptions_menu="${opt#*=}" ;;
 
+		notification) parse_opt "N" ;;
+
 		version)
 		    printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
 		    printf "\033[1myoutube-dl:\033[0m %s\n" "$(youtube-dl --version)"
@@ -1039,13 +1069,15 @@ parse_opt () {
 			# Not to be used explicitly
 			;;
 
+		N)	YTFZF_NOTI=1 ;;
+
 		*)
 			usageinfo
 			exit 2 ;;
 	esac
 }
 
-while getopts "LhDmdfxHaArltSsvn:U:-:" OPT; do
+while getopts "LhDmdfxHaArltSsvNn:U:-:" OPT; do
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
