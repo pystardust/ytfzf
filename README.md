@@ -27,6 +27,7 @@ _This one-line installation does not support every OS, detail information for di
 ```sh
 sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf && sudo chmod +x /usr/bin/ytfzf
 ```
+<sup>*requires cURL</sup>
 
 ## Table of Contents
 
@@ -98,4 +99,4 @@ first hit Q to save position and quit mpv, then choose your format using_
 ## Bugs
 
 * _dwm with swallow patch: Images don't render when looped (ie, option -l)_
-- _If thubnails are not working `.Xautority` might be causing it. Try deleting `.Xauthority` and relogging._
+- _If thumbnails are not working `.Xauthority` might be causing it. Try deleting `.Xauthority` and relogging._
