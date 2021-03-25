@@ -34,10 +34,10 @@ cache_dir="$HOME/.cache/ytfzf"
 #(YTFZF_CUR)
 enable_cur=1
 
-#enable/disable notification when play video
+#enable(1)/disable(0) notification when play video
 #the notification is send via send-notify
 #(YTFZF_NOTI)
-enable_noti=1
+enable_noti=0
 
 #the format of the video (1080p, 720p, etc)
 #uses the youtube-dl preference system
@@ -206,7 +206,7 @@ video_info_text() {
 	printf "%-${channel_len}.${channel_len}s\t" "$channel"
 	printf "%-${dur_len}.${dur_len}s\t" "$duration"
 	printf "%-${view_len}.${view_len}s\t" "$views"
-	printf "%-${date_len}.${date_len}s\t" "$upload_date"
+	printf "%-${date_len}.${date_len}s\t" "$date"
 	printf "%-${url_len}.${url_len}s\t" "$shorturl"
 	printf "\n"
 }
@@ -234,5 +234,5 @@ thumbnail_video_info_text () {
          printf "\n${c_blue}Channel      ${c_green}%s" "$channel"
          printf "\n${c_blue}Duration     ${c_yellow}%s" "$duration"
          printf "\n${c_blue}Views        ${c_magenta}%s" "$views"
-         printf "\n${c_blue}Date ${c_cyan}%s" "$date"
+         printf "\n${c_blue}Date         ${c_cyan}%s" "$date"
 }
