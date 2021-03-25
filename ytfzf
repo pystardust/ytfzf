@@ -30,7 +30,7 @@ printf "" > "$tmp_video_data_file"
 #enable/disable outputting current track to $current_file
 [ -z "$YTFZF_CUR" ] && YTFZF_CUR=${enable_cur-1}
 #enable/disable notification
-[ -z "$YTFZF_NOTI" ] && YTFZF_NOTI=${enable_noti-1}
+[ -z "$YTFZF_NOTI" ] && YTFZF_NOTI=${enable_noti-0}
 #the cache directory
 [ -z "$YTFZF_CACHE" ] && YTFZF_CACHE="${cache_dir-$HOME/.cache/ytfzf}"
 #video type preference (mp4/1080p, mp4/720p, etc..)
@@ -1025,7 +1025,7 @@ parse_opt () {
 			# Not to be used explicitly
 			;;
 
-		N)	YTFZF_NOTI=${optarg:-1} ;;
+		N)	YTFZF_NOTI=1 ;;
 
 		*)
 			usageinfo
