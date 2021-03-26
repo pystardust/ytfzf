@@ -39,11 +39,18 @@ If you wish to find inspiration and see an example you can take a look at the [`
 		ytfzf -H
 		```
 
-	- Clear history
+	- Clear entire history
 
 		```sh
 		ytfzf -x
 		```
+
+    - Clear old history
+
+        ```sh
+        ytfzf --clear-before='2 days ago'
+        ytfzf --clear-before='2021-03-26 12:00'
+        ```
 
 	- History file: `~/.cache/ytfzf/ytfzf_hst`
 

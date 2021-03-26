@@ -143,7 +143,8 @@ basic_helpinfo () {
     printf "     --thumbnail-quality=<0,1>              0: low quality (faster), 1: default\n"
     printf "     -D, --ext-menu                         Use external menu(default dmenu) instead of fzf \n";
     printf "     -H, --choose-from-history              Choose from history \n";
-    printf "     -x, --clear-history                    Delete history\n";
+    printf "     -x, --clear-history                    Delete all history\n";
+    printf "     -X, --clear-before=[date]              Delete videos viewed before the provided date or interval\n";
     printf "     -m, --audio-only     <search-query>    Audio only (for music)\n";
     printf "     -d, --download       <search-query>    Download to current directory\n";
     printf "     -f                   <search-query>    Show available formats before proceeding\n";
@@ -809,7 +810,20 @@ get_history () {
 }
 clear_history () {
 	if [ -e "$history_file" ]; then
-		printf "" > "$history_file"
+        newfile=""
+        if [ -n "$1" ]; then
+            echo "Removing videos viewed earlier than $1"
+            cutoff=$(date --date="$1" +%s)
+            while IFS="$(printf '\t')" read -r line; do
+                viewed=$(echo "$line" | cut --fields=7)
+                viewed=$(date --date="${viewed#|}" +%s)
+                if [ "$viewed" -ge "$cutoff" ]; then
+                    newfile="${newfile}${line}
+"
+                fi
+            done < "$history_file"
+        fi
+        printf "%s" "$newfile" > "$history_file"
 		printf "History has been cleared\n"
 	else
 		printf "\033[31mHistory file not found, history not cleared\033[0m\n"
@@ -903,6 +917,8 @@ parse_long_opt () {
 		choose-from-history) parse_opt "H" ;;
 
 		clear-history) parse_opt "x" ;;
+
+        clear-before=*) parse_opt "X" "${opt#*=}" ;;
 
 		search-again|search-again=*) 
 		    [ "$opt" = 'search-again' ] && parse_opt "s" || parse_opt "s" "${opt#*=}"
@@ -1004,6 +1020,8 @@ parse_opt () {
 
 		x)	clear_history && exit ;;
 
+		X)	clear_history "${optarg:-1}" && exit ;;
+
 		a)	auto_select=${optarg:-1} ;;
 
 		A)	select_all=${optarg:-1} ;;
@@ -1040,7 +1058,7 @@ parse_opt () {
 	esac
 }
 
-while getopts "LhDmdfxHaArltSsvNn:U:-:" OPT; do
+while getopts "LhDmdfxX:HaArltSsvNn:U:-:" OPT; do
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
