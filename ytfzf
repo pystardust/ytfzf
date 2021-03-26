@@ -253,12 +253,15 @@ format_ext_menu () {
 	date_len=$((frac * 3/2 + 100 ))
 	#url space
 	url_len=12
+    #viewed space
+    viewed_len=17
 }
 format_fzf () {
 	dur_len=7
 	view_len=10
 	date_len=14
 	url_len=12
+    viewed_len=17
 
 	#*_len works the same as it does in format_ext_menu
 	#show title, channel
@@ -319,12 +322,13 @@ if ! function_exists 'video_info_text'; then
 		printf "%-${view_len}.${view_len}s\t" "$views"
 		printf "%-${date_len}.${date_len}s\t" "$date"
 		printf "%-${url_len}.${url_len}s\t" "$shorturl"
+        printf "%-${viewed_len}.${viewed_len}s\t" "$viewed"
 		printf "\n"
 	}
 fi
 format_video_data () {
-	local title channel duration views date shorturl IFS="$(printf "\t")"
-	while read -r title channel views duration date shorturl; do
+	local title channel duration views date shorturl viewed IFS="$(printf "\t")"
+	while read -r title channel views duration date shorturl viewed; do
 	    video_info_text
 	done << EOF
 $*
@@ -370,14 +374,15 @@ if ! function_exists 'thumbnail_video_info_text' ; then
 	printf "\n${c_blue}Duration	${c_yellow}%s" "$duration"
 	printf "\n${c_blue}Views	${c_magenta}%s" "$views"
 	printf "\n${c_blue}Date	${c_cyan}%s" "$date"
+    if expr "$viewed" : \\w >/dev/null; then printf "\n${c_blue}Viewed: ${c_cyan}%s" "$viewed"; fi
     }
 fi
 
 preview_img () {
 	local preview_data="$( printf '%s' "$*" | sed "s/ *""$(printf '\t|')""/""$(printf '\t')""/g" )"
 
-	local title channel duration views date shorturl IFS="$(printf "\t")"
-	read -r title channel duration views date shorturl << EOF
+	local title channel duration views date shorturl viewed IFS="$(printf "\t")"
+	read -r title channel duration views date shorturl viewed << EOF
 $preview_data
 EOF
 
@@ -696,7 +701,7 @@ user_selection () {
 
 format_user_selection () {
 	#gets a list of video ids/urls from the selected data
-	local shorturls="$(printf "%s" "$selected_data" | sed -E -n -e "s_.*\|([^|]+) *\$_\1_p")"
+    local shorturls="$(printf "%s" "$selected_data" | cut --fields=6)"
 	[ -z "$shorturls" ] && exit;
 
 	#for each url append the full url to the $urls string
@@ -705,9 +710,10 @@ format_user_selection () {
 	selected_data=""
 	for surl in $shorturls; do
 		[ -z "$surl" ] && continue
+        surl="${surl#|}"
 		selected_urls="$(printf '%s\n%s' "$selected_urls" "https://www.youtube.com/watch?v=$surl")"
 		selected_data="$(printf '%s\n%s' "$selected_data" "$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )")"
-	done 
+	done
 	selected_urls="$( printf "%s" "$selected_urls" | sed 1d )"
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
@@ -764,8 +770,9 @@ delete_thumbnails () {
 }
 #> Save and clean up before script exits
 save_before_exit () {
+    date=$(date '+%F %_H:%_M')
 	[ "$is_url" -eq 1 ] && exit
-	[ "$YTFZF_HIST" -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
+    [ "$YTFZF_HIST" -eq 1 ] && printf "%s\t|%s\n" "$selected_data" "$date" >> "$history_file" ;
 	[ "$YTFZF_CUR" -eq 1 ] && printf "" > "$current_file" ;
 }
 
