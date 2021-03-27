@@ -15,7 +15,6 @@ YTFZF_VERSION="1.1.0"
 config_dir="${YTFZF_CONFIG_DIR-$HOME/.config/ytfzf}"
 config_file="${YTFZF_CONFIG_FILE-$config_dir/conf.sh}"
 tmp_video_data_file="/tmp/ytfzf-subdata"
-printf "" > "$tmp_video_data_file"
 #source config file if exists
 [ -e "$config_file" ] && . "$config_file"
 
@@ -647,7 +646,6 @@ scrape_yt () {
 	channels_data="$(get_video_data "$channels_json")"
 	#if there aren't videos
 	[ -z "${videos_data}${channels_data}" ] && { printf "No results found. Try different keywords.\n"; exit 1;}
-	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	wait
@@ -863,6 +861,7 @@ update_ytfzf () {
 }
 
 scrape_subscriptions () {
+	printf "" > "$tmp_video_data_file"
 	channels="$*"
 	if [ -z "$channels" ]; then
 	    channels="$( sed \
