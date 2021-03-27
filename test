@@ -1,0 +1,55 @@
+diff --git a/ytfzf b/ytfzf
+index 08bd620..8923dbf 100755
+--- a/ytfzf
++++ b/ytfzf
+@@ -56,6 +56,8 @@ tmp_video_data_file="/tmp/ytfzf-subdata"
+ history_file="${history_file-$YTFZF_CACHE/ytfzf_hst}"
+ current_file="${current_file-$YTFZF_CACHE/ytfzf_cur}"
+ thumb_dir="${thumb_dir-$YTFZF_CACHE/thumb}"
++videos_json_cache_file="${videos_json_cache_file-$YTFZF_CACHE/videos_json}"
++[ ! -e "$videos_json_cache_file" ] && printf "" > "$videos_json_cache_file"
+ #> Stores urls of the video page of channels
+ subscriptions_file="${subscriptions_file-$config_dir/subscriptions}"
+ 
+@@ -451,6 +453,7 @@ download_thumbnails () {
+ 			sleep 0.001
+ 		else
+ 			local name="$line"
++			[ ! -e "$thumb_dir/$name.png" ] && \
+ 			{
+ 				image_download
+ 			} &
+@@ -602,6 +605,13 @@ scrape_yt () {
+ 
+ 	#sp is the urlquery youtube uses for sorting videos
+ 	#only runs if --filter-id or --sp was unspecified
++	cached_json="$(cat "$videos_json_cache_file")"
++	if [ -n "$cached_json" ]; then
++	    videos_data="$(get_video_data "$cached_json")"
++	    printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
++	    [ $show_thumbnails -eq 1 ] && download_thumbnails "$cached_json"
++	    return;
++	fi
+ 	if [ -z "$sp" ]; then
+ 		get_sp_filter
+ 	else
+@@ -655,6 +665,7 @@ scrape_yt () {
+ 	#if there aren't videos
+ 	[ -z "${videos_data}${channels_data}" ] && { printf "No results found. Try different keywords.\n"; exit 1;}
+ 	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
++	printf "%s\n" "$videos_json" > "$videos_json_cache_file"
+ 
+ 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+ 	wait
+@@ -715,7 +726,10 @@ user_selection () {
+ 		selected_data="$( title_len=200 video_menu "$full_data" )"
+ 		stop_ueberzug
+ 		# Deletes thumbnails if no video is selected
+-		[ -z "$selected_data" ] && delete_thumbnails
++		if [ -z "$selected_data" ]; then
++		    delete_thumbnails
++		    printf "" > "$videos_json_cache_file"
++		fi
+ 	#show regular menu
+ 	else
+ 		selected_data="$( video_menu "$full_data" )"

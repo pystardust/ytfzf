@@ -451,6 +451,7 @@ download_thumbnails () {
 			sleep 0.001
 		else
 			local name="$line"
+			[ ! -e "$thumb_dir/$name.png" ] && \
 			{
 				image_download
 			} &
@@ -693,7 +694,7 @@ user_selection () {
 	    #since we know that channels_data is first and it's empty
 	    local full_data="$videos_data"
 	fi
-	[ "$use_results_button" -eq 1 ] && full_data="$(printf "RESULTS\n%s" "$full_data")"
+	[ "$use_results_button" -eq 1 ] && local full_data="$(printf "RESULTS\n%s" "$full_data")"
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
