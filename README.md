@@ -25,7 +25,7 @@
 _This one-line installation does not support every OS, detail information for different OS can be found in the [here](docs/INSTALL.md)_
 
 ```sh
-sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf && sudo chmod +x /usr/bin/ytfzf
+curl -sL "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" | sudo tee /usr/bin/ytfzf >/dev/null && sudo chmod 755 /usr/bin/ytfzf
 ```
 <sup>*requires cURL</sup>
 

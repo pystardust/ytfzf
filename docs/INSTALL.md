@@ -43,7 +43,7 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 1. #### Installation by direct download
 
 	```sh
-	sudo curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" -o /usr/bin/ytfzf && sudo chmod +x /usr/bin/ytfzf
+	curl -sL "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" | sudo tee /usr/bin/ytfzf >/dev/null && sudo chmod 755 /usr/bin/ytfzf
 	```
 
    _MacOS users might need to change their installation path from  `/usr/bin/` to `/usr/local/bin/`_
@@ -53,6 +53,8 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 	```
 	yay -S ytfzf-git
 	```
+	
+	Or alternatively from [@JojiiOfficials](https://github.com/JojiiOfficial) [pacman repository](https://repo.jojii.de)
 
 3. #### Gentoo users can install ytfzf from the [nitratesky](https://github.com/VTimofeenko/nitratesky) overlay
 
