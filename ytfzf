@@ -1104,7 +1104,8 @@ while true; do
 
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
-		search_query="" get_search_query
+		search_query=""
+		get_search_query
 		scrape_yt "$search_query"
 	fi
 done
