@@ -147,7 +147,7 @@ create_subs () {
     for i in $( seq 0 $((sublength-1)) ); do
 
         channelId=$(cat "$FILE" | jq --argjson index ${i} '.[$index] .snippet .resourceId .channelId' )
-        echo "https://www.youtube.com/channel/${channelId:1:24}/videos" >> "$subscriptions_file"
+        echo "https://www.youtube.com/channel/$(echo ${channelId} | cut -c 2-25)/videos" >> "$subscriptions_file"
 
     done
 }
@@ -990,7 +990,7 @@ parse_long_opt () {
 		    command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[0m %s\n" "$(fzf --version)"
 		    exit ;;
 
-        add-subs) create_subs exit ;;
+        	add-subs) create_subs exit ;;
 
 		*)
 		    printf "Illegal option --%s\n" "$opt"
@@ -1132,7 +1132,7 @@ while true; do
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
 		search_query=""
-        get_search_query
+        	get_search_query
 		scrape_yt "$search_query"
 	fi
 done
