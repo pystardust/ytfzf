@@ -35,6 +35,8 @@ printf "" > "$tmp_video_data_file"
 [ -z "$YTFZF_CACHE" ] && YTFZF_CACHE="${cache_dir-$HOME/.cache/ytfzf}"
 #video type preference (mp4/1080p, mp4/720p, etc..)
 [ -z  "$YTFZF_PREF" ] && YTFZF_PREF="${video_pref-}"
+#enable/disable add playlist mode
+[ -z "$YTFZF_PLADD" ] && YTFZF_PLADD=${add_playlist_mode-0}
 #the menu to use instead of fzf when -D is specified
 [ -z "$YTFZF_EXTMENU" ] && YTFZF_EXTMENU="${external_menu-dmenu -i -l 30 -p Search:}"
 #number of columns (characters on a line) the external menu can have
@@ -864,7 +866,7 @@ add_playlist () {
 	#Create playlist folder if not exist
 	mkdir -p $playlist_dir
 	#Create playlist if not exist
-	[[ -f $playlist_dir/$playlist ]] || touch $playlist_dir/$playlist
+	[ -f $playlist_dir/$playlist ] || touch $playlist_dir/$playlist
 	#Add selected video to playlist
 	[ "$YTFZF_PLADD" -eq 1 ] && printf "%s\n" "$selected_data" >> "$playlist_dir/$playlist"
 	[ "$YTFZF_NOTI" -eq 1 ] && send_notify "$selected_data"
@@ -1000,9 +1002,7 @@ parse_long_opt () {
 
 		notification) parse_opt "N" ;;
 
-		add-pl) printf "Missing playlist name!"; exit ;;
 		add-pl=*) parse_opt "p" "${opt#*=}" ;;
-		play-pl) printf "Missing playlist name!"; exit ;;
 		play-pl=*) parse_opt "P" "${opt#*=}" ;;
 
 		version)
