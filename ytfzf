@@ -146,7 +146,7 @@ create_subs () {
 
     for i in $( seq 0 $((sublength-1)) ); do
 
-        channelId=$(cat subscriptions.json | jq --argjson index ${i} '.[$index] .snippet .resourceId .channelId' )
+        channelId=$(cat "$FILE" | jq --argjson index ${i} '.[$index] .snippet .resourceId .channelId' )
         echo "https://www.youtube.com/channel/${channelId:1:24}/videos" >> "$subscriptions_file"
 
     done
