@@ -1033,7 +1033,7 @@ parse_long_opt () {
 
 		notification) parse_opt "N" ;;
 
-		wget) use_wget=1 ;;
+		wget) parse_opt "w" ;;
 
 		version)
 		    printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
