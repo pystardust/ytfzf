@@ -544,20 +544,20 @@ get_yt_html () {
 	if [ "$use_wget" -eq 1 ]; then
 		printf "%s" "$(
 		wget -O - --no-cookie --quiet \
-	      --header 'authority: www.youtube.com' \
-	      --header "user-agent: $useragent" \
-	      --header 'accept-language: en-US,en;q=0.9' \
-	      "${link}?search_query=${query}&sp=${sp}" \
-		)"
+		  --header 'authority: www.youtube.com' \
+		  --header "user-agent: $useragent" \
+		  --header 'accept-language: en-US,en;q=0.9' \
+		  "${link}?search_query=${query}&sp=${sp}" \
+		  )"
 	else
 		printf "%s" "$(
 		curl "$link" -s \
-	  	  -G --data-urlencode "search_query=$query" \
-	  	  -G --data-urlencode "sp=$sp" \
-	  	  -H 'authority: www.youtube.com' \
-	  	  -H "user-agent: $useragent" \
-	  	  -H 'accept-language: en-US,en;q=0.9' \
-	  	  --compressed
+		  -G --data-urlencode "search_query=$query" \
+		  -G --data-urlencode "sp=$sp" \
+		  -H 'authority: www.youtube.com' \
+		  -H "user-agent: $useragent" \
+		  -H 'accept-language: en-US,en;q=0.9' \
+		  --compressed
 		)"
 	fi
     unset link query
