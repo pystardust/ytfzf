@@ -146,7 +146,7 @@ basic_helpinfo () {
     printf "     -D, --ext-menu                         Use external menu(default dmenu) instead of fzf \n";
     printf "     -H, --choose-from-history              Choose from history \n";
     printf "     -x, --clear-history                    Delete history\n";
-	printf "     -w, --wget                             Scrape YouTube with wget instead of curl\n";
+    printf "     -w, --wget                             Scrape YouTube with wget instead of curl\n";
     printf "     -m, --audio-only     <search-query>    Audio only (for music)\n";
     printf "     -d, --download       <search-query>    Download to current directory\n";
     printf "     -f                   <search-query>    Show available formats before proceeding\n";
