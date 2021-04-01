@@ -139,14 +139,14 @@ create_subs () {
     fi
    
     # start fresh
-    > $config_dir/subscriptions
+    : > $config_dir/subscriptions
 
     # check how many subscriptions there are in the file
-    sublength=$(cat "$FILE" | jq '. | length')
+    sublength=$( jq '. | length' < "$FILE" )
 
     for i in $( seq 0 $((sublength-1)) ); do
 
-        channelId=$(cat "$FILE" | jq --argjson index ${i} '.[$index] .snippet .resourceId .channelId' )
+        channelId="$(jq --argjson index ${i} '.[$index] .snippet .resourceId .channelId' < "$FILE" )"
         echo "https://www.youtube.com/channel/$(echo ${channelId} | cut -c 2-25)/videos" >> "$subscriptions_file"
 
     done
@@ -1004,7 +1004,8 @@ parse_long_opt () {
 		    command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[0m %s\n" "$(fzf --version)"
 		    exit ;;
 
-        	add-subs) create_subs exit ;;
+        	add-subs) create_subs 
+			  exit ;;
 
 		*)
 		    printf "Illegal option --%s\n" "$opt"
