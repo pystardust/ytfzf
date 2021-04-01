@@ -104,7 +104,8 @@ sp="${sp-}"
 scrape="${scrape-yt_search}"
 #auto generated caption by youtube with enabled with --subt
 auto_caption=${auto_caption-0}
-
+#whether to use wget instead of cutl in get_yt_html() (same as -w)
+use_wget=${use_wget-0}
 
 #ueberzug related variables
 #the side where thumbnails are shown
@@ -174,6 +175,7 @@ basic_helpinfo () {
     printf "     -D, --ext-menu                         Use external menu(default dmenu) instead of fzf \n";
     printf "     -H, --choose-from-history              Choose from history \n";
     printf "     -x, --clear-history                    Delete history\n";
+    printf "     -w, --wget                             Scrape YouTube with wget instead of curl\n";
     printf "     -m, --audio-only     <search-query>    Audio only (for music)\n";
     printf "     -d, --download       <search-query>    Download to current directory\n";
     printf "     -f                   <search-query>    Show available formats before proceeding\n";
@@ -539,15 +541,30 @@ get_yt_json () {
 get_yt_html () {
     link="$1"
     query="$2"
-    printf "%s" "$(
-	curl "$link" -s \
-	  -G --data-urlencode "search_query=$query" \
-	  -G --data-urlencode "sp=$sp" \
-	  -H 'authority: www.youtube.com' \
-	  -H "user-agent: $useragent" \
-	  -H 'accept-language: en-US,en;q=0.9' \
-	  --compressed
-    )"
+
+
+get_yt_html () {
+    local link="$1"
+    local query="$2"
+	if [ $use_wget -eq 1 ]; then
+		printf "%s" "$(
+		wget -O - --no-cookie --quiet \
+	      --header 'authority: www.youtube.com' \
+	      --header "user-agent: $useragent" \
+	      --header 'accept-language: en-US,en;q=0.9' \
+	      "${link}?search_query=${query}&sp=${sp}" \
+		)"
+	else
+		printf "%s" "$(
+		curl "$link" -s \
+	  	  -G --data-urlencode "search_query=$query" \
+	  	  -G --data-urlencode "sp=$sp" \
+	  	  -H 'authority: www.youtube.com' \
+	  	  -H "user-agent: $useragent" \
+	  	  -H 'accept-language: en-US,en;q=0.9' \
+	  	  --compressed
+		)"
+	fi
     unset link query
 }
 
@@ -578,7 +595,7 @@ scrape_channel () {
 	yt_html="$(get_yt_html "$channel_url")"
 
 	if [ -z "$yt_html" ]; then
-	        print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[0m\n"
+	        print_error "\033[31mERROR[#01]: Couldn't download website. Please check your network and try again.\033[0m\n"
 	        exit 1
 	fi
 
@@ -643,7 +660,7 @@ scrape_yt () {
 
 	yt_html="$(get_yt_html "https://www.youtube.com/results" "$*")"
 	if [ -z "$yt_html" ]; then
-		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[0m\n"
+		print_error "\033[31mERROR[#01]: Couldn't download website. Please check your network and try again.\033[0m\n"
 		exit 1
 	fi
 
@@ -1021,6 +1038,8 @@ parse_long_opt () {
 
 		notification) parse_opt "N" ;;
 
+		wget) uset_wget=1 ;;
+
 		version)
 		    printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
 		    printf "\033[1myoutube-dl:\033[0m %s\n" "$(youtube-dl --version)"
@@ -1094,6 +1113,8 @@ parse_opt () {
 			;;
 
 		N)	YTFZF_NOTI=1 ;;
+
+		w)	use_wget=1 ;;
 
 		*)
 			usageinfo

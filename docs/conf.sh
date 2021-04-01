@@ -127,6 +127,10 @@ fancy_subscriptions_menu=1
 #yt_subs is the same as -S
 scrape="yt_search"
 
+#use wget instead of curl to scrape youtube
+#can be used to bypass youtube's consent form
+use_wget=0
+
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
 #to get a filter id go to youtube search for something, choose the filter you want,
