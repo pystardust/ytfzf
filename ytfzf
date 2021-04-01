@@ -135,14 +135,14 @@ dep_ck "jq" "youtube-dl";
 create_subs () {
 
     FILE="${config_dir}/subscriptions.json"
-    
-    # there is a decent guide on getting this data by the FreeTube devs   
+
+    # there is a decent guide on getting this data by the FreeTube devs
     if [ ! -f "$FILE" ]; then
         printf "\033[31mYou need to have a subscriptions.json file in the ${config_dir} directory!\033[0m\n"
         printf "For further information visit https://github.com/FreeTubeApp/FreeTube/wiki/Importing-Your-YouTube-Subscriptions !\n"
         exit
     fi
-   
+
     # start fresh
     : > $config_dir/subscriptions
 
@@ -773,9 +773,12 @@ get_video_format () {
 
 get_sub_lang () {
     if [ $auto_caption -eq 1 ]; then
-        #Gets the auto generated subs and stores them in a file    
-        sub_list=$(youtube-dl --list-subs  --write-auto-sub "$selected_urls" | sed '/Available subtitles/,$d' | awk '{print $1}' | sed '1d;2d;3d')
-        [ ! -z "$sub_list" ]  && selected_sub=$(printf "$sub_list" | eval "$menu_command") && youtube-dl  --sub-lang $selected_sub  --write-auto-sub --skip-download "$selected_urls" -o /tmp/temp && YTFZF_SUBT_NAME="--sub-file=/tmp/temp.$selected_sub.vtt" || printf "Auto generated subs not available." 
+        #Gets the auto generated subs and stores them in a file
+	sub_list="$(youtube-dl --list-subs  --write-auto-sub "$selected_urls" | sed -E '/vtt,/!d;s/ .*//')"
+        [ -n "$sub_list" ] &&\
+			selected_sub=$(printf "$sub_list" | eval "$menu_command") &&\
+			youtube-dl  --sub-lang "$selected_sub"  --write-auto-sub --skip-download "$selected_urls" -o /tmp/ytfzf.sub &&\
+			YTFZF_SUBT_NAME="--sub-file=/tmp/ytfzf.sub.$selected_sub.vtt" || printf "Auto generated subs not available."
     	unset sub_list selected_sub
     fi
 
@@ -803,7 +806,7 @@ play_url () {
 		print_error "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[0mTry updating youtube-dl\n"; save_before_exit ; exit 1;
 	}
 	#Delete the temp auto-gen subtitle file
-	[ ! -z "$YTFZF_SUBT_NAME" ] && printf "%s" "$YTFZF_SUBT_NAME" | awk -F"=" '{print $2}' | xargs rm -f
+	[ $auto_caption -eq 1 ] && rm -f "${YTFZF_SUBT_NAME#*=}"
 
 	unset player_urls
 }
@@ -1023,10 +1026,10 @@ parse_long_opt () {
 		    printf "\033[1myoutube-dl:\033[0m %s\n" "$(youtube-dl --version)"
 		    command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[0m %s\n" "$(fzf --version)"
 		    exit ;;
-       
+
        		subt)  auto_caption=1 ;;
 
-        	add-subs) create_subs 
+        	add-subs) create_subs
 			  exit ;;
 
 		*)
@@ -1159,7 +1162,7 @@ while true; do
 	format_user_selection
 	print_data
 	get_video_format
-	get_sub_lang    
+	get_sub_lang
 	play_url
 	save_before_exit
 
