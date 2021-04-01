@@ -539,14 +539,9 @@ get_yt_json () {
 }
 
 get_yt_html () {
-    link="$1"
-    query="$2"
-
-
-get_yt_html () {
     local link="$1"
     local query="$2"
-	if [ $use_wget -eq 1 ]; then
+	if [ "$use_wget" -eq 1 ]; then
 		printf "%s" "$(
 		wget -O - --no-cookie --quiet \
 	      --header 'authority: www.youtube.com' \
@@ -1038,7 +1033,7 @@ parse_long_opt () {
 
 		notification) parse_opt "N" ;;
 
-		wget) uset_wget=1 ;;
+		wget) use_wget=1 ;;
 
 		version)
 		    printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
@@ -1123,7 +1118,7 @@ parse_opt () {
 	unset opt optarg
 }
 
-while getopts "LhDmdfxHaArltSsvNn:U:-:" OPT; do
+while getopts "LhDmdfxHaArltSsvNwn:U:-:" OPT; do
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
