@@ -20,7 +20,7 @@ printf "" > "$tmp_video_data_file"
 [ -e "$config_file" ] && . "$config_file"
 
 #for each environment variable, check if it's set in environment,
-    #if set in invironment, use that value
+    #if set in environment, use that value
     #otherwise use the variable set in config, if that's not set, use the default value
 
 #enable/disable history
@@ -126,6 +126,31 @@ dep_ck "jq" "youtube-dl";
 #don't check $YTFZF_PLAYER as it could be multiple commands
 [ "$YTFZF_PLAYER" = "mpv" ] && dep_ck "mpv"
 
+#create subscriptions file from data downloaded from youtube
+create_subs () {
+
+    FILE="${config_dir}/subscriptions.json"
+    
+    # there is a decent guide on getting this data by the FreeTube devs   
+    if [ ! -f "$FILE" ]; then
+        printf "\033[31mYou need to have a subscriptions.json file in the ${config_dir} directory!\033[0m\n"
+        printf "For further information visit https://github.com/FreeTubeApp/FreeTube/wiki/Importing-Your-YouTube-Subscriptions !\n"
+        exit
+    fi
+   
+    # start fresh
+    > $config_dir/subscriptions
+
+    # check how many subscriptions there are in the file
+    sublength=$(cat "$FILE" | jq '. | length')
+
+    for i in $( seq 0 $((sublength-1)) ); do
+
+        channelId=$(cat "$FILE" | jq --argjson index ${i} '.[$index] .snippet .resourceId .channelId' )
+        echo "https://www.youtube.com/channel/$(echo ${channelId} | cut -c 2-25)/videos" >> "$subscriptions_file"
+
+    done
+}
 
 ############################
 #       Help Texts         #
@@ -863,8 +888,8 @@ update_ytfzf () {
 }
 
 scrape_subscriptions () {
-	while read -r url; do
-		scrape_channel "$url"  &
+	while IFS= read -r url; do
+		scrape_channel "$url" &
 	done << EOF
 $( sed \
 	-e "s/#.*//" \
@@ -978,6 +1003,8 @@ parse_long_opt () {
 		    printf "\033[1myoutube-dl:\033[0m %s\n" "$(youtube-dl --version)"
 		    command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[0m %s\n" "$(fzf --version)"
 		    exit ;;
+
+        	add-subs) create_subs exit ;;
 
 		*)
 		    printf "Illegal option --%s\n" "$opt"
@@ -1120,7 +1147,8 @@ while true; do
 
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
-		search_query="" get_search_query
+		search_query=""
+        	get_search_query
 		scrape_yt "$search_query"
 	fi
 done
