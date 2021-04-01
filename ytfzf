@@ -100,6 +100,8 @@ fancy_subscriptions_menu=${fancy_subscriptions_menu-1}
 sp="${sp-}"
 #is used to know whether or not scraping the search page is necessary
 scrape="${scrape-yt_search}"
+#whether to use wget instead of curl in get_yt_html (same as -w)
+use_wget="${use_wget-}"
 
 #ueberzug related variables
 #the side where thumbnails are shown
@@ -133,7 +135,7 @@ dep_ck "jq" "youtube-dl";
 
 basic_helpinfo () {
     printf "Usage: ytfzf [OPTIONS...] <search-query>\n";
-    printf "  OPTIONS:\n" 
+    printf "  OPTIONS:\n"
     printf "     -h, --help                             Show this help text\n";
     printf "     -v, --version                          -v for ytfzf's version\n";
     printf "                                            --version for ytfzf + dependency's versions\n"
@@ -144,6 +146,7 @@ basic_helpinfo () {
     printf "     -D, --ext-menu                         Use external menu(default dmenu) instead of fzf \n";
     printf "     -H, --choose-from-history              Choose from history \n";
     printf "     -x, --clear-history                    Delete history\n";
+	printf "     -w, --wget                             Scrape YouTube with wget instead of curl\n";
     printf "     -m, --audio-only     <search-query>    Audio only (for music)\n";
     printf "     -d, --download       <search-query>    Download to current directory\n";
     printf "     -f                   <search-query>    Show available formats before proceeding\n";
@@ -156,9 +159,9 @@ basic_helpinfo () {
     printf "     -L, --link-only      <search-query>    Prints the selected URL only, helpful for scripting\n";
     printf "     --preview-side=      <left/right/top/bottom>    the side of the screen to show thumbnails\n";
     printf "\n"
-    printf "  Use - instead of <search-query> for stdin\n" 
+    printf "  Use - instead of <search-query> for stdin\n"
     printf "\n";
-    printf "  Option usage:\n" 
+    printf "  Option usage:\n"
     printf "     ytfzf -fDH                           to show history using external \n"
     printf "                                          menu and show formats\n"
     printf "     ytfzf -fD --choose-from-history      same as above\n"
@@ -167,13 +170,13 @@ basic_helpinfo () {
 
 all_help_info () {
     basic_helpinfo
-    printf "  Subscriptions: to add a channel to subscptions, copy the channel's video page url\n" 
+    printf "  Subscriptions: to add a channel to subscptions, copy the channel's video page url\n"
     printf "                 and add it to ~/.config/ytfzf/subscriptions. Each url must be on a new line\n";
     printf "     -S,  --subs                          Get the latest 10 videos from subscriptions\n"
     printf "     --subs=<number>                      Get the latest <number> of videos from subscriptions\n";
     printf "     --fancy-subs=                        whether or not to show ------channel------ in subscriptions (must be 1 or 0)\n";
     printf "\n"
-    printf "  Filters: different ways to filter videos in search\n" 
+    printf "  Filters: different ways to filter videos in search\n"
     printf "     --upload-time=     <time-range>      Time range can be one of, \n";
     printf "                                          last-hour, today, this-week, this-month, this-year\n"
     printf "                                          Filters can go directly: --today\n";
@@ -188,7 +191,7 @@ all_help_info () {
     printf "         Example: \033[1mytfzf --filter-id=EgJAAQ minecraft\033[0m\n";
     printf "         This will filter by livestream\n";
     printf "\n";
-    printf "  Update:\n" 
+    printf "  Update:\n"
     printf "     --update                             clones the latest stable commit and installs it\n";
     printf "                                          on Arch ytfzf is available in the AUR\n";
     printf "     --update-unstable                    gets the latest commit and installs it (--update is safer)\n";
@@ -197,7 +200,7 @@ all_help_info () {
     printf "  Defaults can be modified through ENV variables or the config file\n";
     printf "  the default config file can be found at https://github.com/pystardust/ytfzf/blob/master/docs/conf.sh%b\n"
     printf "\n"
-    printf "  Environment Variables:\n" 
+    printf "  Environment Variables:\n"
     printf "     YTFZF_HIST=1                          0 : off history\n";
     printf "     YTFZF_CACHE=~/.cache/ytfzf\n";
     printf "     YTFZF_LOOP=0                          1 : loop the selection prompt\n";
@@ -450,7 +453,7 @@ download_thumbnails () {
 			} &
 		fi
 		i=$((i + 1))
-done 
+done
 
 }
 get_sp_filter () {
@@ -503,17 +506,28 @@ get_yt_json () {
 }
 
 get_yt_html () {
-    local link="$1"
-    local query="$2"
-    printf "%s" "$(
-	curl "$link" -s \
-	  -G --data-urlencode "search_query=$query" \
-	  -G --data-urlencode "sp=$sp" \
-	  -H 'authority: www.youtube.com' \
-	  -H "user-agent: $useragent" \
-	  -H 'accept-language: en-US,en;q=0.9' \
-	  --compressed
-    )"
+	local link="$1"
+	local query="$2"
+
+	if [ "$use_wget" -eq 1 ]; then
+		printf "%s" "$(
+		wget -O - --no-cookie --quiet \
+		  --header 'authority: www.youtube.com' \
+		  --header "user-agent: $useragent" \
+		  --header 'accept-language: en-US,en;q=0.9' \
+		  "${link}?search_query=${query}&sp=${sp}" \
+		)"
+	else
+		printf "%s" "$(
+		curl "$link" -s \
+		  -G --data-urlencode "search_query=$query" \
+		  -G --data-urlencode "sp=$sp" \
+		  -H 'authority: www.youtube.com' \
+		  -H "user-agent: $useragent" \
+		  -H 'accept-language: en-US,en;q=0.9' \
+		  --compressed
+		)"
+	fi
 }
 
 get_video_data () {
@@ -543,7 +557,7 @@ scrape_channel () {
 	local yt_html="$(get_yt_html "$channel_url")"
 
 	if [ -z "$yt_html" ]; then
-	        print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[0m\n"
+	        print_error "\033[31mERROR[#01]: Couldn't download website. Please check your network and try again.\033[0m\n"
 	        exit 1
 	fi
 
@@ -607,7 +621,7 @@ scrape_yt () {
 
 	local yt_html="$(get_yt_html "https://www.youtube.com/results" "$*")"
 	if [ -z "$yt_html" ]; then
-		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[0m\n"
+		print_error "\033[31mERROR[#01]: Couldn't download website. Please check your network and try again.\033[0m\n"
 		exit 1
 	fi
 
@@ -707,7 +721,7 @@ format_user_selection () {
 		[ -z "$surl" ] && continue
 		selected_urls="$(printf '%s\n%s' "$selected_urls" "https://www.youtube.com/watch?v=$surl")"
 		selected_data="$(printf '%s\n%s' "$selected_data" "$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )")"
-	done 
+	done
 	selected_urls="$( printf "%s" "$selected_urls" | sed 1d )"
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
@@ -723,7 +737,7 @@ print_data () {
 
 get_video_format () {
 	# select format if flag given
-	if [ $show_format -eq 1 ]; then 
+	if [ $show_format -eq 1 ]; then
 		YTFZF_PREF="$(youtube-dl -F "$(printf "$selected_urls" | sed 1q)" | sed '1,3d' | sed '1!G; h; $!d' |\
 		eval "$menu_command" | sed -E 's/^([^ ]*) .*/\1/')"
 		[ -z "$YTFZF_PREF"  ] && exit;
@@ -883,11 +897,11 @@ parse_long_opt () {
 	#if the option has a short version it calls this function with the opt as the shortopt
 	case "${opt}" in
 	        help) parse_opt "h" ;;
-		help-all) 
-		    all_help_info 
+		help-all)
+		    all_help_info
 		    exit ;;
 
-		is-ext-menu|is-ext-menu=*) 
+		is-ext-menu|is-ext-menu=*)
 		    [ "$opt" = "is-ext-menu" ] && parse_opt "D" || parse_opt "D" "${opt#*=}"
 		    is_non_number "$is_ext_menu" && bad_opt_arg "--ext-menu=" "$is_ext_menu" ;;
 
@@ -897,7 +911,7 @@ parse_long_opt () {
 
 		clear-history) parse_opt "x" ;;
 
-		search-again|search-again=*) 
+		search-again|search-again=*)
 		    [ "$opt" = 'search-again' ] && parse_opt "s" || parse_opt "s" "${opt#*=}"
 		    is_non_number "$search_again" && bad_opt_arg "--search=" "$search_again" ;;
 
@@ -905,7 +919,7 @@ parse_long_opt () {
 		    [ "$opt" = 'loop' ] && parse_opt "l" || parse_opt "l" "${opt#*=}"
 		    is_non_number "$YTFZF_LOOP" && bad_opt_arg "--loop=" "$YTFZF_LOOP" ;;
 
-		show-thumbnails|show-thumbnails=*) 
+		show-thumbnails|show-thumbnails=*)
 		    [ "$opt" = 'show-thumbnails' ] && parse_opt "t" || parse_opt "t" "${opt#*=}"
 		    is_non_number "$show_thumbnails" && bad_opt_arg "--thumbnails=" "$show_thumbnails" ;;
 
@@ -958,6 +972,8 @@ parse_long_opt () {
 		fancy-subs=*) fancy_subscriptions_menu="${opt#*=}" ;;
 
 		notification) parse_opt "N" ;;
+
+		wget) use_wget=1 ;;
 
 		version)
 		    printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
@@ -1027,13 +1043,15 @@ parse_opt () {
 
 		N)	YTFZF_NOTI=1 ;;
 
+		w)  use_wget=1 ;;
+
 		*)
 			usageinfo
 			exit 2 ;;
 	esac
 }
 
-while getopts "LhDmdfxHaArltSsvNn:U:-:" OPT; do
+while getopts "LhDmdfxHaArltSsvNn:U:w-:" OPT; do
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
@@ -1077,7 +1095,7 @@ case "$scrape" in
 	"history")
 		get_history
 		;;
-	"url") 
+	"url")
 	    play_url
 	    exit
 	    ;;
