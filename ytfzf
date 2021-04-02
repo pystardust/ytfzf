@@ -546,6 +546,7 @@ get_yt_html () {
 	  -H 'authority: www.youtube.com' \
 	  -H "user-agent: $useragent" \
 	  -H 'accept-language: en-US,en;q=0.9' \
+	  -L \
 	  --compressed
     )"
     unset link query
