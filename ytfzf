@@ -174,8 +174,8 @@ basic_helpinfo () {
     printf "     -N, --notification                     Send notification when playing video\n";
     printf "                                            Doesn't work with -H -D\n";
     printf "     --thumbnail-quality=<0,1>              0: low quality (faster), 1: default\n"
-    printf "     -p --add-pl=<playlist-name>            Add video to playlist, create playlist if not exist\n"
-    printf "     -P --play-pl=<playlist-name>           Play query playlist\n" 
+    printf "     -P --playlist-add    <search-query>    Add video to playlist, create playlist if not exist\n"
+    printf "     -p --playlist                          Play query playlist\n" 
     printf "     -D, --ext-menu                         Use external menu(default dmenu) instead of fzf \n";
     printf "     -H, --choose-from-history              Choose from history \n";
     printf "     -x, --clear-history                    Delete history\n";
@@ -869,10 +869,6 @@ get_history () {
 	fi
 	unset hist_data
 }
-get_playlist () {
-	pl_data="$( sed '1!G; h; $!d' "$playlist_dir/$playlist" )"
-	videos_data="$(printf "%s" "$pl_data" | uniq )"
-}
 clear_history () {
 	if [ -e "$history_file" ]; then
 		printf "" > "$history_file"
@@ -887,6 +883,7 @@ send_notify () {
 	number_video="$(printf "%s\n" "$*" | wc -l)"
 	video_name="$(printf "%s" "$*" | cut -d'|' -f1 )"
 	video_channel="$(printf "%s" "$*" | cut -d'|' -f2)"
+	head=$YTFZF_PLAYER
 	#Add playlist mode
 	if [ $YTFZF_PLADD -eq 1 ]; then
 		head="Playlist: $playlist"
@@ -894,22 +891,28 @@ send_notify () {
 		message="Added $number_video video to playlist"
  	# Only select 1 video thumbnail on
 	elif [ "$show_thumbnails" -eq 1 ] && [ "$number_video" -eq 1 ]; then	
-		head="Current playing"
 		video_thumb="$thumb_dir/$(printf "%s" "$selected_data" | cut -d'|' -f6).png"
 		message="$(printf "$video_name\nChannel: $video_channel")"
 	# Select more than one video
 	elif [ $number_video -gt 1 ]; then
-		head="Video player"
 		video_thumb="$config_dir/default_thumb.png"
 		message="Added $number_video video to play queue"
 	# Only select 1 video without thumbnail
 	else
-		head="Current playing"
 		message="$(printf "$video_name\nChannel: $video_channel")"
 		video_thumb="$config_dir/default_thumb.png"
 	fi
 	notify-send "$head" "$message" -i "$video_thumb"
-	unset number_video video_name video_channel message video_thumb
+	unset head number_video video_name video_channel message video_thumb
+}
+
+get_playlist () {
+	#fzf a playlist from list, if in add playlist mode get query when didn't match
+	if [ $YTFZF_PLADD -eq 1 ]; then
+		playlist=$(ls $playlist_dir | fzf -m --prompt="Playlist name: " --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2 --print-query | tail -1) 
+	else
+		playlist=$(ls $playlist_dir | fzf -m --prompt="Playlist name: " --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2)
+	fi
 }
 add_playlist () {
 	#Create playlist folder if not exist
@@ -920,6 +923,12 @@ add_playlist () {
 	[ "$YTFZF_PLADD" -eq 1 ] && printf "%s\n" "$selected_data" >> "$playlist_dir/$playlist"
 	[ "$YTFZF_NOTI" -eq 1 ] && send_notify "$selected_data"
 }
+scrape_playlist () {
+	#Get playlist data
+	pl_data="$( sed '1!G; h; $!d' "$playlist_dir/$playlist" )"
+	videos_data="$(printf "%s" "$pl_data" | uniq )"
+}
+
 update_ytfzf () {
 	branch="$1"
 	updatefile="/tmp/ytfzf-update"
@@ -1051,8 +1060,8 @@ parse_long_opt () {
 
 		notification) parse_opt "N" ;;
 
-		add-pl=*) parse_opt "p" "${opt#*=}" ;;
-		play-pl=*) parse_opt "P" "${opt#*=}" ;;
+		playlist-add) parse_opt "P" ;;
+		playlist) parse_opt "p" ;;
 
 		version)
 		    printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
@@ -1128,8 +1137,9 @@ parse_opt () {
 
 		N)	YTFZF_NOTI=1 ;;
 
-		p)	playlist=${optarg:-1}; YTFZF_PLADD=1 ;;
-		P)	playlist=${optarg:-1}; scrape="playlist" ;;
+		P)	YTFZF_PLADD=1; get_playlist ;;
+
+		p)	scrape="playlist"; get_playlist ;;
 
 		*)
 			usageinfo
@@ -1138,7 +1148,7 @@ parse_opt () {
 	unset opt optarg
 }
 
-while getopts "LhDmdfxHaArltSsvNp:P:n:U:-:" OPT; do
+while getopts "LhDmdfxHaArltSsvNpPn:U:-:" OPT; do
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
@@ -1180,7 +1190,7 @@ case "$scrape" in
 		scrape_subscriptions
 		;;
 	"playlist")
-		get_playlist
+		scrape_playlist
 		;;
 	"history")
 		get_history
@@ -1195,12 +1205,12 @@ case "$scrape" in
 
 esac
 
-
 while true; do
 	user_selection
 	format_user_selection
 	print_data
 	get_video_format
+	#if in playlist mode, exit after added video to playlist
 	if [ $YTFZF_PLADD -eq 1 ] ; then
 	 	add_playlist
 		exit
