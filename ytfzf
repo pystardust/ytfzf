@@ -498,7 +498,7 @@ download_thumbnails () {
 		jq  -r '.[]|[.thumbs,.videoID]|@tsv' )
 
 	while IFS=$tab_space read -r Url Name; do
-		sleep 0.002
+		sleep 0.001
 		{
 			image_download
 		} &
