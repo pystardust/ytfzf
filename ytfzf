@@ -767,10 +767,10 @@ print_data () {
 get_video_format () {
 	# select format if flag given
 	if [ $show_format -eq 1 ]; then
-        max_quality=$(youtube-dl -F "$(printf "$selected_urls")" | awk '{print $4}' | sort -n | tail -n1)
-        quality=$(printf "Audio 144p 240p 360p 480p 720p 1080p 1440P 2160p 4320p" | awk -F"$max_quality" '{print $1 FS}' | sed "s/ /\n/g" | eval "$menu_command" | sed "s/p//g")
+        max_quality=$(youtube-dl -F "$(printf "$selected_urls")" | awk '{print $4}' | sort -n | tail -n1 | awk -F"p" '{print $1 FS}')
+        quality=$(printf "Audio 144p 240p 360p 480p 720p 1080p 1440p 2160p 4320p" | awk -F"$max_quality" '{print $1 FS}' | sed "s/ /\n/g" | eval "$menu_command" | sed "s/p//g")
 		[ -z "$quality"  ] && exit;
-	    [ $quality = "Audio"  ] && YTFZF_PREF="bestaudio/best" || YTFZF_PREF="bestvideo[height=?$quality][fps<=?30][vcodec!=?vp9]+bestaudio/best"
+	    [ $quality = "Audio"  ] && YTFZF_PREF="bestaudio/best" || YTFZF_PREF="bestvideo[height=?$quality][vcodec!=?vp9]+bestaudio/best"
 
 	fi
 	unset max_quality quality
