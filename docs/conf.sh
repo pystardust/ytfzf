@@ -179,7 +179,6 @@ current_file="$cache_dir/ytfzf_cur"
 #the folder where thumbnails are cached
 thumb_dir="$cache_dir/thumb"
 
-#when using the menu, use the text printed in this function to display all the info, $shorturl must be present in order to work
 #available default colors (note: they are be bolded):
     #c_red
     #c_green
@@ -188,6 +187,8 @@ thumb_dir="$cache_dir/thumb"
     #c_magenta
     #c_cyan
     #c_reset (sets it back to terminal defaults)
+
+#when using the menu, use the text printed in this function to display all the info, $shorturl must be present in order to work
 #available variables
     #title
     #title_len, the available tty columns for $title
@@ -200,7 +201,6 @@ thumb_dir="$cache_dir/thumb"
     #date (video upload date)
     #date_len, the vailable tty columns for $date
     #shorturl (the video ID)
-    #url_len, the available tty columns for $shroturl
 video_info_text() {
 	printf "%-${title_len}.${title_len}s\t" "$title"
 	printf "%-${channel_len}.${channel_len}s\t" "$channel"
@@ -213,14 +213,6 @@ video_info_text() {
 
 
 #when displaying thumbnails, use the text printed in this function to show the title, views, etc..
-#available default colors (note: they are be bolded):
-    #c_red
-    #c_green
-    #c_yellow
-    #c_blue
-    #c_magenta
-    #c_cyan
-    #c_reset (sets it back to terminal defaults)
 #available variables
     #title
     #channel
@@ -236,4 +228,25 @@ thumbnail_video_info_text () {
          printf "\n${c_blue}Duration     ${c_yellow}%s" "$duration"
          printf "\n${c_blue}Views        ${c_magenta}%s" "$views"
          printf "\n${c_blue}Date         ${c_cyan}%s" "$date"
+}
+
+#when displaying a result that is a channel it will use this function
+#available variables
+    #title, the name of the channel
+    #title_len, the available tty columns for $title
+
+    #the variables below are for spacing each | so it lines up with the rest of the results
+    #using $channel, $duration, etc... will not do anything in this function
+    #channel_len, the available tty columns for $channel
+    #dur_len, the available tty columns for $duration
+    #view_len, the available tty columns for $views
+    #date_len, the vailable tty columns for $date
+channel_info_text () {
+    printf "%-${title_len}.${title_len}s\t" "[Channel] $title"
+    printf "%-${channel_len}.${channel_len}s\t" "|"
+    printf "%-${dur_len}.${dur_len}s\t" "|"
+    printf "%-${view_len}.${view_len}s\t" "|"
+    printf "%-${date_len}.${date_len}s\t" "|"
+    printf "%s" "$shorturl"
+    printf "\n"
 }
