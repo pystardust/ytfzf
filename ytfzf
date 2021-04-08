@@ -4,7 +4,7 @@
 #> https://github.com/pystardust/ytfzf
 ######################################
 
-YTFZF_VERSION="1.1.1"
+YTFZF_VERSION="1.1.2"
 
 ############################
 #         Defaults         #
@@ -952,9 +952,9 @@ EOF
 is_non_number () {
 	case $1 in
 		(*[!0-9]*|'') 
-			return 1;;
-		(*)
 			return 0;;
+		(*)
+			return 1;;
 	esac
 }
 
