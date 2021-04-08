@@ -799,7 +799,9 @@ format_user_selection () {
 	selected_urls="$( printf "%s" "$selected_urls" | sed 1d )"
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data="$( printf "%s" "$selected_data" | sed 1d )"
+
 	unset shorturls
+
 }
 
 print_data () {
@@ -830,6 +832,11 @@ get_sub_lang () {
         fi
 	unset sub_list
     fi
+	[ $show_format -eq 1 ] || return 0
+	YTFZF_PREF="$(youtube-dl -F "$(printf "$selected_urls" | sed 1q)" |\
+		sed '1,3d' | sed '1!G; h; $!d' |\
+		eval "$menu_command" | sed -E 's/^([^ ]*) .*/\1/')"
+	[ -z "$YTFZF_PREF"  ] && exit;
 }
 
 
@@ -895,6 +902,20 @@ check_if_url () {
 	fi
 	unset url_regex
 }
+
+check_channel () {
+	local channel_urls="$(printf "%s" "$selected_urls" | grep '/videos$')"
+	if [ -n "$channel_urls" ]; then
+		echo "Scraping channel"
+		videos_data=""
+		fancy_subscriptions_menu=0
+		sub_link_count=100 scrape_subscriptions "$channel_urls"
+		return 0
+	else
+		return 1
+	fi
+}
+
 
 check_channel () {
 	local channel_urls="$(printf "%s" "$selected_urls" | grep '/videos$')"
@@ -984,6 +1005,7 @@ scrape_subscriptions () {
 	fi
 	while IFS= read -r url; do
 		scrape_channel "$url" &
+
 	done << EOF
 $channels
 EOF
@@ -1235,6 +1257,7 @@ while true; do
 	check_channel && continue
 	get_video_format
 	get_sub_lang
+
 	play_url
 	save_before_exit
    

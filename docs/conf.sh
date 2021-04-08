@@ -250,3 +250,24 @@ channel_info_text () {
     printf "%s" "$shorturl"
     printf "\n"
 }
+
+#when displaying a result that is a channel it will use this function
+#available variables
+    #title, the name of the channel
+    #title_len, the available tty columns for $title
+
+    #the variables below are for spacing each | so it lines up with the rest of the results
+    #using $channel, $duration, etc... will not do anything in this function
+    #channel_len, the available tty columns for $channel
+    #dur_len, the available tty columns for $duration
+    #view_len, the available tty columns for $views
+    #date_len, the vailable tty columns for $date
+channel_info_text () {
+    printf "%-${title_len}.${title_len}s\t" "[Channel] $title"
+    printf "%-${channel_len}.${channel_len}s\t" "|"
+    printf "%-${dur_len}.${dur_len}s\t" "|"
+    printf "%-${view_len}.${view_len}s\t" "|"
+    printf "%-${date_len}.${date_len}s\t" "|"
+    printf "%s" "$shorturl"
+    printf "\n"
+}
