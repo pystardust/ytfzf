@@ -115,9 +115,7 @@ tab_space=$(printf '\t')
 #the side where thumbnails are shown
 #needs to be exported because ueberzug spawns subprocesses
 [ -z "$PREVIEW_SIDE" ] && export PREVIEW_SIDE=${preview_side-left}
-#used for thumbnail previews in ueberzug (getting lines + cols later is inconsistent)
-[ -z "$TTY_LINES" ] && export TTY_LINES=$(tput lines)
-[ -z "$TTY_COLS" ] && export TTY_COLS=$(tput cols)
+
 #variable used for when this process spawns subprocesses and there needs to be a unique value (ueberzug)
 #this could be any unique value, $$ is used because it is the most easily accessible unique value
 if [ -z "$PROC_ID" ]; then
@@ -436,7 +434,7 @@ EOF
 	# Out put the formatted text on the (left)panel
 	thumbnail_video_info_text
 
-	thumb_width=$WIDTH
+	thumb_width=$((WIDTH - 2 ))
 	thumb_height=$((HEIGHT - 2))
 	#most common x, y positions
 
@@ -445,7 +443,7 @@ EOF
 
 	case $PREVIEW_SIDE in
 	    left)
-		thumb_x=2
+		thumb_x=1
 		;;
 	    top)
 		thumb_height=$((HEIGHT - 5))
@@ -1131,6 +1129,12 @@ while getopts "LhDmdfxHaArltSsvNn:U:-:" OPT; do
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
+
+#used for thumbnail previews in ueberzug
+if [ $is_ext_menu -eq 0 ]; then
+	export TTY_LINES=$(tput lines)
+ 	export TTY_COLS=$(tput cols)
+fi
 
 #if both are true, it defaults to using fzf, and if fzf isnt installed it will throw an error
 #so print this error instead and set $show_thumbnails to 0
