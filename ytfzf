@@ -329,10 +329,10 @@ format_fzf () {
 		view_len=$((frac * 1 + 7))
 	#show title, channel, time, views, date
 	else
-		frac=$(((TTY_COLS - 5)/11))
+		frac=$((TTY_COLS/10 ))
 		title_len=$((frac * 5 - 1))
 		channel_len=$((frac * 2))
-		dur_len=$((frac * 1))
+		dur_len=$((frac * 1 - 5 ))
 		view_len=$((frac * 1))
 		date_len=$((frac * 2 + 20))
 	fi
@@ -387,11 +387,11 @@ EOF
 
 if ! function_exists 'thumbnail_video_info_text' ; then
     thumbnail_video_info_text () {
-	printf "\n${c_cyan}%s" "$title"
-	printf "\n${c_blue}Channel	${c_green}%s" "$channel"
-	printf "\n${c_blue}Duration	${c_yellow}%s" "$duration"
-	printf "\n${c_blue}Views	${c_magenta}%s" "$views"
-	printf "\n${c_blue}Date	${c_cyan}%s" "$date"
+	printf "\n ${c_cyan}%s" "$title"
+	printf "\n ${c_blue}Channel	${c_green}%s" "$channel"
+	printf "\n ${c_blue}Duration	${c_yellow}%s" "$duration"
+	printf "\n ${c_blue}Views	${c_magenta}%s" "$views"
+	printf "\n ${c_blue}Date	${c_cyan}%s" "$date"
     }
 fi
 
