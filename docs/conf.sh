@@ -206,16 +206,8 @@ video_info_text() {
 	printf "%-${channel_len}.${channel_len}s\t" "$channel"
 	printf "%-${dur_len}.${dur_len}s\t" "$duration"
 	printf "%-${view_len}.${view_len}s\t" "$views"
-<<<<<<< HEAD
-	printf "%-${date_len}.${date_len}s\t" "$upload_date"
-=======
-<<<<<<< HEAD
-	printf "%-${date_len}.${date_len}s\t" "$upload_date"
-=======
 	printf "%-${date_len}.${date_len}s\t" "$date"
 	printf "%-${url_len}.${url_len}s\t" "$shorturl"
->>>>>>> master
->>>>>>> channel-results
 	printf "\n"
 }
 
