@@ -65,6 +65,7 @@ video_player="mpv"
 video_player_format="mpv --ytdl-format="
 
 #the player to use for audio ( option -m )
+#(YTFZF_AUDIO_PLAYER)
 audio_player="mpv --no-video"
 
 #enable/disable ytfzf's use of your $FZF_DEFAULT_OPTS

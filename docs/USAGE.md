@@ -96,10 +96,18 @@ If you wish to find inspiration and see an example you can take a look at the [`
 
 	_By default, `ytfzf` uses `mpv`. Custom player should have the ability to launch youtube links (example: `vlc`)._
 
+	Player can be changed in the [`conf.sh`](conf.sh) by changing
+	```sh
+	video_player="devour mpv"
+	video_player_format="devour mpv --ytdl-format="
+	audio_player="devour mpv --no-video"
+	```
+	Or via environmental variables as follows
 	```sh
 	# example: using devour
 	FZF_PLAYER="devour mpv"
 	YTFZF_PLAYER_FORMAT="devour mpv --ytdl-format="
+	YTFZF_AUDIO_PLAYER="devour mpv --no-video"
 	```
 
 + ### Misc
