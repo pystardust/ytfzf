@@ -60,9 +60,12 @@ external_menu_len=220
 #(YTFZF_PLAYER)
 video_player="mpv"
 
-#the player to use when choosing a video format with $YTFZF_PREF or -m
+#the player to use when choosing a video format with $YTFZF_PREF
 #(YTFZF_PLAYER_FORMAT)
 video_player_format="mpv --ytdl-format="
+
+#the player to use for audio ( option -m )
+audio_player="mpv --no-video"
 
 #enable/disable ytfzf's use of your $FZF_DEFAULT_OPTS
 #depending on your fzf settings, this could mess up the formatting of the menu
