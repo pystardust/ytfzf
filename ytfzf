@@ -111,6 +111,9 @@ auto_caption=${auto_caption-0}
 # misc
 tab_space=$(printf '\t')
 
+#keeps track of all searches made this session
+searches=""
+
 #ueberzug related variables
 #the side where thumbnails are shown
 #needs to be exported because ueberzug spawns subprocesses
@@ -703,6 +706,17 @@ scrape_yt () {
 	unset videos_json yt_json yt_html
 }
 
+parse_special_search () {
+    search="$1"
+    number="$(printf "%s" "$search" | grep -Po "[\-0-9]+")"
+    if [ "$search" = "!!" ]; then
+	printf "%s" "$searches" | tail -1
+    elif [ "$number" -lt 0 ]; then
+	printf "%s" "$searches" | sed '1!G; h; $!d' | sed -n "$(printf "%s" "$number" | tr -d '-')p"
+    elif [ "$number" -gt 0 ]; then
+	printf "%s" "$searches" | sed -n "${number}p"
+    fi
+}
 
 ############################
 #      User selection      #
@@ -718,6 +732,10 @@ get_search_query () {
 			#otherwise use the search prompt
 			printf "$search_prompt"
 			read -r search_query
+		fi
+		#that regex checks for the ![number] pattern should act the same as how it does in bash
+		if [ "$(printf "%s" "$search_query" | grep -Po '^!(?:!|-?[0-9]+)$')" ]; then
+		    search_query="$(parse_special_search "$search_query")"
 		fi
 		[ -z "$search_query" ] && exit 0
 	fi
@@ -1203,6 +1221,11 @@ while true; do
 
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
+		if [ -n "$searches" ]; then
+		    searches="$(printf "%s\n%s" "$searches" "$search_query")"
+		else
+		    searches="$(printf "%s" "$search_query")"
+		fi
 		search_query=
         	get_search_query
 		scrape_yt "$search_query"
