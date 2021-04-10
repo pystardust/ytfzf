@@ -135,7 +135,7 @@ dep_ck () {
 	done
 	unset Dep
 }
-dep_ck "jq" "youtube-dl";
+dep_ck "jq" "youtube-dl" "curl"
 
 #only check for mpv if $YTFZF_PLAYER is set to it
 #don't check $YTFZF_PLAYER as it could be multiple commands
