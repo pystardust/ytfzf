@@ -14,8 +14,10 @@ YTFZF_VERSION="1.1.2"
 #>reading the config file
 config_dir=${YTFZF_CONFIG_DIR-$HOME/.config/ytfzf}
 config_file=${YTFZF_CONFIG_FILE-$config_dir/conf.sh}
-tmp_video_data_file="/tmp/ytfzf-subdata"
-printf "" > "$tmp_video_data_file"
+tmp_dir="/tmp/ytfzf"
+tmp_video_data_file="$tmp_dir/ytfzf-subdata"
+tmp_search_results_dir="$tmp_dir/search"
+[ ! -d "$tmp_search_results_dir" ] && mkdir -p "$tmp_search_results_dir"
 #source config file if exists
 [ -e "$config_file" ] && . "$config_file"
 
@@ -111,8 +113,8 @@ auto_caption=${auto_caption-0}
 # misc
 tab_space=$(printf '\t')
 
-#keeps track of all searches made this session
-searches=""
+#tracks the amount of searches this session
+search_count=0
 
 #ueberzug related variables
 #the side where thumbnails are shown
@@ -696,6 +698,7 @@ scrape_yt () {
 	]')
 
 	videos_data=$(get_video_data "$videos_json")
+	printf "%s" "$videos_data" > "$tmp_search_results_dir/results-$search_count"
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
@@ -710,12 +713,13 @@ parse_special_search () {
     search="$1"
     number="$(printf "%s" "$search" | grep -Po "[\-0-9]+")"
     if [ "$search" = "!!" ]; then
-	printf "%s" "$searches" | tail -1
+	# minus 1 because search_count is incrementd too high
+	number="$((search_count - 1))"
     elif [ "$number" -lt 0 ]; then
-	printf "%s" "$searches" | sed '1!G; h; $!d' | sed -n "$(printf "%s" "$number" | tr -d '-')p"
-    elif [ "$number" -gt 0 ]; then
-	printf "%s" "$searches" | sed -n "${number}p"
+	#needs to be + because number is negative
+	number="$((search_count + number))"
     fi
+    cat "$tmp_search_results_dir/results-$number"
 }
 
 ############################
@@ -735,7 +739,10 @@ get_search_query () {
 		fi
 		#that regex checks for the ![number] pattern should act the same as how it does in bash
 		if [ "$(printf "%s" "$search_query" | grep -Po '^!(?:!|-?[0-9]+)$')" ]; then
-		    search_query="$(parse_special_search "$search_query")"
+		    videos_data="$(parse_special_search "$search_query")"
+		    printf "%s" "$videos_data" > "$tmp_search_results_dir/results-$search_count"
+		else
+		    videos_data=""
 		fi
 		[ -z "$search_query" ] && exit 0
 	fi
@@ -766,7 +773,10 @@ user_selection () {
 		selected_data=$( title_len=200 video_menu "$videos_data" )
 		stop_ueberzug
 		# Deletes thumbnails if no video is selected
-		[ -z "$selected_data" ] && delete_thumbnails
+		if [ -z "$selected_data" ]; then 
+		    delete_thumbnails
+		    rm -r "$tmp_dir"
+		fi
 	#show regular menu
 	else
 		selected_data=$( video_menu "$videos_data" )
@@ -1183,25 +1193,31 @@ check_if_url "${search_query:=$*}"
 format_menu
 
 
-case $scrape in
-	"yt_search")
-		get_search_query
-		scrape_yt "$search_query" ;;
-	"yt_subs")
-		scrape_subscriptions
-		;;
-	"history")
-		get_history
-		;;
-	"url")
-	    play_url
-	    exit
-	    ;;
-	*)
-	    printf "\033[31mError: \$scrape set to bad option, set to '$scrape'${c_reset}\n"
-	    exit 1 ;;
+scrape_fn () {
+    scrape="${1-$scrape}"
+    case $scrape in
+	    "yt_search")
+		    search_count=$((search_count + 1))
+		    get_search_query
+		    #if the search was ![!|number] videos data is given in get_search_query
+		    [ -z "$videos_data" ] && scrape_yt "$search_query" ;;
+	    "yt_subs")
+		    scrape_subscriptions
+		    ;;
+	    "history")
+		    get_history
+		    ;;
+	    "url")
+		    play_url
+		    exit
+		    ;;
+	    *)
+		    printf "\033[31mError: \$scrape set to bad option, set to '$scrape'${c_reset}\n"
+		    exit 1 ;;
 
-esac
+    esac
+}
+scrape_fn
 
 
 while true; do
@@ -1216,18 +1232,13 @@ while true; do
 	#if looping and searching_again arent on then exit
 	if [ $YTFZF_LOOP -eq 0 ] && [ $search_again -eq 0 ] ; then
 		delete_thumbnails
+		rm -r "$tmp_dir"
 		exit
 	fi
 
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
-		if [ -n "$searches" ]; then
-		    searches="$(printf "%s\n%s" "$searches" "$search_query")"
-		else
-		    searches="$(printf "%s" "$search_query")"
-		fi
 		search_query=
-        	get_search_query
-		scrape_yt "$search_query"
+		scrape_fn "yt_search"
 	fi
 done
