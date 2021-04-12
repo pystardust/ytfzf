@@ -159,10 +159,9 @@ create_subs () {
     # check how many subscriptions there are in the file
     sublength=$( jq '. | length' < "$yt_sub_import_file" )
 
-    subscriptions_json="$(cat "$yt_sub_import_file")"
     for i in $( seq 0 $((sublength-1)) ); do
 
-        channelInfo=$(printf "%s" "$subscriptions_json" | jq --argjson index ${i} '[ "https://www.youtube.com/channel/" + .[$index].snippet.resourceId.channelId + "/videos", "#" + .[$index].snippet.title ]')
+        channelInfo=$(jq --argjson index ${i} '[ "https://www.youtube.com/channel/" + .[$index].snippet.resourceId.channelId + "/videos", "#" + .[$index].snippet.title ]' < "$yt_sub_import_file")
 	printf "%s\n" "$(printf "%s" "$channelInfo" | tr -d '[]"\n,')" >> "$subscriptions_file"
 
     done
@@ -942,6 +941,7 @@ scrape_subscriptions () {
 	done << EOF
 $( sed \
 	-e "s/#.*//" \
+	-e "/^[[:space:]]*$/d" \
 	-e "s/[[:space:]]*//g" \
 	"$subscriptions_file")
 EOF
