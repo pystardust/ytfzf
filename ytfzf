@@ -161,8 +161,8 @@ create_subs () {
 
     for i in $( seq 0 $((sublength-1)) ); do
 
-        channelId=$(jq --argjson index ${i} '.[$index] .snippet .resourceId .channelId' < "$yt_sub_import_file" )
-        printf "%s\n" "https://www.youtube.com/channel/$(printf "%s" "${channelId}" | cut -c 2-25)/videos" >> "$subscriptions_file"
+        channelInfo=$(jq --argjson index ${i} '[ "https://www.youtube.com/channel/" + .[$index].snippet.resourceId.channelId + "/videos", "#" + .[$index].snippet.title ]' < "$yt_sub_import_file")
+	printf "%s\n" "$(printf "%s" "$channelInfo" | tr -d '[]"\n,')" >> "$subscriptions_file"
 
     done
     exit
@@ -640,7 +640,7 @@ scrape_channel () {
 	videos_data=$(get_video_data "$videos_json")
 
 	#if there aren't videos
-	[ -z "$videos_data" ] &&  { printf "No results found. Make sure the link is correct.\n"; exit 1;}
+	[ -z "$videos_data" ] &&  { printf "${c_yellow}No results found. Make sure the link ($channel_url) is correct.${c_reset}\n(if this chnanel has not uploaded videos this warning may appear)\n"; exit 1;}
 	if [ $fancy_subscriptions_menu -eq 1 ]; then
 		printf "             -------%s-------\t\n%s\n" "$channel_name" "$videos_data" >> "$tmp_video_data_file"
 	else
@@ -828,7 +828,7 @@ play_url () {
 		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "$player_urls"  "$YTFZF_SUBT_NAME"
                      # Ctr-C in MPV results in a return code of 4
 	} || {
-		[ 4 -eq $? ] || print_error "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[0mTry updating youtube-dl\n"; save_before_exit ; exit 1;
+	        [ 4 -eq $? ] || print_error "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[0mTry updating youtube-dl\n"; save_before_exit ; exit 1;
 	}
 	#Delete the temp auto-gen subtitle file
 	[ $auto_caption -eq 1 ] && rm -f "${YTFZF_SUBT_NAME#*=}"
@@ -942,7 +942,7 @@ scrape_subscriptions () {
 $( sed \
 	-e "s/#.*//" \
 	-e "/^[[:space:]]*$/d" \
-	-e "s/[[:space:]]*$//" \
+	-e "s/[[:space:]]*//g" \
 	"$subscriptions_file")
 EOF
 	wait
