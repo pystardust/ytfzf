@@ -487,11 +487,11 @@ download_thumbnails () {
 	if [ "$thumbnail_quality" -eq 1 ]; then
 		image_download () {
 			# higher quality images
-			curl -s --parallel-immediate "$Url" -G --data-urlencode "sqp=" > "$thumb_dir/$Name.png"
+			curl -s "$Url" -G --data-urlencode "sqp=" > "$thumb_dir/$Name.png"
 		}
 	else
 		image_download () {
- 			curl -s --parallel-immediate "$Url"  > "$thumb_dir/$Name.png"
+ 			curl -s "$Url"  > "$thumb_dir/$Name.png"
 		}
 	fi
 
@@ -589,6 +589,20 @@ get_video_data () {
 		jq -r '.[]| "\(.title)'"$tab_space"'|\(.channel)'"$tab_space"'|\(.views)'"$tab_space"'|\(.duration)'"$tab_space"'|\(.date)'"$tab_space"'|\(.videoID)"'
 }
 
+get_date_relevant_videos () {
+	vids="$1"
+	newer_than_date="$(date +%s --date="$sub_vids_newer_than")"
+	while read -r vid; do
+		vid_date="$(printf "%s" "$vid" | cut -d "$tab_space" -f5 | tr -d '|' | sed 's/Streamed//')"
+		if [ "$(date +%s --date="$vid_date")" -gt "$newer_than_date" ]; then
+			new_videos_data="$(printf "%s%s" "$new_videos_data" "$vid")"
+		fi
+	    done << EOF
+$videos_data
+EOF
+	printf "%s" "$new_videos_data"
+	unset new_videos_data
+}
 
 scrape_channel () {
 	# needs channel url as $*
@@ -642,17 +656,7 @@ scrape_channel () {
 	videos_json=$(printf "%s" "$videos_json" | jq '.[0:'$sub_link_count']')
 	videos_data=$(get_video_data "$videos_json")
 	if [ "$scrape" = "yt_subs" ] && [ -n "$sub_vids_newer_than" ]; then
-	    newer_than_date="$(date +%s --date="$sub_vids_newer_than")"
-	    while read -r vid; do
-		vid_date="$(printf "%s" "$vid" | cut -d "$tab_space" -f5 | tr -d '|' | sed 's/Streamed//')"
-		if [ "$(date +%s --date="$vid_date")" -gt "$newer_than_date" ]; then
-		    new_videos_data="$(printf "%s%s" "$new_videos_data" "$vid")"
-		fi
-	    done << EOF
-$videos_data
-EOF
-	    videos_data="$new_videos_data"
-	    unset new_videos_data
+	    videos_data="$(get_date_relevant_videos "$videos_data")"
 	fi
 
 	#if there aren't videos
@@ -660,7 +664,7 @@ EOF
 	    if [ -n "$sub_vids_newer_than" ]; then
 		printf "$channel_name has no videos more recent than $sub_vids_newer_than\n"
 	    else
-		printf "${c_yellow}No results found. Make sure the link is correct.${c_reset}\n"
+		printf "${c_yellow}No results found. Make sure the link ($channel_url) is correct.${c_reset}\n"
 	    fi
 	    exit 1;
 	fi
@@ -965,7 +969,7 @@ scrape_subscriptions () {
 $( sed \
 	-e "s/#.*//" \
 	-e "/^[[:space:]]*$/d" \
-	-e "s/[[:space:]]*$//" \
+	-e "s/[[:space:]]*//g" \
 	"$subscriptions_file")
 EOF
 	wait
