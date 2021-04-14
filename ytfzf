@@ -110,7 +110,9 @@ scrape=${scrape-yt_search}
 #auto generated caption by youtube with enabled with --subt
 auto_caption=${auto_caption-0}
 #only shows videos newer than this date
-sub_vids_newer_than="${sub_vids_newer_than-}"
+vids_newer_than="${vids_newer_than-}"
+#only shows videos older than this date
+vids_older_than="${vids_older_than-}"
 
 # misc
 tab_space=$(printf '\t')
@@ -238,6 +240,14 @@ all_help_info () {
          In addition this overrides any filter provided through options
          Example: ytfzf --filter-id=EgJAAQ minecraft
          This will filter by livestream
+
+     --vids-nt=         <date>            removes all videos from results older than date
+					  date can be an actual date eg: "4/13/2020" (dd/mm/yyyy) or
+                                          it can be a relative date eg: "1 day ago"
+
+     --vids-ot=          <date>           removes all videos newer than date
+					  date can be an actual date eg: "4/13/2020" (dd/mm/yyyy) or
+                                          it can be a relative date eg: "1 day ago"
 
   Update:
      --update                             clones the latest stable commit and installs it
@@ -591,16 +601,22 @@ get_video_data () {
 
 get_date_relevant_videos () {
 	vids="$1"
-	newer_than_date="$(date +%s --date="$sub_vids_newer_than")"
+	if [ -n "$vids_newer_than" ]; then
+	    older_or_newer="-gt"
+	    compare_date="$(date +%s --date="$vids_newer_than")"
+	elif [ -n "$vids_older_than" ]; then
+	    older_or_newer="-lt"
+	    compare_date="$(date +%s --date="$vids_older_than")"
+	fi
 	while read -r vid; do
 		vid_date="$(printf "%s" "$vid" | cut -d "$tab_space" -f5 | tr -d '|' | sed 's/Streamed//')"
-		if [ "$(date +%s --date="$vid_date")" -gt "$newer_than_date" ]; then
-			new_videos_data="$(printf "%s%s" "$new_videos_data" "$vid")"
+		if [ "$vid_date" = "null" ] || [ "$(date +%s --date="$vid_date")" $older_or_newer "$compare_date" ]; then
+			new_videos_data="$(printf "%s\n%s" "$new_videos_data" "$vid")"
 		fi
-	    done << EOF
-$videos_data
+	done << EOF
+$vids
 EOF
-	printf "%s" "$new_videos_data"
+	printf "%s" "$new_videos_data" | sed 1d
 	unset new_videos_data
 }
 
@@ -655,17 +671,15 @@ scrape_channel () {
 
 	videos_json=$(printf "%s" "$videos_json" | jq '.[0:'$sub_link_count']')
 	videos_data=$(get_video_data "$videos_json")
-	if [ "$scrape" = "yt_subs" ] && [ -n "$sub_vids_newer_than" ]; then
-	    videos_data="$(get_date_relevant_videos "$videos_data")"
+	[ -n "$vids_newer_than" ] || [ -n "$vids_older_than" ] && videos_data="$(get_date_relevant_videos "$videos_data")"
+	if [ -z "$videos_data" ]; then
+	    printf "no videos for "$channel_name" with a relevant time stamp were found\n"
+	    exit 1;
 	fi
 
 	#if there aren't videos
 	if [ -z "$videos_data" ]; then
-	    if [ -n "$sub_vids_newer_than" ]; then
-		printf "$channel_name has no videos more recent than $sub_vids_newer_than\n"
-	    else
-		printf "${c_yellow}No results found. Make sure the link ($channel_url) is correct.${c_reset}\n"
-	    fi
+	    printf "${c_yellow}No results found. Make sure the link ($channel_url) is correct.${c_reset}\n"
 	    exit 1;
 	fi
 	if [ $fancy_subscriptions_menu -eq 1 ]; then
@@ -722,6 +736,9 @@ scrape_yt () {
 	]')
 
 	videos_data=$(get_video_data "$videos_json")
+	if [ -n "$vids_newer_than" ] || [ -n "$vids_older_than" ]; then
+		videos_data="$(get_date_relevant_videos "$videos_data")"
+	fi
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
@@ -1084,7 +1101,8 @@ parse_long_opt () {
 
 		add-subs) create_subs ;;
 
-		sub-vids-newer-than=*) sub_vids_newer_than="${opt#*=}" ;;
+		vids-nt=*|vids-newer-than=*) vids_newer_than="${opt#*=}" ;;
+		vids-ot=*|vids-older-than=*) vids_older_than="${opt#*=}" ;;
 
 		*)
 		    printf "Illegal option --%s\n" "$opt"

@@ -125,6 +125,16 @@ sub_link_count=10
 #same as --fancy-subs=
 fancy_subscriptions_menu=1
 
+#a time in which videos must be newer than in order to appear
+#eg: vids_newer_than="1 day ago"
+#the above example would mean that only videos newer than 1 day ago in will appear
+vids_newer_than=""
+
+#a time in which videos must be older than in order to appear
+#eg: vids_older_than="1 month ago"
+#the above example would mean that only videos older than 1 month ago in will appear
+vids_older_than=""
+
 #where to source videos from
 #options are history, yt_subs, yt_search
 #history is the same as -H
