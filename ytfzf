@@ -344,7 +344,7 @@ format_menu () {
 	if [ "$is_ext_menu" -eq 0 ]; then
 		#dep_ck fzf here because it is only necessary to use here
 		dep_ck "fzf"
-		menu_command='fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 $FZF_DEFAULT_OPTS'
+		menu_command='column -t -s "$tab_space" | fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 $FZF_DEFAULT_OPTS'
 		format_fzf
 	else
 		# Dmenu doesn't render tabs so removing it
