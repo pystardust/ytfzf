@@ -673,7 +673,7 @@ scrape_channel () {
 	videos_data=$(get_video_data "$videos_json")
 	[ -n "$vids_newer_than" ] || [ -n "$vids_older_than" ] && videos_data="$(get_date_relevant_videos "$videos_data")"
 	if [ -z "$videos_data" ]; then
-	    printf "no videos for "$channel_name" with a relevant time stamp were found\n"
+	    printf "no videos for "$channel_name" with a relevant upload date were found\n"
 	    exit 1;
 	fi
 
