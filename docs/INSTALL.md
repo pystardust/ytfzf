@@ -51,7 +51,7 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 2. #### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
 
 	```
-	yay -S ytfzf-git
+	yay -S ytfzf
 	```
 	
 	Or alternatively from [@JojiiOfficials](https://github.com/JojiiOfficial) [pacman repository](https://repo.jojii.de)
