@@ -15,7 +15,6 @@ YTFZF_VERSION="1.1.4"
 config_dir=${YTFZF_CONFIG_DIR-$HOME/.config/ytfzf}
 config_file=${YTFZF_CONFIG_FILE-$config_dir/conf.sh}
 tmp_video_data_file="/tmp/ytfzf-subdata"
-printf "" > "$tmp_video_data_file"
 #source config file if exists
 [ -e "$config_file" ] && . "$config_file"
 
@@ -103,6 +102,8 @@ sub_link_count=${sub_link_count-10}
 search_again=${search_again-0}
 #whether or not to show -----------channel------------ when looking at subscriptions
 fancy_subscriptions_menu=${fancy_subscriptions_menu-1}
+#sort subsciptions subsections based on time instead of channel
+subscriptions_sort_latest=${subscriptions_sort_latest-1}
 #filter id used when searching
 sp=${sp-}
 #is used to know whether or not scraping the search page is necessary
@@ -674,7 +675,6 @@ scrape_yt () {
 	videos_data=$(get_video_data "$videos_json")
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
-	printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	# wait for thumbnails to download
@@ -930,18 +930,41 @@ update_ytfzf () {
 	exit
 }
 
+sort_video_data_date () {
+	while IFS= read -r _VLine
+	do
+		IFS="$tab_space"
+		set -- $_VLine
+		_Date=${5#|}
+		_Date=${_Date#Streamed}
+		printf "%d\t%s\n" "$(date -d "${_Date}" '+%s')" "$_VLine"
+	done | sort -nr | cut -f2-
+	unset IFS _VLine _Date
+}
+
+
+
 scrape_subscriptions () {
+	# clear the subfile, all subscriptions data will be dumped into this file
+	: > "$tmp_video_data_file"
+
+	[ $subscriptions_sort_latest -eq 1 ] && fancy_subscriptions_menu=0
+
 	while IFS= read -r url; do
 		scrape_channel "$url" &
-	done << EOF
-$( sed \
+	done <<-EOF
+	$( sed \
 	-e "s/#.*//" \
 	-e "/^[[:space:]]*$/d" \
 	-e "s/[[:space:]]*//g" \
 	"$subscriptions_file")
-EOF
+	EOF
 	wait
-	videos_data=$(cat "$tmp_video_data_file")
+	if [ $subscriptions_sort_latest -eq 1 ]; then 
+		videos_data=$(sort_video_data_date < "$tmp_video_data_file")
+	else
+		videos_data=$(cat "$tmp_video_data_file")
+	fi
 }
 
 #create subscriptions file from data downloaded from youtube
