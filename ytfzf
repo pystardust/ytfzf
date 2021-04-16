@@ -224,7 +224,8 @@ all_help_info () {
      -S,  --subs                          Get the latest 10 videos from subscriptions
      --subs=<number>                      Get the latest <number> of videos from subscriptions
      --fancy-subs=                        whether or not to show ------channel------ in subscriptions (must be 1 or 0)
-
+     --add-subs				  generate a subscriptions file with subscriptions.json that you can get from google
+                                          visit https://github.com/FreeTubeApp/FreeTube/wiki/Importing-Your-YouTube-Subscriptions for more info
   Filters: different ways to filter videos in search
      --upload-time=     <time-range>      Time range can be one of,
                                           last-hour, today, this-week, this-month, this-year
