@@ -4,7 +4,7 @@
 #> https://github.com/pystardust/ytfzf
 ######################################
 
-YTFZF_VERSION="1.1.2"
+YTFZF_VERSION="1.1.4"
 
 ############################
 #         Defaults         #
@@ -109,7 +109,10 @@ sp=${sp-}
 scrape=${scrape-yt_search}
 #auto generated caption by youtube with enabled with --subt
 auto_caption=${auto_caption-0}
-
+#only play/download the audio if set to 1
+is_audio_only=${is_audio_only-0}
+#flag for downloading
+is_download=0
 # misc
 tab_space=$(printf '\t')
 
@@ -221,7 +224,8 @@ all_help_info () {
      -S,  --subs                          Get the latest 10 videos from subscriptions
      --subs=<number>                      Get the latest <number> of videos from subscriptions
      --fancy-subs=                        whether or not to show ------channel------ in subscriptions (must be 1 or 0)
-
+     --add-subs				  generate a subscriptions file with subscriptions.json that you can get from google
+                                          visit https://github.com/FreeTubeApp/FreeTube/wiki/Importing-Your-YouTube-Subscriptions for more info
   Filters: different ways to filter videos in search
      --upload-time=     <time-range>      Time range can be one of,
                                           last-hour, today, this-week, this-month, this-year
@@ -810,9 +814,34 @@ get_sub_lang () {
 }
 
 
+open_player () {
+
+	eval set -- "$*"
+
+	if [ $is_audio_only -eq 1 ]; then
+		YTFZF_PLAYER=$YTFZF_AUDIO_PLAYER
+		YTFZF_PREF="bestaudio"
+	fi
+
+	if [ $is_download -eq 0 ]; then
+		if [ -z "$YTFZF_PREF" ] || [ $is_audio_only -eq 1 ]; then
+			printf "Opening Player: %s\n" "$YTFZF_PLAYER $*"
+			eval "$YTFZF_PLAYER" "$@"  "$YTFZF_SUBT_NAME"
+		else
+			printf "Opening Player: %s\n" "$YTFZF_PLAYER_FORMAT'$YTFZF_PREF' $*"
+			eval "$YTFZF_PLAYER_FORMAT'$YTFZF_PREF'"  "$@"  "$YTFZF_SUBT_NAME" || [ $? -eq 4 ] || YTFZF_PREF= open_player "$*"
+		fi
+	elif [ $is_download -eq 1 ]; then
+		if [ -z "$YTFZF_PREF" ]; then
+			eval youtube-dl "$@"  "$YTFZF_SUBT_NAME"
+		else
+			eval youtube-dl -f "'$YTFZF_PREF'"  "$@"  "$YTFZF_SUBT_NAME" || YTFZF_PREF= open_player "$*"
+		fi
+	fi
+}
+
 play_url () {
 	#> output the current track to current file before playing
-	[ $show_link_only -eq 0 ] && printf "Opening Player: %s\n" "$YTFZF_PLAYER"
 
 	[ "$YTFZF_CUR" -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
 
@@ -820,16 +849,9 @@ play_url () {
 
 	#> The urls are quoted and placed one after the other for mpv to read
 	player_urls="\"$(printf "%s" "$selected_urls" | awk  'ORS="\" \"" { print }' | sed 's/"$//' | sed 's/ "" / /')"
-	#> Play url with $player or $player_format based on options
-	#> if player format fails, then use normal player
-	[ -n "$YTFZF_PREF" ] && {
-		eval "$YTFZF_PLAYER_FORMAT"\'"$YTFZF_PREF"\'  "$player_urls"  "$YTFZF_SUBT_NAME"
-	} || {
-		[ 4 -eq $? ] || eval "$YTFZF_PLAYER" "$player_urls"  "$YTFZF_SUBT_NAME"
-                     # Ctr-C in MPV results in a return code of 4
-	} || {
-	        [ 4 -eq $? ] || print_error "\033[31mERROR[#03]: Couldn't play the video/audio using the current player: ${YTFZF_PLAYER}\n\t\033[0mTry updating youtube-dl\n"; save_before_exit ; exit 1;
-	}
+
+	open_player "$player_urls"
+
 	#Delete the temp auto-gen subtitle file
 	[ $auto_caption -eq 1 ] && rm -f "${YTFZF_SUBT_NAME#*=}"
 
@@ -1079,11 +1101,9 @@ parse_opt () {
 
 		D) 	is_ext_menu=${optarg:-1} ;;
 
-		m) 	YTFZF_PREF=
-			YTFZF_PLAYER="$YTFZF_AUDIO_PLAYER" ;;
+		m) 	is_audio_only=1 ;;
 
-		d) 	YTFZF_PLAYER="youtube-dl"
-			YTFZF_PLAYER_FORMAT="youtube-dl -f " ;;
+		d) 	is_download=1 ;;
 
 		f) 	show_format=1 ;;
 

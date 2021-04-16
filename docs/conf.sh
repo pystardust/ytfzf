@@ -42,7 +42,6 @@ enable_noti=0
 #the format of the video (1080p, 720p, etc)
 #uses the youtube-dl preference system
 #must be a number eg: 22 is 720p
-#setting this to bestaudio is equivelent to -m
 #(YTFZF_PREF)
 video_pref=""
 
@@ -64,6 +63,8 @@ video_player="mpv"
 #(YTFZF_PLAYER_FORMAT)
 video_player_format="mpv --ytdl-format="
 
+# this emulates the -m flag if set to 1
+is_audio_only=0
 #the player to use for audio ( option -m )
 #(YTFZF_AUDIO_PLAYER)
 audio_player="mpv --no-video"
