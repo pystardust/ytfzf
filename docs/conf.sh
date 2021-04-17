@@ -132,6 +132,9 @@ fancy_subscriptions_menu=1
 #yt_subs is the same as -S
 scrape="yt_search"
 
+#sort videos, history, and subscriptions by date from newest to oldest
+sort_videos_data=0
+
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
 #to get a filter id go to youtube search for something, choose the filter you want,
