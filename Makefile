@@ -4,6 +4,9 @@ UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
     PREFIX = /usr/local/bin
 endif
+ifeq ($(UNAME), FreeBSD)
+    PREFIX = /usr/local/bin
+endif
 ifeq ($(UNAME), Linux)
     PREFIX = /usr/bin
 endif
