@@ -133,6 +133,9 @@ fancy_subscriptions_menu=1
 #trending is the same as -T
 scrape="yt_search"
 
+#sort videos, history, and subscriptions by date from newest to oldest
+sort_videos_data=0
+
 #the tab of trending to select when scrape is trending
 #options are: music, gaming, movies, ""
 #same as --trending=

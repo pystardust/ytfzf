@@ -103,7 +103,7 @@ search_again=${search_again-0}
 #whether or not to show -----------channel------------ when looking at subscriptions
 fancy_subscriptions_menu=${fancy_subscriptions_menu-1}
 #sort subsciptions subsections based on time instead of channel
-subscriptions_sort_latest=${subscriptions_sort_latest-1}
+sort_videos_data=${sort_videos_data-0}
 #filter id used when searching
 sp=${sp-}
 #is used to know whether or not scraping the search page is necessary
@@ -180,6 +180,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -T, --trending=      <gaming/music/movies>      The trending tab, using --trending= you can choose a specific tab
      --preview-side=      <left/right/top/bottom>    The side of the screen to show thumbnails
      --subt                                 Select auto-generated subtitles
+     --sort                                 Sorts videos by latest upload date
 
   Use - instead of <search-query> for stdin
 
@@ -695,6 +696,8 @@ scrape_yt () {
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 
+	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_date)
+
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	# wait for thumbnails to download
 	wait
@@ -895,6 +898,7 @@ get_history () {
 		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 		#removes duplicate values from $history_data
 		videos_data=$(printf "%s" "$hist_data" | uniq )
+		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_date)"
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n";
 		exit;
@@ -961,13 +965,11 @@ sort_video_data_date () {
 	unset IFS _VLine _Date
 }
 
-
-
 scrape_subscriptions () {
 	# clear the subfile, all subscriptions data will be dumped into this file
 	: > "$tmp_video_data_file"
 
-	[ $subscriptions_sort_latest -eq 1 ] && fancy_subscriptions_menu=0
+	[ $sort_videos_data -eq 1 ] && fancy_subscriptions_menu=0
 
 	while IFS= read -r url; do
 		scrape_channel "$url" &
@@ -979,7 +981,7 @@ scrape_subscriptions () {
 	"$subscriptions_file")
 	EOF
 	wait
-	if [ $subscriptions_sort_latest -eq 1 ]; then 
+	if [ $sort_videos_data -eq 1 ]; then 
 		videos_data=$(sort_video_data_date < "$tmp_video_data_file")
 	else
 		videos_data=$(cat "$tmp_video_data_file")
@@ -1124,6 +1126,8 @@ parse_long_opt () {
 
 		add-subs) create_subs ;;
 
+		sort) sort_videos_data=1 ;;
+
 		*)
 		    printf "Illegal option --%s\n" "$opt"
 		    usageinfo
@@ -1211,7 +1215,9 @@ fi
 #if both are true, it defaults to using fzf, and if fzf isnt installed it will throw an error
 #so print this error instead and set $show_thumbnails to 0
 if [ $is_ext_menu -eq 1 -a $show_thumbnails -eq 1 ]; then
-	printf "\033[31mCurrently thumbnails do not work in external menus\033[0m\n"
+	if ! notify-send "Currently thumbnails do not work in external menus" 1> /dev/null 2>&1; then
+	    printf "\033[31mCurrently thumbnails do not work in external menus\033[0m\n"
+	fi
 	show_thumbnails=0
 fi
 
