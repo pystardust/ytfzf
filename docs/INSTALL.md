@@ -8,6 +8,8 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 * [`youtube-dl`](https://github.com/ytdl-org/youtube-dl)
 * [`jq`](https://github.com/stedolan/jq) - _to parse json_
 * [`fzf`](https://github.com/junegunn/fzf) (Optional) - _for menu_
+* [`notify-send`](https://gitlab.gnome.org/GNOME/libnotify) (Optional) - _for desktop notifications_
+* [GNU `shuf`](https://www.gnu.org/software/coreutils/manual/html_node/shuf-invocation.html) or [ISC `shuf`](https://github.com/ibara/shuf) (Optional) - _for selecting random videos_
 * [`ueberzug`](https://github.com/seebye/ueberzug) (Optional) - _for thumbnails_
 
 > Thumbnails only work with `fzf` and `Ueberzug` as of now.
@@ -29,6 +31,15 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 	  pip install ueberzug
 
 	_Note youtube-dl is usually outdated in debian repos, I suggest getting it from  [youtube-dl github](https://github.com/ytdl-org/youtube-dl)_
+
++ #### FreeBSD
+
+	  pkg install jq mpv youtube_dl fzf libnotify shuf
+
+	> For thumbnails
+
+	  pkg install --glob "py3*-ueberzug"
+
 
 + #### MacOS
 
@@ -56,7 +67,19 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 	
 	Or alternatively from [@JojiiOfficials](https://github.com/JojiiOfficial) [pacman repository](https://repo.jojii.de)
 
-3. #### Gentoo users can install ytfzf from the [nitratesky](https://github.com/VTimofeenko/nitratesky) overlay
+3. #### FreeBSD users can install ytfzf as a binary package with [pkg(8)](https://www.freshports.org/multimedia/ytfzf/)
+
+	```
+	pkg instal ytfzf
+	```
+
+	Or alternatively, build the port from source
+
+	```
+	make -C /usr/ports/multimedia/ytfzf install
+	```
+
+4. #### Gentoo users can install ytfzf from the [nitratesky](https://github.com/VTimofeenko/nitratesky) overlay
 
 	```
 	eselect repository enable nitratesky
