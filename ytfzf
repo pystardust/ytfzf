@@ -114,6 +114,8 @@ auto_caption=${auto_caption-0}
 is_audio_only=${is_audio_only-0}
 #flag for downloading
 is_download=0
+#the tab for trending, empty is the default page
+trending_tab="${trending_tab-}"
 # misc
 tab_space=$(printf '\t')
 
@@ -175,7 +177,8 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -l, --loop           <search-query>    Loop: prompt selector again after video ends
      -s, --search-again   <search-query>    After the video ends make another search
      -L, --link-only      <search-query>    Prints the selected URL only, helpful for scripting
-     --preview-side=      <left/right/top/bottom>    the side of the screen to show thumbnails
+     -T, --trending=      <gaming/music/movies>      The trending tab, using --trending= you can choose a specific tab
+     --preview-side=      <left/right/top/bottom>    The side of the screen to show thumbnails
      --subt                                 Select auto-generated subtitles
      --sort                                 Sorts videos by latest upload date
 
@@ -629,6 +632,15 @@ scrape_channel () {
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	unset channel_url channel_name yt_html yt_json  videos_json
 }
+
+get_trending_url_data () {
+    case "$trending_tab" in
+	music) printf "%s" "4gINGgt5dG1hX2NoYXJ0cw%3D%3D" ;;
+	gaming) printf "%s" "4gIcGhpnYW1pbmdfY29ycHVzX21vc3RfcG9wdWxhcg%3D%3D" ;;
+	movies) printf "%s" "4gIKGgh0cmFpbGVycw%3D%3D" ;;
+    esac
+}
+
 scrape_yt () {
 	# needs search_query as $*
 	## Scrape data and store video information in videos_data ( and thumbnails )
@@ -644,7 +656,14 @@ scrape_yt () {
 
 	[ $show_link_only -eq 0 ] && printf "Scraping Youtube...\n"
 
-	yt_html=$(get_yt_html "https://www.youtube.com/results" "$*")
+	if [ "$scrape" = "trending" ]; then
+	    tab_data="$(get_trending_url_data)"
+	    [ -z "$tab_data" ] && [ -n "$trending_tab" ] && printf "\033[31mERROR[#05]: \033[1m\$trending_tab\033[0m\033[31m must be one of:\n\033[2;39mmusic, gaming, movies\033[0m\n\033[31myou put: \033[1m\"$trending_tab\"\033[0m\n" && exit 2
+	    yt_html=$(get_yt_html "https://www.youtube.com/feed/trending?bp=$tab_data")
+	else
+	    yt_html=$(get_yt_html "https://www.youtube.com/results" "$*")
+	fi
+
 	if [ -z "$yt_html" ]; then
 		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[0m\n"
 		exit 1
@@ -1103,6 +1122,8 @@ parse_long_opt () {
 
        		subt)  auto_caption=1 ;;
 
+		trending|trending=*) [ "$opt" = 'trending' ] && parse_opt "T" || parse_opt "T" "${opt#*=}" ;;
+
 		add-subs) create_subs ;;
 
 		sort) sort_videos_data=1 ;;
@@ -1149,6 +1170,10 @@ parse_opt () {
 
 		S)	scrape="yt_subs" ;;
 
+		T)	
+		    trending_tab=${optarg:-}
+		    scrape="trending" ;;
+
 		l) 	YTFZF_LOOP=${optarg:-1} ;;
 
 		t) 	show_thumbnails=${optarg:-1} ;;
@@ -1176,7 +1201,7 @@ parse_opt () {
 	unset opt optarg
 }
 
-while getopts "LhDmdfxHaArltSsvNn:U:-:" OPT; do
+while getopts "LhDmdfxHaArltSsvNTn:U:-:" OPT; do
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
@@ -1219,6 +1244,8 @@ format_menu
 
 
 case $scrape in
+	"trending")
+		scrape_yt ;;
 	"yt_search")
 		get_search_query
 		scrape_yt "$search_query" ;;
