@@ -127,10 +127,16 @@ sub_link_count=10
 fancy_subscriptions_menu=1
 
 #where to source videos from
-#options are history, yt_subs, yt_search
+#options are: history, yt_subs, yt_search, trending
 #history is the same as -H
 #yt_subs is the same as -S
+#trending is the same as -T
 scrape="yt_search"
+
+#the tab of trending to select when scrape is trending
+#options are: music, gaming, movies, ""
+#same as --trending=
+trending_tab=""
 
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
