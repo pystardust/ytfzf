@@ -8,6 +8,8 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 * [`youtube-dl`](https://github.com/ytdl-org/youtube-dl)
 * [`jq`](https://github.com/stedolan/jq) - _to parse json_
 * [`fzf`](https://github.com/junegunn/fzf) (Optional) - _for menu_
+* [`notify-send`](https://gitlab.gnome.org/GNOME/libnotify) (Optional) - _for desktop notifications_
+* [GNU `shuf`](https://www.gnu.org/software/coreutils/manual/html_node/shuf-invocation.html) or [ISC `shuf`](https://github.com/ibara/shuf) (Optional) - _for selecting random videos_
 * [`ueberzug`](https://github.com/seebye/ueberzug) (Optional) - _for thumbnails_
 
 > Thumbnails only work with `fzf` and `Ueberzug` as of now.
