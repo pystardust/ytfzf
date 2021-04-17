@@ -179,6 +179,9 @@ current_file="$cache_dir/ytfzf_cur"
 #the folder where thumbnails are cached
 thumb_dir="$cache_dir/thumb"
 
+#the folder where playlists are stored
+playlist_dir="$HOME/.config/ytfzf/playlist"
+
 #when using the menu, use the text printed in this function to display all the info, $shorturl must be present in order to work
 #available default colors (note: they are be bolded):
     #c_red
