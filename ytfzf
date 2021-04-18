@@ -1112,7 +1112,9 @@ parse_long_opt () {
 		fancy-subs) fancy_subscriptions_menu=1 ;;
 		fancy-subs=*) fancy_subscriptions_menu=${opt#*=} ;;
 
-		notification) parse_opt "N" ;;
+		notification|notification=*) 
+		    [ "$opt" = 'notification' ] && parse_opt "N" || parse_opt "N" "${opt#*=}"
+		    is_non_number "$auto_caption" && bad_opt_arg "--subt=" "$auto_caption" ;;
 
 		version)
 		    printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
@@ -1120,13 +1122,17 @@ parse_long_opt () {
 		    command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[0m %s\n" "$(fzf --version)"
 		    exit ;;
 
-       		subt)  auto_caption=1 ;;
+       		subt|subt=*)  
+		    [ "$opt" = 'subt' ] && auto_caption=1 || auto_caption="${opt#*=}"
+		    is_non_number "$auto_caption" && bad_opt_arg "--subt=" "$auto_caption" ;;
 
 		trending|trending=*) [ "$opt" = 'trending' ] && parse_opt "T" || parse_opt "T" "${opt#*=}" ;;
 
 		add-subs) create_subs ;;
 
-		sort) sort_videos_data=1 ;;
+		sort|sort=*) 
+		    [ "$opt" = 'sort' ] && sort_videos_data=1 || sort_videos_data="${opt#*=}"
+		    is_non_number "$sort_videos_data" && bad_opt_arg "--sort=" "$sort_videos_data" ;;
 
 		*)
 		    printf "Illegal option --%s\n" "$opt"
@@ -1192,7 +1198,7 @@ parse_opt () {
 			# Not to be used explicitly
 			;;
 
-		N)	YTFZF_NOTI=1 ;;
+		N)	YTFZF_NOTI=${optarg:-1} ;;
 
 		*)
 			usageinfo
@@ -1201,7 +1207,12 @@ parse_opt () {
 	unset opt optarg
 }
 
+function_exists "on_opt_parse"
+#checking if TTY_LINES is empty is an easy way to check if this is a subprocess (aka ueberzug is running)
+#if we do not do  that weird errors occur
+opt_function_exists="$([ -z "$TTY_LINES" ] && printf "$?" || printf "1")"
 while getopts "LhDmdfxHaArltSsvNTn:U:-:" OPT; do
+    [ "$opt_function_exists" -eq 0 ] && eval "on_opt_parse" "$OPT" "$OPTARG"
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))

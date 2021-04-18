@@ -251,3 +251,21 @@ thumbnail_video_info_text () {
          printf "\n${c_blue}Views        ${c_magenta}%s" "$views"
          printf "\n${c_blue}Date         ${c_cyan}%s" "$date"
 }
+
+
+#gets called when an opt gets passed
+#$1 will be the opt name
+#$2 will be the opt argument
+#eg:
+    #ytfzf -a -n2
+    #this function will be called twice, on the first time
+	#$1 will be a, $2 will be empty
+    #on the 2nd time
+	#$1 will be n, $2 will be 2
+#long options are different
+    #ytfzf --link-count=2
+    #$1 will be -
+    #$2 will be link-count=2
+on_opt_parse () {
+    return 0
+}
