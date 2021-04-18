@@ -94,6 +94,10 @@ select_all=${select_all-0}
 random_select=${random_select-0}
 #only show the selected link (same as -L)
 show_link_only=${show_link_only-0}
+#only show the selected data (same as -R)
+show_data_only=${show_data_only-0}
+#dont show unecessary info
+silent_mode=${silent_mode-0}
 #show different video formats (same as -f)
 show_format=${show_format-0}
 #number of links to select with -a or -r (same as -n)
@@ -201,8 +205,10 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -l, --loop           <search-query>    Loop: prompt selector again after video ends
      -s, --search-again   <search-query>    After the video ends make another search
      -L, --link-only      <search-query>    Prints the selected URL only, helpful for scripting
+     -R, --data-only      <search-query>    Prints the selected data only, helpful for manipulating playlists manually
      --preview-side=      <left/right/top/bottom>    the side of the screen to show thumbnails
      --subt                                 Select auto-generated subtitles
+     --silent             <search-query>    Does not print verbose info
 
   Use - instead of <search-query> for stdin
 
@@ -496,7 +502,7 @@ download_thumbnails () {
 		}
 	fi
 
-	[ "$show_link_only" -eq 0 ] && printf "Downloading Thumbnails...\n"
+	[ "$silent_mode" -eq 0 ] && printf "Downloading Thumbnails...\n"
 	thumb_urls=$(printf "%s" "$*" |\
 		jq  -r '.[]|[.thumbs,.videoID]|@tsv' )
 
@@ -666,7 +672,7 @@ scrape_yt () {
 		sp=${sp%%%*}
 	fi
 
-	[ $show_link_only -eq 0 ] && printf "Scraping Youtube...\n"
+	[ $silent_mode -eq 0 ] && printf "Scraping Youtube...\n"
 
 	yt_html=$(get_yt_html "https://www.youtube.com/results" "$*")
 	if [ -z "$yt_html" ]; then
@@ -758,6 +764,7 @@ user_selection () {
 	else
 		selected_data=$( video_menu "$videos_data" )
 	fi
+
 	unset videos_data_clean
 }
 
@@ -782,10 +789,10 @@ format_user_selection () {
 }
 
 print_data () {
-	if [ $show_link_only -eq 1 ] ; then
-		printf "%s\n" "$selected_urls"
-		exit
-	fi
+	#if one wanted to show both url and selected data, they can
+	[ "$show_link_only" -eq 1 ] && printf "%s\n" "$selected_urls"
+	[ "$show_data_only" -eq 1 ] && printf "%s\n" "$selected_data"
+	exit
 }
 
 get_video_format () {
@@ -815,7 +822,7 @@ get_sub_lang () {
 
 play_url () {
 	#> output the current track to current file before playing
-	[ $show_link_only -eq 0 ] && printf "Opening Player: %s\n" "$YTFZF_PLAYER"
+	[ $silent_mode -eq 0 ] && printf "Opening Player: %s\n" "$YTFZF_PLAYER"
 
 	[ "$YTFZF_CUR" -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
 
@@ -1037,9 +1044,13 @@ parse_long_opt () {
 			thumbnail_quality=${opt#*=}
 			is_non_number "$thumbnail_quality" && bad_opt_arg "--thumbnail-quality=" "$thumbnail_quality" ;;
 
-		show-link-only|show-link-only=*)
+		link-only|link-only=*)
 		    [ "$opt" = 'show-link-only' ] && parse_opt "L" || parse_opt "L" "${opt#*=}"
 		    is_non_number "$show_link_only" && bad_opt_arg "--link-only=" "$show_link_only" ;;
+
+		data-only|data-only=*)
+		    [ "$opt" = 'show-data-only' ] && parse_opt "R" || parse_opt "R" "${opt#*=}"
+		    is_non_number "$show_data_only" && bad_opt_arg "--show-data-only=" "$show_data_only" ;;
 
 		link-count=*) parse_opt "n" "${opt#*=}" ;;
 
@@ -1095,6 +1106,10 @@ parse_long_opt () {
 
 		add-subs) create_subs ;;
 
+		silent|silent=*)
+		    [ "$opt" = 'silent' ] && parse_opt "R" || parse_opt "R" "${opt#*=}"
+		    is_non_number "$silent_mode" && bad_opt_arg "--silent=" "$silent_mode" ;;
+
 		*)
 		    printf "Illegal option --%s\n" "$opt"
 		    usageinfo
@@ -1145,7 +1160,13 @@ parse_opt () {
 		v)	printf "ytfzf: %s\n" "$YTFZF_VERSION"
 			exit ;;
 
-		L) 	show_link_only=${optarg:-1} ;;
+		L) 	
+		    show_link_only=${optarg:-1}
+		    silent_mode=${optarg:-1} ;;
+
+		R)
+		    show_data_only=${optarg:-1}
+		    [ "$show_data_only" -eq 1 ] && silent_mode=1 && fancy_subscriptions_menu=0 ;;
 
 		n)
 		    link_count="$optarg"
@@ -1169,7 +1190,7 @@ parse_opt () {
 	unset opt optarg
 }
 
-while getopts "LhDmdfxHaArltSsvNpPn:U:-:" OPT; do
+while getopts "LRhDmdfxHaArltSsvNpPn:U:-:" OPT; do
     parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))

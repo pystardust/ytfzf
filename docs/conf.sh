@@ -104,6 +104,13 @@ link_count=1
 #same as -L
 show_link_only=0
 
+#enable/disable only showing the selected data
+#same as -R
+show_data_only=0
+
+#enable/disable showing information such as "downloading thumbnails..." and "scraping youtube..."
+silent_mode=0
+
 #enable/disable showing the different video formats
 #same as -f
 show_format=0
