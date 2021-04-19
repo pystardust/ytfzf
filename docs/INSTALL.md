@@ -59,7 +59,7 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
    _MacOS users might need to change their installation path from  `/usr/bin/` to `/usr/local/bin/`_
 
-2. #### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf-git/)
+2. #### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf/)
 
 	```
 	yay -S ytfzf
