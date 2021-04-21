@@ -712,13 +712,12 @@ parse_special_search () {
     search="$1"
     number="$(printf "%s" "$search" | grep -Po "[\-0-9]+")"
     if [ "$search" = "!!" ]; then
-	# minus 1 because search_count is incrementd too high
 	number="$search_count"
     elif [ "$number" -lt 0 ]; then
 	#needs to be + because number is negative
 	number="$((search_count + number + 1))"
     fi
-    if ! cat "${tmp_searches_prefix}${number}" 1> /dev/null 2>&1; then
+    if ! cat "${tmp_searches_prefix}${number}"; then
 	printf "%s" "$search is an invalid lookback"
 	clean_up
 	exit 2
