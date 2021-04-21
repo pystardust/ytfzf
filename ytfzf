@@ -532,7 +532,7 @@ get_sp_filter () {
 	if [ -n "$upload_date_character" ]; then
 		#replaces the 8th character in the filter_id with the appropriate character
 		#the 8th character specifies the upload_date_filter
-		sp=$(printf "%s" "$filter_id" | sed "s/\\(.\\{7\\}\\)./\\1$upload_date_character/")
+		sp=$(printf "%s" "$filter_id" | sed 's/\(.\{7\}\)./\1'"$upload_date_character"'/')
 	#otherwise set it to the filter_id
 	else
 		sp=$filter_id
@@ -938,7 +938,7 @@ update_ytfzf () {
 	updatefile="/tmp/ytfzf-update"
 	curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/$branch/ytfzf" -o "$updatefile"
 
-	if sed -n '1p' < "$updatefile" | grep -q '#!/bin/sh' ; then
+	if [ -n "$(cat "$updatefile")" ];  then
 		chmod 755 "$updatefile"
 		if [ "$(uname)" = "Darwin" ]; then
 			sudo cp "$updatefile" "/usr/local/bin/ytfzf"
