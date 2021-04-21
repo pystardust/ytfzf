@@ -718,8 +718,8 @@ parse_special_search () {
 	#needs to be + because number is negative
 	number="$((search_count + number + 1))"
     fi
-    if ! cat "${tmp_searches_prefix}${number}"; then
-	printf "%s" "\033[31m$search is an invalid lookback"
+    if ! cat "${tmp_searches_prefix}${number}" 1> /dev/null 2>&1; then
+	printf "%s" "$search is an invalid lookback"
 	clean_up
 	exit 2
     fi
