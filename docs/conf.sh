@@ -141,6 +141,10 @@ sort_videos_data=0
 #same as --trending=
 trending_tab=""
 
+#sets the default sort name
+#same as --sort-name=
+sort_name=""
+
 #the filter id that will be used when searching youtube
 #same as --filter-id={filter}
 #to get a filter id go to youtube search for something, choose the filter you want,

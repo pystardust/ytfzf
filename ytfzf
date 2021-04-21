@@ -116,6 +116,8 @@ is_audio_only=${is_audio_only-0}
 is_download=0
 #the tab for trending, empty is the default page
 trending_tab="${trending_tab-}"
+#the sort name, if exists will be called and it will set functions for sorting
+sort_name="${sort_name-}"
 # misc
 tab_space=$(printf '\t')
 
@@ -1155,10 +1157,7 @@ parse_long_opt () {
 		sort) sort_videos_data=1 ;;
 		sort-name=*) 
 		    sort_videos_data=1
-		    sort_name="${opt#*=}"
-		    #this will overwrite the already set sort functions
-		    eval "$sort_name"
-		    unset sort_name ;;
+		    sort_name="${opt#*=}" ;;
 		*)
 		    printf "Illegal option --%s\n" "$opt"
 		    usageinfo
@@ -1273,6 +1272,8 @@ check_if_url "${search_query:=$*}"
 #format the menu screen
 format_menu
 
+[ -n "$sort_name" ] && eval "$sort_name"
+unset sort_name
 
 case $scrape in
 	"trending")
