@@ -15,6 +15,10 @@ YTFZF_VERSION="1.1.4"
 config_dir=${YTFZF_CONFIG_DIR-$HOME/.config/ytfzf}
 config_file=${YTFZF_CONFIG_FILE-$config_dir/conf.sh}
 tmp_video_data_file="/tmp/ytfzf-subdata"
+tmp_searches_prefix="/tmp/ytfzf-search-"
+search_count=0
+special_search=0
+
 #source config file if exists
 [ -e "$config_file" ] && . "$config_file"
 
@@ -704,6 +708,22 @@ scrape_yt () {
 	unset videos_json yt_json yt_html
 }
 
+parse_special_search () {
+    search="$1"
+    number="$(printf "%s" "$search" | grep -Po "[\-0-9]+")"
+    if [ "$search" = "!!" ]; then
+	# minus 1 because search_count is incrementd too high
+	number="$search_count"
+    elif [ "$number" -lt 0 ]; then
+	#needs to be + because number is negative
+	number="$((search_count + number + 1))"
+    fi
+    if ! cat "${tmp_searches_prefix}${number}"; then
+	printf "%s" "\033[31m$search is an invalid lookback"
+	clean_up
+	exit 2
+    fi
+}
 
 ############################
 #      User selection      #
@@ -720,13 +740,23 @@ get_search_query () {
 			printf "$search_prompt"
 			read -r search_query
 		fi
-		[ -z "$search_query" ] && exit 0
+		if [ -n "$(printf "%s" "$search_query" | grep -Po '!(?:-?[0-9]+|!)')" ]; then
+		    videos_data="$(parse_special_search "$search_query")"
+		    special_search=1
+		fi
+		if [ -z "$search_query" ]; then
+		    clean_up
+		    exit
+		fi
 	fi
+	search_count=$((search_count + 1))
 }
 #> To select videos from videos_data
 user_selection () {
 	#remove subscription separators
 	videos_data_clean=$(printf "%s" "$videos_data" | sed "/.*$tab_space$/d")
+	#resets the special search
+	special_search=0
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
@@ -749,11 +779,12 @@ user_selection () {
 		selected_data=$( title_len=200 video_menu "$videos_data" )
 		stop_ueberzug
 		# Deletes thumbnails if no video is selected
-		[ -z "$selected_data" ] && delete_thumbnails
+		[ -z "$selected_data" ] && ! session_is_running && clean_up
 	#show regular menu
 	else
 		selected_data=$( video_menu "$videos_data" )
 	fi
+	printf "%s" "$videos_data" > "${tmp_searches_prefix}${search_count}"
 	unset videos_data_clean
 }
 
@@ -852,20 +883,27 @@ play_url () {
 
 	unset player_urls
 }
-#> Checks if other sessions are running, if not then deletes thumbnails
-delete_thumbnails () {
+clean_up () {
+	[ -d "$thumb_dir" ] && rm -r "$thumb_dir"
+	rm /tmp/ytfzf-search-*
+	printf "" > "$pid_file"
+}
+
+#> Checks if other sessions are running
+session_is_running () {
 	session_count=0
 	while read -r pid; do
 		[ -d /proc/"$pid" ] && session_count=$(( session_count + 1 ))
 	done < "$pid_file"
 	if [ $session_count -eq 1 ] ; then
-		[ -d "$thumb_dir" ] && rm -r "$thumb_dir"
-		printf "" > "$pid_file"
+	    return 0
 	fi
+	return 1
 	unset session_count
 }
 #> Save and clean up before script exits
 save_before_exit () {
+	! session_is_running && clean_up
 	[ $is_url -eq 1 ] && exit
 	[ $YTFZF_HIST -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
 	[ $YTFZF_CUR -eq 1 ] && printf "" > "$current_file" ;
@@ -1243,12 +1281,13 @@ check_if_url "${search_query:=$*}"
 format_menu
 
 
-case $scrape in
+scrape_fn () {
+    case $scrape in
 	"trending")
 		scrape_yt ;;
 	"yt_search")
 		get_search_query
-		scrape_yt "$search_query" ;;
+		[ $special_search -eq 0 ] && scrape_yt "$search_query" ;;
 	"yt_subs")
 		scrape_subscriptions
 		;;
@@ -1263,7 +1302,10 @@ case $scrape in
 	    printf "\033[31mError: \$scrape set to bad option, set to '$scrape'${c_reset}\n"
 	    exit 1 ;;
 
-esac
+    esac
+}
+
+scrape_fn
 
 
 while true; do
@@ -1277,14 +1319,13 @@ while true; do
 
 	#if looping and searching_again arent on then exit
 	if [ $YTFZF_LOOP -eq 0 ] && [ $search_again -eq 0 ] ; then
-		delete_thumbnails
+		! session_is_running && clean_up
 		exit
 	fi
 
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
 		search_query=
-        	get_search_query
-		scrape_yt "$search_query"
+		scrape_fn
 	fi
 done
