@@ -193,6 +193,11 @@ current_file="$cache_dir/ytfzf_cur"
 #the folder where thumbnails are cached
 thumb_dir="$cache_dir/thumb"
 
+
+###################
+#  VIDEO DISPLAY  #
+###################
+
 #when using the menu, use the text printed in this function to display all the info, $shorturl must be present in order to work
 #available default colors (note: they are be bolded):
     #c_red
@@ -251,3 +256,65 @@ thumbnail_video_info_text () {
          printf "\n${c_blue}Views        ${c_magenta}%s" "$views"
          printf "\n${c_blue}Date         ${c_cyan}%s" "$date"
 }
+
+
+###################
+#    SORT DATA    #
+###################
+
+data_sort_key () {
+    #the first argument will be the value given from parse_value_for_key
+    #the second argument wil be the entire line
+    sort_by="$1"
+    line="$2"
+    #the format must be *\t%s\n the first format can be anything
+
+    #the first value to print must be the value to be sorting by
+    #the second value must be the line
+    printf "%d\t%s\n" "$(date -d "${sort_by}" '+%s')" "$line"
+    unset sort_by line
+}
+
+parse_value_for_key () {
+    #get the initial value (each value's first character will be a |, this removes it)
+    #there are a few different values passed into this function
+    #1: the video title
+    #2: the channel
+    #3: the length of the video
+    #4: view count
+    #5: the upload date
+    #6: the video id
+    sort_by=${5#|}
+    #remove non-date part of the upload date
+    sort_by=${sort_by#Streamed}
+    #"return" the value
+    printf "%s" "$sort_by"
+    unset sort_by
+}
+
+#this can be anything but sort is a builtin function that sorts data
+#for random sort set this to "sort -R"
+data_sort_fn="sort -nr"
+
+
+#a sort-name is a function that sets the values of data_sort_key, parse_value_for_key and data_sort_fn
+#it only needs to set 1 or more of those, however it is better to set all 3 so you know what is happening
+
+alphabetical () {
+    parse_value_for_key () {
+	#to get the title we use the first argument, not the 5th
+	sort_by=${1#|}
+	printf "%s" "$sort_by"
+	unset sort_by
+    }
+    data_sort_key () {
+	sort_by="$1"
+	line="$2"
+	#since sort by is the title of the video, not the upload date, use %s
+	printf "%s\t%s\n" "$sort_by" "$line"
+	unset sort_by line
+    }
+    data_sort_fn="sort" 
+}
+
+#to use this run, "ytfzf --sort-name=alphabetical <search>"

@@ -181,6 +181,9 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      --preview-side=      <left/right/top/bottom>    The side of the screen to show thumbnails
      --subt                                 Select auto-generated subtitles
      --sort                                 Sorts videos by latest upload date
+     --sort-name=         <function>        The function must contain the values of
+                                            data_sort_key, parse_value_for_key, data_sort_fn,
+					    see the example sort-name in the example config
 
   Use - instead of <search-query> for stdin
 
@@ -953,16 +956,39 @@ update_ytfzf () {
 	exit
 }
 
+#gives a value to sort by (this will give the unix time the video was uploaded)
+if ! function_exists "data_sort_key"; then
+    data_sort_key () {
+	sort_by="$1"
+	line="$2"
+	#prepend the date to the front of the line
+	printf "%d\t%s\n" "$(date -d "${sort_by}" '+%s')" "$line"
+	unset sort_by line
+    }
+fi
+if ! function_exists "parse_value_for_key"; then
+    parse_value_for_key () {
+	#get the initial value
+	sort_by=${5#|}
+	#remove non-date part
+	sort_by=${sort_by#Streamed}
+	#"return" the value
+	printf "%s" "$sort_by"
+	unset sort_by
+    }
+fi
+#the function to use for sorting
+data_sort_fn=${data_sort_fn-sort -nr}
 sort_video_data_date () {
-	while IFS= read -r _VLine
+	while IFS= read -r line
 	do
 		IFS="$tab_space"
-		set -- $_VLine
-		_Date=${5#|}
-		_Date=${_Date#Streamed}
-		printf "%d\t%s\n" "$(date -d "${_Date}" '+%s')" "$_VLine"
-	done | sort -nr | cut -f2-
-	unset IFS _VLine _Date
+		set -- $line
+		sort_by="$(parse_value_for_key $line)"
+		#run the key function to get the value to sort by
+		data_sort_key "$sort_by" "$line"
+	done | eval "$data_sort_fn" | cut -f2-
+	unset IFS line sort_by
 }
 
 scrape_subscriptions () {
@@ -1127,7 +1153,12 @@ parse_long_opt () {
 		add-subs) create_subs ;;
 
 		sort) sort_videos_data=1 ;;
-
+		sort-name=*) 
+		    sort_videos_data=1
+		    sort_name="${opt#*=}"
+		    #this will overwrite the already set sort functions
+		    eval "$sort_name"
+		    unset sort_name ;;
 		*)
 		    printf "Illegal option --%s\n" "$opt"
 		    usageinfo
