@@ -989,7 +989,7 @@ sort_video_data_date () {
 		sort_by="$(parse_value_for_key $line)"
 		#run the key function to get the value to sort by
 		data_sort_key "$sort_by" "$line"
-	done | eval "$data_sort_fn" | cut -f2-
+	done | $data_sort_fn | cut -f2-
 	unset IFS line sort_by
 }
 
