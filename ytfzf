@@ -701,7 +701,7 @@ scrape_yt () {
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
 
-	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_date)
+	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_fn)
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	# wait for thumbnails to download
@@ -903,7 +903,7 @@ get_history () {
 		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 		#removes duplicate values from $history_data
 		videos_data=$(printf "%s" "$hist_data" | uniq )
-		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_date)"
+		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_fn)"
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n";
 		exit;
@@ -981,7 +981,7 @@ if ! function_exists "parse_value_for_key"; then
 fi
 #the function to use for sorting
 data_sort_fn=${data_sort_fn-sort -nr}
-sort_video_data_date () {
+sort_video_data_fn () {
 	while IFS= read -r line
 	do
 		IFS="$tab_space"
@@ -1010,7 +1010,7 @@ scrape_subscriptions () {
 	EOF
 	wait
 	if [ $sort_videos_data -eq 1 ]; then 
-		videos_data=$(sort_video_data_date < "$tmp_video_data_file")
+		videos_data=$(sort_video_data_fn < "$tmp_video_data_file")
 	else
 		videos_data=$(cat "$tmp_video_data_file")
 	fi
