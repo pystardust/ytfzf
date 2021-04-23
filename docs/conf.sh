@@ -298,8 +298,9 @@ parse_value_for_key () {
 
 #this can be anything but sort is a builtin function that sorts data
 #for random sort set this to "sort -R"
-data_sort_fn="sort -nr"
-
+data_sort_fn () {
+    sort -nr
+}
 
 #a sort-name is a function that sets the values of data_sort_key, parse_value_for_key and data_sort_fn
 #it only needs to set 1 or more of those, however it is better to set all 3 so you know what is happening
@@ -318,7 +319,9 @@ alphabetical () {
 	printf "%s\t%s\n" "$sort_by" "$line"
 	unset sort_by line
     }
-    data_sort_fn="sort" 
+    data_sort_fn () {
+	sort
+    }
 }
 
 #to use this run, "ytfzf --sort-name=alphabetical <search>"
