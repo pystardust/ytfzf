@@ -968,6 +968,7 @@ if ! function_exists "data_sort_key"; then
 	unset sort_by line
     }
 fi
+#gets the value to be put into data_sort_key
 if ! function_exists "parse_value_for_key"; then
     parse_value_for_key () {
 	#get the initial value
