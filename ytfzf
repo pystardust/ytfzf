@@ -1210,7 +1210,9 @@ parse_opt () {
 
 while getopts "LhDmdfxHaArltSsvNTn:U:-:" OPT; do
 	# to parse extra-options in conf.sh ( and don't parse during thumbnail call)
-	function_exists "on_opt_parse" && on_opt_parse "$OPT" "$OPTARG"
+	if function_exists "on_opt_parse"; then
+	    [ "$OPT" = "-" ] && on_opt_parse "${OPTARG%%=*}" "${OPTARG#*=}" || on_opt_parse "$OPT" "$OPTARG"
+	fi
 	parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
