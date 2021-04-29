@@ -1207,13 +1207,11 @@ parse_opt () {
 	unset opt optarg
 }
 
-function_exists "on_opt_parse"
-#checking if TTY_LINES is empty is an easy way to check if this is a subprocess (aka ueberzug is running)
-#if we do not do  that weird errors occur
-opt_function_exists="$([ -z "$TTY_LINES" ] && printf "$?" || printf "1")"
+
 while getopts "LhDmdfxHaArltSsvNTn:U:-:" OPT; do
-    [ "$opt_function_exists" -eq 0 ] && on_opt_parse "$OPT" "$OPTARG"
-    parse_opt "$OPT" "$OPTARG"
+	# to parse extra-options in conf.sh
+	function_exists "on_opt_parse" && on_opt_parse "$OPT" "$OPTARG"
+	parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
 
