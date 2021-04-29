@@ -710,17 +710,19 @@ scrape_yt () {
 
 parse_special_search () {
     search="$1"
-    number="$(printf "%s" "$search" | grep -Po "[\-0-9]+")"
+    number="${search#!}"
     if [ "$search" = "!!" ]; then
 	number="$search_count"
     elif [ "$number" -lt 0 ]; then
 	#needs to be + because number is negative
 	number="$((search_count + number + 1))"
     fi
-    if ! cat "${tmp_searches_prefix}${number}"; then
+    if [ ! -f "${tmp_searches_prefix}${number}" ]; then
 	printf "%s" "$search is an invalid lookback"
 	clean_up
 	exit 2
+    else
+	cat "${tmp_searches_prefix}${number}"
     fi
 }
 
@@ -739,7 +741,7 @@ get_search_query () {
 			printf "$search_prompt"
 			read -r search_query
 		fi
-		if [ -n "$(printf "%s" "$search_query" | grep -Po '!(?:-?[0-9]+|!)')" ]; then
+		if printf "%s" "$search_query" | grep -q -Po '!(?:-?[0-9]+|!)'; then
 		    videos_data="$(parse_special_search "$search_query")"
 		    special_search=1
 		fi
