@@ -886,7 +886,8 @@ play_url () {
 }
 clean_up () {
 	[ -d "$thumb_dir" ] && rm -r "$thumb_dir"
-	rm /tmp/ytfzf-search-*
+	rm /tmp/ytfzf-search-* > /dev/null 2>&1
+	rm /tmp/ytfzf-ueberzug-fifo-* > /dev/null 2>&1
 	printf "" > "$pid_file"
 }
 
