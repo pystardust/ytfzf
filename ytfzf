@@ -709,20 +709,27 @@ scrape_yt () {
 }
 
 parse_special_search () {
-    search="$1"
-    number="${search#!}"
-    if [ "$search" = "!!" ]; then
-	number="$search_count"
-    elif [ "$number" -lt 0 ]; then
+    #1 is the search
+    look_back="${1#!}"
+    #in case they have extra words
+    look_back="${look_back%% }"
+    if [ "$number" = "!" ]; then
+	file=${tmp_searches_prefix}${search_count}-*
+    elif printf "%s" "$look_back" | grep -q -Po '[^-0-9]'; then
+	file=${tmp_searches_prefix}*-${look_back}*
+    elif [ "$look_back" -lt 0 ]; then
 	#needs to be + because number is negative
-	number="$((search_count + number + 1))"
+	look_back="$((search_count + look_back + 1))"
+	file=${tmp_searches_prefix}${look_back}-*
+    elif [ "$look_back" -gt 0 ]; then
+	file=${tmp_searches_prefix}${look_back}-*
     fi
-    if [ ! -f "${tmp_searches_prefix}${number}" ]; then
-	printf "%s" "$search is an invalid lookback"
+    if [ ! -f $file ]; then
+	printf "%s" "$1 is an invalid lookback"
 	clean_up
 	exit 2
     else
-	cat "${tmp_searches_prefix}${number}"
+	cat $file
     fi
 }
 
@@ -741,7 +748,7 @@ get_search_query () {
 			printf "$search_prompt"
 			read -r search_query
 		fi
-		if printf "%s" "$search_query" | grep -q -Po '!(?:-?[0-9]+|!)'; then
+		if printf "%s" "$search_query" | grep -q -Po '!(?:-?[0-z]+|)(?!\s*.+)'; then
 		    videos_data="$(parse_special_search "$search_query")"
 		    special_search=1
 		fi
@@ -785,7 +792,7 @@ user_selection () {
 	else
 		selected_data=$( video_menu "$videos_data" )
 	fi
-	printf "%s" "$videos_data" > "${tmp_searches_prefix}${search_count}"
+	printf "%s" "$videos_data" > "${tmp_searches_prefix}${search_count}-${search_query%% *}"
 	unset videos_data_clean
 }
 
