@@ -16,7 +16,8 @@ config_dir=${YTFZF_CONFIG_DIR-$HOME/.config/ytfzf}
 config_file=${YTFZF_CONFIG_FILE-$config_dir/conf.sh}
 tmp_video_data_file="/tmp/ytfzf-subdata"
 #source config file if exists
-[ -e "$config_file" ] && . "$config_file"
+#it also checks to make sure that this is not a subprocess of another ytfzf script
+[ -e "$config_file" ] && [ -z "$PROC_ID" ] && . "$config_file"
 
 #for each environment variable, check if it's set in environment,
     #if set in environment, use that value
