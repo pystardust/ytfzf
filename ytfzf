@@ -1209,8 +1209,8 @@ parse_opt () {
 
 
 while getopts "LhDmdfxHaArltSsvNTn:U:-:" OPT; do
-	# to parse extra-options in conf.sh ( and don't parse during thumbnail call)
-	[ -z "$PROC_ID" ] && function_exists "on_opt_parse" && on_opt_parse "$OPT" "$OPTARG"
+	# to parse extra-options in conf.sh
+	function_exists "on_opt_parse" && on_opt_parse "$OPT" "$OPTARG"
 	parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
