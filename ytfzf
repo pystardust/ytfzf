@@ -15,8 +15,6 @@ YTFZF_VERSION="1.1.4"
 config_dir=${YTFZF_CONFIG_DIR-$HOME/.config/ytfzf}
 config_file=${YTFZF_CONFIG_FILE-$config_dir/conf.sh}
 tmp_video_data_file="/tmp/ytfzf-subdata"
-tmp_searches_prefix="/tmp/ytfzf-search-"
-search_count=0
 special_search=0
 
 #source config file if exists
@@ -64,6 +62,7 @@ special_search=0
 [ "$YTFZF_ENABLE_FZF_DEFAULT_OPTS" -eq 0 ] && FZF_DEFAULT_OPTS=""
 
 #> files and directories
+search_data_file=${search_data_file-$YTFZF_CACHE/ytfzf_video_data}
 history_file=${history_file-$YTFZF_CACHE/ytfzf_hst}
 current_file=${current_file-$YTFZF_CACHE/ytfzf_cur}
 thumb_dir=${thumb_dir-$YTFZF_CACHE/thumb}
@@ -120,6 +119,8 @@ is_audio_only=${is_audio_only-0}
 is_download=0
 #the tab for trending, empty is the default page
 trending_tab="${trending_tab-}"
+#the special search to look for to show all results from all searches in the current session
+look_back_search="${look_back_search-!!}"
 # misc
 tab_space=$(printf '\t')
 
@@ -711,26 +712,7 @@ scrape_yt () {
 parse_special_search () {
     #1 is the search
     look_back="${1#!}"
-    #in case they have extra words
-    look_back="${look_back%% }"
-    if [ "$number" = "!" ]; then
-	file=${tmp_searches_prefix}${search_count}-*
-    elif printf "%s" "$look_back" | grep -q -Po '[^-0-9]'; then
-	file=${tmp_searches_prefix}*-${look_back}*
-    elif [ "$look_back" -lt 0 ]; then
-	#needs to be + because number is negative
-	look_back="$((search_count + look_back + 1))"
-	file=${tmp_searches_prefix}${look_back}-*
-    elif [ "$look_back" -gt 0 ]; then
-	file=${tmp_searches_prefix}${look_back}-*
-    fi
-    if [ ! -f $file ]; then
-	printf "%s" "$1 is an invalid lookback"
-	clean_up
-	exit 2
-    else
-	cat $file
-    fi
+    cat "$search_data_file"
 }
 
 ############################
@@ -748,7 +730,7 @@ get_search_query () {
 			printf "$search_prompt"
 			read -r search_query
 		fi
-		if printf "%s" "$search_query" | grep -q -Po '!(?:-?[0-z]+|)(?!\s*.+)'; then
+		if [ "$search_query" = "$look_back_search" ]; then
 		    videos_data="$(parse_special_search "$search_query")"
 		    special_search=1
 		fi
@@ -757,14 +739,11 @@ get_search_query () {
 		    exit
 		fi
 	fi
-	search_count=$((search_count + 1))
 }
 #> To select videos from videos_data
 user_selection () {
 	#remove subscription separators
 	videos_data_clean=$(printf "%s" "$videos_data" | sed "/.*$tab_space$/d")
-	#resets the special search
-	special_search=0
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
@@ -787,12 +766,14 @@ user_selection () {
 		selected_data=$( title_len=200 video_menu "$videos_data" )
 		stop_ueberzug
 		# Deletes thumbnails if no video is selected
-		[ -z "$selected_data" ] && ! session_is_running && clean_up
+		[ -z "$selected_data" ] && clean_up
 	#show regular menu
 	else
 		selected_data=$( video_menu "$videos_data" )
 	fi
-	printf "%s" "$videos_data" > "${tmp_searches_prefix}${search_count}-${search_query%% *}"
+	[ "$special_search" -eq 0 ] && printf "%s" "$videos_data" >> "$search_data_file"
+	#resets the special search
+	special_search=0
 	unset videos_data_clean
 }
 
@@ -895,6 +876,7 @@ clean_up () {
 	[ -d "$thumb_dir" ] && rm -r "$thumb_dir"
 	rm /tmp/ytfzf-search-* > /dev/null 2>&1
 	rm /tmp/ytfzf-ueberzug-fifo-* > /dev/null 2>&1
+	printf "" > "$search_data_file"
 	printf "" > "$pid_file"
 }
 

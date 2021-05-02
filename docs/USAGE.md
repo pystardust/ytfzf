@@ -74,21 +74,6 @@ If you wish to find inspiration and see an example you can take a look at the [`
 
 	+ `-d`: (download) To **download** a video instead of playing it.
 
-+ ### Searching
-	
-	When `-s` is enabled, and the search prompt shows, you can use lookback searches which look like this
-	
-	+ `!!`
-	+ `![n]` eg: `!1`
-	+ `!-[n]` eg: `!-1`
-	+ `![s]` eg: `!search`
-	
-	+ `!!` will bring up the results from the previous search
-	+ `!n` will bring up the results from the nth search
-	+ `!-n` will bring up the results from n searches ago
-	+ `!s` will bring up results from every search starting with s
-
-
 + ### Multi-selection
 
    Multiple videos can be queued up using `fzf`'s auto multi-selection (tab). To traverse between selected videos use `<` and `>`.
