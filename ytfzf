@@ -1053,7 +1053,7 @@ parse_opt () {
 			is_non_number "$is_audio_only" && bad_opt_arg "--audio-only=" "$is_audio_only" ;;
 
 		d|download)
-			is_download=1 ;;
+			is_download=${optarg:-1} ;;
 
 		f) 	show_format=1 ;;
 
@@ -1105,9 +1105,9 @@ parse_opt () {
 			is_non_number "$show_thumbnails" && bad_opt_arg "--show-thumbnails=" "$show_thumbnails" ;;
 
 		thumbnail-quality)
-			parse_opt "t"
 			thumbnail_quality=$optarg
-			is_non_number "$thumbnail_quality" && bad_opt_arg "--thumbnail-quality=" "$thumbnail_quality" ;;
+			is_non_number "$thumbnail_quality" && bad_opt_arg "--thumbnail-quality=" "$thumbnail_quality"
+			parse_opt "t" ;;
 
 		v)	printf "ytfzf: %s\n" "$YTFZF_VERSION"
 			exit ;;
