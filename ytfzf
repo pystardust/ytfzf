@@ -76,6 +76,8 @@ pid_file="$YTFZF_CACHE/.pid"
 search_prompt=${search_prompt-Search Youtube: }
 #used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
+#whether or not to show errors when an invalid option is passed
+exit_on_opt_error=${exit_on_opt_error-1}
 
 #Opt variables (can also be set in config)
 #use $YTFZF_EXT_MENU (same as -D)
@@ -1154,8 +1156,10 @@ parse_opt () {
 		update-unstable) update_ytfzf "${optarg-development}" ;;
 
 		*)
-			usageinfo
-			exit 2 ;;
+			if [ "$exit_on_opt_error" -eq 1 ]; then
+			    usageinfo
+			    exit 2
+			fi ;;
 	esac
 	unset opt optarg
 }
