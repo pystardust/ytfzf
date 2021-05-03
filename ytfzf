@@ -1085,10 +1085,12 @@ parse_opt () {
 			sort_videos_data=${optarg:-1}
 			is_non_number "$sort_videos_data" && bad_opt_arg "--sort=" "$sort_videos_data" ;;
 
-		S|subs)	
-			scrape="yt_subs"
+		S)	
+			scrape="yt_subs" ;;
+		subs)
 			sub_link_count=$optarg
-			is_non_number "$sub_link_count" && bad_opt_arg "--subs=" "$sub_link_count" ;;
+			is_non_number "$sub_link_count" && bad_opt_arg "--subs=" "$sub_link_count"
+			parse_opt "S" ;;
 
 		fancy-subs)
 			fancy_subscriptions_menu=${optarg:-1}
