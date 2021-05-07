@@ -164,7 +164,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -N, --notification                     Send notification when playing video
                                             Doesn't work with -H -D
      --thumbnail-quality=<0,1>              0: low quality (faster), 1: default
-     -D, --ext-menu                         Use external menu(default dmenu) instead of fzf
+     -D, --ext-menu                         Use external menu (default dmenu) instead of fzf
      -H, --choose-from-history              Choose from history
      -x, --clear-history                    Delete history
      -m, --audio-only     <search-query>    Audio only (for music)
@@ -981,7 +981,7 @@ scrape_subscriptions () {
 	"$subscriptions_file")
 	EOF
 	wait
-	if [ $sort_videos_data -eq 1 ]; then 
+	if [ $sort_videos_data -eq 1 ]; then
 		videos_data=$(sort_video_data_date < "$tmp_video_data_file")
 	else
 		videos_data=$(cat "$tmp_video_data_file")
@@ -1018,7 +1018,7 @@ create_subs () {
 
 is_non_number () {
 	case $1 in
-		(*[!0-9]*|'') 
+		(*[!0-9]*|'')
 			return 0;;
 		(*)
 			return 1;;
@@ -1170,7 +1170,7 @@ parse_opt () {
 
 		S)	scrape="yt_subs" ;;
 
-		T)	
+		T)
 		    trending_tab=${optarg:-}
 		    scrape="trending" ;;
 
