@@ -75,6 +75,8 @@ pid_file="$cache_dir/.pid"
 search_prompt=${search_prompt-Search Youtube: }
 #used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
+#whether or not to show errors when an invalid option is passed
+exit_on_opt_error=${exit_on_opt_error-1}
 
 #Opt variables (can also be set in config)
 #use $YTFZF_EXT_MENU (same as -D)
@@ -1031,186 +1033,148 @@ bad_opt_arg () {
 	exit 2
 }
 
-#OPT
-parse_long_opt () {
-	opt=$1
-	#if the option has a short version it calls this function with the opt as the shortopt
-	case ${opt} in
-	        help) parse_opt "h" ;;
-		help-all)
-		    all_help_info
-		    exit ;;
-
-		is-ext-menu|is-ext-menu=*)
-		    [ "$opt" = "is-ext-menu" ] && parse_opt "D" || parse_opt "D" "${opt#*=}"
-		    is_non_number "$is_ext_menu" && bad_opt_arg "--ext-menu=" "$is_ext_menu" ;;
-
-		download) parse_opt "d" ;;
-
-		choose-from-history) parse_opt "H" ;;
-
-		clear-history) parse_opt "x" ;;
-
-		search-again|search-again=*)
-		    [ "$opt" = 'search-again' ] && parse_opt "s" || parse_opt "s" "${opt#*=}"
-		    is_non_number "$search_again" && bad_opt_arg "--search=" "$search_again" ;;
-
-		loop|loop=*)
-		    [ "$opt" = 'loop' ] && parse_opt "l" || parse_opt "l" "${opt#*=}"
-		    is_non_number "$enable_loop" && bad_opt_arg "--loop=" "$enable_loop" ;;
-
-		show-thumbnails|show-thumbnails=*)
-		    [ "$opt" = 'show-thumbnails' ] && parse_opt "t" || parse_opt "t" "${opt#*=}"
-		    is_non_number "$show_thumbnails" && bad_opt_arg "--thumbnails=" "$show_thumbnails" ;;
-
-		thumbnail-quality=*)
-			parse_opt "t"
-			thumbnail_quality=${opt#*=}
-			is_non_number "$thumbnail_quality" && bad_opt_arg "--thumbnail-quality=" "$thumbnail_quality" ;;
-
-		show-link-only|show-link-only=*)
-		    [ "$opt" = 'show-link-only' ] && parse_opt "L" || parse_opt "L" "${opt#*=}"
-		    is_non_number "$show_link_only" && bad_opt_arg "--link-only=" "$show_link_only" ;;
-
-		link-count=*) parse_opt "n" "${opt#*=}" ;;
-
-		audio-only) parse_opt "m" ;;
-
-		auto-select|auto-select=*)
-		    [ "$opt" = 'auto-select' ] && parse_opt "a" || parse_opt "a" "${opt#*=}"
-		    is_non_number "$auto_select" && bad_opt_arg "--auto-play=" "$auto_select" ;;
-
-		select-all|select-all=*)
-		    [ "$opt" = 'select-all' ] && parse_opt "A" || parse_opt "A" "${opt#*=}"
-		    is_non_number "$select_all" && bad_opt_arg "--select-all=" "$select_all" ;;
-
-		random-select|random-select=*)
-		    [ "$opt" = 'random-select' ] && parse_opt "r" || parse_opt "r" "${opt#*=}"
-		    is_non_number "$random_select" && bad_opt_arg "--random-play=" "$random_select" ;;
-
-		upload-time=*) upload_date_filter=${opt#*=} ;;
-		last-hour|today|this-week|this-month|this-year) upload_date_filter="$opt" ;;
-
-		upload-sort=*) sort_by_filter=${opt#*=} ;;
-		upload-date|view-count|rating) sort_by_filter=$opt ;;
-
-		filter-id=*|sp=*) sp=${opt#*=} ;;
-
-		preview-side=*) export PREVIEW_SIDE=${opt#*=} ;;
-
-		update) update_ytfzf "master" ;;
-		update-unstable) update_ytfzf "development" ;;
-
-		subs) parse_opt "S" ;;
-		subs=*)
-			sub_link_count=${opt#*=}
-			is_non_number "$sub_link_count" && bad_opt_arg "--subs" "$sub_link_count"
-			parse_opt "S"
-			;;
-
-		fancy-subs) fancy_subscriptions_menu=1 ;;
-		fancy-subs=*) fancy_subscriptions_menu=${opt#*=} ;;
-
-		notification|notification=*) 
-		    [ "$opt" = 'notification' ] && parse_opt "N" || parse_opt "N" "${opt#*=}"
-		    is_non_number "$auto_caption" && bad_opt_arg "--subt=" "$auto_caption" ;;
-
-		version)
-		    printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
-		    printf "\033[1myoutube-dl:\033[0m %s\n" "$(youtube-dl --version)"
-		    command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[0m %s\n" "$(fzf --version)"
-		    exit ;;
-
-       		subt|subt=*)  
-		    [ "$opt" = 'subt' ] && auto_caption=1 || auto_caption="${opt#*=}"
-		    is_non_number "$auto_caption" && bad_opt_arg "--subt=" "$auto_caption" ;;
-
-		trending|trending=*) [ "$opt" = 'trending' ] && parse_opt "T" || parse_opt "T" "${opt#*=}" ;;
-
-		add-subs) create_subs ;;
-
-		sort|sort=*) 
-		    [ "$opt" = 'sort' ] && sort_videos_data=1 || sort_videos_data="${opt#*=}"
-		    is_non_number "$sort_videos_data" && bad_opt_arg "--sort=" "$sort_videos_data" ;;
-
-		*)
-		    printf "Illegal option --%s\n" "$opt"
-		    usageinfo
-		    exit 2 ;;
-	esac
-	unset opt
-}
 parse_opt () {
 	#the first arg is the option
 	opt=$1
 	#second arg is the optarg
 	optarg=$2
 	case ${opt} in
-		#Long options
-		-)	parse_long_opt "$optarg" ;;
-		#Short options
-		h) 	basic_helpinfo
+		h|help)	basic_helpinfo
 			printf "type --help-all for more info\n"
 			exit ;;
+		help-all)
+			all_help_info
+			exit ;;
 
-		D) 	is_ext_menu=${optarg:-1} ;;
+		D|is-ext-menu)
+			is_ext_menu=${optarg:-1}
+			is_non_number "$is_ext_menu" && bad_opt_arg "--is-ext-menu=" "$is_ext_menu" ;;
 
-		m) 	is_audio_only=1 ;;
+		m|audio-only)
+			is_audio_only=${optarg:-1}
+			is_non_number "$is_audio_only" && bad_opt_arg "--audio-only=" "$is_audio_only" ;;
 
-		d) 	is_download=1 ;;
+		d|download)
+			is_download=${optarg:-1} ;;
 
 		f) 	show_format=1 ;;
 
-		H)	scrape="history" ;;
+		H|choose-from-history)
+			scrape="history" ;;
 
-		x)	clear_history && exit ;;
+		x|clear-history)
+			clear_history && exit ;;
 
-		a)	auto_select=${optarg:-1} ;;
+		a|auto-select)
+			auto_select=${optarg:-1}
+			is_non_number "$auto_select" && bad_opt_arg "--auto-select=" "$auto_select" ;;
 
-		A)	select_all=${optarg:-1} ;;
+		A|select-all)
+			select_all=${optarg:-1}
+			is_non_number "$select_all" && bad_opt_arg "--select-all=" "$select_all" ;;
 
-		r)	random_select=${optarg:-1} ;;
+		r|random-select)
+			random_select=${optarg:-1}
+			is_non_number "$random_select" && bad_opt_arg "--random-select=" "$random_select" ;;
 
-		s)	search_again=${optarg:-1} ;;
+		s|search-again)
+			search_again=${optarg:-1}
+			is_non_number "$search_again" && bad_opt_arg "--search-again=" "$search_again" ;;
 
-		S)	scrape="yt_subs" ;;
+		sort)
+			sort_videos_data=${optarg:-1}
+			is_non_number "$sort_videos_data" && bad_opt_arg "--sort=" "$sort_videos_data" ;;
 
-		T)	
-		    trending_tab=${optarg:-}
-		    scrape="trending" ;;
+		S)	
+			scrape="yt_subs" ;;
+		subs)
+			sub_link_count=$optarg
+			is_non_number "$sub_link_count" && bad_opt_arg "--subs=" "$sub_link_count"
+			parse_opt "S" ;;
 
-		l) 	enable_loop=${optarg:-1} ;;
+		fancy-subs)
+			fancy_subscriptions_menu=${optarg:-1}
+			is_non_number "$fancy_subscriptions_menu" && bad_opt_arg "--fancy-subs=" "$fancy_subscriptions_menu" ;;
+			
+		T|trending)	
+			trending_tab=${optarg:-}
+			scrape="trending" ;;
 
-		t) 	show_thumbnails=${optarg:-1} ;;
+		l|loop)
+			enable_loop=${optarg:-1}
+			is_non_number "$YTFZF_LOOP" && bad_opt_arg "--loop=" "$enable_loop" ;;
+
+		t|show-thumbnails)
+			show_thumbnails=${optarg:-1}
+			is_non_number "$show_thumbnails" && bad_opt_arg "--show-thumbnails=" "$show_thumbnails" ;;
+
+		thumbnail-quality)
+			thumbnail_quality=$optarg
+			is_non_number "$thumbnail_quality" && bad_opt_arg "--thumbnail-quality=" "$thumbnail_quality"
+			parse_opt "t" ;;
 
 		v)	printf "ytfzf: %s\n" "$YTFZF_VERSION"
 			exit ;;
+		version)
+			printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
+			printf "\033[1myoutube-dl:\033[0m %s\n" "$(youtube-dl --version)"
+			command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[0m %s\n" "$(fzf --version)"
+			exit ;;
 
-		L) 	show_link_only=${optarg:-1} ;;
+		subt)
+			auto_caption=${optarg:-1}
+			is_non_number "$auto_caption" && bad_opt_arg "--subt=" "$auto_caption" ;;
 
-		n)
-		    link_count="$optarg"
-		    is_non_number "$link_count" && bad_opt_arg "-n" "$link_count" ;;
+		L|show-link-only)
+			show_link_only=${optarg:-1}
+			is_non_number "$show_link_only" && bad_opt_arg "--show-link-only=" "$show_link_only" ;;
+
+		n|link-count)
+			link_count="$optarg"
+			is_non_number "$link_count" && bad_opt_arg "-n" "$link_count" ;;
 
 		U) 	[ -p "$FIFO" ] && preview_img "$optarg"; exit;
 			# This option is reserved for the script, to show image previews
 			# Not to be used explicitly
 			;;
 
-		N)	enable_noti=${optarg:-1} ;;
+		N|notification)
+			enable_noti=${optarg:-1}
+			is_non_number "$enable_noti" && bad_opt_arg "--notification=" "$enable_noti" ;;
+
+		add-subs) create_subs ;;
+
+		upload-time) upload_date_filter=$optarg ;;
+		last-hour|today|this-week|this-month|this-year) upload_date_filter="$opt" ;;
+
+		upload-sort) sort_by_filter=$optarg ;;
+		upload-date|view-count|rating) sort_by_filter=$opt ;;
+
+		filter-id|sp) sp=$optarg ;;
+
+		preview-side) export PREVIEW_SIDE=$optarg ;;
+
+		update) update_ytfzf "master" ;;
+		update-unstable) update_ytfzf "${optarg-development}" ;;
 
 		*)
-			usageinfo
-			exit 2 ;;
+			if [ "$exit_on_opt_error" -eq 1 ]; then
+			    usageinfo
+			    exit 2
+			fi ;;
 	esac
 	unset opt optarg
 }
 
 
 while getopts "LhDmdfxHaArltSsvNTn:U:-:" OPT; do
+	# to parse extra-options in conf.sh
+	[ "$OPT" = "-" ] && OPT="${OPTARG%%=*}" && OPTARG="${OPTARG#*=}"
+	#when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
+	[ "$OPTARG" = "$OPT" ] && OPTARG=""
 	# to parse extra-options in conf.sh ( and don't parse during thumbnail call)
 	if function_exists "on_opt_parse"; then
-	    [ "$OPT" = "-" ] && on_opt_parse "${OPTARG%%=*}" "${OPTARG#*=}" || on_opt_parse "$OPT" "$OPTARG"
+	    on_opt_parse "$OPT" "$OPTARG"
 	fi
 	parse_opt "$OPT" "$OPTARG"
 done
