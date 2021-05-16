@@ -630,7 +630,7 @@ scrape_channel () {
 
 	videos_json=$(printf "%s" "$videos_json" | jq '.[0:'$sub_link_count']')
 	[ $custom_videos_data -eq 0 ] && videos_data=$(get_video_data "$videos_json")
-	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json"
+	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$yt_json"
 
 	#if there aren't videos
 	if [ -z "$videos_data" ]; then

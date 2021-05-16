@@ -353,6 +353,7 @@ on_opt_parse () {
 #this function is called after videos_data has been set and ytfzf knows it's been set
 #$1 will be videos_data
 #$2 will be videos_json
+#$3 will be yt_json
 on_video_data_gotten () {
     return 0
 }
@@ -403,7 +404,7 @@ alphabetical () {
     data_sort_key () {
 	sort_by="${1#|}"
 	#since sort by is the title of the video, not the upload date, use %s
-	printf "%d" "$(date -d "${sort_by}" '+%s')"
+	printf "%s" "$sort_by"
 	unset sort_by
     }
     data_sort_fn () {
