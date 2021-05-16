@@ -10,6 +10,9 @@
 #  ENV VARIABLES  #
 ###################
 
+#this variable should be set somewhere other than here or it will not work
+YTFZF_CONFIG_DIR=$HOME/.config/ytfzf
+
 #each variable below can be set here, or using export
 #when setting them through export, use the variable in parentheses instead
 #variables set through export will override the ones set here
@@ -200,6 +203,27 @@ current_file="$cache_dir/ytfzf_cur"
 #the folder where thumbnails are cached
 thumb_dir="$cache_dir/thumb"
 
+#the file where subscriptions are stored
+subscriptions_file=$YTFZF_CONFIG_DIR/subscriptions
+
+#####################
+#     SCRIPTING     #
+#####################
+
+#############
+# Variables #
+#############
+
+#when an invlaid opt is given, eg: --fjiewoapjfewioa it will throw an error and exit when set to 1, otherwise ignore the error
+exit_on_opt_error=1
+
+#when set to 1 it means that you have given data for videos_data and ytfzf will not get the data itself
+custom_videos_data=0
+
+#############
+# Functions #
+#############
+
 #when using the menu, use the text printed in this function to display all the info, $shorturl must be present in order to work
 #available default colors (note: they are be bolded):
     #c_red
@@ -274,5 +298,26 @@ thumbnail_video_info_text () {
     #$1 will be -
     #$2 will be link-count=2
 on_opt_parse () {
+    return 0
+}
+
+
+#this function is called after videos_data has been set and ytfzf knows it's been set
+#$1 will be videos_data
+#$2 will be videos_json
+on_video_data_gotten () {
+    return 0
+}
+
+
+#this function is called after the search query is gotten, including the initial search used in the command
+    #eg: ytfzf search query
+#$1 will be the search query
+on_get_search () {
+    return 0
+}
+
+#this function will be called when all instances of ytfzf are closed, and the last one is closed
+on_exit () {
     return 0
 }
