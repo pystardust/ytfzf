@@ -963,8 +963,8 @@ if ! function_exists "data_sort_key"; then
     data_sort_key () {
 	sort_by="$1"
 	line="$2"
-	#prepend the date to the front of the line
-	printf "%d\t%s\n" "$(date -d "${sort_by}" '+%s')" "$line"
+	#print the data that should be sorted by
+	printf "%d" "$(date -d "${sort_by}" '+%s')"
 	unset sort_by line
     }
 fi
@@ -993,7 +993,7 @@ sort_video_data_fn () {
 		set -- $line
 		sort_by="$(parse_value_for_key $line)"
 		#run the key function to get the value to sort by
-		data_sort_key "$sort_by" "$line"
+		printf "%s\t%s\n" "$(data_sort_key "$sort_by" "$line")" "$line"
 	done | data_sort_fn | cut -f2-
 	unset IFS line sort_by
 }
