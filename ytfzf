@@ -1158,7 +1158,7 @@ parse_opt () {
 			is_non_number "$sort_videos_data" && bad_opt_arg "--sort=" "$sort_videos_data" ;;
 		sort-name)
 			sort_videos_data=1
-			sort_name="${opt#*=}" ;;
+			sort_name="$optarg" ;;
 
 		S)	
 			scrape="yt_subs" ;;
@@ -1292,7 +1292,7 @@ check_if_url "${search_query:=$*}"
 #format the menu screen
 format_menu
 
-[ -n "$sort_name" ] && eval "$sort_name"
+[ -n "$sort_name" ] && $sort_name
 unset sort_name
 
 case $scrape in

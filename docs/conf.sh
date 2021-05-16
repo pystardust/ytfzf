@@ -380,9 +380,8 @@ data_sort_key () {
     line="$2"
     #the format must be *\t%s\n the first format can be anything
 
-    #the first value to print must be the value to be sorting by
-    #the second value must be the line
-    printf "%d\t%s\n" "$(date -d "${sort_by}" '+%s')" "$line"
+    #this must return the value to sort by
+    printf "%d" "$(date -d "${sort_by}" '+%s')"
     unset sort_by line
 }
 
