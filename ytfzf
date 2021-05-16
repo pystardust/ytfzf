@@ -77,6 +77,8 @@ search_prompt=${search_prompt-Search Youtube: }
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 #whether or not to show errors when an invalid option is passed
 exit_on_opt_error=${exit_on_opt_error-1}
+#whether or not you provided videos_data
+custom_videos_data=0
 
 #Opt variables (can also be set in config)
 #use $YTFZF_EXT_MENU (same as -D)
@@ -567,7 +569,7 @@ get_video_data () {
 	# outputs tab and pipe separated fields: title, channel, view count, video length, video upload date, and the video id/url
 	# from the videos_json
 	printf "%s" "$*" |\
-		jq -r '.[]| "\(.title)'"$tab_space"'|\(.channel)'"$tab_space"'|\(.views)'"$tab_space"'|\(.duration)'"$tab_space"'|\(.date)'"$tab_space"'|\(.videoID)"'
+	    jq -r '.[]| "\(.title)'"$tab_space"'|\(.channel)'"$tab_space"'|\(.views)'"$tab_space"'|\(.duration)'"$tab_space"'|\(.date)'"$tab_space"'|\(.videoID)"'
 }
 
 scrape_channel () {
@@ -620,7 +622,8 @@ scrape_channel () {
 	]')
 
 	videos_json=$(printf "%s" "$videos_json" | jq '.[0:'$sub_link_count']')
-	videos_data=$(get_video_data "$videos_json")
+	[ $custom_videos_data -eq 1 ] && videos_data=$(get_video_data "$videos_json")
+	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json"
 
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "${c_yellow}No results found. Make sure the link ($channel_url) is correct.${c_reset}\n(if this chnanel has not uploaded videos this warning may appear)\n"; exit 1;}
@@ -693,9 +696,10 @@ scrape_yt () {
 		}
 	]')
 
-	videos_data=$(get_video_data "$videos_json")
+	[ $custom_videos_data -eq 1 ] && videos_data=$(get_video_data "$videos_json")
 	#if there aren't videos
 	[ -z "$videos_data" ] &&  { printf "No results found. Try different keywords.\n"; exit 1;}
+	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json"
 
 	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_date)
 
@@ -723,6 +727,7 @@ get_search_query () {
 		fi
 		[ -z "$search_query" ] && exit 0
 	fi
+	function_exists "on_get_search" && on_get_search "$search_query"
 }
 #> To select videos from videos_data
 user_selection () {
@@ -930,7 +935,11 @@ send_notify () {
 		message=$(printf "$video_name\nChannel: $video_channel")
 		video_thumb="$config_dir/default_thumb.png"
 	fi
-	notify-send "Current playing" "$message" -i "$video_thumb"
+	if [ $is_download -eq 1 ]; then
+	    notify-send "Downloading..." "$message" -i "$video_thumb"
+	else
+	    notify-send "Current playing" "$message" -i "$video_thumb"
+	fi
 	unset number_video video_name video_channel message video_thumb
 }
 
@@ -1242,6 +1251,7 @@ esac
 
 
 while true; do
+	custom_videos_data=0
 	user_selection
 	format_user_selection
 	print_data
