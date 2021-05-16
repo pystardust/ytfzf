@@ -326,11 +326,11 @@ format_menu () {
 	if [ "$is_ext_menu" -eq 0 ]; then
 		#dep_ck fzf here because it is only necessary to use here
 		dep_ck "fzf"
-		menu_command='column -t -s "$tab_space" | fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 $FZF_DEFAULT_OPTS'
+		menu_command="column -t -s "$tab_space" | fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 $FZF_DEFAULT_OPTS"
 		format_fzf
 	else
 		# Dmenu doesn't render tabs so removing it
-		menu_command='tr -d "$tab_space" | '"$YTFZF_EXTMENU"
+		menu_command="tr -d "$tab_space" | ""$YTFZF_EXTMENU"
 		format_ext_menu
 	fi
 }
@@ -618,7 +618,7 @@ scrape_channel () {
 	    }
 	]')
 
-	videos_json=$(printf "%s" "$videos_json" | jq '.[0:'$sub_link_count']')
+	videos_json=$(printf "%s" "$videos_json" | jq '.[0:'"$sub_link_count"']')
 	videos_data=$(get_video_data "$videos_json")
 
 	#if there aren't videos
