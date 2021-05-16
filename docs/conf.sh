@@ -74,6 +74,10 @@ audio_player="mpv --no-video"
 #(YTFZF_ENABLE_FZF_DEFAULT_OPTS)
 enable_fzf_default_opts=0
 
+#stores the langauge for the auto generated subtitltes
+#(YTFZF_SELECTED_SUB)
+selected_sub=""
+
 ###################
 #  OPT VARIABLES  #
 ###################
