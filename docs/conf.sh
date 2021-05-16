@@ -206,24 +206,6 @@ thumb_dir="$cache_dir/thumb"
 #the file where subscriptions are stored
 subscriptions_file=$YTFZF_CONFIG_DIR/subscriptions
 
-#####################
-#     SCRIPTING     #
-#####################
-
-#############
-# Variables #
-#############
-
-#when an invlaid opt is given, eg: --fjiewoapjfewioa it will throw an error and exit when set to 1, otherwise ignore the error
-exit_on_opt_error=1
-
-#when set to 1 it means that you have given data for videos_data and ytfzf will not get the data itself
-custom_videos_data=0
-
-#############
-# Functions #
-#############
-
 #when using the menu, use the text printed in this function to display all the info, $shorturl must be present in order to work
 #available default colors (note: they are be bolded):
     #c_red
@@ -283,6 +265,63 @@ thumbnail_video_info_text () {
          printf "\n${c_blue}Date         ${c_cyan}%s" "$date"
 }
 
+
+#this function is called when a video is selected in the menu to send a notification
+#available variables
+    #$videos_selected_count: the number of videos selected
+    #$video_title
+    #$video_channel
+    #$video_views
+    #$video_duration
+    #$video_date (the upload date)
+    #$video_shorturl (the id of the video)
+
+#with video_title, channel, views, duration, date, and shorturl, be sure to use this syntax
+    # ${var#|}, that way the extra | at the start will be removed
+send_select_video_notif () {
+         #if show thumbnails and videos_selected is equal to 1   
+         if [ "$show_thumbnails" -eq 1 ] && [ "$videos_selected_count" -eq 1 ]; then
+		#get the thumbnail of the video which was downloaded in $thumb_dir/$video_shorturl
+                 video_thumb="$thumb_dir/${video_shorturl#|}.png"                                                   
+                 #message=$title\nchannel: $channel
+                 message="${video_title#|}\nChannel: ${video_channel#|}"
+         #if more than 1 video is selected
+         elif [ $videos_selected_count -gt 1 ]; then
+		#use the default thbumbnail provided in config, (notify-send wont throw an error if this does not exist)
+                 video_thumb="$config_dir/default_thumb.png"
+                 message="Added $videos_selected_count video to play queue"
+         else
+                 #${var#|} removes the extra | at the start of the text 
+                 message="${video_title#|}\nChannel: ${video_channel#|}"
+                 video_thumb="$config_dir/default_thumb.png"
+         fi
+	 #say downloading instead of currently playing when downloading
+         if [ $is_download -eq 1 ]; then
+             notify-send "Downloading" "$message" -i "$video_thumb"
+         else
+             notify-send "Current playing" "$message" -i "$video_thumb"
+         fi
+	 unset message video_thumb
+}
+
+
+#####################
+#     SCRIPTING     #
+#####################
+
+#############
+# Variables #
+#############
+
+#when an invlaid opt is given, eg: --fjiewoapjfewioa it will throw an error and exit when set to 1, otherwise ignore the error
+exit_on_opt_error=1
+
+#when set to 1 it means that you have given data for videos_data and ytfzf will not get the data itself
+custom_videos_data=0
+
+#############
+# Functions #
+#############
 
 #gets called when an opt gets passed
 #$1 will be the opt name
