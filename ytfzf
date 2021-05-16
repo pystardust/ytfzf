@@ -168,18 +168,18 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -D, --ext-menu                         Use external menu(default dmenu) instead of fzf
      -H, --choose-from-history              Choose from history
      -x, --clear-history                    Delete history
-     -m, --audio-only     <search-query>    Audio only (for music)
-     -d, --download       <search-query>    Download to current directory
-     -f                   <search-query>    Show available formats before proceeding
-     -a, --auto-select    <search-query>    Auto play the first result, no selector
-     -r  --random-select  <search-query>    Auto play a random result, no selector
-     -A, --select-all     <search-query>    Selects all results
-     -n, --link-count=    <link-count>      To specify number of videos to select with -a, -r
-     -l, --loop           <search-query>    Loop: prompt selector again after video ends
-     -s, --search-again   <search-query>    After the video ends make another search
-     -L, --link-only      <search-query>    Prints the selected URL only, helpful for scripting
-     -T, --trending=      <gaming/music/movies>      The trending tab, using --trending= you can choose a specific tab
-     --preview-side=      <left/right/top/bottom>    The side of the screen to show thumbnails
+     -m, --audio-only                       Audio only (for music)
+     -d, --download                         Download to current directory
+     -f                                     Show available formats before proceeding
+     -a, --auto-select                      Auto play the first result, no selector
+     -r  --random-select                    Auto play a random result, no selector
+     -A, --select-all                       Selects all results
+     -n, --link-count=<link-count>          To specify number of videos to select with -a, -r
+     -l, --loop                             Loop: prompt selector again after video ends
+     -s, --search-again                     After the video ends make another search
+     -L, --link-only                        Prints the selected URL only, helpful for scripting
+     -T, --trending=<gaming/music/movies>   The trending tab, using --trending= you can choose a specific tab
+     --preview-side=<left/right/top/bottom> The side of the screen to show thumbnails
      --subt                                 Select auto-generated subtitles
      --sort                                 Sorts videos by latest upload date
 
@@ -206,13 +206,13 @@ all_help_info () {
      --add-subs				  generate a subscriptions file with subscriptions.json that you can get from google
                                           visit https://github.com/FreeTubeApp/FreeTube/wiki/Importing-Your-YouTube-Subscriptions for more info
   Filters: different ways to filter videos in search
-     --upload-time=     <time-range>      Time range can be one of,
+     --upload-time=<time-range>           Time range can be one of,
                                           last-hour, today, this-week, this-month, this-year
                                           Filters can go directly: --today
-     --upload-sort=     <sort-filter>     The filter to sort the videos can be one of
+     --upload-sort=<sort-filter>          The filter to sort the videos can be one of
                                           upload-date, view-count, rating
                                           Filters can go directly: --upload-date
-     --filter-id=       <filter>          The id of the filter to use for video results
+     --filter-id=<filter>                 The id of the filter to use for video results
          A filter id can be found by going to Youtube searching, filtering how you want
          Then taking the value of the &sp= part of the url
          Filters may not work especially when the filter sorts for non-videos
@@ -1102,7 +1102,7 @@ parse_opt () {
 
 		l|loop)
 			enable_loop=${optarg:-1}
-			is_non_number "$YTFZF_LOOP" && bad_opt_arg "--loop=" "$enable_loop" ;;
+			is_non_number "$enable_loop" && bad_opt_arg "--loop=" "$enable_loop" ;;
 
 		t|show-thumbnails)
 			show_thumbnails=${optarg:-1}
@@ -1125,9 +1125,9 @@ parse_opt () {
 			auto_caption=${optarg:-1}
 			is_non_number "$auto_caption" && bad_opt_arg "--subt=" "$auto_caption" ;;
 
-		L|show-link-only)
+		L|link-only)
 			show_link_only=${optarg:-1}
-			is_non_number "$show_link_only" && bad_opt_arg "--show-link-only=" "$show_link_only" ;;
+			is_non_number "$show_link_only" && bad_opt_arg "--link-only=" "$show_link_only" ;;
 
 		n|link-count)
 			link_count="$optarg"
@@ -1145,7 +1145,7 @@ parse_opt () {
 		add-subs) create_subs ;;
 
 		upload-time) upload_date_filter=$optarg ;;
-		last-hour|today|this-week|this-month|this-year) upload_date_filter="$opt" ;;
+		last-hour|today|this-week|this-month|this-year) upload_date_filter=$opt ;;
 
 		upload-sort) sort_by_filter=$optarg ;;
 		upload-date|view-count|rating) sort_by_filter=$opt ;;
@@ -1169,13 +1169,14 @@ parse_opt () {
 
 while getopts "LhDmdfxHaArltSsvNTn:U:-:" OPT; do
 	# to parse extra-options in conf.sh
-	[ "$OPT" = "-" ] && OPT="${OPTARG%%=*}" && OPTARG="${OPTARG#*=}"
-	#when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
-	[ "$OPTARG" = "$OPT" ] && OPTARG=""
-	# to parse extra-options in conf.sh ( and don't parse during thumbnail call)
-	if function_exists "on_opt_parse"; then
-	    on_opt_parse "$OPT" "$OPTARG"
+	# when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
+	if [ "$OPT" = "-" ]; then
+		OPT=${OPTARG%%=*}
+		OPTARG=${OPTARG#*=}
+		[ "$OPTARG" = "$OPT" ] && OPTARG=""
 	fi
+	# to parse extra-options in conf.sh ( and don't parse during thumbnail call)
+	function_exists "on_opt_parse" && on_opt_parse "$OPT" "$OPTARG"
 	parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
