@@ -801,7 +801,7 @@ get_sub_lang () {
         #Gets the auto generated subs and stores them in a file
         sub_list=$(youtube-dl --list-subs  --write-auto-sub "$selected_urls" | sed '/Available subtitles/,$d' | awk '{print $1}' | sed '1d;2d;3d')
         if [ -n "$sub_list" ]; then
-            [ -n "$YTFZF_SELECTED_SUB" ] ||  YTFZF_SELECTED_SUB=$(printf '%s' "$sub_list" | eval "$menu_command") &&  youtube-dl  --sub-lang $YTFZF_SELECTED_SUB  --write-auto-sub --skip-download "$selected_urls" -o /tmp/ytfzf && YTFZF_SUBT_NAME="--sub-file=/tmp/ytfzf.$YTFZF_SELECTED_SUB.vtt" || printf "Auto generated subs not available."
+            [ -n "$YTFZF_SELECTED_SUB" ] ||  YTFZF_SELECTED_SUB=$(printf '%s' "$sub_list" | eval "$menu_command") &&  youtube-dl  --sub-lang "$YTFZF_SELECTED_SUB"  --write-auto-sub --skip-download "$selected_urls" -o /tmp/ytfzf && YTFZF_SUBT_NAME="--sub-file=/tmp/ytfzf.$YTFZF_SELECTED_SUB.vtt" || printf "Auto generated subs not available."
         fi
 	unset sub_list
     fi
@@ -866,9 +866,9 @@ delete_thumbnails () {
 }
 #> Save and clean up before script exits
 save_before_exit () {
-	[ $is_url -eq 1 ] && exit
-	[ $YTFZF_HIST -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
-	[ $YTFZF_CUR -eq 1 ] && printf "" > "$current_file" ;
+	[ "$is_url" -eq 1 ] && exit
+	[ "$YTFZF_HIST" -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
+	[ "$YTFZF_CUR" -eq 1 ] && printf "" > "$current_file" ;
 }
 
 
@@ -916,13 +916,13 @@ clear_history () {
 }
 
 send_notify () {
-	number_video=$(printf "%s\n" "$*" | wc -l)
-	video_name=$(printf "%s" "$*" | cut -d'|' -f1 )
-	video_channel=$(printf "%s" "$*" | cut -d'|' -f2)
+	number_video=$(printf '%s\n' "$*" | wc -l)
+	video_name=$(printf '%s' "$*" | cut -d'|' -f1 )
+	video_channel=$(printf '%s' "$*" | cut -d'|' -f2)
 	if [ "$show_thumbnails" -eq 1 ] && [ "$number_video" -eq 1 ]; then
-		video_thumb="$thumb_dir/$(printf "%s" "$selected_data" | cut -d'|' -f6).png"
+		video_thumb="$thumb_dir/$(printf '%s' "$selected_data" | cut -d'|' -f6).png"
 		message=$(printf "$video_name\nChannel: $video_channel")
-	elif [ $number_video -gt 1 ]; then
+	elif [ "$number_video" -gt 1 ]; then
 		video_thumb="$config_dir/default_thumb.png"
 		message="Added $number_video video to play queue"
 	else
@@ -957,7 +957,7 @@ sort_video_data_date () {
 	while IFS= read -r _VLine
 	do
 		IFS="$tab_space"
-		set -- $_VLine
+		set -- "$_VLine"
 		_Date=${5#|}
 		_Date=${_Date#Streamed}
 		printf "%d\t%s\n" "$(date -d "${_Date}" '+%s')" "$_VLine"
@@ -969,7 +969,7 @@ scrape_subscriptions () {
 	# clear the subfile, all subscriptions data will be dumped into this file
 	: > "$tmp_video_data_file"
 
-	[ $sort_videos_data -eq 1 ] && fancy_subscriptions_menu=0
+	[ "$sort_videos_data" -eq 1 ] && fancy_subscriptions_menu=0
 
 	while IFS= read -r url; do
 		scrape_channel "$url" &
@@ -981,7 +981,7 @@ scrape_subscriptions () {
 	"$subscriptions_file")
 	EOF
 	wait
-	if [ $sort_videos_data -eq 1 ]; then
+	if [ "$sort_videos_data" -eq 1 ]; then
 		videos_data=$(sort_video_data_date < "$tmp_video_data_file")
 	else
 		videos_data=$(cat "$tmp_video_data_file")
@@ -1001,14 +1001,14 @@ create_subs () {
     fi
 
     # start fresh
-    : > $config_dir/subscriptions
+    : > "$config_dir"/subscriptions
 
     # check how many subscriptions there are in the file
     sublength=$( jq '. | length' < "$yt_sub_import_file" )
 
     for i in $( seq 0 $((sublength-1)) ); do
 
-        channelInfo=$(jq --argjson index ${i} '[ "https://www.youtube.com/channel/" + .[$index].snippet.resourceId.channelId + "/videos", "#" + .[$index].snippet.title ]' < "$yt_sub_import_file")
+        channelInfo=$(jq --argjson index ${i} '[ "https://www.youtube.com/channel/" + .["$index"].snippet.resourceId.channelId + "/videos", "#" + .["$index"].snippet.title ]' < "$yt_sub_import_file")
 	printf "%s\n" "$(printf "%s" "$channelInfo" | tr -d '[]"\n,')" >> "$subscriptions_file"
 
     done
@@ -1207,23 +1207,23 @@ done
 shift $((OPTIND-1))
 
 #used for thumbnail previews in ueberzug
-if [ $is_ext_menu -eq 0 ]; then
+if [ "$is_ext_menu" -eq 0 ]; then
 	export TTY_LINES=$(tput lines)
  	export TTY_COLS=$(tput cols)
 fi
 
 #if both are true, it defaults to using fzf, and if fzf isnt installed it will throw an error
 #so print this error instead and set $show_thumbnails to 0
-if [ $is_ext_menu -eq 1 -a $show_thumbnails -eq 1 ]; then
+if [ "$is_ext_menu" -eq 1 ] && [ "$show_thumbnails" -eq 1 ]; then
 	if ! notify-send "Currently thumbnails do not work in external menus" 1> /dev/null 2>&1; then
 	    printf "\033[31mCurrently thumbnails do not work in external menus\033[0m\n"
 	fi
 	show_thumbnails=0
 fi
 
-#if stdin is given and no input (including -) is given, throw error
-#also make sure its not reading from ext_menu
-if [ ! -t 0 ] && [ -z "$*" ] && [ $is_ext_menu -eq 0 ]; then
+# If stdin is given and no input (including -) is given, throw error
+# Also make sure its not reading from ext_menu
+if [ ! -t 0 ] && [ -z "$*" ] && [ "$is_ext_menu" -eq 0 ]; then
 	print_error "\033[31mERROR[#04]: Use - when reading from stdin\033[0m\n"
 	exit 2
 #read stdin if given
@@ -1236,12 +1236,11 @@ elif [ "$*" = "-" ]; then
 fi
 check_if_url "${search_query:=$*}"
 
-# If in auto select mode dont download thumbnails
-[ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0;
+# If in auto select mode don't download thumbnails
+[ "$auto_select" -eq 1 ] || [ "$random_select" -eq 1 ] && show_thumbnails=0;
 
-#format the menu screen
+# Format the menu screen
 format_menu
-
 
 case $scrape in
 	"trending")
@@ -1276,13 +1275,13 @@ while true; do
 	save_before_exit
 
 	#if looping and searching_again arent on then exit
-	if [ $YTFZF_LOOP -eq 0 ] && [ $search_again -eq 0 ] ; then
+	if [ "$YTFZF_LOOP" -eq 0 ] && [ "$search_again" -eq 0 ] ; then
 		delete_thumbnails
 		exit
 	fi
 
 	#if -s was specified make another search query
-	if [ $search_again -eq 1 ]; then
+	if [ "$search_again" -eq 1 ]; then
 		search_query=
         	get_search_query
 		scrape_yt "$search_query"
