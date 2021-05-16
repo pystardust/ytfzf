@@ -880,9 +880,9 @@ session_is_running () {
 	[ -d /proc/"$pid" ] && session_count=$(( session_count + 1 ))
     done < "$pid_file"
     if [ $session_count -eq 1 ]; then
-	return 0
-    else 
 	return 1
+    else 
+	return 0
     fi
 }
 #> removes tmp files and clutter
@@ -895,7 +895,6 @@ clean_up () {
 }
 #> Saves data before exiting
 save_before_exit () {
-	clean_up
 	[ $is_url -eq 1 ] && exit
 	[ $enable_hist -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
 	[ $enable_cur -eq 1 ] && printf "" > "$current_file" ;
