@@ -121,6 +121,8 @@ is_audio_only=${is_audio_only-0}
 is_download=0
 #the tab for trending, empty is the default page
 trending_tab="${trending_tab-}"
+#the sort name, if exists will be called and it will set functions for sorting
+sort_name="${sort_name-}"
 # misc
 tab_space=$(printf '\t')
 
@@ -186,6 +188,9 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      --preview-side=<left/right/top/bottom> The side of the screen to show thumbnails
      --subt                                 Select auto-generated subtitles
      --sort                                 Sorts videos by latest upload date
+     --sort-name=         <function>        The function must contain the values of
+                                            data_sort_key, parse_value_for_key, data_sort_fn,
+					    see the example sort-name in the example config
 
   Use - instead of <search-query> for stdin
 
@@ -711,7 +716,7 @@ scrape_yt () {
 	fi
 	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json"
 
-	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_date)
+	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_fn)
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	# wait for thumbnails to download
@@ -923,7 +928,7 @@ get_history () {
 		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 		#removes duplicate values from $history_data
 		videos_data=$(printf "%s" "$hist_data" | uniq )
-		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_date)"
+		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_fn)"
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n";
 		exit;
@@ -993,16 +998,44 @@ update_ytfzf () {
 	exit
 }
 
-sort_video_data_date () {
-	while IFS= read -r _VLine
+#gives a value to sort by (this will give the unix time the video was uploaded)
+if ! function_exists "data_sort_key"; then
+    data_sort_key () {
+	sort_by="$1"
+	line="$2"
+	#print the data that should be sorted by
+	printf "%d" "$(date -d "${sort_by}" '+%s')"
+	unset sort_by line
+    }
+fi
+#gets the value to be put into data_sort_key
+if ! function_exists "parse_value_for_key"; then
+    parse_value_for_key () {
+	#get the initial value
+	sort_by=${5#|}
+	#remove non-date part
+	sort_by=${sort_by#Streamed}
+	#"return" the value
+	printf "%s" "$sort_by"
+	unset sort_by
+    }
+fi
+#the function to use for sorting
+if ! function_exists "data_sort_fn"; then
+    data_sort_fn () {
+	sort -nr
+    }
+fi
+sort_video_data_fn () {
+	while IFS= read -r line
 	do
 		IFS="$tab_space"
-		set -- $_VLine
-		_Date=${5#|}
-		_Date=${_Date#Streamed}
-		printf "%d\t%s\n" "$(date -d "${_Date}" '+%s')" "$_VLine"
-	done | sort -nr | cut -f2-
-	unset IFS _VLine _Date
+		set -- $line
+		sort_by="$(parse_value_for_key $line)"
+		#run the key function to get the value to sort by
+		printf "%s\t%s\n" "$(data_sort_key "$sort_by" "$line")" "$line"
+	done | data_sort_fn | cut -f2-
+	unset IFS line sort_by
 }
 
 scrape_subscriptions () {
@@ -1022,7 +1055,7 @@ scrape_subscriptions () {
 	EOF
 	wait
 	if [ $sort_videos_data -eq 1 ]; then 
-		videos_data=$(sort_video_data_date < "$tmp_video_data_file")
+		videos_data=$(sort_video_data_fn < "$tmp_video_data_file")
 	else
 		videos_data=$(cat "$tmp_video_data_file")
 	fi
@@ -1123,6 +1156,9 @@ parse_opt () {
 		sort)
 			sort_videos_data=${optarg:-1}
 			is_non_number "$sort_videos_data" && bad_opt_arg "--sort=" "$sort_videos_data" ;;
+		sort-name)
+			sort_videos_data=1
+			sort_name="${opt#*=}" ;;
 
 		S)	
 			scrape="yt_subs" ;;
@@ -1256,6 +1292,8 @@ check_if_url "${search_query:=$*}"
 #format the menu screen
 format_menu
 
+[ -n "$sort_name" ] && eval "$sort_name"
+unset sort_name
 
 case $scrape in
 	"trending")
