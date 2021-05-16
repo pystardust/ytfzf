@@ -822,14 +822,14 @@ open_player () {
 			printf "Opening Player: %s\n" "$video_player $*"
 			$video_player "$@"  $YTFZF_SUBT_NAME
 		else
-			printf "Opening Player: %s\n" "$video_player_format'$video_pref' $*"
-			$video_player_format"'$video_pref'"  "$@"  $YTFZF_SUBT_NAME || [ $? -eq 4 ] || video_pref= open_player "$@"
+			printf "Opening Player: %s\n" "$video_player_format$video_pref $*"
+			$video_player_format"$video_pref"  "$@"  $YTFZF_SUBT_NAME || [ $? -eq 4 ] || video_pref= open_player "$@"
 		fi
 	elif [ $is_download -eq 1 ]; then
 		if [ -z "$video_pref" ]; then
 			youtube-dl "$@"  $YTFZF_SUBT_NAME
 		else
-			youtube-dl -f "'$video_pref'"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
+			youtube-dl -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
 		fi
 	fi
 }
