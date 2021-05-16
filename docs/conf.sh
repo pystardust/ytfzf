@@ -316,7 +316,7 @@ alphabetical () {
 	sort_by="$1"
 	line="$2"
 	#since sort by is the title of the video, not the upload date, use %s
-	printf "%s\t%s\n" "$sort_by" "$line"
+	printf "%d" "$(date -d "${sort_by}" '+%s')"
 	unset sort_by line
     }
     data_sort_fn () {
