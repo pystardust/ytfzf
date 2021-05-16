@@ -373,32 +373,19 @@ on_exit () {
 # Sort Data #
 #############
 
+#returns the value that it will use to sort
+#parameters
+    #$1: video title
+    #$2: video channel
+    #$3: length of video
+    #$4: view count
+    #$5: upload date
+    #$6: video id
+#be sure to use ${var#|} to get rid of the extra | at the start
 data_sort_key () {
-    #the first argument will be the value given from parse_value_for_key
-    #the second argument wil be the entire line
-    sort_by="$1"
-    line="$2"
-    #the format must be *\t%s\n the first format can be anything
-
+    sort_by="${5#|}"
     #this must return the value to sort by
     printf "%d" "$(date -d "${sort_by}" '+%s')"
-    unset sort_by line
-}
-
-parse_value_for_key () {
-    #get the initial value (each value's first character will be a |, this removes it)
-    #there are a few different values passed into this function
-    #1: the video title
-    #2: the channel
-    #3: the length of the video
-    #4: view count
-    #5: the upload date
-    #6: the video id
-    sort_by=${5#|}
-    #remove non-date part of the upload date
-    sort_by=${sort_by#Streamed}
-    #"return" the value
-    printf "%s" "$sort_by"
     unset sort_by
 }
 
@@ -408,22 +395,15 @@ data_sort_fn () {
     sort -nr
 }
 
-#a sort-name is a function that sets the values of data_sort_key, parse_value_for_key and data_sort_fn
+#a sort-name is a function that sets the values of data_sort_key and data_sort_fn
 #it only needs to set 1 or more of those, however it is better to set all 3 so you know what is happening
 
 alphabetical () {
-    parse_value_for_key () {
-	#to get the title we use the first argument, not the 5th
-	sort_by=${1#|}
-	printf "%s" "$sort_by"
-	unset sort_by
-    }
     data_sort_key () {
-	sort_by="$1"
-	line="$2"
+	sort_by="${1#|}"
 	#since sort by is the title of the video, not the upload date, use %s
 	printf "%d" "$(date -d "${sort_by}" '+%s')"
-	unset sort_by line
+	unset sort_by
     }
     data_sort_fn () {
 	sort
