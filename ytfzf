@@ -635,7 +635,7 @@ scrape_channel () {
 	#if there aren't videos
 	if [ -z "$videos_data" ]; then
 	    printf "${c_yellow}No results found. Make sure the link ($channel_url) is correct.${c_reset}\n(if this chnanel has not uploaded videos this warning may appear)\n"
-	    save_before_exit
+	    clean_up
 	    exit 1
 	fi
 	if [ $fancy_subscriptions_menu -eq 1 ]; then
@@ -711,7 +711,7 @@ scrape_yt () {
 	#if there aren't videos
 	if [ -z "$videos_data" ]; then
 	    printf "No results found. Try different keywords.\n"
-	    save_before_exit
+	    clean_up
 	    exit 1
 	fi
 	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json"
