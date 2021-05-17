@@ -386,6 +386,7 @@ on_exit () {
 #be sure to use ${var#|} to get rid of the extra | at the start
 data_sort_key () {
     sort_by="${5#|}"
+    sort_bey="${sort_by#Streamed}"
     #this must return the value to sort by
     printf "%d" "$(date -d "${sort_by}" '+%s')"
     unset sort_by

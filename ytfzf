@@ -999,6 +999,7 @@ update_ytfzf () {
 if ! function_exists "data_sort_key"; then
     data_sort_key () {
 	sort_by="${5#|}"
+	sort_by="${sort_by#Streamed}"
 	#print the data that should be sorted by
 	printf "%d" "$(date -d "${sort_by}" '+%s')"
 	unset sort_by
