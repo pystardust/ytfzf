@@ -79,8 +79,6 @@ useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML
 #> config scripting settings
 #whether or not to show errors when an invalid option is passed
 exit_on_opt_error=${exit_on_opt_error-1}
-#whether or not you provided videos_data
-custom_videos_data=0
 
 #Opt variables (can also be set in config)
 #use $YTFZF_EXT_MENU (same as -D)
@@ -629,7 +627,7 @@ scrape_channel () {
 	]')
 
 	videos_json=$(printf "%s" "$videos_json" | jq '.[0:'$sub_link_count']')
-	[ $custom_videos_data -eq 0 ] && videos_data=$(get_video_data "$videos_json")
+	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
 	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$yt_json"
 
 	#if there aren't videos
@@ -706,13 +704,13 @@ scrape_yt () {
 		}
 	]')
 
-	[ $custom_videos_data -eq 0 ] && videos_data=$(get_video_data "$videos_json")
+	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
 	#if there aren't videos
 	if [ -z "$videos_data" ]; then
 	    printf "No results found. Try different keywords.\n"
 	    exit 1
 	fi
-	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json"
+	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$yt_json"
 
 	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_fn)
 
@@ -1303,7 +1301,6 @@ esac
 
 
 while true; do
-	custom_videos_data=0
 	user_selection
 	format_user_selection
 	print_data
@@ -1320,7 +1317,7 @@ while true; do
 
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
-		search_query=
+		unset videos_data search_query
         	get_search_query
 		scrape_yt "$search_query"
 	fi

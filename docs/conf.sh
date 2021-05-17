@@ -325,9 +325,6 @@ thumbnail_video_info_text () {
 #when an invlaid opt is given, eg: --this-is-not-an-option it will throw an error and exit when set to 1, otherwise ignore the error
 exit_on_opt_error=1
 
-#when set to 1 it means that you have given data for videos_data and ytfzf will not get the data itself
-custom_videos_data=0
-
 #############
 # Functions #
 #############
