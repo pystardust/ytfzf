@@ -813,8 +813,6 @@ get_sub_lang () {
 
 open_player () {
 
-	eval set -- "$*"
-
 	if [ $is_audio_only -eq 1 ]; then
 		video_player=$audio_player
 		video_pref="bestaudio"
@@ -823,16 +821,16 @@ open_player () {
 	if [ $is_download -eq 0 ]; then
 		if [ -z "$video_pref" ] || [ $is_audio_only -eq 1 ]; then
 			printf "Opening Player: %s\n" "$video_player $*"
-			eval "$video_player" "$@"  "$YTFZF_SUBT_NAME"
+			$video_player "$@"  $YTFZF_SUBT_NAME
 		else
-			printf "Opening Player: %s\n" "$video_player_format'$video_pref' $*"
-			eval "$video_player_format'$video_pref'"  "$@"  "$YTFZF_SUBT_NAME" || [ $? -eq 4 ] || video_pref= open_player "$*"
+			printf "Opening Player: %s\n" "$video_player_format$video_pref $*"
+			$video_player_format"$video_pref"  "$@"  $YTFZF_SUBT_NAME || [ $? -eq 4 ] || video_pref= open_player "$@"
 		fi
 	elif [ $is_download -eq 1 ]; then
 		if [ -z "$video_pref" ]; then
-			eval youtube-dl "$@"  "$YTFZF_SUBT_NAME"
+			youtube-dl "$@"  $YTFZF_SUBT_NAME
 		else
-			eval youtube-dl -f "'$video_pref'"  "$@"  "$YTFZF_SUBT_NAME" || video_pref= open_player "$*"
+			youtube-dl -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
 		fi
 	fi
 }
@@ -844,10 +842,9 @@ play_url () {
 
 	[ "$enable_noti" -eq 1 ] && send_notify "$selected_data" ;
 
-	#> The urls are quoted and placed one after the other for mpv to read
-	player_urls="\"$(printf "%s" "$selected_urls" | awk  'ORS="\" \"" { print }' | sed 's/"$//' | sed 's/ "" / /')"
-
-	open_player "$player_urls"
+	# word splitting on the urls below, -f to remove globbing
+	set -f
+	open_player $selected_urls
 
 	#Delete the temp auto-gen subtitle file
 	[ $auto_caption -eq 1 ] && rm -f "${YTFZF_SUBT_NAME#*=}"
