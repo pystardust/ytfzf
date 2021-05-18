@@ -627,6 +627,7 @@ scrape_channel () {
 	]')
 
 	videos_json=$(printf "%s" "$videos_json" | jq '.[0:'$sub_link_count']')
+	#checks if it's empty in case it was defined in a config function eg: on_get_search
 	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
 	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$yt_json"
 
@@ -704,6 +705,7 @@ scrape_yt () {
 		}
 	]')
 
+	#checks if it's empty in case it was defined in a config function eg: on_get_search
 	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
 	#if there aren't videos
 	if [ -z "$videos_data" ]; then
@@ -1275,8 +1277,9 @@ check_if_url "${search_query:=$*}"
 #format the menu screen
 format_menu
 
-[ -n "$sort_name" ] && $sort_name
-unset sort_name
+#if sort_name is define it will define data_sort_key and data_sort_fn
+#otherwise nothing will happen
+$sort_name
 
 case $scrape in
 	"trending")
