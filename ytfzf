@@ -1016,7 +1016,6 @@ sort_video_data_fn () {
 	while IFS= read -r line
 	do
 		IFS="$tab_space"
-		set -- $line
 		#run the key function to get the value to sort by
 		printf "%s\t%s\n" "$(data_sort_key $line)" "$line"
 	done | data_sort_fn | cut -f2-
