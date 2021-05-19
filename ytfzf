@@ -4,6 +4,12 @@
 #> https://github.com/pystardust/ytfzf
 ######################################
 
+#exit codes
+#0: success
+#1: a general error
+#2: missing dependancy, invalid opt or argument
+#3: invalid argument for opt, error with config
+
 YTFZF_VERSION="1.1.5"
 
 ############################
@@ -171,7 +177,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
                                             Doesn't work with -H -D
      --thumbnail-quality=<0,1>              0: low quality (faster), 1: default
      --thumb-disp-method=<method>           the program to use for displaying images,
-                                            see --help-thumb-display for a list of choices
+                                            see --help-thumb-disp for a list of choices
 
      -N, --notification                     Send notification when playing video
      -D, --ext-menu                         Use external menu(default dmenu) instead of fzf
@@ -510,6 +516,10 @@ EOF
 		printf "\n"
 		chafa --size="${thumb_width}x${thumb_height}" --colors=256 "$IMAGE" ;;
 	    custom)
+		if ! function_exists "handle_display_img"; then
+		    printf "\033[031mERROR[#07]: \033[0m\033[1mhandle_display_img\033[0m is not defined"
+		    exit 3
+		fi
 		handle_display_img "$thumb_width" "$thumb_height" "$thumb_x" "$thumb_y" "$IMAGE" ;;
 	esac
 	unset title channel duration views date shorturl
@@ -730,7 +740,7 @@ scrape_yt () {
 
 	if [ "$scrape" = "trending" ]; then
 	    tab_data="$(get_trending_url_data)"
-	    [ -z "$tab_data" ] && [ -n "$trending_tab" ] && printf "\033[31mERROR[#05]: \033[1m\$trending_tab\033[0m\033[31m must be one of:\n\033[2;39mmusic, gaming, movies\033[0m\n\033[31myou put: \033[1m\"$trending_tab\"\033[0m\n" && exit 2
+	    [ -z "$tab_data" ] && [ -n "$trending_tab" ] && printf "\033[31mERROR[#05]: \033[1m\$trending_tab\033[0m\033[31m must be one of:\n\033[2;39mmusic, gaming, movies\033[0m\n\033[31myou put: \033[1m\"$trending_tab\"\033[0m\n" && exit 3
 	    yt_html=$(get_yt_html "https://www.youtube.com/feed/trending?bp=$tab_data")
 	else
 	    yt_html=$(get_yt_html "https://www.youtube.com/results" "$*")
@@ -1135,8 +1145,8 @@ verify_thumb_disp_method () {
     case "$thumb_disp_method" in
 	ueberzug|jp2a-grey|jp2a-gray|jp2a|jp2a-4|jp2a-8|catimg|custom|chafa|chafa-grey|chafa-gray|chafa-4|chafa-8) ;;
 	*)
-	    print_error "\033[31mERROR[#06]: $thumb_disp_method is not a valid display method\nrun \033[1mytfzf --help-thumb-display\033[0m for more"
-	    exit 2 ;;
+	    print_error "\033[31mERROR[#06]: $thumb_disp_method is not a valid display method\nrun \033[1mytfzf --help-thumb-disp\033[0m for more"
+	    exit 3 ;;
     esac
 }
 
@@ -1153,7 +1163,7 @@ bad_opt_arg () {
 	opt=$1
 	arg=$2
 	printf "%s\n" "$opt requires a numeric arg, but was given \"$arg\""
-	exit 2
+	exit 3
 }
 
 parse_opt () {
@@ -1169,7 +1179,7 @@ parse_opt () {
 			all_help_info
 			exit ;;
 
-		help-thumb-display)
+		help-thumb-disp)
 			thumbnail_display_help_info
 			exit ;;
 
