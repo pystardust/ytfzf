@@ -1154,7 +1154,7 @@ parse_opt () {
 		preview-side) export PREVIEW_SIDE=$optarg ;;
 
 		update) update_ytfzf "master" ;;
-		update-unstable) update_ytfzf "${optarg-development}" ;;
+		update-unstable) update_ytfzf "${optarg:-development}" ;;
 
 		*)
 			if [ "$exit_on_opt_error" -eq 1 ]; then
