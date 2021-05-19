@@ -52,6 +52,7 @@ audio_player=${YTFZF_AUDIO_PLAYER-${audio_player-mpv --no-video}}
 #Stores the language for the auto genereated subtitles
 selected_sub=${YTFZF_SELECTED_SUB-${selected_sub-}}
 
+
 #> Clearing/Enabling fzf_defaults
 #enable/disable the use of FZF_DEFAULT_OPTS
 enable_fzf_default_opts=${YTFZF_ENABLE_FZF_DEFAULT_OPTS-${enable_fzf_default_opts-0}}
@@ -73,7 +74,7 @@ pid_file="$cache_dir/.pid"
 
 #> config settings
 search_prompt=${search_prompt-Search Youtube: }
-#used when getting the html from youtube
+#used when getting the html from YouTube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 #whether or not to show errors when an invalid option is passed
 exit_on_opt_error=${exit_on_opt_error-1}
@@ -97,19 +98,19 @@ show_link_only=${show_link_only-0}
 show_format=${show_format-0}
 #number of links to select with -a or -r (same as -n)
 link_count=${link_count-1}
-#number of videos to show in the subsciption menu
+#number of videos to show in the subscription menu
 sub_link_count=${sub_link_count-10}
 #after video ends, make another search (same as -s)
 search_again=${search_again-0}
 #whether or not to show -----------channel------------ when looking at subscriptions
 fancy_subscriptions_menu=${fancy_subscriptions_menu-1}
-#sort subsciptions subsections based on time instead of channel
+#sort subscriptions subsections based on time instead of channel
 sort_videos_data=${sort_videos_data-0}
 #filter id used when searching
 sp=${sp-}
 #is used to know whether or not scraping the search page is necessary
 scrape=${scrape-yt_search}
-#auto generated caption by youtube with enabled with --subt
+#auto generated caption by YouTube with enabled with --subt
 auto_caption=${auto_caption-0}
 #only play/download the audio if set to 1
 is_audio_only=${is_audio_only-0}
@@ -165,7 +166,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -N, --notification                     Send notification when playing video
                                             Doesn't work with -H -D
      --thumbnail-quality=<0,1>              0: low quality (faster), 1: default
-     -D, --ext-menu                         Use external menu(default dmenu) instead of fzf
+     -D, --ext-menu                         Use external menu (default dmenu) instead of fzf
      -H, --choose-from-history              Choose from history
      -x, --clear-history                    Delete history
      -m, --audio-only                       Audio only (for music)
@@ -237,7 +238,7 @@ all_help_info () {
      YTFZF_CONFIG_FILE='\$YTFZF_CONFIG_DIR/conf.sh'     The configuration file
      YTFZF_LOOP=0                                       1 : loop the selection prompt
      YTFZF_PREF=''                                      22: 720p,  18: 360p (yt-dl formats)
-     YTFZF_CUR=1                                        For status bar bodules
+     YTFZF_CUR=1                                        For status bar modules
      YTFZF_ENABLE_FZF_DEFAULT_OPTS=0                    1 : fzf will use FZF_DEFAULT_OPTS
      YTFZF_SELECTED_SUB=en                              Set default auto caption language (eg. English)
      YTFZF_EXTMENU=' dmenu -i -l 30'
@@ -980,7 +981,7 @@ scrape_subscriptions () {
 	"$subscriptions_file")
 	EOF
 	wait
-	if [ $sort_videos_data -eq 1 ]; then 
+	if [ $sort_videos_data -eq 1 ]; then
 		videos_data=$(sort_video_data_date < "$tmp_video_data_file")
 	else
 		videos_data=$(cat "$tmp_video_data_file")
@@ -1017,7 +1018,7 @@ create_subs () {
 
 is_non_number () {
 	case $1 in
-		(*[!0-9]*|'') 
+		(*[!0-9]*|'')
 			return 0;;
 		(*)
 			return 1;;
