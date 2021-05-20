@@ -52,6 +52,21 @@ video_pref=""
 #(YTFZF_EXTMENU)
 external_menu="dmenu -i -l 30 -p Search:"
 
+#the method to use for displaying thumbnails
+#valid options:
+    #ueberzug
+    #jp2a
+    #jp2a-grey/gray
+    #jp2a-4
+    #jp2a-8
+    #catimg
+    #chafa
+    #chafa-grey/gray
+    #chafa-4
+    #chafa-8
+#(YTFZF_THUMB_DISP_METHOD)
+thumb_disp_method="ueberzug"
+
 #the amount of characters that can fit on a line in the external menu
 #tweek this for better formatting if the external menu looks weird
 #(YTFZF_EXTMENU_LEN)
@@ -327,9 +342,21 @@ exit_on_opt_error=1
 # Functions #
 #############
 
+#this function is called when thumbnail_display_method is custom
+#parameters:
+    #$1: thumb_width
+    #$2: thumb_height
+    #$3: thumb_x
+    #$4: thumb_y
+    #$5: IMAGE (path to the image)
+handle_display_img () {
+    return 0
+}
+
 #gets called when an opt gets passed
-#$1 will be the opt name
-#$2 will be the opt argument
+#paramters
+    #$1 will be the opt name
+    #$2 will be the opt argument
 #eg:
     #ytfzf -a -n2
     #this function will be called twice, on the first time
@@ -346,9 +373,10 @@ on_opt_parse () {
 
 
 #this function is called after videos_data has been set and ytfzf knows it's been set
-#$1 will be videos_data
-#$2 will be videos_json
-#$3 will be yt_json
+#parameters
+    #$1 will be videos_data
+    #$2 will be videos_json
+    #$3 will be yt_json
 on_video_data_gotten () {
     return 0
 }
@@ -356,7 +384,8 @@ on_video_data_gotten () {
 
 #this function is called after the search query is gotten, including the initial search used in the command
     #eg: ytfzf search query
-#$1 will be the search query
+#parameters
+    #$1 will be the search query
 on_get_search () {
     return 0
 }
