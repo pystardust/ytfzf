@@ -64,7 +64,7 @@ printf "" > "$tmp_video_data_file"
 history_file="${history_file-$YTFZF_CACHE/ytfzf_hst}"
 current_file="${current_file-$YTFZF_CACHE/ytfzf_cur}"
 thumb_dir="${thumb_dir-$YTFZF_CACHE/thumb}"
-playlist_dir="${playlist_dir-$YTFZF_CACHE/playlist}"
+playlist_dir="${playlist_dir-$YTFZF_CONFIG_DIR/playlist}"
 #> Stores urls of the video page of channels
 subscriptions_file=${subscriptions_file-$config_dir/subscriptions}
 
@@ -76,6 +76,7 @@ pid_file="$YTFZF_CACHE/.pid"
 
 #> config settings
 search_prompt=${search_prompt-Search Youtube: }
+new_playlist_prompt=${new_playlist_prompt-New playlist name: }
 #used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 
@@ -790,9 +791,8 @@ format_user_selection () {
 
 print_data () {
 	#if one wanted to show both url and selected data, they can
-	[ "$show_link_only" -eq 1 ] && printf "%s\n" "$selected_urls"
-	[ "$show_data_only" -eq 1 ] && printf "%s\n" "$selected_data"
-	exit
+	[ "$show_link_only" -eq 1 ] && printf "%s\n" "$selected_urls" && exit
+	[ "$show_data_only" -eq 1 ] && printf "%s\n" "$selected_data" && exit
 }
 
 get_video_format () {
@@ -937,20 +937,26 @@ send_notify () {
 get_playlist () {
 	#fzf a playlist from list, if in add playlist mode get query when didn't match
 	if [ $YTFZF_PLADD -eq 1 ]; then
-		playlist=$(ls $playlist_dir | fzf -m --prompt="Playlist name: " --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2 --print-query | tail -1) 
+		playlist=$(printf "NEW PLAYLIST\n%s" "$(ls -1 $playlist_dir)" | fzf -m --prompt="Playlist name: " --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space"\t")" --nth=1,2 | tail -1)
+		if [ "$playlist" = "NEW PLAYLIST" ]; then
+		    printf "%s" "$new_playlist_prompt"
+		    read -r playlist
+		fi
 	else
-		playlist=$(ls $playlist_dir | fzf -m --prompt="Playlist name: " --bind change:top --tabstop=1 --layout=reverse --delimiter="$(printf "\t")" --nth=1,2)
+		playlist=$(ls -1 $playlist_dir | fzf -m --prompt="Playlist name: " --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space"\t")" --nth=1,2)
 	fi
 }
+
 add_playlist () {
 	#Create playlist folder if not exist
-	mkdir -p $playlist_dir
+	[ -d "$playlist_dir" ] || mkdir -p $playlist_dir
 	#Create playlist if not exist
 	[ -f $playlist_dir/$playlist ] || touch $playlist_dir/$playlist
 	#Add selected video to playlist
 	[ "$YTFZF_PLADD" -eq 1 ] && printf "%s\n" "$selected_data" >> "$playlist_dir/$playlist"
 	[ "$YTFZF_NOTI" -eq 1 ] && send_notify "$selected_data"
 }
+
 scrape_playlist () {
 	#Get playlist data
 	pl_data="$( sed '1!G; h; $!d' "$playlist_dir/$playlist" )"
@@ -1179,7 +1185,8 @@ parse_opt () {
 
 		N)	YTFZF_NOTI=1 ;;
 
-		P)	YTFZF_PLADD=1; get_playlist ;;
+		P)	YTFZF_PLADD=1
+			get_playlist ;;
 
 		p)	scrape="playlist"; get_playlist ;;
 
