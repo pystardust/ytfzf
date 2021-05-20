@@ -136,6 +136,7 @@ show_link_only=0
 show_data_only=0
 
 #enable/disable showing information such as "downloading thumbnails..." and "scraping youtube..."
+#same as --silent
 silent_mode=0
 
 #enable/disable showing the different video formats
@@ -276,7 +277,6 @@ send_select_video_notif () {
 ###################
 #  VIDEO DISPLAY  #
 ###################
->>>>>>> master
 
 #when using the menu, use the text printed in this function to display all the info, $shorturl must be present in order to work
 #available default colors (note: they are be bolded):

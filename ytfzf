@@ -69,9 +69,9 @@ enable_fzf_default_opts=${YTFZF_ENABLE_FZF_DEFAULT_OPTS-${enable_fzf_default_opt
 [ "$enable_fzf_default_opts" -eq 0 ] && FZF_DEFAULT_OPTS=""
 
 #> files and directories
-history_file="${history_file-$YTFZF_CACHE/ytfzf_hst}"
-current_file="${current_file-$YTFZF_CACHE/ytfzf_cur}"
-thumb_dir="${thumb_dir-$YTFZF_CACHE/thumb}"
+history_file="${history_file-$cache_dir/ytfzf_hst}"
+current_file="${current_file-$cache_dir/ytfzf_cur}"
+thumb_dir="${thumb_dir-$cache_dir/thumb}"
 playlist_dir="${playlist_dir-$YTFZF_CONFIG_DIR/playlist}"
 #> Stores urls of the video page of channels
 subscriptions_file=${subscriptions_file-$config_dir/subscriptions}
@@ -173,9 +173,7 @@ dep_ck "jq" "youtube-dl" "curl"
 ############################
 
 basic_helpinfo () {
-	while IFS= read -r Line; do
-		printf "%s\n" "$Line";
-	done <<EOF
+    printf "
 Usage: ytfzf [OPTIONS...] <search-query>;
   OPTIONS:
      -h, --help                             Show this help text;
@@ -188,8 +186,10 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      --thumb-disp-method=<method>           the program to use for displaying images,
                                             see --help-thumb-disp for a list of choices
 
-     -P --playlist-add    <search-query>    Add video to playlist, create playlist if not exist\n"
-     -p --playlist                          Play query playlist\n" 
+     -P --playlist-add    <search-query>    Add video to playlist
+     -p --playlist                          Play query playlist 
+     --create-playlist                      creates a playlist
+     --delete-playlist                      deletes a playlist
      -N, --notification                     Send notification when playing video
      -D, --ext-menu                         Use external menu(default dmenu) instead of fzf
      -H, --choose-from-history              Choose from history
@@ -219,12 +219,12 @@ Usage: ytfzf [OPTIONS...] <search-query>;
                                             menu and show formats
      ytfzf -fD --choose-from-history        same as above
 
-EOF
+"
 }
 
 all_help_info () {
 	basic_helpinfo
-	printf "%s" "
+	printf "
   Subscriptions: to add a channel to subscptions, copy the channel's video page url
                  and add it to ~/.config/ytfzf/subscriptions. Each url must be on a new line
      -S,  --subs                          Get the latest 10 videos from subscriptions
@@ -563,7 +563,7 @@ download_thumbnails () {
 		}
 	fi
 
-	[ "$silent_mode" -eq 0 ] && printf "Downloading Thumbnails...\n"
+	[ $silent_mode -eq 0 ] && printf "Downloading Thumbnails...\n"
 	thumb_urls=$(printf "%s" "$*" |\
 		jq  -r '.[]|[.thumbs,.videoID]|@tsv' )
 
@@ -879,9 +879,19 @@ format_user_selection () {
 }
 
 print_data () {
+	#tracks whether or not the program should exit
+	e=0
 	#if one wanted to show both url and selected data, they can
-	[ "$show_link_only" -eq 1 ] && printf "%s\n" "$selected_urls" && exit
-	[ "$show_data_only" -eq 1 ] && printf "%s\n" "$selected_data" && exit
+	if [ $show_link_only -eq 1 ]; then
+	    printf "%s\n" "$selected_urls"
+	    e=1
+	fi
+	if [ $show_data_only -eq 1 ]; then
+	    printf "%s\n" "$selected_data"
+	    e=1
+	fi
+	[ $e -eq 1 ] && exit
+	unset e
 }
 
 get_video_format () {
@@ -1027,7 +1037,7 @@ clear_history () {
 	message="${video_title#|}\nChannel: ${video_channel#|}"
 	video_thumb="$config_dir/default_thumb.png"
 
-	[ $is_download -eq 1 ] && head="Downloading" || head="$video_player"
+	[ $is_download -eq 1 ] && head="Downloading" || head="Playing in: $video_player"
 
 	if [ $add_playlist_mode -eq 1 ]; then
 	    head="Playlist: $playlist"
@@ -1044,27 +1054,82 @@ clear_history () {
 	unset head message video_thumb
 }
 
+#handles deleting of playlists
+delete_playlist () {
+    #there is no way to make sure that the user knows \
+    #what they're supposed to put into the prompt in an external menu
+    if [ $is_ext_menu -eq 1 ]; then
+	notify-send "ERROR" "cannot delete playlist in external menu" || printf "\033[31mcannot delete playlist in external menu"
+    fi
+
+    playlist_to_delete="$1"
+    if [ ! -e "$playlist_dir/$playlist" ]; then
+	printf "%s" "\"$playlist\" does not exist"
+	exit 2;
+    fi
+    printf "Are you sure you want to delete \"$playlist_to_delete\" (this is irreversable)? [Y/n]"
+    read -r erase
+    printf "%s" "$erase" | grep -qPo '(?:n|no|N|NO|No|nO)' || rm "$playlist_dir/$playlist"
+    exit
+}
+
+#handles the creation of the playlist
+create_playlist () {
+    #there is no way to make sure that the user knows \
+    #what they're supposed to put into the prompt in an external menu
+    if [ $is_ext_menu -eq 1 ]; then
+	notify-send "ERROR" "cannot create playlist in external menu" || printf "\033[31mcannot create playlist in external menu"
+    fi
+
+    #get the playlists
+    playlists="$(ls --color=never -1 "$playlist_dir")"
+
+    printf "%s" "$new_playlist_prompt"
+    read -r playlist
+
+    #make sure the playlist doesn't already exist
+    while [ -e "$playlist_dir/$playlist" ]; do
+	printf "%s" "\"$playlist\" already exists, would you like to erase it (this is irreversable)? [y/N]"
+	read -r erase
+	if [ "$erase" = "y" ]; then
+	    #erase the playlist
+	    : > "$playlist_dir/$playlist"
+	    break
+	fi
+	printf "%s" "$new_playlist_prompt"
+	read -r playlist
+    done
+}
+
 get_playlist () {
+	# make sure playlists exist
+	if [ -z "$(ls -1 "$playlist_dir")" ]; then
+	    if [ $is_ext_menu -eq 1 ] && notify-send "ERROR" "no playlists exist" ; then
+		exit
+	    else 
+		printf "\033[31m%s\n" "no playlists exist, run ytfzf --create-playlist"
+	    fi
+	    exit
+	fi
 	#fzf a playlist from list, if in add playlist mode get query when didn't match
-	if [ $YTFZF_PLADD -eq 1 ]; then
-		playlist=$(printf "NEW PLAYLIST\n%s" "$(ls -1 $playlist_dir)" | fzf -m --prompt="Playlist name: " --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space"\t")" --nth=1,2 | tail -1)
-		if [ "$playlist" = "NEW PLAYLIST" ]; then
-		    printf "%s" "$new_playlist_prompt"
-		    read -r playlist
-		fi
+	if [ $is_ext_menu -eq 1 ]; then
+	    #pipe playlists in ext menu to select
+	    playlist=$(ls --color=never -1 "$playlist_dir" | $external_menu)
 	else
-		playlist=$(ls -1 $playlist_dir | fzf -m --prompt="Playlist name: " --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space"\t")" --nth=1,2)
+	    #pipe playlists to fzf to select
+	    playlist=$(ls -1 "$playlist_dir" | fzf -m --prompt="Playlist name: " --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space"\t")" --nth=1,2)
 	fi
 }
 
+#handles putting the playlist somwhere and putting data in the playlist
 add_playlist () {
 	#Create playlist folder if not exist
-	[ -d "$playlist_dir" ] || mkdir -p $playlist_dir
+	[ -d "$playlist_dir" ] || mkdir -p "$playlist_dir"
 	#Create playlist if not exist
 	[ -f $playlist_dir/$playlist ] || touch $playlist_dir/$playlist
 	#Add selected video to playlist
-	[ "$YTFZF_PLADD" -eq 1 ] && printf "%s\n" "$selected_data" >> "$playlist_dir/$playlist"
-	[ "$YTFZF_NOTI" -eq 1 ] && send_notify "$selected_data"
+	[ "$add_playlist_mode" -eq 1 ] && printf "%s\n" "$selected_data" >> "$playlist_dir/$playlist"
+	[ "$enable_noti" -eq 1 ] && send_notify "$selected_data"
 }
 
 scrape_playlist () {
@@ -1310,6 +1375,8 @@ parse_opt () {
 			auto_caption=${optarg:-1}
 			is_non_number "$auto_caption" && bad_opt_arg "--subt=" "$auto_caption" ;;
 
+		silent) silent_mode="${optarg:-1}" ;;
+
 		L|link-only)
 			silent_mode=${optarg:-1}
 			show_link_only=${optarg:-1}
@@ -1347,16 +1414,17 @@ parse_opt () {
 		update) update_ytfzf "master" ;;
 		update-unstable) update_ytfzf "${optarg:-development}" ;;
 
-		P|add-playlist)	
-			YTFZF_PLADD=1
-			if [ -z "$optarg" ]; then
-			    get_playlist
-			else
-			    playlist="$optarg"
-			fi
+		create-playlist)
+			[ -z "$optarg" ] && create_playlist || playlist="$optarg"
+			add_playlist_mode=1 ;;
 
-		p|playlist)
-			scrape="playlist"
+		delete-playlist)
+			[ -z "$optarg" ] && get_playlist || playlist="$optarg"
+			delete_playlist "$playlist" ;;
+
+		p|playlist|P|add-playlist)
+			[ "$opt" = "P" ] || [ "$opt" = "add-playlist" ] && add_playlist_mode=1 && is_ext_menu=0
+			[ "$opt" = "p" ] || [ "$opt" = "playlist" ] && scrape="playlist"
 			if [ -z "$optarg" ]; then
 			    get_playlist
 			else
@@ -1372,7 +1440,7 @@ parse_opt () {
 	unset opt optarg
 }
 
-while getopts "LhDmdfxHaArltSsvNTpPn:U:-:" OPT; do
+while getopts "LhDmdfxHaArRltSsvNTpPn:U:-:" OPT; do
 	# to parse extra-options in conf.sh
 	# when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
 	if [ "$OPT" = "-" ]; then
@@ -1459,7 +1527,7 @@ while true; do
 	print_data
 	get_video_format
 	#if in playlist mode, exit after added video to playlist
-	if [ $YTFZF_PLADD -eq 1 ] ; then
+	if [ $add_playlist_mode -eq 1 ] ; then
 	 	add_playlist
 		exit
 	fi
