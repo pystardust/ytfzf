@@ -186,8 +186,8 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      --thumb-disp-method=<method>           the program to use for displaying images,
                                             see --help-thumb-disp for a list of choices
 
-     -P --playlist-add    <search-query>    Add video to playlist
-     -p --playlist                          Play query playlist 
+     -P, --playlist-add                     Add video to playlist
+     -p, --playlist                         Play query playlist 
      --create-playlist                      creates a playlist
      --delete-playlist                      deletes a playlist
      -N, --notification                     Send notification when playing video
@@ -374,7 +374,7 @@ format_fzf () {
 }
 #> Formats the fields depending on which menu is needed. And assigns the menu command.
 format_menu () {
-	if [ "$is_ext_menu" -eq 0 ]; then
+	if [ $is_ext_menu -eq 0 ]; then
 		#dep_ck fzf here because it is only necessary to use here
 		dep_ck "fzf"
 		menu_command='column -t -s "$tab_space" | fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 $FZF_DEFAULT_OPTS'
@@ -552,7 +552,7 @@ video_menu () {
 
 download_thumbnails () {
        #scrapes the urls of the thumbnails of the videos from the adjusted json
-	if [ "$thumbnail_quality" -eq 1 ]; then
+	if [ $thumbnail_quality -eq 1 ]; then
 		image_download () {
 			# higher quality images
 			curl -s "$Url" -G --data-urlencode "sqp=" > "$thumb_dir/$Name.png"
@@ -794,7 +794,7 @@ scrape_yt () {
 	fi
 	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$yt_json"
 
-	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_fn)
+	[ $sort_videos_data -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_fn)
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	# wait for thumbnails to download
@@ -810,7 +810,7 @@ scrape_yt () {
 get_search_query () {
 	#in case no query was provided
 	if [ -z "$search_query" ]; then
-		if [ "$is_ext_menu" -eq 1 ]; then
+		if [ $is_ext_menu -eq 1 ]; then
 			#when using an external menu, the query will be done there
 			search_query=$(printf "" | eval "$external_menu" )
 		else
@@ -829,15 +829,15 @@ user_selection () {
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
-	if [ "$select_all" -eq 1 ] ; then
+	if [ $select_all -eq 1 ] ; then
 		selected_data=$videos_data_clean
-	elif [ "$auto_select" -eq 1 ] ; then
+	elif [ $auto_select -eq 1 ] ; then
 		selected_data=$(printf "%s\n" "$videos_data_clean" | sed "${link_count}"q )
 	#picks n random videos
-	elif [ "$random_select" -eq 1 ] ; then
+	elif [ $random_select -eq 1 ] ; then
 		selected_data=$(printf "%s\n" "$videos_data_clean" | shuf -n "$link_count" )
 	#show thumbnail menu
-	elif [ "$show_thumbnails" -eq 1 ] ; then
+	elif [ $show_thumbnails -eq 1 ] ; then
 		dep_ck "ueberzug" "fzf"
 		export YTFZF_THUMB_DISP_METHOD="$thumb_disp_method"
 		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
@@ -947,9 +947,9 @@ open_player () {
 play_url () {
 	#> output the current track to current file before playing
 
-	[ "$enable_cur" -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
+	[ $enable_cur -eq 1 ] && printf "%s" "$selected_data" > "$current_file" ;
 
-	[ "$enable_noti" -eq 1 ] && send_notify "$selected_data" ;
+	[ $enable_noti -eq 1 ] && send_notify "$selected_data" ;
 
 	# word splitting on the urls below, -f to remove globbing
 	set -f
@@ -1007,14 +1007,14 @@ check_if_url () {
 }
 #> Loads history in videos_data
 get_history () {
-	if [ "$enable_hist" -eq 1 ]; then
+	if [ $enable_hist -eq 1 ]; then
 		[ -e "$history_file" ] || touch "$history_file"
 		#gets history data in reverse order (makes it most recent to least recent)
 		hist_data=$( sed '1!G; h; $!d' "$history_file" )
 		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
 		#removes duplicate values from $history_data
 		videos_data=$(printf "%s" "$hist_data" | uniq )
-		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_fn)"
+		[ $sort_videos_data -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_fn)"
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n";
 		exit;
@@ -1046,7 +1046,7 @@ clear_history () {
 	elif [ $videos_selected_count -gt 1 ]; then
 		message="Added $videos_selected_count video to play queue"
 	#if show thumbnails and videos_selected is 1 (it will never be less than 1)
-	elif [ "$show_thumbnails" -eq 1 ]; then
+	elif [ $show_thumbnails -eq 1 ]; then
 		video_thumb="$thumb_dir/${video_shorturl#|}.png"
 	fi
 
@@ -1128,8 +1128,8 @@ add_playlist () {
 	#Create playlist if not exist
 	[ -f $playlist_dir/$playlist ] || touch $playlist_dir/$playlist
 	#Add selected video to playlist
-	[ "$add_playlist_mode" -eq 1 ] && printf "%s\n" "$selected_data" >> "$playlist_dir/$playlist"
-	[ "$enable_noti" -eq 1 ] && send_notify "$selected_data"
+	[ $add_playlist_mode -eq 1 ] && printf "%s\n" "$selected_data" >> "$playlist_dir/$playlist"
+	[ $enable_noti -eq 1 ] && send_notify "$selected_data"
 }
 
 scrape_playlist () {
@@ -1402,7 +1402,7 @@ parse_opt () {
 
 		R|video-data-only)
 		    show_data_only=${optarg:-1}
-		    [ "$show_data_only" -eq 1 ] && silent_mode=1 && fancy_subscriptions_menu=0 ;;
+		    [ $show_data_only -eq 1 ] && silent_mode=1 && fancy_subscriptions_menu=0 ;;
 
 		upload-sort) sort_by_filter=$optarg ;;
 		upload-date|view-count|rating) sort_by_filter=$opt ;;
@@ -1432,7 +1432,7 @@ parse_opt () {
 			fi ;;
 
 		*)
-			if [ "$exit_on_opt_error" -eq 1 ]; then
+			if [ $exit_on_opt_error -eq 1 ]; then
 			    usageinfo
 			    exit 2
 			fi ;;
@@ -1464,7 +1464,7 @@ fi
 
 #if both are true, it defaults to using fzf, and if fzf isnt installed it will throw an error
 #so print this error instead and set $show_thumbnails to 0
-if [ $is_ext_menu -eq 1 -a $show_thumbnails -eq 1 ]; then
+if [ $is_ext_menu -eq 1 ] && [ $show_thumbnails -eq 1 ]; then
 	if ! notify-send "Currently thumbnails do not work in external menus" 1> /dev/null 2>&1; then
 	    printf "\033[31mCurrently thumbnails do not work in external menus\033[0m\n"
 	fi
