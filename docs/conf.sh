@@ -74,6 +74,10 @@ audio_player="mpv --no-video"
 #(YTFZF_ENABLE_FZF_DEFAULT_OPTS)
 enable_fzf_default_opts=0
 
+#stores the langauge for the auto generated subtitltes
+#(YTFZF_SELECTED_SUB)
+selected_sub=""
+
 ###################
 #  OPT VARIABLES  #
 ###################
@@ -184,6 +188,9 @@ sp=""
 #useragent when using curl on youtube
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
 
+#whether or not to exit when an invalid opt is passed
+exit_on_opt_error=1
+
 #the file for storing watch history
 history_file="$cache_dir/ytfzf_hst"
 
@@ -250,4 +257,22 @@ thumbnail_video_info_text () {
          printf "\n${c_blue}Duration     ${c_yellow}%s" "$duration"
          printf "\n${c_blue}Views        ${c_magenta}%s" "$views"
          printf "\n${c_blue}Date         ${c_cyan}%s" "$date"
+}
+
+
+#gets called when an opt gets passed
+#$1 will be the opt name
+#$2 will be the opt argument
+#eg:
+    #ytfzf -a -n2
+    #this function will be called twice, on the first time
+	#$1 will be a, $2 will be empty
+    #on the 2nd time
+	#$1 will be n, $2 will be 2
+#long options are different
+    #ytfzf --link-count=2
+    #$1 will be -
+    #$2 will be link-count=2
+on_opt_parse () {
+    return 0
 }
