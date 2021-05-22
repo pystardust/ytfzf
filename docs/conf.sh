@@ -225,6 +225,10 @@ thumb_dir="$cache_dir/thumb"
 #the file where subscriptions are stored
 subscriptions_file=$YTFZF_CONFIG_DIR/subscriptions
 
+#the text template string to use for the fancy subscriptions divider,
+#the spaces are for centering
+fancy_subscriptions_text="             -------%s-------"
+
 
 #this function is called when a video is selected in the menu to send a notification
 #available variables
@@ -393,6 +397,14 @@ on_get_search () {
 #this function will be called when all instances of ytfzf are closed, and the last one is closed
 on_exit () {
     return 0
+}
+
+#when this function is set it will be called instead of open_player,
+#open_player handles downloading, and showing a video,
+#when handle_urls is defined you get all the urls passed in, and can do whatever you want with them,
+#you can call open_player yourself, as shown below
+handle_urls () {
+    open_player $*
 }
 
 #############

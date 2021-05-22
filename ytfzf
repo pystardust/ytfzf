@@ -83,6 +83,8 @@ pid_file="$cache_dir/.pid"
 search_prompt=${search_prompt-Search Youtube: }
 #used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
+#used when fancy_subscriptions_menu is 1
+fancy_subscriptions_text=${fancy_subscriptions_text-             -------%s-------}
 
 #> config scripting settings
 #whether or not to show errors when an invalid option is passed
@@ -706,7 +708,7 @@ scrape_channel () {
 	    exit 1
 	fi
 	if [ $fancy_subscriptions_menu -eq 1 ]; then
-		printf "             -------%s-------\t\n%s\n" "$channel_name" "$videos_data" >> "$tmp_video_data_file"
+		printf "$fancy_subscriptions_text\t\n%s\n" "$channel_name" "$videos_data" >> "$tmp_video_data_file"
 	else
 		printf "%s\n" "$videos_data" >> "$tmp_video_data_file"
 	fi
@@ -932,7 +934,11 @@ play_url () {
 
 	# word splitting on the urls below, -f to remove globbing
 	set -f
-	open_player $selected_urls
+	if function_exists "handle_urls"; then
+	    handle_urls $selected_urls
+	else
+	    open_player $selected_urls
+	fi
 
 	#Delete the temp auto-gen subtitle file
 	[ $auto_caption -eq 1 ] && rm -f "${YTFZF_SUBT_NAME#*=}"
@@ -958,6 +964,8 @@ clean_up () {
 		printf "" > "$pid_file"
 		function_exists "on_exit" && on_exit
 	fi
+	#clean up should never fail, it may fail in user's on_exit, but should be handled by on_exit
+	return 0
 }
 #> Saves data before exiting
 save_before_exit () {
