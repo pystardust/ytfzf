@@ -1133,7 +1133,14 @@ add_playlist () {
 
 scrape_playlist () {
 	#Get playlist data
-	pl_data="$( sed '1!G; h; $!d' "$playlist_dir/$playlist" )"
+	#check if it's a path by checking if / is in the name
+	if printf "%s" "$playlist" | grep -q "/"; then
+	    pl_data="$(sed '1!G; h; $!d' "$playlist")"
+	else
+	    pl_data="$( sed '1!G; h; $!d' "$playlist_dir/$playlist" )"
+	#if sed fails the or part of this line will trigger, doing it this way avoids having this line after each time pl_data is set
+	fi > /dev/null 2>&1 || { printf "%s%b%s%b%s" "playlist: " "\033[1m" "'$playlist'" "\033[0m" " does not exist"; exit 2; }
+
 	videos_data="$(printf "%s" "$pl_data" | uniq )"
 
 	unset message video_thumb
