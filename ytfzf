@@ -818,7 +818,7 @@ get_search_query () {
 			printf "$search_prompt"
 			read -r search_query
 		fi
-		[ -z "$search_query" ] && clean_up && exit 0
+		[ -z "$search_query" ] && (clean_up; exit 0)
 	fi
 	function_exists "on_get_search" && on_get_search "$search_query"
 }
@@ -879,19 +879,16 @@ format_user_selection () {
 }
 
 print_data () {
-	#tracks whether or not the program should exit
-	e=0
 	#if one wanted to show both url and selected data, they can
 	if [ $show_link_only -eq 1 ]; then
 	    printf "%s\n" "$selected_urls"
-	    e=1
+	    return 0
 	fi
 	if [ $show_data_only -eq 1 ]; then
 	    printf "%s\n" "$selected_data"
-	    e=1
+	    return 0
 	fi
-	[ $e -eq 1 ] && exit
-	unset e
+	return 1
 }
 
 get_video_format () {
@@ -1123,6 +1120,7 @@ get_playlist () {
 
 #handles putting the playlist somwhere and putting data in the playlist
 add_playlist () {
+	[ $add_playlist_mode -eq 0 ] && return 1	
 	#Create playlist folder if not exist
 	[ -d "$playlist_dir" ] || mkdir -p "$playlist_dir"
 	#Create playlist if not exist
@@ -1130,6 +1128,7 @@ add_playlist () {
 	#Add selected video to playlist
 	[ $add_playlist_mode -eq 1 ] && printf "%s\n" "$selected_data" >> "$playlist_dir/$playlist"
 	[ $enable_noti -eq 1 ] && send_notify "$selected_data"
+	return 0
 }
 
 scrape_playlist () {
@@ -1422,9 +1421,10 @@ parse_opt () {
 			[ -z "$optarg" ] && get_playlist || playlist="$optarg"
 			delete_playlist "$playlist" ;;
 
-		p|playlist|P|add-playlist)
-			[ "$opt" = "P" ] || [ "$opt" = "add-playlist" ] && add_playlist_mode=1 && is_ext_menu=0
+		p|playlist|P|playlist-add)
+			[ "$opt" = "P" ] || [ "$opt" = "playlist-add" ] && add_playlist_mode=1 && is_ext_menu=0
 			[ "$opt" = "p" ] || [ "$opt" = "playlist" ] && scrape="playlist"
+
 			if [ -z "$optarg" ]; then
 			    get_playlist
 			else
@@ -1524,22 +1524,17 @@ esac
 while true; do
 	user_selection
 	format_user_selection
-	print_data
+	#exits if it printed data
+	print_data && exit
 	get_video_format
 	#if in playlist mode, exit after added video to playlist
-	if [ $add_playlist_mode -eq 1 ] ; then
-	 	add_playlist
-		exit
-	fi
+	add_playlist && exit
 	get_sub_lang
 	play_url
 	save_before_exit
 
 	#if looping and searching_again arent on then exit
-	if [ $enable_loop -eq 0 ] && [ $search_again -eq 0 ] ; then
-		clean_up
-		exit
-	fi
+	[ $enable_loop -eq 0 ] && [ $search_again -eq 0 ] && (clean_up; exit)
 
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
