@@ -148,7 +148,7 @@ fi
 dep_ck () {
 	for Dep; do
 		if ! command -v "$Dep" 1>/dev/null; then
-			printf "%s not found. Please install it.\n" "$Dep"
+			printf "%s not found. Please install it.\n" "$Dep" >&2
 			exit 2
 		fi
 	done
@@ -292,8 +292,8 @@ usageinfo () {
 }
 
 print_error () {
-    printf "$*"
-    printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n"
+    printf "$*" >&2
+    printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n" >&2
 }
 
 ############################
@@ -517,7 +517,7 @@ EOF
 		chafa --size="${thumb_width}x${thumb_height}" --colors=256 "$IMAGE" ;;
 	    custom)
 		if ! function_exists "handle_display_img"; then
-		    printf "\033[031mERROR[#07]: \033[0m\033[1mhandle_display_img\033[0m is not defined"
+		    printf "\033[031mERROR[#07]: \033[0m\033[1mhandle_display_img\033[0m is not defined" >&2
 		    exit 3
 		fi
 		handle_display_img "$thumb_width" "$thumb_height" "$thumb_x" "$thumb_y" "$IMAGE" ;;
@@ -702,7 +702,7 @@ scrape_channel () {
 
 	#if there aren't videos
 	if [ -z "$videos_data" ]; then
-	    printf "${c_yellow}No results found. Make sure the link ($channel_url) is correct.${c_reset}\n(if this chnanel has not uploaded videos this warning may appear)\n"
+	    printf "${c_yellow}No results found. Make sure the link ($channel_url) is correct.${c_reset}\n(if this chnanel has not uploaded videos this warning may appear)\n" >&2
 	    exit 1
 	fi
 	if [ $fancy_subscriptions_menu -eq 1 ]; then
@@ -740,7 +740,7 @@ scrape_yt () {
 
 	if [ "$scrape" = "trending" ]; then
 	    tab_data="$(get_trending_url_data)"
-	    [ -z "$tab_data" ] && [ -n "$trending_tab" ] && printf "\033[31mERROR[#05]: \033[1m\$trending_tab\033[0m\033[31m must be one of:\n\033[2;39mmusic, gaming, movies\033[0m\n\033[31myou put: \033[1m\"$trending_tab\"\033[0m\n" && exit 3
+	    [ -z "$tab_data" ] && [ -n "$trending_tab" ] && printf "\033[31mERROR[#05]: \033[1m\$trending_tab\033[0m\033[31m must be one of:\n\033[2;39mmusic, gaming, movies\033[0m\n\033[31myou put: \033[1m\"$trending_tab\"\033[0m\n" >&2 && exit 3
 	    yt_html=$(get_yt_html "https://www.youtube.com/feed/trending?bp=$tab_data")
 	else
 	    yt_html=$(get_yt_html "https://www.youtube.com/results" "$*")
@@ -778,7 +778,7 @@ scrape_yt () {
 	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
 	#if there aren't videos
 	if [ -z "$videos_data" ]; then
-	    printf "No results found. Try different keywords.\n"
+	    printf "No results found. Try different keywords.\n" >&2
 	    exit 1
 	fi
 	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$yt_json"
@@ -990,7 +990,7 @@ get_history () {
 		[ -e "$history_file" ] || touch "$history_file"
 		#gets history data in reverse order (makes it most recent to least recent)
 		hist_data=$( sed '1!G; h; $!d' "$history_file" )
-		[ -z "$hist_data" ] && printf "History is empty!\n" && exit;
+		[ -z "$hist_data" ] && printf "History is empty!\n" >&2 && exit 1;
 		#removes duplicate values from $history_data
 		videos_data=$(printf "%s" "$hist_data" | uniq )
 		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_fn)"
@@ -1005,7 +1005,7 @@ clear_history () {
 		printf "" > "$history_file"
 		printf "History has been cleared\n"
 	else
-		printf "\033[31mHistory file not found, history not cleared\033[0m\n"
+		printf "\033[31mHistory file not found, history not cleared\033[0m\n" >&2
 		exit 1
 	fi
 }
@@ -1162,7 +1162,7 @@ is_non_number () {
 bad_opt_arg () {
 	opt=$1
 	arg=$2
-	printf "%s\n" "$opt requires a numeric arg, but was given \"$arg\""
+	printf "%s\n" "$opt requires a numeric arg, but was given \"$arg\"" >&2
 	exit 3
 }
 
@@ -1303,7 +1303,7 @@ parse_opt () {
 
 		*)
 			if [ "$exit_on_opt_error" -eq 1 ]; then
-			    usageinfo
+			    usageinfo >&2
 			    exit 2
 			fi ;;
 	esac
