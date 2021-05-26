@@ -818,7 +818,7 @@ get_search_query () {
 			printf "$search_prompt"
 			read -r search_query
 		fi
-		[ -z "$search_query" ] && (clean_up; exit 0)
+		[ -z "$search_query" ] && clean_up && exit 0
 	fi
 	function_exists "on_get_search" && on_get_search "$search_query"
 }
@@ -976,6 +976,7 @@ clean_up () {
 		printf "" > "$pid_file"
 		function_exists "on_exit" && on_exit
 	fi
+	return 0
 }
 #> Saves data before exiting
 save_before_exit () {
@@ -1534,7 +1535,7 @@ while true; do
 	save_before_exit
 
 	#if looping and searching_again arent on then exit
-	[ $enable_loop -eq 0 ] && [ $search_again -eq 0 ] && (clean_up; exit)
+	[ $enable_loop -eq 0 ] && [ $search_again -eq 0 ] && clean_up && exit
 
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ]; then
