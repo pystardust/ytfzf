@@ -158,6 +158,7 @@ dep_ck () {
 }
 dep_ck "jq" "youtube-dl" "curl"
 
+
 #only check for mpv if $YTFZF_PLAYER is set to it
 #don't check $YTFZF_PLAYER as it could be multiple commands
 [ "$video_player" = "mpv" ] && dep_ck "mpv"
@@ -294,8 +295,8 @@ usageinfo () {
 }
 
 print_error () {
-    printf "$*" >&2
-    printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n" >&2
+    [ $ext_menu_notifs -eq 1 ] && notify-send "error" "$*" || printf "\033[31m$*\033[0m" >&2
+    [ $ext_menu_notifs -eq 1 ] && notify-send "Check for new versions and report at: https://github.com/pystardust/ytfzf\n" || printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n" >&2
 }
 
 ############################
@@ -662,7 +663,7 @@ scrape_channel () {
 	yt_html=$(get_yt_html "$channel_url")
 
 	if [ -z "$yt_html" ]; then
-	        print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[0m\n"
+	        print_error "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"
 	        exit 1
 	fi
 
@@ -704,7 +705,7 @@ scrape_channel () {
 
 	#if there aren't videos
 	if [ -z "$videos_data" ]; then
-	    printf "${c_yellow}No results found. Make sure the link ($channel_url) is correct.${c_reset}\n(if this chnanel has not uploaded videos this warning may appear)\n" >&2
+	    print_error "No results found. Make sure the link ($channel_url) is correct.\n(if this chnanel has not uploaded videos this warning may appear)\n"
 	    exit 1
 	fi
 	if [ $fancy_subscriptions_menu -eq 1 ]; then
@@ -749,7 +750,7 @@ scrape_yt () {
 	fi
 
 	if [ -z "$yt_html" ]; then
-		print_error "\033[31mERROR[#01]: Couldn't curl website. Please check your network and try again.\033[0m\n"
+		print_error "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"
 		exit 1
 	fi
 
@@ -757,7 +758,7 @@ scrape_yt () {
 
 	#if the data couldn't be found
 	if [ -z "$yt_json" ]; then
-		print_error "\033[31mERROR[#02]: Couldn't find data on site.\033[0m\n"
+		print_error "ERROR[#02]: Couldn't find data on site.\n"
 		exit 1
 	fi
 
@@ -1153,7 +1154,7 @@ verify_thumb_disp_method () {
     case "$thumb_disp_method" in
 	ueberzug|jp2a-grey|jp2a-gray|jp2a|jp2a-4|jp2a-8|catimg|custom|chafa|chafa-grey|chafa-gray|chafa-4|chafa-8) ;;
 	*)
-	    print_error "\033[31mERROR[#06]: $thumb_disp_method is not a valid display method\nrun \033[1mytfzf --help-thumb-disp\033[0m for more"
+	    print_error "ERROR[#06]: $thumb_disp_method is not a valid display method\nrun ytfzf --help-thumb-disp for more"
 	    exit 3 ;;
     esac
 }
@@ -1333,7 +1334,8 @@ while getopts "LhDmdfxHaArltSsvNTn:U:-:" OPT; do
 done
 shift $((OPTIND-1))
 
-
+#only apply to ext_menu since they dont have a terminal to print to
+[ $is_ext_menu -eq 1 ] && command -v notify-send 1>/dev/null 2>&1 && ext_menu_notifs=1 || ext_menu_notifs=0
 
 #used for thumbnail previews in ueberzug
 if [ $is_ext_menu -eq 0 ]; then
@@ -1344,16 +1346,16 @@ fi
 #if both are true, it defaults to using fzf, and if fzf isnt installed it will throw an error
 #so print this error instead and set $show_thumbnails to 0
 if [ $is_ext_menu -eq 1 -a $show_thumbnails -eq 1 ]; then
-	if ! notify-send "Currently thumbnails do not work in external menus" 1> /dev/null 2>&1; then
-	    printf "\033[31mCurrently thumbnails do not work in external menus\033[0m\n"
-	fi
+	[ $ext_menu_notifs -eq 1 ] &&\
+	    notify-send "warning" "Currently thumbnails do not work in external menus" ||\
+	    printf "\033[33mWARNING: Currently thumbnails do not work in external menus\033[0m\n" >&2
 	show_thumbnails=0
 fi
 
 #if stdin is given and no input (including -) is given, throw error
 #also make sure its not reading from ext_menu
 if [ ! -t 0 ] && [ -z "$*" ] && [ $is_ext_menu -eq 0 ]; then
-	print_error "\033[31mERROR[#04]: Use - when reading from stdin\033[0m\n"
+	print_error "ERROR[#04]: Use - when reading from stdin\n"
 	exit 2
 #read stdin if given
 elif [ "$*" = "-" ]; then
