@@ -10,7 +10,7 @@
 #2: missing dependancy, invalid opt or argument
 #3: invalid argument for opt, error with config
 
-YTFZF_VERSION="1.1.5"
+YTFZF_VERSION="1.2.0_dev"
 
 ############################
 #         Defaults         #
