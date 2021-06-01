@@ -250,8 +250,6 @@ all_help_info () {
          This will filter by livestream
 
   Formatting: format into the format ytfzf reads (videos data)
-     --format-url                       Formats url to videos data
-
      -R, --video-data-only              prints only the selected videos' videos data
 
   Update:
@@ -1439,11 +1437,6 @@ parse_opt () {
 		update) update_ytfzf "master" ;;
 		update-unstable) update_ytfzf "${optarg:-development}" ;;
 
-		format-url)
-			[ -z "$optarg" ] && print_error "No url given for --format-url\nhint: --format-url=\"[url]\"\n" && exit 3
-			url_to_playlist_format "$optarg"
-			exit ;;
-
 		create-playlist)
 			[ -z "$optarg" ] && create_playlist || playlist="$optarg" 
 			exit ;;
@@ -1544,6 +1537,7 @@ case $scrape in
 		;;
 	"url")
 	    [ $add_playlist_mode -eq 1 ] && add_playlist && exit
+	    [ $show_data_only -eq 1 ] && url_to_playlist_format "$selected_urls" && exit
 	    play_url
 	    exit
 	    ;;
