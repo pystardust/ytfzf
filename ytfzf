@@ -133,6 +133,8 @@ trending_tab="${trending_tab-}"
 sort_name="${sort_name-}"
 # misc
 tab_space=$(printf '\t')
+new_line="
+"
 
 #ueberzug related variables
 #the side where thumbnails are shown
@@ -326,14 +328,11 @@ format_ext_menu () {
 	view_len=$((frac * 1))
 	#video upload date space
 	date_len=$((frac * 3/2 + 100 ))
-	#url space
-	url_len=12
 }
 format_fzf () {
 	dur_len=7
 	view_len=10
 	date_len=14
-	url_len=12
 
 	#*_len works the same as it does in format_ext_menu
 	#show title, channel
@@ -394,7 +393,7 @@ if ! function_exists 'video_info_text'; then
 		printf "%-${dur_len}.${dur_len}s\t" "$duration"
 		printf "%-${view_len}.${view_len}s\t" "$views"
 		printf "%-${date_len}.${date_len}s\t" "$date"
-		printf "%-${url_len}.${url_len}s\t" "$shorturl"
+		printf "%s" "$shorturl"
 		printf "\n"
 	}
 fi
@@ -741,6 +740,7 @@ scrape_yt () {
 
 	[ $show_link_only -eq 0 ] && printf "Scraping Youtube...\n"
 
+	# scrape trending or search query provided
 	if [ "$scrape" = "trending" ]; then
 	    tab_data="$(get_trending_url_data)"
 	    [ -z "$tab_data" ] && [ -n "$trending_tab" ] && printf "\033[31mERROR[#05]: \033[1m\$trending_tab\033[0m\033[31m must be one of:\n\033[2;39mmusic, gaming, movies\033[0m\n\033[31myou put: \033[1m\"$trending_tab\"\033[0m\n" >&2 && exit 3
@@ -777,6 +777,22 @@ scrape_yt () {
 		}
 	]')
 
+	playlist_json=$(printf "%s" "$yt_json" | jq '[ .contents|
+	..|.playlistRenderer? |
+	select(. !=null) |
+		{
+			title: "[Playlist] \(.title.simpleText)",
+			channel: .longBylineText.runs[0].text,
+			duration: "playlist",
+			views: "playlist",
+			date: "playlist",
+			videoID: .playlistId,
+			thumbs: .thumbnail.thumbnails[0].url
+		}
+	]')
+
+	videos_json=$playlist_json$videos_json
+
 	#checks if it's empty in case it was defined in a config function eg: on_get_search
 	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
 	#if there aren't videos
@@ -791,7 +807,7 @@ scrape_yt () {
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	# wait for thumbnails to download
 	wait
-	unset videos_json yt_json yt_html
+	unset playlist_json videos_json yt_json yt_html
 }
 
 
@@ -860,8 +876,17 @@ format_user_selection () {
 	selected_data=
 	for surl in $shorturls; do
 		[ -z "$surl" ] && continue
-		selected_urls=$(printf '%s\n%s' "$selected_urls" "https://www.youtube.com/watch?v=$surl")
-		selected_data=$(printf '%s\n%s' "$selected_data" "$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )")
+		case $surl in
+			???????????)
+				# youtube video
+				selected_urls=$selected_urls$new_line"https://www.youtube.com/watch?v="$surl
+				selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )
+				;;
+			??????????????????????????????????)
+				selected_urls=$selected_urls$new_line"https://www.youtube.com/playlist?list="$surl
+				selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )
+				;;
+		esac
 	done
 	selected_urls=$( printf "%s" "$selected_urls" | sed 1d )
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
