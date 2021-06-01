@@ -61,6 +61,8 @@ thumb_disp_method=${YTFZF_THUMB_DISP_METHOD-${thumb_disp_method-ueberzug}}
 [ -z "$YTFZF_SUBT_NAME" ] && YTFZF_SUBT_NAME=""
 #Stores the language for the auto genereated subtitles
 selected_sub=${YTFZF_SELECTED_SUB-${selected_sub-}}
+#directory to look for playlists
+playlist_dir="${YTFZF_PLAYLIST_DIR-${playlist_dir-$YTFZF_CONFIG_DIR/playlist}}"
 
 #> Clearing/Enabling fzf_defaults
 #enable/disable the use of FZF_DEFAULT_OPTS
@@ -72,7 +74,6 @@ enable_fzf_default_opts=${YTFZF_ENABLE_FZF_DEFAULT_OPTS-${enable_fzf_default_opt
 history_file="${history_file-$cache_dir/ytfzf_hst}"
 current_file="${current_file-$cache_dir/ytfzf_cur}"
 thumb_dir="${thumb_dir-$cache_dir/thumb}"
-playlist_dir="${playlist_dir-$YTFZF_CONFIG_DIR/playlist}"
 #> Stores urls of the video page of channels
 subscriptions_file=${subscriptions_file-$config_dir/subscriptions}
 
@@ -232,7 +233,8 @@ all_help_info () {
      --fancy-subs=                        whether or not to show ------channel------ in subscriptions (must be 1 or 0)
      --add-subs				  generate a subscriptions file with subscriptions.json that you can get from google
                                           visit https://github.com/FreeTubeApp/FreeTube/wiki/Importing-Your-YouTube-Subscriptions for more info
-  Filters: different ways to filter videos in search
+
+  Filters: different ways to filter videos in search (only works in youtube search)
      --upload-time=<time-range>           Time range can be one of,
                                           last-hour, today, this-week, this-month, this-year
                                           Filters can go directly: --today
@@ -247,6 +249,11 @@ all_help_info () {
          Example: ytfzf --filter-id=EgJAAQ minecraft
          This will filter by livestream
 
+  Formatting: format into the format ytfzf reads (videos data)
+     --format-url                       Formats url to videos data
+
+     -R, --video-data-only              prints only the selected videos' videos data
+
   Update:
      --update                             clones the latest stable commit and installs it
                                           on Arch ytfzf is available in the AUR
@@ -257,6 +264,8 @@ all_help_info () {
   the default config file can be found at https://github.com/pystardust/ytfzf/blob/master/docs/conf.sh
 
   Environment Variables:
+     YTFZF_CONFIG_DIR=\$HOME/.config/ytfzf              directory where configuration files are
+     YTFZF_PLAYLIST_DIR=\$YTFZF_CONFIG_DIR/playlist     directory where playlists are stored
      YTFZF_HIST=1                                       0 : off history
      YTFZF_NOTI=1                                       0 : turn off notification
      YTFZF_CACHE=~/.cache/ytfzf;
@@ -1068,6 +1077,7 @@ delete_playlist () {
     printf "Are you sure you want to delete \"$playlist_to_delete\" (this is irreversable)? [Y/n]"
     read -r erase
     printf "%s" "$erase" | grep -qPo '(?:n|no|N|NO|No|nO)' || rm "$playlist_dir/$playlist"
+    printf "Playlist ($playlist) deleted"
     exit
 }
 
@@ -1097,6 +1107,8 @@ create_playlist () {
 	printf "%s" "$new_playlist_prompt"
 	read -r playlist
     done
+    touch "$playlist_dir/$playlist"
+    printf "Playlist ($playlist) created"
 }
 
 get_playlist () {
@@ -1127,9 +1139,17 @@ add_playlist () {
 	#Create playlist if not exist
 	[ -f $playlist_dir/$playlist ] || touch $playlist_dir/$playlist
 	#Add selected video to playlist
-	[ $add_playlist_mode -eq 1 ] && printf "%s\n" "$selected_data" >> "$playlist_dir/$playlist"
+	if [ $add_playlist_mode -eq 1 ]; then
+	    [ $is_url -eq 1 ] && selected_data="$(url_to_playlist_format "$selected_urls")"
+	    printf "%s\n" "$selected_data" >> "$playlist_dir/$playlist"
+	fi
 	[ $enable_noti -eq 1 ] && send_notify "$selected_data"
 	return 0
+}
+
+url_to_playlist_format () {
+    url="$1"
+    ytfzf -Ra "$(printf "%s" "$url" | sed 's/.*?v=//')"
 }
 
 scrape_playlist () {
@@ -1414,9 +1434,14 @@ parse_opt () {
 		update) update_ytfzf "master" ;;
 		update-unstable) update_ytfzf "${optarg:-development}" ;;
 
+		format-url)
+			[ -z "$optarg" ] && print_error "No url given for --format-url\nhint: --format-url=\"[url]\"\n" && exit 3
+			url_to_playlist_format "$optarg"
+			exit ;;
+
 		create-playlist)
-			[ -z "$optarg" ] && create_playlist || playlist="$optarg"
-			add_playlist_mode=1 ;;
+			[ -z "$optarg" ] && create_playlist || playlist="$optarg" 
+			exit ;;
 
 		delete-playlist)
 			[ -z "$optarg" ] && get_playlist || playlist="$optarg"
@@ -1513,6 +1538,7 @@ case $scrape in
 		get_history
 		;;
 	"url")
+	    [ $add_playlist_mode -eq 1 ] && add_playlist && exit
 	    play_url
 	    exit
 	    ;;

@@ -17,6 +17,11 @@ YTFZF_CONFIG_DIR=$HOME/.config/ytfzf
 #when setting them through export, use the variable in parentheses instead
 #variables set through export will override the ones set here
 
+#the folder where playlists are stored and where ytfzf will look for playlists
+#(YTFZF_PLAYLIST_DIR)
+playlist_dir="$HOME/.config/ytfzf/playlist"
+
+
 #enable/disable history (enabled by default)
 #history is stored in $history_file ($YTFZF_CACHE/ytfzf_hst by default, change $history_file to change this)
 #(YTFZF_HIST)
@@ -229,9 +234,6 @@ current_file="$cache_dir/ytfzf_cur"
 
 #the folder where thumbnails are cached
 thumb_dir="$cache_dir/thumb"
-
-#the folder where playlists are stored
-playlist_dir="$HOME/.config/ytfzf/playlist"
 
 #the file where subscriptions are stored
 subscriptions_file=$YTFZF_CONFIG_DIR/subscriptions
