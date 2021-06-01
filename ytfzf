@@ -1150,9 +1150,9 @@ url_to_playlist_format () {
     id="$(printf "%s" "$url" | sed 's/.*?v=//')"
     silent_mode=1
     show_thumbnails=0 scrape_yt "$id"
-    auto_select=1 user_selection
+    selected_data=$(printf "%s\n" "$videos_data" | sed "${link_count}"q )
     format_user_selection
-    printf "%s" "$selected_data"
+    printf "%s\n" "$selected_data"
 }
 
 scrape_playlist () {
