@@ -783,11 +783,11 @@ scrape_yt () {
 		{
 			title: "[Playlist] \(.title.simpleText)",
 			channel: .longBylineText.runs[0].text,
-			duration: "playlist",
+			duration: "\(.videoCount) videos",
 			views: "playlist",
 			date: "playlist",
 			videoID: .playlistId,
-			thumbs: .thumbnail.thumbnails[0].url
+			thumbs: .thumbnails[0].thumbnails[0].url
 		}
 	]')
 
