@@ -1149,7 +1149,12 @@ add_playlist () {
 
 url_to_playlist_format () {
     url="$1"
-    ytfzf -Ra "$(printf "%s" "$url" | sed 's/.*?v=//')"
+    id="$(printf "%s" "$url" | sed 's/.*?v=//')"
+    silent_mode=1
+    show_thumbnails=0 scrape_yt "$id"
+    auto_select=1 user_selection
+    format_user_selection
+    printf "%s" "$selected_data"
 }
 
 scrape_playlist () {
