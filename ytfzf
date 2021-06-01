@@ -10,7 +10,7 @@
 #2: missing dependancy, invalid opt or argument
 #3: invalid argument for opt, error with config
 
-YTFZF_VERSION="1.1.5"
+YTFZF_VERSION="1.2.0_dev"
 
 ############################
 #         Defaults         #
@@ -878,14 +878,13 @@ print_data () {
 
 get_video_format () {
 	# select format if flag given
-	if [ $show_format -eq 1 ]; then
+	[ $show_format -eq 0 ] && return
         formats=$(youtube-dl -F "$(printf "$selected_urls")") 
         line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
         quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | eval "$menu_command" | sed "s/p//g")
 		[ -z "$quality"  ] && exit;
 		[ $quality = "Audio"  ] && video_pref= && video_player="$audio_player" || video_pref="bestvideo[height=?$quality][vcodec!=?vp9]+bestaudio/best"
 
-	fi
 	unset max_quality quality
 }
 
@@ -1390,6 +1389,7 @@ case $scrape in
 		get_history
 		;;
 	"url")
+	    get_video_format
 	    play_url
 	    exit
 	    ;;
