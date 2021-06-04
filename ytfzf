@@ -21,6 +21,7 @@ YTFZF_VERSION="1.2.0_dev"
 config_dir=${YTFZF_CONFIG_DIR-$HOME/.config/ytfzf}
 config_file=${YTFZF_CONFIG_FILE-$config_dir/conf.sh}
 tmp_video_data_file="/tmp/ytfzf-subdata"
+tmp_video_json_file="/tmp/ytfzf-subjson"
 #source config file if exists
 #it also checks to make sure that this is not a subprocess of another ytfzf script
 [ -e "$config_file" ] && . "$config_file"
@@ -707,6 +708,7 @@ scrape_channel () {
 	]')
 
 	videos_json=$(printf "%s" "$videos_json" | jq '.[0:'$sub_link_count']')
+	printf "%s\n" "$videos_json" >> "$tmp_video_json_file"
 	#checks if it's empty in case it was defined in a config function eg: on_get_search
 	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
 	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$yt_json"
@@ -723,7 +725,7 @@ scrape_channel () {
 	fi
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
-	unset channel_url channel_name yt_html yt_json  videos_json
+	unset channel_url channel_name yt_html yt_json videos_json
 }
 
 get_trending_url_data () {
@@ -1137,6 +1139,7 @@ sort_video_data_fn () {
 scrape_subscriptions () {
 	# clear the subfile, all subscriptions data will be dumped into this file
 	: > "$tmp_video_data_file"
+	: > "$tmp_video_json_file"
 
 	[ $sort_videos_data -eq 1 ] && fancy_subscriptions_menu=0
 
@@ -1150,6 +1153,8 @@ scrape_subscriptions () {
 	"$subscriptions_file")
 	EOF
 	wait
+	videos_json="$(cat "$tmp_video_json_file")"
+	export videos_json
 	if [ $sort_videos_data -eq 1 ]; then 
 		videos_data=$(sort_video_data_fn < "$tmp_video_data_file")
 	else
