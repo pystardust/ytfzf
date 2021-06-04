@@ -442,12 +442,13 @@ stop_ueberzug () {
 
 preview_img () {
 
-	shorturl=${*##*${tab_space}|}
+	args="$*"
+	shorturl=${args##*${tab_space}|}
 
 	json_obj=$(printf "%s" "$videos_json" | jq '.[]|select( .videoID == "'"$shorturl"'")')
 
 
-	IFS=$tab_space read title channel duration views date description <<-EOF
+	IFS=$tab_space read -r title channel duration views date description <<-EOF
 	$(
 		printf "%s" "$json_obj" | jq -r \
 		'
@@ -532,6 +533,7 @@ preview_img () {
 	esac
 	unset title channel duration views date shorturl
 	unset thumb_width thumb_height thumb_x thumb_y IMAGE
+	unset args
 }
 
 ############################
@@ -951,7 +953,7 @@ open_player () {
 		fi
 	elif [ $is_download -eq 1 ]; then
 		if [ -z "$video_pref" ]; then
-			youtube-dl "$@"  $YTFZF_SUBT_NAME
+			youtube-dl "$@"  "$YTFZF_SUBT_NAME"
 		else
 			youtube-dl -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
 		fi
@@ -1166,7 +1168,7 @@ create_subs () {
     fi
 
     # start fresh
-    : > $config_dir/subscriptions
+    : > "$config_dir/subscriptions"
 
     # check how many subscriptions there are in the file
     sublength=$( jq '. | length' < "$yt_sub_import_file" )
