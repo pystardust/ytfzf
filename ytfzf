@@ -379,11 +379,7 @@ format_menu () {
 }
 
 function_exists () {
-	if type "$1" > /dev/null 2>&1; then
-	    return 0
-	else
-	    return 1
-	fi
+	type "$1" > /dev/null 2>&1 && return 0 || return 1
 }
 
 # video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
@@ -642,9 +638,9 @@ get_yt_html () {
 	curl "$link" -s \
 	  -G --data-urlencode "search_query=$query" \
 	  -G --data-urlencode "sp=$sp" \
-	  -H 'authority: www.youtube.com' \
-	  -H "user-agent: $useragent" \
-	  -H 'accept-language: en-US,en;q=0.9' \
+	  -H 'Authority: www.youtube.com' \
+	  -H "User-Agent: $useragent" \
+	  -H 'Accept-Language: en-US,en;q=0.9' \
 	  -L \
 	  --compressed
     )"
@@ -833,7 +829,7 @@ get_search_query () {
 	if [ -z "$search_query" ]; then
 		if [ "$is_ext_menu" -eq 1 ]; then
 			#when using an external menu, the query will be done there
-			search_query=$(printf "" | eval "$external_menu" )
+			search_query=$( : | eval "$external_menu" )
 		else
 			#otherwise use the search prompt
 			printf "$search_prompt"
@@ -856,7 +852,8 @@ user_selection () {
 		selected_data=$(printf "%s\n" "$videos_data_clean" | sed "${link_count}"q )
 	#picks n random videos
 	elif [ "$random_select" -eq 1 ] ; then
-		selected_data=$(printf "%s\n" "$videos_data_clean" | shuf -n "$link_count" )
+	    selected_data=$(printf "%s\n" "$videos_data_clean" | posix_shuf) 
+
 	#show thumbnail menu
 	elif [ "$show_thumbnails" -eq 1 ] ; then
 		dep_ck "ueberzug" "fzf"
@@ -889,17 +886,14 @@ format_user_selection () {
 	selected_data=
 	for surl in $shorturls; do
 		[ -z "$surl" ] && continue
-		case $surl in
-			???????????)
-				# youtube video
-				selected_urls=$selected_urls$new_line"https://www.youtube.com/watch?v="$surl
-				selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )
-				;;
-			??????????????????????????????????)
-				selected_urls=$selected_urls$new_line"https://www.youtube.com/playlist?list="$surl
-				selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )
-				;;
-		esac
+		if printf "%s" "$surl" | grep -q '.\{11\}'; then
+			# youtube video
+			selected_urls=$selected_urls$new_line"https://www.youtube.com/watch?v="$surl
+			selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep "|$surl" )
+		elif printf "%s" "$surl" | grep -q '.\{35\}'; then
+			selected_urls=$selected_urls$new_line"https://www.youtube.com/playlist?list="$surl
+			selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep "|$surl" )
+		fi
 	done
 	selected_urls=$( printf "%s" "$selected_urls" | sed 1d )
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
@@ -989,17 +983,13 @@ session_is_running () {
     while read -r pid; do
 	[ -d /proc/"$pid" ] && session_count=$(( session_count + 1 ))
     done < "$pid_file"
-    if [ $session_count -eq 1 ]; then
-	return 1
-    else 
-	return 0
-    fi
+    [ $session_count -eq 1 ] && return 1 || return 0
 }
 #> removes tmp files and clutter
 clean_up () {
 	if ! session_is_running ; then
 		[ -d "$thumb_dir" ] && rm -r "$thumb_dir"
-		printf "" > "$pid_file"
+		: > "$pid_file"
 		function_exists "on_exit" && on_exit
 	fi
 	#clean up should never fail, it may fail in user's on_exit, but should be handled by on_exit
@@ -1009,7 +999,7 @@ clean_up () {
 save_before_exit () {
 	[ $is_url -eq 1 ] && exit
 	[ $enable_hist -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
-	[ $enable_cur -eq 1 ] && printf "" > "$current_file" ;
+	[ $enable_cur -eq 1 ] && : > "$current_file" ;
 }
 
 
@@ -1048,7 +1038,7 @@ get_history () {
 }
 clear_history () {
 	if [ -e "$history_file" ]; then
-		printf "" > "$history_file"
+		: > "$history_file"
 		printf "History has been cleared\n"
 	else
 		printf "\033[31mHistory file not found, history not cleared\033[0m\n" >&2
@@ -1180,11 +1170,11 @@ create_subs () {
     # check how many subscriptions there are in the file
     sublength=$( jq '. | length' < "$yt_sub_import_file" )
 
-    for i in $( seq 0 $((sublength-1)) ); do
-
+    i=0
+    while [ $i -lt $((sublength-1)) ]; do
         channelInfo=$(jq --argjson index ${i} '[ "https://www.youtube.com/channel/" + .[$index].snippet.resourceId.channelId + "/videos", "#" + .[$index].snippet.title ]' < "$yt_sub_import_file")
 	printf "%s\n" "$(printf "%s" "$channelInfo" | tr -d '[]"\n,')" >> "$subscriptions_file"
-
+	i=$((i + 1))
     done
     exit
 }
@@ -1199,13 +1189,17 @@ verify_thumb_disp_method () {
     esac
 }
 
+#sort -R is not posix
+posix_shuf () {
+    awk -F '\n' '
+	BEGIN {srand()} #set the random seed at the start
+	{print rand() " " $0} #prepend a random number for each line' |\
+    sort | head -n${link_count} | sed -E 's/[^ ]* //'
+    #sort by the random numbers, pick the first $link_count videos, remove the random number
+}
+
 is_non_number () {
-	case $1 in
-		(*[!0-9]*|'') 
-			return 0;;
-		(*)
-			return 1;;
-	esac
+	[ "$1" -eq "$1" ] 2>/dev/null && return 1 || return 0
 }
 
 bad_opt_arg () {
