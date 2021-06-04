@@ -852,7 +852,8 @@ user_selection () {
 		selected_data=$(printf "%s\n" "$videos_data_clean" | sed "${link_count}"q )
 	#picks n random videos
 	elif [ "$random_select" -eq 1 ] ; then
-	    selected_data=$(printf "%s\n" "$videos_data_clean" | posix_shuf) 
+	    selected_data=$(printf "%s\n" "$videos_data_clean" | posix_shuf | head -n${link_count}) 
+	    #posix_shuf, pick the first $link_count videos
 
 	#show thumbnail menu
 	elif [ "$show_thumbnails" -eq 1 ] ; then
@@ -1194,8 +1195,8 @@ posix_shuf () {
     awk -F '\n' '
 	BEGIN {srand()} #set the random seed at the start
 	{print rand() " " $0} #prepend a random number for each line' |\
-    sort | head -n${link_count} | sed -E 's/[^ ]* //'
-    #sort by the random numbers, pick the first $link_count videos, remove the random number
+    sort | sed -E 's/[^ ]* //'
+    #sort by the random numbers, remove the random number
 }
 
 is_non_number () {
