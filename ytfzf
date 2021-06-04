@@ -418,6 +418,7 @@ if ! function_exists 'thumbnail_video_info_text' ; then
 	printf "\n ${c_blue}Duration	${c_yellow}%s" "$duration"
 	printf "\n ${c_blue}Views	${c_magenta}%s" "$views"
 	printf "\n ${c_blue}Date	${c_cyan}%s" "$date"
+	printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
     }
 fi
 
@@ -444,13 +445,21 @@ stop_ueberzug () {
 
 preview_img () {
 
-	# remove trailing spaces from each field and separate them with just a tab
-	preview_data=$( printf '%s' "$*" | sed "s/ *$tab_space|/$tab_space/g" )
+	shorturl=${*##*${tab_space}|}
 
-	IFS=$tab_space read -r title channel duration views date shorturl << EOF
-$preview_data
-EOF
+	json_obj=$(printf "%s" "$videos_json" | jq '.[]|select( .videoID == "'"$shorturl"'")')
 
+
+	IFS=$tab_space read title channel duration views date description <<-EOF
+	$(
+		printf "%s" "$json_obj" | jq -r \
+		'
+		[.title,.channel,.duration,.views,.date,.description]|@tsv
+		'
+	)
+	EOF
+
+	# if the entry is a channel separator then clear the image
 	if [ -z "${shorturl%% *}" ] ; then
 		printf "\n${c_cyan}%s${c_reset}\n" "$title"
 		printf '{ "action": "remove", "identifier": "%s" }\n' "$ID" > "$FIFO"
@@ -772,6 +781,7 @@ scrape_yt () {
 			duration:.lengthText.simpleText,
 			views: .shortViewCountText.simpleText,
 			date: .publishedTimeText.simpleText,
+			description: .detailedMetadataSnippets[0].snippetText.runs[0].text,
 			videoID: .videoId,
 			thumbs: .thumbnail.thumbnails[0].url
 		}
@@ -792,6 +802,7 @@ scrape_yt () {
 	]')
 
 	videos_json=$playlist_json$videos_json
+	export videos_json
 
 	#checks if it's empty in case it was defined in a config function eg: on_get_search
 	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
@@ -807,7 +818,7 @@ scrape_yt () {
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	# wait for thumbnails to download
 	wait
-	unset playlist_json videos_json yt_json yt_html
+	unset playlist_json yt_json yt_html
 }
 
 
