@@ -292,14 +292,13 @@ send_select_video_notif () {
     #date (video upload date)
     #date_len, the vailable tty columns for $date
     #shorturl (the video ID)
-    #url_len, the available tty columns for $shroturl
 video_info_text() {
 	printf "%-${title_len}.${title_len}s\t" "$title"
 	printf "%-${channel_len}.${channel_len}s\t" "$channel"
 	printf "%-${dur_len}.${dur_len}s\t" "$duration"
 	printf "%-${view_len}.${view_len}s\t" "$views"
 	printf "%-${date_len}.${date_len}s\t" "$date"
-	printf "%-${url_len}.${url_len}s\t" "$shorturl"
+	printf "%s" "$shorturl"
 	printf "\n"
 }
 
@@ -319,15 +318,17 @@ video_info_text() {
     #duration
     #views
     #date (video upload date)
+    #description (the short description seen in search results)
     #shorturl (the video ID)
 #how this works:
     #anything printed will stay on the screen in the fzf preview menu
 thumbnail_video_info_text () {
-         printf "\n${c_cyan}%s" "$title"
-         printf "\n${c_blue}Channel      ${c_green}%s" "$channel"
-         printf "\n${c_blue}Duration     ${c_yellow}%s" "$duration"
-         printf "\n${c_blue}Views        ${c_magenta}%s" "$views"
-         printf "\n${c_blue}Date         ${c_cyan}%s" "$date"
+         printf "\n ${c_cyan}%s" "$title"
+         printf "\n ${c_blue}Channel      ${c_green}%s" "$channel"
+         printf "\n ${c_blue}Duration     ${c_yellow}%s" "$duration"
+         printf "\n ${c_blue}Views        ${c_magenta}%s" "$views"
+         printf "\n ${c_blue}Date         ${c_cyan}%s" "$date"
+         printf "\n ${c_blue}Description  ${c_reset}: %s" "$description"
 }
 
 
