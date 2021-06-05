@@ -889,14 +889,13 @@ format_user_selection () {
 	selected_data=
 	for surl in $shorturls; do
 		[ -z "$surl" ] && continue
-		if printf "%s" "$surl" | grep -q '.\{11\}'; then
-			# youtube video
-			selected_urls=$selected_urls$new_line"https://www.youtube.com/watch?v="$surl
-			selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep "|$surl" )
-		elif printf "%s" "$surl" | grep -q '.\{35\}'; then
-			selected_urls=$selected_urls$new_line"https://www.youtube.com/playlist?list="$surl
-			selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep "|$surl" )
-		fi
+		case ${#surl} in
+		    # youtube video
+		    11) selected_urls=$selected_urls$new_line"https://www.youtube.com/watch?v="$surl ;;
+		    34) selected_urls=$selected_urls$new_line"https://www.youtube.com/playlist?list="$surl ;;
+		    *) continue ;;
+		esac
+		selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep "|$surl" )
 	done
 	selected_urls=$( printf "%s" "$selected_urls" | sed 1d )
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
@@ -1013,8 +1012,7 @@ save_before_exit () {
 check_if_url () {
 	# to check if given input is a url
 	url_regex='^https\?://.*'
-
-	if { printf "%s" "$1" | grep -q "$url_regex"; } ; then
+	if printf "%s" "$1" | grep -q "$url_regex"; then
 		is_url=1
 		selected_urls=$(printf "%s" "$1" | tr ' ' '\n')
 		scrape="url"
@@ -1023,6 +1021,7 @@ check_if_url () {
 	fi
 	unset url_regex
 }
+
 #> Loads history in videos_data
 get_history () {
 	if [ "$enable_hist" -eq 1 ]; then
@@ -1039,6 +1038,7 @@ get_history () {
 	fi
 	unset hist_data
 }
+
 clear_history () {
 	if [ -e "$history_file" ]; then
 		: > "$history_file"
@@ -1064,13 +1064,10 @@ clear_history () {
 	fi
 
 	#if downloading, say Downloading not currently playing
-	if [ $is_download -eq 1 ]; then
-	    notify-send "Downloading" "$message" -i "$video_thumb"
-	else
-	    notify-send "Current playing" "$message" -i "$video_thumb"
-	fi
+	[ $is_download -eq 1 ] && title="Downloading" || title="Currently playing"
+	notify-send "$title" "$message" -i "$video_thumb"
 
-	unset message video_thumb
+	unset message video_thumb title
 }
 
 send_notify () {
@@ -1090,17 +1087,16 @@ update_ytfzf () {
 
 	if sed -n '1p' < "$updatefile" | grep -q '#!/bin/sh'; then
 		chmod 755 "$updatefile"
-		if [ "$(uname)" = "Darwin" ]; then
-			sudo cp "$updatefile" "/usr/local/bin/ytfzf"
-		else
-			sudo cp "$updatefile" "/usr/bin/ytfzf"
-		fi
+		[ "$(uname)" = "Darwin" ] && prefix="/usr/local/bin" || prefix="/usr/bin"
+		function_exists "sudo" && doasroot="sudo" || doasroot="doas"
+		$doasroot cp "$updatefile" "$prefix/ytfzf"
+		unset prefix doasroot
 	else
 		printf "%bFailed to update ytfzf. Try again later.%b" "$c_red" "$c_reset"
 	fi
 
 	rm "$updatefile"
-	exit
+	exit 0
 }
 
 #gives a value to sort by (this will give the unix time the video was uploaded)
