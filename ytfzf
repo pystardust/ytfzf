@@ -84,7 +84,7 @@ exit_on_opt_error=${exit_on_opt_error-1}
 is_ext_menu=${is_ext_menu-0}
 #show thumbnails (same as -t)
 show_thumbnails=${show_thumbnails-0}
-# 0: better thumbnails (slower), 1: low res thumbnails (faster)
+# 1: better thumbnails (slower), 0: low res thumbnails (faster)
 thumbnail_quality=${thumbnail_quality-1}
 #auto select the first video (same as -a)
 auto_select=${auto_select-0}
