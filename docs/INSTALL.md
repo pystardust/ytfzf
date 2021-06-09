@@ -9,8 +9,13 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 * [`jq`](https://github.com/stedolan/jq) - _to parse json_
 * [`fzf`](https://github.com/junegunn/fzf) (Optional) - _for menu_
 * [`ueberzug`](https://github.com/seebye/ueberzug) (Optional) - _for thumbnails_
+* other thumbnail options
+    * [`chafa`](https://github.com/hpjansson/chafa)
+    * [`catimg`](https://github.com/posva/catimg)
+    * [`jp2a`](https://github.com/cslarsen/jp2a)
+> be sure to export `YTFZF_THUMB_DISP_METHOD` in your shell rc or `thumb_disp_method` in the [config](conf.sh) when not using ueberzug
 
-> Thumbnails only work with `fzf` and `Ueberzug` as of now.
+> Thumbnails only work with `fzf` as of now.
 
 + #### Arch based
 

@@ -379,11 +379,7 @@ format_menu () {
 }
 
 function_exists () {
-	if type "$1" > /dev/null 2>&1; then
-	    return 0
-	else
-	    return 1
-	fi
+	type "$1" > /dev/null 2>&1 && return 0 || return 1
 }
 
 # video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
@@ -446,12 +442,13 @@ stop_ueberzug () {
 
 preview_img () {
 
-	shorturl=${*##*${tab_space}|}
+	args="$*"
+	shorturl=${args##*${tab_space}|}
 
 	json_obj=$(printf "%s" "$videos_json" | jq '.[]|select( .videoID == "'"$shorturl"'")')
 
 
-	IFS=$tab_space read title channel duration views date description <<-EOF
+	IFS=$tab_space read -r title channel duration views date description <<-EOF
 	$(
 		printf "%s" "$json_obj" | jq -r \
 		'
@@ -536,6 +533,7 @@ preview_img () {
 	esac
 	unset title channel duration views date shorturl
 	unset thumb_width thumb_height thumb_x thumb_y IMAGE
+	unset args
 }
 
 ############################
@@ -642,9 +640,9 @@ get_yt_html () {
 	curl "$link" -s \
 	  -G --data-urlencode "search_query=$query" \
 	  -G --data-urlencode "sp=$sp" \
-	  -H 'authority: www.youtube.com' \
-	  -H "user-agent: $useragent" \
-	  -H 'accept-language: en-US,en;q=0.9' \
+	  -H 'Authority: www.youtube.com' \
+	  -H "User-Agent: $useragent" \
+	  -H 'Accept-Language: en-US,en;q=0.9' \
 	  -L \
 	  --compressed
     )"
@@ -833,7 +831,7 @@ get_search_query () {
 	if [ -z "$search_query" ]; then
 		if [ "$is_ext_menu" -eq 1 ]; then
 			#when using an external menu, the query will be done there
-			search_query=$(printf "" | eval "$external_menu" )
+			search_query=$( : | eval "$external_menu" )
 		else
 			#otherwise use the search prompt
 			printf "$search_prompt"
@@ -856,7 +854,9 @@ user_selection () {
 		selected_data=$(printf "%s\n" "$videos_data_clean" | sed "${link_count}"q )
 	#picks n random videos
 	elif [ "$random_select" -eq 1 ] ; then
-		selected_data=$(printf "%s\n" "$videos_data_clean" | shuf -n "$link_count" )
+	    selected_data=$(printf "%s\n" "$videos_data_clean" | posix_shuf | head -n${link_count}) 
+	    #posix_shuf, pick the first $link_count videos
+
 	#show thumbnail menu
 	elif [ "$show_thumbnails" -eq 1 ] ; then
 		dep_ck "ueberzug" "fzf"
@@ -889,17 +889,13 @@ format_user_selection () {
 	selected_data=
 	for surl in $shorturls; do
 		[ -z "$surl" ] && continue
-		case $surl in
-			???????????)
-				# youtube video
-				selected_urls=$selected_urls$new_line"https://www.youtube.com/watch?v="$surl
-				selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )
-				;;
-			??????????????????????????????????)
-				selected_urls=$selected_urls$new_line"https://www.youtube.com/playlist?list="$surl
-				selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep -m1 -e "$surl" )
-				;;
+		case ${#surl} in
+		    # youtube video
+		    11) selected_urls=$selected_urls$new_line"https://www.youtube.com/watch?v="$surl ;;
+		    34) selected_urls=$selected_urls$new_line"https://www.youtube.com/playlist?list="$surl ;;
+		    *) continue ;;
 		esac
+		selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep "|$surl" )
 	done
 	selected_urls=$( printf "%s" "$selected_urls" | sed 1d )
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
@@ -956,7 +952,7 @@ open_player () {
 		fi
 	elif [ $is_download -eq 1 ]; then
 		if [ -z "$video_pref" ]; then
-			youtube-dl "$@"  $YTFZF_SUBT_NAME
+			youtube-dl "$@"  "$YTFZF_SUBT_NAME"
 		else
 			youtube-dl -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
 		fi
@@ -989,17 +985,13 @@ session_is_running () {
     while read -r pid; do
 	[ -d /proc/"$pid" ] && session_count=$(( session_count + 1 ))
     done < "$pid_file"
-    if [ $session_count -eq 1 ]; then
-	return 1
-    else 
-	return 0
-    fi
+    [ $session_count -eq 1 ] && return 1 || return 0
 }
 #> removes tmp files and clutter
 clean_up () {
 	if ! session_is_running ; then
 		[ -d "$thumb_dir" ] && rm -r "$thumb_dir"
-		printf "" > "$pid_file"
+		: > "$pid_file"
 		function_exists "on_exit" && on_exit
 	fi
 	#clean up should never fail, it may fail in user's on_exit, but should be handled by on_exit
@@ -1009,7 +1001,7 @@ clean_up () {
 save_before_exit () {
 	[ $is_url -eq 1 ] && exit
 	[ $enable_hist -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
-	[ $enable_cur -eq 1 ] && printf "" > "$current_file" ;
+	[ $enable_cur -eq 1 ] && : > "$current_file" ;
 }
 
 
@@ -1020,8 +1012,7 @@ save_before_exit () {
 check_if_url () {
 	# to check if given input is a url
 	url_regex='^https\?://.*'
-
-	if { printf "%s" "$1" | grep -q "$url_regex"; } ; then
+	if printf "%s" "$1" | grep -q "$url_regex"; then
 		is_url=1
 		selected_urls=$(printf "%s" "$1" | tr ' ' '\n')
 		scrape="url"
@@ -1030,6 +1021,7 @@ check_if_url () {
 	fi
 	unset url_regex
 }
+
 #> Loads history in videos_data
 get_history () {
 	if [ "$enable_hist" -eq 1 ]; then
@@ -1046,9 +1038,10 @@ get_history () {
 	fi
 	unset hist_data
 }
+
 clear_history () {
 	if [ -e "$history_file" ]; then
-		printf "" > "$history_file"
+		: > "$history_file"
 		printf "History has been cleared\n"
 	else
 		printf "\033[31mHistory file not found, history not cleared\033[0m\n" >&2
@@ -1071,13 +1064,10 @@ clear_history () {
 	fi
 
 	#if downloading, say Downloading not currently playing
-	if [ $is_download -eq 1 ]; then
-	    notify-send "Downloading" "$message" -i "$video_thumb"
-	else
-	    notify-send "Current playing" "$message" -i "$video_thumb"
-	fi
+	[ $is_download -eq 1 ] && title="Downloading" || title="Currently playing"
+	notify-send "$title" "$message" -i "$video_thumb"
 
-	unset message video_thumb
+	unset message video_thumb title
 }
 
 send_notify () {
@@ -1097,17 +1087,16 @@ update_ytfzf () {
 
 	if sed -n '1p' < "$updatefile" | grep -q '#!/bin/sh'; then
 		chmod 755 "$updatefile"
-		if [ "$(uname)" = "Darwin" ]; then
-			sudo cp "$updatefile" "/usr/local/bin/ytfzf"
-		else
-			sudo cp "$updatefile" "/usr/bin/ytfzf"
-		fi
+		[ "$(uname)" = "Darwin" ] && prefix="/usr/local/bin" || prefix="/usr/bin"
+		function_exists "sudo" && doasroot="sudo" || doasroot="doas"
+		$doasroot cp "$updatefile" "$prefix/ytfzf"
+		unset prefix doasroot
 	else
 		printf "%bFailed to update ytfzf. Try again later.%b" "$c_red" "$c_reset"
 	fi
 
 	rm "$updatefile"
-	exit
+	exit 0
 }
 
 #gives a value to sort by (this will give the unix time the video was uploaded)
@@ -1175,16 +1164,14 @@ create_subs () {
     fi
 
     # start fresh
-    : > $config_dir/subscriptions
+    : > "$config_dir/subscriptions"
 
     # check how many subscriptions there are in the file
     sublength=$( jq '. | length' < "$yt_sub_import_file" )
 
-    for i in $( seq 0 $((sublength-1)) ); do
-
+    for i in $(seq $((sublength - 1))); do
         channelInfo=$(jq --argjson index ${i} '[ "https://www.youtube.com/channel/" + .[$index].snippet.resourceId.channelId + "/videos", "#" + .[$index].snippet.title ]' < "$yt_sub_import_file")
 	printf "%s\n" "$(printf "%s" "$channelInfo" | tr -d '[]"\n,')" >> "$subscriptions_file"
-
     done
     exit
 }
@@ -1199,18 +1186,22 @@ verify_thumb_disp_method () {
     esac
 }
 
+#sort -R is not posix
+posix_shuf () {
+    awk -F '\n' '
+	BEGIN {srand()} #set the random seed at the start
+	{print rand() " " $0} #prepend a random number for each line' |\
+    sort | sed -E 's/[^ ]* //'
+    #sort by the random numbers, remove the random number
+}
+
 is_non_number () {
-	case $1 in
-		(*[!0-9]*|'') 
-			return 0;;
-		(*)
-			return 1;;
-	esac
+	[ "$1" -eq "$1" ] 2>/dev/null && return 1 || return 0
 }
 
 bad_opt_arg () {
-	opt=$1
-	arg=$2
+	arg=${1:-"$optarg"}
+	opt=${2:-"--$opt="}
 	printf "%s\n" "$opt requires a numeric arg, but was given \"$arg\"" >&2
 	exit 3
 }
@@ -1234,11 +1225,11 @@ parse_opt () {
 
 		D|is-ext-menu)
 			is_ext_menu=${optarg:-1}
-			is_non_number "$is_ext_menu" && bad_opt_arg "--is-ext-menu=" "$is_ext_menu" ;;
+			is_non_number "$is_ext_menu" && bad_opt_arg ;;
 
 		m|audio-only)
 			is_audio_only=${optarg:-1}
-			is_non_number "$is_audio_only" && bad_opt_arg "--audio-only=" "$is_audio_only" ;;
+			is_non_number "$is_audio_only" && bad_opt_arg ;;
 
 		d|download)
 			is_download=${optarg:-1} ;;
@@ -1253,23 +1244,23 @@ parse_opt () {
 
 		a|auto-select)
 			auto_select=${optarg:-1}
-			is_non_number "$auto_select" && bad_opt_arg "--auto-select=" "$auto_select" ;;
+			is_non_number "$auto_select" && bad_opt_arg ;;
 
 		A|select-all)
 			select_all=${optarg:-1}
-			is_non_number "$select_all" && bad_opt_arg "--select-all=" "$select_all" ;;
+			is_non_number "$select_all" && bad_opt_arg ;;
 
 		r|random-select)
 			random_select=${optarg:-1}
-			is_non_number "$random_select" && bad_opt_arg "--random-select=" "$random_select" ;;
+			is_non_number "$random_select" && bad_opt_arg ;;
 
 		s|search-again)
 			search_again=${optarg:-1}
-			is_non_number "$search_again" && bad_opt_arg "--search-again=" "$search_again" ;;
+			is_non_number "$search_again" && bad_opt_arg ;;
 
 		sort)
 			sort_videos_data=${optarg:-1}
-			is_non_number "$sort_videos_data" && bad_opt_arg "--sort=" "$sort_videos_data" ;;
+			is_non_number "$sort_videos_data" && bad_opt_arg ;;
 		sort-name)
 			sort_videos_data=1
 			sort_name="$optarg" ;;
@@ -1278,12 +1269,12 @@ parse_opt () {
 			scrape="yt_subs" ;;
 		subs)
 			sub_link_count=$optarg
-			is_non_number "$sub_link_count" && bad_opt_arg "--subs=" "$sub_link_count"
+			is_non_number "$sub_link_count" && bad_opt_arg
 			parse_opt "S" ;;
 
 		fancy-subs)
 			fancy_subscriptions_menu=${optarg:-1}
-			is_non_number "$fancy_subscriptions_menu" && bad_opt_arg "--fancy-subs=" "$fancy_subscriptions_menu" ;;
+			is_non_number "$fancy_subscriptions_menu" && bad_opt_arg ;;
 			
 		T|trending)	
 			trending_tab=${optarg:-}
@@ -1291,11 +1282,11 @@ parse_opt () {
 
 		l|loop)
 			enable_loop=${optarg:-1}
-			is_non_number "$enable_loop" && bad_opt_arg "--loop=" "$enable_loop" ;;
+			is_non_number "$enable_loop" && bad_opt_arg ;;
 
 		t|show-thumbnails)
 			show_thumbnails=${optarg:-1}
-			is_non_number "$show_thumbnails" && bad_opt_arg "--show-thumbnails=" "$show_thumbnails" ;;
+			is_non_number "$show_thumbnails" && bad_opt_arg ;;
 
 		thumb-disp-method)
 			thumb_disp_method="$optarg"
@@ -1303,7 +1294,7 @@ parse_opt () {
 
 		thumbnail-quality)
 			thumbnail_quality=$optarg
-			is_non_number "$thumbnail_quality" && bad_opt_arg "--thumbnail-quality=" "$thumbnail_quality"
+			is_non_number "$thumbnail_quality" && bad_opt_arg
 			parse_opt "t" ;;
 
 		v)	printf "ytfzf: %s\n" "$YTFZF_VERSION"
@@ -1316,15 +1307,15 @@ parse_opt () {
 
 		subt)
 			auto_caption=${optarg:-1}
-			is_non_number "$auto_caption" && bad_opt_arg "--subt=" "$auto_caption" ;;
+			is_non_number "$auto_caption" && bad_opt_arg ;;
 
 		L|link-only)
 			show_link_only=${optarg:-1}
-			is_non_number "$show_link_only" && bad_opt_arg "--link-only=" "$show_link_only" ;;
+			is_non_number "$show_link_only" && bad_opt_arg ;;
 
 		n|link-count)
 			link_count="$optarg"
-			is_non_number "$link_count" && bad_opt_arg "-n" "$link_count" ;;
+			is_non_number "$link_count" && bad_opt_arg "$link_count" "-n" ;;
 
 		U) 	preview_img "$optarg"; exit;
 			# This option is reserved for the script, to show image previews
@@ -1333,7 +1324,7 @@ parse_opt () {
 
 		N|notification)
 			enable_noti=${optarg:-1}
-			is_non_number "$enable_noti" && bad_opt_arg "--notification=" "$enable_noti" ;;
+			is_non_number "$enable_noti" && bad_opt_arg ;;
 
 		add-subs) create_subs ;;
 
@@ -1385,7 +1376,7 @@ fi
 
 #if both are true, it defaults to using fzf, and if fzf isnt installed it will throw an error
 #so print this error instead and set $show_thumbnails to 0
-if [ $is_ext_menu -eq 1 -a $show_thumbnails -eq 1 ]; then
+if [ $is_ext_menu -eq 1 ] && [ $show_thumbnails -eq 1 ]; then
 	[ $ext_menu_notifs -eq 1 ] &&\
 	    notify-send "warning" "Currently thumbnails do not work in external menus" ||\
 	    printf "\033[33mWARNING: Currently thumbnails do not work in external menus\033[0m\n" >&2
