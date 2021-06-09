@@ -148,6 +148,13 @@ sub_link_count=10
 #same as --fancy-subs=
 fancy_subscriptions_menu=1
 
+#whether or not to show the search again button
+#1 means it's  always on
+#0 means always off
+#empty means enable when search_again and enable_loop are on
+#same as -ls
+search_again_button=
+
 #where to source videos from
 #options are: history, yt_subs, yt_search, trending
 #history is the same as -H
@@ -228,6 +235,9 @@ subscriptions_file=$YTFZF_CONFIG_DIR/subscriptions
 #the text template string to use for the fancy subscriptions divider,
 #the spaces are for centering
 fancy_subscriptions_text="             -------%s-------"
+
+#the text to use for the search again button, should be rather unique to not interfere with titles
+search_again_button_text="[Make Another Search]"
 
 
 #this function is called when a video is selected in the menu to send a notification
