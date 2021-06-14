@@ -909,31 +909,35 @@ user_selection () {
 }
 
 format_user_selection () {
-	#gets a list of video ids/urls from the selected data
-	shorturls=$(printf "%s" "$selected_data" | awk -F "$tab_space" '{print $6}' | tr -d '|')
-	[ -z "$shorturls" ] && exit
-
 	#for each url append the full url to the $urls string
 	#through this loop, the selected data which was truncated by formatting is retrived.
-	selected_urls=
-	selected_data=
-	for surl in $shorturls; do
-		[ -z "$surl" ] && continue
+	while read data_line; do
+		surl=${data_line##*|}
+		[ -z "$surl" ] && continue # to ignore the separators
 		#literally just check if there is :// to make sure it's a url (just in case the url doesn't use https or http)
 		#peertube urls can differ a lot
-		printf "%s" "$surl" | grep -q "://" && selected_urls=$selected_urls$new_line$surl
-		case ${#surl} in
-		    # youtube video
-		    11) selected_urls=$selected_urls$new_line"https://www.youtube.com/watch?v="$surl ;;
-		    34) selected_urls=$selected_urls$new_line"https://www.youtube.com/playlist?list="$surl ;;
-		    *) continue ;;
+		case $surl in
+			*'://'*) selected_urls=$selected_urls$new_line$surl ;;
+			*)
+				case ${#surl} in
+					# youtube video
+					11) selected_urls=$selected_urls$new_line'https://www.youtube.com/watch?v='$surl ;;
+					34) selected_urls=$selected_urls$new_line'https://www.youtube.com/playlist?list='$surl ;;
+					*) continue ;;
+				esac
+				;;
 		esac
-		selected_data=$selected_data$new_line$(printf "%s" "$videos_data" | grep "|$surl" )
-	done
-	selected_urls=$( printf "%s" "$selected_urls" | sed 1d )
+		refined_selected_data=$refined_selected_data$new_line$data_line
+	done<<-EOF
+	$selected_data
+	EOF
+
+	selected_urls=${selected_urls#$new_line}
+	[ -z "$selected_urls" ] && exit # exit if no valid url
+
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
-	selected_data=$( printf "%s" "$selected_data" | sed 1d )
-	unset shorturls
+	selected_data=${refined_selected_data#$new_line}
+	unset shorturls refined_selected_data
 }
 
 print_data () {
