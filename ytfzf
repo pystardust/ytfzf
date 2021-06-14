@@ -931,7 +931,10 @@ format_user_selection () {
 	done<<-EOF
 	$selected_data
 	EOF
+
 	selected_urls=${selected_urls#$new_line}
+	[ -z "$selected_urls" ] && exit # exit if no valid url
+
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data=${refined_selected_data#$new_line}
 	unset shorturls refined_selected_data
