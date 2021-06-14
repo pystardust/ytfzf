@@ -416,12 +416,12 @@ EOF
 
 if ! function_exists 'thumbnail_video_info_text' ; then
     thumbnail_video_info_text () {
-	printf "\n ${c_cyan}%s" "$title"
-	printf "\n ${c_blue}Channel	${c_green}%s" "$channel"
-	printf "\n ${c_blue}Duration	${c_yellow}%s" "$duration"
-	printf "\n ${c_blue}Views	${c_magenta}%s" "$views"
-	printf "\n ${c_blue}Date	${c_cyan}%s" "$date"
-	printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
+	printf "\n${c_cyan}%s" "$title"
+	printf "\n${c_blue}Channel	${c_green}%s" "$channel"
+	printf "\n${c_blue}Duration	${c_yellow}%s" "$duration"
+	printf "\n${c_blue}Views	${c_magenta}%s" "$views"
+	printf "\n${c_blue}Date	${c_cyan}%s" "$date"
+	printf "\n${c_blue}Description${c_cyan}\n%s${c_reset}" "$description"
     }
 fi
 
@@ -478,7 +478,7 @@ preview_img () {
 	#most common x, y positions
 
 	thumb_x=$((TTY_COLS / 2 + 3))
-	thumb_y=10
+	thumb_y=15
 
 	case $PREVIEW_SIDE in
 	    left)
@@ -893,7 +893,7 @@ user_selection () {
 		export YTFZF_THUMB_DISP_METHOD="$thumb_disp_method"
 		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
 		#thumbnails only work in fzf, use fzf
-		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
+		menu_command="fzf -m --padding 1% --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
 		--nth=1,2 $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview \"sh $0 -U {}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
