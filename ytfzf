@@ -81,7 +81,7 @@ pid_file="$cache_dir/.pid"
 [ -d "$thumb_dir" ] || mkdir -p "$thumb_dir"
 
 #> config settings
-search_prompt=${search_prompt-Search Youtube: }
+search_prompt=${search_prompt-Search: }
 #used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 #used when fancy_subscriptions_menu is 1
@@ -204,6 +204,8 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -s, --search-again                     After the video ends make another search
      -L, --link-only                        Prints the selected URL only, helpful for scripting
      -T, --trending=<gaming/music/movies>   The trending tab, using --trending= you can choose a specific tab
+     -Y, --youtube                          Search youtube (default)
+     -P, --peertube                         Search peertube
      --preview-side=<left/right/top/bottom> The side of the screen to show thumbnails
      --subt                                 Select auto-generated subtitles
      --sort                                 Sorts videos by latest upload date
@@ -738,6 +740,27 @@ get_trending_url_data () {
     esac
 }
 
+scrape_pt () {
+     #gets a list of videos
+     videos_json=$(
+     curl \
+         -s "https://sepiasearch.org/api/v1/search/videos" \
+         -G --data-urlencode "search=$*" |
+     jq '[ .data | .[] |
+         {
+              title: .name,
+              channel: .channel.displayName,
+              duration: .duration,
+              views: .views,
+              date: .publishedAt,
+              videoID: .url,
+              thumbs: .thumbnailUrl
+          }
+     ]')
+     export videos_json
+     videos_data="$(get_video_data "$videos_json")"
+}
+
 scrape_yt () {
 	# needs search_query as $*
 	## Scrape data and store video information in videos_data ( and thumbnails )
@@ -887,7 +910,7 @@ user_selection () {
 
 format_user_selection () {
 	#gets a list of video ids/urls from the selected data
-	shorturls=$(printf "%s" "$selected_data" | sed -E -n -e "s_.*\|([^|]+) *\$_\1_p")
+	shorturls=$(printf "%s" "$selected_data" | awk -F "$tab_space" '{print $6}' | tr -d '|')
 	[ -z "$shorturls" ] && exit
 
 	#for each url append the full url to the $urls string
@@ -896,6 +919,9 @@ format_user_selection () {
 	selected_data=
 	for surl in $shorturls; do
 		[ -z "$surl" ] && continue
+		#literally just check if there is :// to make sure it's a url (just in case the url doesn't use https or http)
+		#peertube urls can differ a lot
+		printf "%s" "$surl" | grep -q "://" && selected_urls=$selected_urls$new_line$surl
 		case ${#surl} in
 		    # youtube video
 		    11) selected_urls=$selected_urls$new_line"https://www.youtube.com/watch?v="$surl ;;
@@ -1265,6 +1291,10 @@ parse_opt () {
 			search_again=${optarg:-1}
 			is_non_number "$search_again" && bad_opt_arg ;;
 
+		P|peer-tube)
+			scrape="pt_search" ;;
+		Y|youtube)
+			scrape="yt_search" ;;
 		sort)
 			sort_videos_data=${optarg:-1}
 			is_non_number "$sort_videos_data" && bad_opt_arg ;;
@@ -1358,7 +1388,7 @@ parse_opt () {
 }
 
 
-while getopts "LhDmdfxHaArltSsvNTn:U:-:" OPT; do
+while getopts "LhDmdfxHaArltSsvNTPYn:U:-:" OPT; do
 	# to parse extra-options in conf.sh
 	# when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
 	if [ "$OPT" = "-" ]; then
@@ -1427,6 +1457,9 @@ scrape_fn () {
 	"yt_search")
 		get_search_query
 		scrape_yt "$search_query" ;;
+	"pt_search")
+		get_search_query
+		scrape_pt "$search_query" ;;
 	"yt_subs")
 		scrape_subscriptions
 		;;
@@ -1472,7 +1505,7 @@ while true; do
 	#if -s was specified make another search query
 	if [ $search_again -eq 1 ] && [ $enable_loop -eq 0 ] ; then
 		unset videos_data search_query
-		scrape="yt_search" scrape_fn
+		scrape_fn
 		continue
 	fi
 	#so it doesn't add it again on loop

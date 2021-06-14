@@ -156,10 +156,11 @@ fancy_subscriptions_menu=1
 search_again_button=
 
 #where to source videos from
-#options are: history, yt_subs, yt_search, trending
+#options are: history, yt_subs, yt_search, trending, pt_search
 #history is the same as -H
 #yt_subs is the same as -S
 #trending is the same as -T
+#pt_search is the same as -P (searches peertube)
 scrape="yt_search"
 
 #sort videos, history, and subscriptions by date from newest to oldest
