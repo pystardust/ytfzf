@@ -911,6 +911,7 @@ user_selection () {
 format_user_selection () {
 	#for each url append the full url to the $urls string
 	#through this loop, the selected data which was truncated by formatting is retrived.
+	selected_urls=
 	while read data_line; do
 		surl=${data_line##*|}
 		[ -z "$surl" ] && continue # to ignore the separators
