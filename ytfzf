@@ -915,7 +915,7 @@ $shortcuts
 EOF
     case $selected_key in
 	"$urls_shortcut") printf "%s\n" $selected_urls; return 1 ;;
-	"$title_shortcut") printf "%s\n" "$selected_data" | cut -f1; return 1 ;;
+	"$title_shortcut") printf "%s\n" "$selected_data" | cut -d '|' -f1; return 1 ;;
 	"$open_browser_shortcut")
 	    for url in $selected_urls; do
 		$BROWSER "$url" >/dev/null 2>&1 & disown
