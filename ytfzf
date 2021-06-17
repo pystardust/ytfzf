@@ -226,6 +226,13 @@ all_help_info () {
                                           on Arch ytfzf is available in the AUR
      --update-unstable                    gets the latest commit and installs it (--update is safer)
 
+  Alt Keys: Used withing the FZF video menu
+    alt-l : Prints the selected URL only
+    alt-t : Prints the selected title only
+    alt-o : Opens selected URL in BROWSER
+    alt-v : Play selected video
+    alt-m : Play Audio only (for music)
+    alt-d : Download to current directory
 
   Defaults can be modified through ENV variables or the config file
   the default config file can be found at https://github.com/pystardust/ytfzf/blob/master/docs/conf.sh
@@ -328,7 +335,7 @@ format_menu () {
 	if [ "$is_ext_menu" -eq 0 ]; then
 		#dep_ck fzf here because it is only necessary to use here
 		dep_ck "fzf"
-		menu_command='column -t -s "$tab_space" | fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 $FZF_DEFAULT_OPTS'
+		menu_command='column -t -s "$tab_space" | fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 --expect="alt-l,alt-t,alt-o,alt-v,alt-m,alt-d" $FZF_DEFAULT_OPTS'
 		format_fzf
 	else
 		# Dmenu doesn't render tabs so removing it
@@ -745,7 +752,7 @@ user_selection () {
 		start_ueberzug
 		#thumbnails only work in fzf, use fzf
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
-		--nth=1,2 $FZF_DEFAULT_OPTS \
+		--nth=1,2 --expect='alt-l,alt-t,alt-o,alt-v,alt-m,alt-d' $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview \"sh $0 -U {}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
 		selected_data=$( title_len=200 video_menu "$videos_data" )
@@ -760,6 +767,8 @@ user_selection () {
 }
 
 format_user_selection () {
+    selected_key=$(printf "%s" "$selected_data" | head -n1)
+
 	#gets a list of video ids/urls from the selected data
 	shorturls=$(printf "%s" "$selected_data" | sed -E -n -e "s_.*\|([^|]+) *\$_\1_p")
 	[ -z "$shorturls" ] && exit
@@ -777,6 +786,22 @@ format_user_selection () {
 	#sometimes % shows up in selected data, could throw an error if it's an invalid directive
 	selected_data=$( printf "%s" "$selected_data" | sed 1d )
 	unset shorturls
+}
+
+alt_keys () {
+    case $selected_key in
+        alt-l) printf "%s\n" "$selected_urls"; exit ;;
+        alt-t) printf "%s\n" "$selected_data" | cut -f1; exit ;;
+        alt-o)
+            for url in $selected_urls; do
+                setsid $BROWSER "$url" >/dev/null &
+                sleep 1 # Some browsers struggle to open multiple urls in succession
+            done
+            exit;;
+        alt-v) is_download=0; is_audio_only=0; play_url $selected_urls; exit;;
+        alt-d) is_download=1; play_url $selected_urls; exit;;
+        alt-m) is_audio_only=1; play_url $selected_urls; exit;;
+    esac
 }
 
 print_data () {
@@ -1243,6 +1268,7 @@ esac
 while true; do
 	user_selection
 	format_user_selection
+    alt_keys
 	print_data
 	get_video_format
 	get_sub_lang
