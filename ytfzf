@@ -918,7 +918,7 @@ EOF
 	"$title_shortcut") printf "%s\n" "$selected_data" | cut -d '|' -f1; return 1 ;;
 	"$open_browser_shortcut")
 	    for url in $selected_urls; do
-		$BROWSER "$url" >/dev/null 2>&1 & disown
+		nohup $BROWSER "$url" >/dev/null 2>&1
 	    done
 	    return 1 ;;
 	"$watch_shortcut") is_download=0; is_audio_only=0; play_url $selected_urls; return 1;;
