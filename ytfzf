@@ -337,11 +337,13 @@ format_ext_menu () {
 	view_len=$((frac * 1))
 	#video upload date space
 	date_len=$((frac * 3/2 + 100 ))
+	url_len=100
 }
 format_fzf () {
 	dur_len=7
 	view_len=10
 	date_len=14
+	url_len=100
 
 	#*_len works the same as it does in format_ext_menu
 	#show title, channel
@@ -452,6 +454,7 @@ preview_img () {
 
 	args="$*"
 	shorturl=${args##*${tab_space}|}
+	shorturl="$(printf "%s" "$shorturl" | awk '{print $1}')"
 
 	json_obj=$(printf "%s" "$videos_json" | jq '.[]|select( .videoID == "'"$shorturl"'")')
 
