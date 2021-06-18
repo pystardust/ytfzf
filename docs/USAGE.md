@@ -85,6 +85,7 @@ If you wish to find inspiration and see an example you can take a look at the [`
     + `alt-d`: download the selected video(s)
     + `alt-m`: listen to the audio of the selected video(s)
     + `alt-s`: search again
+    + `alt-enter`: detach video player
 
     These shortcuts can all be changed in `~/.config/ytfzf/conf.sh` (see the [config](conf.sh) file and go to the `MISC` section for more)
 

@@ -83,7 +83,7 @@ pid_file="$cache_dir/.pid"
 #> config settings
 #list of shortcuts to use in fzf
 #handle_custom_shortcuts will be called if defined (handle_custom_shortcuts can call handle_shortcuts to handle normal shortcuts)
-shortcuts="${shortcuts-alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s}"
+shortcuts="${shortcuts-alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter}"
 search_prompt=${search_prompt-Search: }
 #used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
@@ -135,6 +135,8 @@ is_download=0
 trending_tab="${trending_tab-}"
 #the sort name, if exists will be called and it will set functions for sorting
 sort_name="${sort_name-}"
+#to detach the video player from the terminal
+detach_player=${detach_player-0}
 # misc
 tab_space=$(printf '\t')
 new_line="
@@ -184,6 +186,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
                                             --version for ytfzf + dependency's versions
      -t, --show-thumbnails                  Show thumbnails (requires ueberzug)
                                             Doesn't work with -H -D
+     --detach                               Detach the video player from the terminal
      --thumbnail-quality=<0,1>              0: low quality (faster), 1: default
      --thumb-disp-method=<method>           the program to use for displaying images,
                                             see --help-thumb-disp for a list of choices
@@ -910,9 +913,10 @@ handle_shortcuts () {
     #ei: $urls_shortcut will be equal to the first keybind
     IFS="," read -r \
 	urls_shortcut title_shortcut open_browser_shortcut watch_shortcut \
-	download_shortcut audio_shortcut search_shortcut rest <<-EOF
-$shortcuts
-EOF
+	download_shortcut audio_shortcut search_shortcut detach_shortcut _ <<-EOF
+	$shortcuts
+	EOF
+
     case $selected_key in
 	"$urls_shortcut") printf "%s\n" $selected_urls; return 1 ;;
 	"$title_shortcut") 
@@ -925,6 +929,7 @@ EOF
 	"$watch_shortcut") is_download=0; is_audio_only=0; return 0;;
 	"$download_shortcut") is_download=1; return 0;;
 	"$audio_shortcut") is_audio_only=1; return 0;;
+	"$detach_shortcut") detach_player=1; return 0;;
 	"$search_shortcut")
 	    unset videos_data search_query
 	    [ "$scrape" = "pt_search" ] && scrape_fn || scrape="yt_search" scrape_fn
@@ -1008,6 +1013,17 @@ open_player () {
 	if [ $is_audio_only -eq 1 ]; then
 		video_player=$audio_player
 		video_pref="bestaudio"
+	fi
+
+	if [ $detach_player -eq 1 ]; then
+		if [ -z "$video_pref" ] || [ $is_audio_only -eq 1 ]; then
+			printf "Opening Player: %s\n" "$video_player $*"
+			setsid -f $video_player "$@"  $YTFZF_SUBT_NAME >/dev/null 2>&1
+		else
+			printf "Opening Player: %s\n" "$video_player_format$video_pref $*"
+			setsid -f $video_player_format"$video_pref"  "$@"  $YTFZF_SUBT_NAME >/dev/null 2>&1
+		fi
+		return
 	fi
 
 	if [ $is_download -eq 0 ]; then
@@ -1409,6 +1425,8 @@ parse_opt () {
 		filter-id|sp) sp=$optarg ;;
 
 		preview-side) export PREVIEW_SIDE=$optarg ;;
+
+		detach) detach_player=1 ;;
 
 		update) update_ytfzf "master" ;;
 		update-unstable) update_ytfzf "${optarg:-development}" ;;
