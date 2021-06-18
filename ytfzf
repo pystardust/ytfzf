@@ -932,8 +932,11 @@ EOF
 	    format_user_selection
 	    return 0;;
     esac
-    function_exists "handle_custom_shortcuts" && handle_custom_shortcuts
-    return $?
+    if function_exists "handle_custom_shortcuts"; then
+	handle_custom_shortcuts
+	return $?
+    fi
+    return 0
 }
 
 format_user_selection () {
