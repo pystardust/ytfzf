@@ -908,9 +908,7 @@ handle_shortcuts () {
     [ -z "$selected_key" ] && return 0
     #creates splits the variable shortcuts by , and assigns a variable to each string
     #ei: $urls_shortcut will be equal to the first keybind
-    while IFS="," read -r urls_shortcut title_shortcut open_browser_shortcut watch_shortcut download_shortcut audio_shortcut search_shortcut; do
-	break;
-    done << EOF
+    IFS="," read -r urls_shortcut title_shortcut open_browser_shortcut watch_shortcut download_shortcut audio_shortcut search_shortcut << EOF
 $shortcuts
 EOF
     case $selected_key in
