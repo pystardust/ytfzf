@@ -29,6 +29,18 @@ curl -sL "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" | sud
 ```
 <sup>*requires cURL</sup>
 
+## Breaking Change in V 1.2
+
+In version 1.2, `video_info_text` was changed slightly,
+the line
+```sh
+printf "%-${url_len}.${url_len}s" "$short_urls"
+```
+was changed to
+```sh
+printf "%s" "$short_urls"
+```
+
 ## Table of Contents
 
 - [`Dependencies`](docs/INSTALL.md/#Dependencies)
