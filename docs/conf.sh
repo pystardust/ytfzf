@@ -11,13 +11,17 @@
 ###################
 
 #this variable should be set somewhere other than here or it will not work
-YTFZF_CONFIG_DIR=$HOME/.config/ytfzf
+
+#YTFZF_CONFIG_DIR=$HOME/.config/ytfzf
+
 
 #the file to source for config
 #the best way to use this would either be to export it in your shell's rc or
 #to run ytfzf as such:
     #YTFZF_CONFIG_FILE=path/to/config ytfzf ...
-YTFZF_CONFIG_FILE=$YTFZF_CONFIG_DIR/conf.sh
+
+#YTFZF_CONFIG_FILE=$YTFZF_CONFIG_DIR/conf.sh
+
 
 #each variable below can be set here, or using export
 #when setting them through export, use the variable in parentheses instead
