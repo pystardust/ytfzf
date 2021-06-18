@@ -148,13 +148,6 @@ sub_link_count=10
 #same as --fancy-subs=
 fancy_subscriptions_menu=1
 
-#whether or not to show the search again button
-#1 means it's  always on
-#0 means always off
-#empty means enable when search_again and enable_loop are on
-#same as -ls
-search_again_button=
-
 #where to source videos from
 #options are: history, yt_subs, yt_search, trending, pt_search
 #history is the same as -H
@@ -215,6 +208,39 @@ sp=""
 #       MISC       #
 ####################
 
+#############
+# Shortcuts #
+#############
+
+#the shortcuts to use in fzf
+#the first 6 are used for
+    # printing the urls
+    # printing the title
+    # openeing selected urls in a browser
+    # watching the video
+    # downloading the video
+    # listening to the video
+    # search again
+#in that order, these keys can be changed
+#any keys after will not have default behaviour and the behaviour must be defined in handle_custom_shortcuts
+shortcuts="alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s"
+
+#some helpful variables to keep in mind:
+    #selected_key: they shortcut pressed
+    #selected_urls: the selected urls
+    #selected_data: the line that was selected
+    #play_url: a function that takes a url and plays it (play_url "$url") 
+#the return value matters in this function,
+    #returning 0 will continue the program as normal
+    #returning 1 will exit the program and will clean up after itself
+handle_custom_shortcuts () {
+    return 0
+}
+
+#############
+#   Other   #
+#############
+
 #useragent when using curl on youtube
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
 
@@ -236,10 +262,6 @@ subscriptions_file=$YTFZF_CONFIG_DIR/subscriptions
 #the text template string to use for the fancy subscriptions divider,
 #the spaces are for centering
 fancy_subscriptions_text="             -------%s-------"
-
-#the text to use for the search again button, should be rather unique to not interfere with titles
-search_again_button_text="[Make Another Search]"
-
 
 #this function is called when a video is selected in the menu to send a notification
 #available variables

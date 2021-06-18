@@ -81,15 +81,14 @@ pid_file="$cache_dir/.pid"
 [ -d "$thumb_dir" ] || mkdir -p "$thumb_dir"
 
 #> config settings
+#list of shortcuts to use in fzf
+#handle_custom_shortcuts will be called if defined (handle_custom_shortcuts can call handle_shortcuts to handle normal shortcuts)
+shortcuts="${shortcuts-alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s}"
 search_prompt=${search_prompt-Search: }
 #used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 #used when fancy_subscriptions_menu is 1
 fancy_subscriptions_text=${fancy_subscriptions_text-             -------%s-------}
-#whether or not the search again button appears
-search_again_button=${search_again_button-}
-#the text that the search again button has (should be unique-ish)
-search_again_button_text="${search_again_button_text:-[Make Another Search]}"
 
 #> config scripting settings
 #whether or not to show errors when an invalid option is passed
@@ -375,7 +374,7 @@ format_menu () {
 	if [ "$is_ext_menu" -eq 0 ]; then
 		#dep_ck fzf here because it is only necessary to use here
 		dep_ck "fzf"
-		menu_command='column -t -s "$tab_space" | fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 $FZF_DEFAULT_OPTS'
+		menu_command='column -t -s "$tab_space" | fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 --expect="$shortcuts" $FZF_DEFAULT_OPTS'
 		format_fzf
 	else
 		# Dmenu doesn't render tabs so removing it
@@ -873,9 +872,6 @@ user_selection () {
 	#remove subscription separators
 	videos_data_clean=$(printf "%s" "$videos_data" | sed "/.*$tab_space$/d")
 
-	#make sure it's not coming from a loop and search_again_button is enabled
-	[ $looped -eq 0 ] && [ $search_again_button -eq 1 ] && videos_data="$search_again_button_text$new_line$videos_data"
-
 	#$selected_data is the video the user picked
 	#picks the first n videos
 	if [ "$select_all" -eq 1 ] ; then
@@ -894,7 +890,7 @@ user_selection () {
 		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
 		#thumbnails only work in fzf, use fzf
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
-		--nth=1,2 $FZF_DEFAULT_OPTS \
+		--nth=1,2 --expect='$shortcuts' $FZF_DEFAULT_OPTS \
 		--layout=reverse --preview \"sh $0 -U {}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
 		selected_data=$( title_len=200 video_menu "$videos_data" )
@@ -908,9 +904,42 @@ user_selection () {
 	unset videos_data_clean
 }
 
+handle_shortcuts () {
+    [ -z "$selected_key" ] && return 0
+    #creates splits the variable shortcuts by , and assigns a variable to each string
+    #ei: $urls_shortcut will be equal to the first keybind
+    IFS="," read -r \
+	urls_shortcut title_shortcut open_browser_shortcut watch_shortcut \
+	download_shortcut audio_shortcut search_shortcut <<-EOF
+$shortcuts
+EOF
+    case $selected_key in
+	"$urls_shortcut") printf "%s\n" $selected_urls; return 1 ;;
+	"$title_shortcut") 
+	    printf "%s\n" "$selected_data" | awk -F "  " '{print $1}'; return 1 ;;
+	"$open_browser_shortcut")
+	    for url in $selected_urls; do
+		nohup $BROWSER "$url" >/dev/null 2>&1
+	    done
+	    return 1 ;;
+	"$watch_shortcut") is_download=0; is_audio_only=0; play_url $selected_urls; return 1;;
+	"$download_shortcut") is_download=1; play_url $selected_urls; return 1;;
+	"$audio_shortcut") is_audio_only=1; play_url $selected_urls; return 1;;
+	"$search_shortcut")
+	    unset videos_data search_query
+	    [ "$scrape" = "pt_search" ] && scrape_fn || scrape="yt_search" scrape_fn
+	    user_selection
+	    format_user_selection
+	    return 0;;
+    esac
+    function_exists "handle_custom_shortcuts" && handle_custom_shortcuts
+    return $?
+}
+
 format_user_selection () {
 	#for each url append the full url to the $urls string
 	#through this loop, the selected data which was truncated by formatting is retrived.
+	selected_key="${selected_data%%${new_line}*}"
 	selected_urls=
 	while read data_line; do
 		surl=${data_line##*|}
@@ -1407,11 +1436,6 @@ while getopts "LhDmdfxHaArltSsvNTPYn:U:-:" OPT; do
 done
 shift $((OPTIND-1))
 
-#only enable for  -l and -s if search_again_button is empty
-[ -z "$search_again_button" ] && [ $enable_loop -eq 1 ] && [ $search_again -eq 1 ] && search_again_button=1
-#if it's still empty it's false
-[ -z "$search_again_button" ] && search_again_button=0
-
 #only apply to ext_menu since they dont have a terminal to print to
 [ $is_ext_menu -eq 1 ] && command -v notify-send 1>/dev/null 2>&1 && ext_menu_notifs=1 || ext_menu_notifs=0
 
@@ -1488,13 +1512,13 @@ looped=0
 while true; do
 	user_selection
 	#to renable it for a new search
-	looped=0
-	if printf "%s" "$selected_data" | grep -qF "$search_again_button_text"; then
-	    unset videos_data search_query
-	    scrape="yt_search" scrape_fn
-	    continue
-	fi
 	format_user_selection
+	#if handle_shortcuts returns 1, exit
+	if ! handle_shortcuts; then
+	    save_before_exit
+	    clean_up
+	    exit
+	fi
 	print_data
 	get_video_format
 	get_sub_lang
@@ -1513,6 +1537,4 @@ while true; do
 		scrape_fn
 		continue
 	fi
-	#so it doesn't add it again on loop
-	looped=1
 done
