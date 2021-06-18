@@ -908,12 +908,15 @@ handle_shortcuts () {
     [ -z "$selected_key" ] && return 0
     #creates splits the variable shortcuts by , and assigns a variable to each string
     #ei: $urls_shortcut will be equal to the first keybind
-    IFS="," read -r urls_shortcut title_shortcut open_browser_shortcut watch_shortcut download_shortcut audio_shortcut search_shortcut << EOF
+    IFS="," read -r \
+	urls_shortcut title_shortcut open_browser_shortcut watch_shortcut \
+	download_shortcut audio_shortcut search_shortcut <<-EOF
 $shortcuts
 EOF
     case $selected_key in
 	"$urls_shortcut") printf "%s\n" $selected_urls; return 1 ;;
-	"$title_shortcut") printf "%s\n" "$selected_data" | cut -d '|' -f1; return 1 ;;
+	"$title_shortcut") 
+	    printf "%s\n" "$selected_data" | awk -F "  " '{print $1}'; return 1 ;;
 	"$open_browser_shortcut")
 	    for url in $selected_urls; do
 		nohup $BROWSER "$url" >/dev/null 2>&1
@@ -936,7 +939,7 @@ EOF
 format_user_selection () {
 	#for each url append the full url to the $urls string
 	#through this loop, the selected data which was truncated by formatting is retrived.
-	selected_key=$(printf "%s" "$selected_data" | sed 1q)
+	selected_key="${selected_data%%${new_line}*}"
 	selected_urls=
 	while read data_line; do
 		surl=${data_line##*|}
