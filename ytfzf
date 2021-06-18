@@ -135,6 +135,8 @@ is_download=0
 trending_tab="${trending_tab-}"
 #the sort name, if exists will be called and it will set functions for sorting
 sort_name="${sort_name-}"
+#to detach the video player from the terminal
+detach_player=${detach_player-0}
 # misc
 tab_space=$(printf '\t')
 new_line="
@@ -205,6 +207,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -T, --trending=<gaming/music/movies>   The trending tab, using --trending= you can choose a specific tab
      -Y, --youtube                          Search youtube (default)
      -P, --peertube                         Search peertube
+     --detach                               Detach the video player from the terminal
      --preview-side=<left/right/top/bottom> The side of the screen to show thumbnails
      --subt                                 Select auto-generated subtitles
      --sort                                 Sorts videos by latest upload date
@@ -1010,6 +1013,17 @@ open_player () {
 		video_pref="bestaudio"
 	fi
 
+	if [ $detach_player -eq 1 ]; then
+		if [ -z "$video_pref" ] || [ $is_audio_only -eq 1 ]; then
+			printf "Opening Player: %s\n" "$video_player $*"
+			setsid -f $video_player "$@"  $YTFZF_SUBT_NAME >/dev/null 2>&1
+		else
+			printf "Opening Player: %s\n" "$video_player_format$video_pref $*"
+			setsid -f $video_player_format"$video_pref"  "$@"  $YTFZF_SUBT_NAME || [ $? -eq 4 ] || mpv "$@" >/dev/null 2>&1
+		fi
+		return
+	fi
+
 	if [ $is_download -eq 0 ]; then
 		if [ -z "$video_pref" ] || [ $is_audio_only -eq 1 ]; then
 			printf "Opening Player: %s\n" "$video_player $*"
@@ -1409,6 +1423,8 @@ parse_opt () {
 		filter-id|sp) sp=$optarg ;;
 
 		preview-side) export PREVIEW_SIDE=$optarg ;;
+
+		detach) detach_player=1 ;;
 
 		update) update_ytfzf "master" ;;
 		update-unstable) update_ytfzf "${optarg:-development}" ;;
