@@ -223,7 +223,7 @@ sp=""
     # search again
 #in that order, these keys can be changed
 #any keys after will not have default behaviour and the behaviour must be defined in handle_custom_shortcuts
-shortcuts="alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s"
+shortcuts="alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter"
 
 #some helpful variables to keep in mind:
     #selected_key: they shortcut pressed
