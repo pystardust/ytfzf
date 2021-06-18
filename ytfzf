@@ -910,7 +910,7 @@ handle_shortcuts () {
     #ei: $urls_shortcut will be equal to the first keybind
     IFS="," read -r \
 	urls_shortcut title_shortcut open_browser_shortcut watch_shortcut \
-	download_shortcut audio_shortcut search_shortcut <<-EOF
+	download_shortcut audio_shortcut search_shortcut rest <<-EOF
 $shortcuts
 EOF
     case $selected_key in
@@ -922,18 +922,19 @@ EOF
 		nohup $BROWSER "$url" >/dev/null 2>&1
 	    done
 	    return 1 ;;
-	"$watch_shortcut") is_download=0; is_audio_only=0; play_url $selected_urls; return 1;;
-	"$download_shortcut") is_download=1; play_url $selected_urls; return 1;;
-	"$audio_shortcut") is_audio_only=1; play_url $selected_urls; return 1;;
+	"$watch_shortcut") is_download=0; is_audio_only=0; return 0;;
+	"$download_shortcut") is_download=1; return 0;;
+	"$audio_shortcut") is_audio_only=1; return 0;;
 	"$search_shortcut")
 	    unset videos_data search_query
 	    [ "$scrape" = "pt_search" ] && scrape_fn || scrape="yt_search" scrape_fn
-	    user_selection
-	    format_user_selection
-	    return 0;;
+	    return 2 ;;
     esac
-    function_exists "handle_custom_shortcuts" && handle_custom_shortcuts
-    return $?
+    if function_exists "handle_custom_shortcuts"; then
+	handle_custom_shortcuts
+	return $?
+    fi
+    return 0
 }
 
 format_user_selection () {
@@ -1514,11 +1515,14 @@ while true; do
 	#to renable it for a new search
 	format_user_selection
 	#if handle_shortcuts returns 1, exit
-	if ! handle_shortcuts; then
-	    save_before_exit
-	    clean_up
-	    exit
-	fi
+	handle_shortcuts
+	case "$?" in
+	    1)
+		save_before_exit
+		clean_up
+		exit ;;
+	    2) continue ;;
+	esac
 	print_data
 	get_video_format
 	get_sub_lang

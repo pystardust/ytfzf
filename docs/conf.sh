@@ -233,6 +233,7 @@ shortcuts="alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s"
 #the return value matters in this function,
     #returning 0 will continue the program as normal
     #returning 1 will exit the program and will clean up after itself
+    #returning 2 will restart the main loop (this is used for the search_again shortcut)
 handle_custom_shortcuts () {
     return 0
 }
