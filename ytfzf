@@ -307,6 +307,66 @@ print_error () {
     [ $ext_menu_notifs -eq 1 ] && notify-send "Check for new versions and report at: https://github.com/pystardust/ytfzf\n" || printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n" >&2
 }
 
+
+############################
+#        Subscribe         #
+############################
+
+SUBSCRIBE_FIFO=/tmp/ytfzf.fifo
+
+mk_subscribe(){
+    [ -e $SUBSCRIBE_FIFO ] || { mkfifo "$SUBSCRIBE_FIFO" || exit 1 ; }
+}
+
+update_subscribe(){
+    if [ -e $SUBSCRIBE_FIFO ]; then
+        printf "%s\n" "$1" >> $SUBSCRIBE_FIFO
+    fi
+}
+
+
+handle_subscribe () {
+    if [ -z "$selected_key" ]; then
+        printf "VIDEO: %s\n" "$selected_urls"
+        return 1
+    fi
+    #creates splits the variable shortcuts by , and assigns a variable to each string
+    #ei: $urls_shortcut will be equal to the first keybind
+    IFS="," read -r \
+	urls_shortcut title_shortcut open_browser_shortcut watch_shortcut \
+	download_shortcut audio_shortcut search_shortcut <<-EOF
+$shortcuts
+EOF
+    case $selected_key in
+	"$urls_shortcut") printf "URL: %s\n" $selected_urls; return 1 ;;
+	"$title_shortcut") 
+	    printf "TITLE: %s\n" "$selected_data" | awk -F "  " '{print $1}'; return 1 ;;
+	"$open_browser_shortcut") printf "BROSWER: %s\n" "$selected_urls"; return 1 ;;
+	"$watch_shortcut") printf "VIDEO: %s\n" $selected_urls; return 1 ;;
+	"$download_shortcut") printf "DOWNLOAD: %s\n" $selected_urls; return 1 ;;
+	"$audio_shortcut") printf "AUDIO: %s\n" $selected_urls; return 1 ;;
+	"$search_shortcut") #  TODO: Fix going back to search
+	    unset videos_data search_query
+	    [ "$scrape" = "pt_search" ] && scrape_fn || scrape="yt_search" scrape_fn
+	    user_selection
+	    format_user_selection
+	    return 0;;
+    esac
+    function_exists "handle_custom_shortcuts" && handle_custom_shortcuts
+    return $?
+}
+
+subscribe(){
+    if [ -e $SUBSCRIBE_FIFO ]; then
+        tail -f $SUBSCRIBE_FIFO
+        exit
+    else
+        echo "ERROR"
+        exit 1
+    fi
+}
+
+
 ############################
 #        Formatting        #
 ############################
@@ -1393,6 +1453,9 @@ parse_opt () {
 			# Not to be used explicitly
 			;;
 
+        sub) subscribe; echo "cool"; exit;;
+        X) persistant_mode=1;;
+
 		N|notification)
 			enable_noti=${optarg:-1}
 			is_non_number "$enable_noti" && bad_opt_arg ;;
@@ -1422,7 +1485,7 @@ parse_opt () {
 }
 
 
-while getopts "LhDmdfxHaArltSsvNTPYn:U:-:" OPT; do
+while getopts "XLhDmdfxHaArltSsvNTPYn:U:-:" OPT; do
 	# to parse extra-options in conf.sh
 	# when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
 	if [ "$OPT" = "-" ]; then
@@ -1513,17 +1576,22 @@ while true; do
 	user_selection
 	#to renable it for a new search
 	format_user_selection
-	#if handle_shortcuts returns 1, exit
-	if ! handle_shortcuts; then
-	    save_before_exit
-	    clean_up
-	    exit
-	fi
-	print_data
-	get_video_format
-	get_sub_lang
-	play_url
-	save_before_exit
+    if [ $persistant_mode -eq 1 ]; then
+        mk_subscribe
+        update_subscribe "$( handle_subscribe )"
+    else
+        #if handle_shortcuts returns 1, exit
+        if ! handle_shortcuts; then
+            save_before_exit
+            clean_up
+            exit
+        fi
+        print_data
+        get_video_format
+        get_sub_lang
+        play_url
+        save_before_exit
+    fi
 
 	#if looping and searching_again arent on then exit
 	if [ $enable_loop -eq 0 ] && [ $search_again -eq 0 ] ; then
