@@ -13,6 +13,12 @@
 #this variable should be set somewhere other than here or it will not work
 YTFZF_CONFIG_DIR=$HOME/.config/ytfzf
 
+#the file to source for config
+#the best way to use this would either be to export it in your shell's rc or
+#to run ytfzf as such:
+    #YTFZF_CONFIG_FILE=path/to/config ytfzf ...
+YTFZF_CONFIG_FILE=$YTFZF_CONFIG_DIR/conf.sh
+
 #each variable below can be set here, or using export
 #when setting them through export, use the variable in parentheses instead
 #variables set through export will override the ones set here
@@ -130,6 +136,11 @@ link_count=1
 #enable/disable only showing the selected video's link
 #same as -L
 show_link_only=0
+
+#enable/disable silent mode
+#when -L is given this will be enabled automatically
+#same as --silent
+silent_mode=0
 
 #enable/disable showing the different video formats
 #same as -f
