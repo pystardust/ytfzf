@@ -1564,11 +1564,10 @@ elif [ "$*" = "-" ]; then
 	do
 	    search_query="$search_query $line"
 	done
-fi
-if [ $enable_search_hist_menu -eq 1 ]; then
-    search_history_menu
-else
+elif [ -n "$*" ]; then
     check_if_url "${search_query:=$*}"
+elif [ $enable_search_hist_menu -eq 1 ]; then
+    search_history_menu
 fi
 set_search_history
 
