@@ -1190,7 +1190,7 @@ search_history_menu () {
     key="$( printf "%s" "$choice" | head -n2 )"
     search="$( printf "%s" "$choice" | head -n3 )"
 
-    if [ -z $search ]; then
+    if [ -z "$search" ]; then
         search_query="$query"
         return
     fi
