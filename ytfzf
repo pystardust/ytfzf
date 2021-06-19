@@ -1143,13 +1143,29 @@ get_history () {
 }
 
 clear_history () {
-	if [ -e "$history_file" ]; then
-		: > "$history_file"
-		printf "History has been cleared\n"
-	else
-		printf "\033[31mHistory file not found, history not cleared\033[0m\n" >&2
-		exit 1
-	fi
+    case "$1" in
+        search) h_file="${search_history_file}" ;;
+        watch) h_file="${history_file}" ;;
+        *) h_file="${search_history_file}|${history_file}" ;;
+    esac
+
+    exit_code=0
+    IFS="|"
+    for file in $h_file; do
+        if [ "$file" = "$history_file" ]; then
+            name="History"
+        else
+            name="Search History"
+        fi
+        if [ -e "$file" ]; then
+            : > "$file"
+            printf "%s has been cleared\n" "$name"
+        else
+            printf "\033[31m%s file not found, history not cleared\033[0m\n" "$name" >&2
+            exit_code=1
+        fi
+    done
+    exit $exit_code
 }
 
 get_search_history () {
@@ -1165,16 +1181,6 @@ get_search_history () {
 		exit;
 	fi
 	unset hist_data
-}
-
-clear_search_history () {
-	if [ -e "$search_history_file" ]; then
-		: > "$search_history_file"
-		printf "Search history has been cleared\n"
-	else
-		printf "\033[31mSearch history file not found, search history not cleared\033[0m\n" >&2
-		exit 1
-	fi
 }
 
 set_search_history () {
@@ -1392,12 +1398,9 @@ parse_opt () {
 			scrape="history" ;;
 
 		x|clear-history)
-			clear_history && exit ;;
+			clear_history "${optarg}" && exit ;;
         q|search-history)
             search_history_menu ;;
-		X|clear-search-history)
-			clear_search_history && exit ;;
-
 		a|auto-select)
 			auto_select=${optarg:-1}
 			is_non_number "$auto_select" && bad_opt_arg ;;
@@ -1517,7 +1520,7 @@ parse_opt () {
 }
 
 
-while getopts "LhDmdfxXqHaArltSsvNTPYn:U:-:" OPT; do
+while getopts "LhDmdfxqHaArltSsvNTPYn:U:-:" OPT; do
 	# to parse extra-options in conf.sh
 	# when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
 	if [ "$OPT" = "-" ]; then
