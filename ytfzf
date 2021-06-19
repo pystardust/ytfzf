@@ -1564,7 +1564,6 @@ elif [ "$*" = "-" ]; then
 	do
 	    search_query="$search_query $line"
 	done
-    set_search_history
 fi
 if [ $enable_search_hist_menu -eq 1 ]; then
     search_history_menu
