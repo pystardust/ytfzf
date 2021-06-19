@@ -1161,7 +1161,7 @@ get_search_history () {
 		#removes duplicate values from $history_data
 		search_history=$(printf "%s" "$hist_data" | uniq )
 	else
-		printf "Search history is not enabled. Please enable it to use this option (-H).\n";
+		printf "Search history is not enabled. Please enable it to use this option (-q).\n";
 		exit;
 	fi
 	unset hist_data
