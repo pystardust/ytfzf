@@ -1190,7 +1190,12 @@ set_search_history () {
 search_history_menu () {
     get_search_history
 
-    choice="$( printf "%s\n" "$search_history" | fzf --print-query --no-multi -d '\t' --with-nth=2.. --expect='alt-enter' --bind='tab:replace-query' )"
+    if [ "$is_ext_menu" -eq 1 ]; then
+    #when using an external menu, the search history will be done there
+        choice=$( printf "%s\n" "$search_history" | eval "$external_menu" )
+    else
+        choice="$( printf "%s\n" "$search_history" | fzf --print-query --no-multi -d '\t' --with-nth=2.. --expect='alt-enter' --bind='tab:replace-query' )"
+    fi
 
     query="$( printf "%s" "$choice" | sed -n '1p' )"
     [ -z "$query" ] && exit
