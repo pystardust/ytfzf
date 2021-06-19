@@ -34,7 +34,7 @@ tmp_video_json_file="/tmp/ytfzf-subjson"
 enable_hist=${YTFZF_HIST-${enable_hist-1}}
 #enable/disable search history
 enable_search_hist=${YTFZF_SEARCH_HIST-${enable_search_hist-1}}
-enable_search_hist_menu=${YTFZF_SEARCH_HIST_MENU-${enable_search_hist_menu-1}}
+enable_search_hist_menu=${YTFZF_SEARCH_HIST_MENU-${enable_search_hist_menu-0}}
 #enable/disable looping
 enable_loop=${YTFZF_LOOP-${enable_loop-0}}
 #enable/disable outputting current track to $current_file
