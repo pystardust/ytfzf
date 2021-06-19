@@ -32,6 +32,9 @@ tmp_video_json_file="/tmp/ytfzf-subjson"
 
 #enable/disable history
 enable_hist=${YTFZF_HIST-${enable_hist-1}}
+#enable/disable search history
+enable_search_hist=${YTFZF_SEARCH_HIST-${enable_search_hist-1}}
+enable_search_hist_menu=${YTFZF_SEARCH_HIST_MENU-${enable_search_hist_menu-1}}
 #enable/disable looping
 enable_loop=${YTFZF_LOOP-${enable_loop-0}}
 #enable/disable outputting current track to $current_file
@@ -69,6 +72,7 @@ enable_fzf_default_opts=${YTFZF_ENABLE_FZF_DEFAULT_OPTS-${enable_fzf_default_opt
 
 #> files and directories
 history_file=${history_file-$cache_dir/ytfzf_hst}
+search_history_file=${search_history_file-$cache_dir/ytfzf_search_hst}
 current_file=${current_file-$cache_dir/ytfzf_cur}
 thumb_dir=${thumb_dir-$cache_dir/thumb}
 #> Stores urls of the video page of channels
@@ -199,6 +203,8 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -D, --ext-menu                         Use external menu(default dmenu) instead of fzf
      -H, --choose-from-history              Choose from history
      -x, --clear-history                    Delete history
+     -q, --search-history                   Open a fzf menu to choose query from search history
+     -X, --clear-search-history             Delete search history
      -m, --audio-only                       Audio only (for music)
      -d, --download                         Download to current directory
      -f                                     Show available formats before proceeding
@@ -871,12 +877,15 @@ get_search_query () {
 		if [ "$is_ext_menu" -eq 1 ]; then
 			#when using an external menu, the query will be done there
 			search_query=$( : | eval "$external_menu" )
+        elif [ $enable_search_hist_menu -eq 1 ]; then
+            search_history_menu
 		else
 			#otherwise use the search prompt
 			printf "$search_prompt"
 			read -r search_query
 		fi
 		[ -z "$search_query" ] && clean_up && exit 0
+        set_search_history
 	fi
 	function_exists "on_get_search" && on_get_search "$search_query"
 }
@@ -1143,6 +1152,55 @@ clear_history () {
 	fi
 }
 
+get_search_history () {
+	if [ "$enable_search_hist" -eq 1 ]; then
+		[ -e "$search_history_file" ] || touch "$search_history_file"
+		#gets history data in reverse order (makes it most recent to least recent)
+		hist_data=$( sed '1!G; h; $!d' "$search_history_file" )
+		[ -z "$hist_data" ] && printf "Search history is empty!\n" >&2 && return 1;
+		#removes duplicate values from $history_data
+		search_history=$(printf "%s" "$hist_data" | uniq )
+	else
+		printf "Search history is not enabled. Please enable it to use this option (-H).\n";
+		exit;
+	fi
+	unset hist_data
+}
+
+clear_search_history () {
+	if [ -e "$search_history_file" ]; then
+		: > "$search_history_file"
+		printf "Search history has been cleared\n"
+	else
+		printf "\033[31mSearch history file not found, search history not cleared\033[0m\n" >&2
+		exit 1
+	fi
+}
+
+set_search_history () {
+    [ -z $search_query ] && return
+    [ $enable_search_hist -eq 1 ] && printf "%s\t%s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$search_query" >> "$search_history_file" ;
+}
+
+search_history_menu () {
+    get_search_history
+
+    choice="$( printf "%s\n" "$search_history" | fzf --print-query --no-multi -d '\t' --with-nth=2.. --expect='alt-enter' )"
+    query="$( printf "%s" "$choice" | head -n1 )"
+    key="$( printf "%s" "$choice" | head -n2 )"
+    search="$( printf "%s" "$choice" | head -n3 )"
+
+    if [ -z $search ]; then
+        search_query="$query"
+        return
+    fi
+
+    case $key in
+        alt-enter) search_query="$query"; return;;
+    esac
+    search_query="$( printf "%s" "$search" | awk -F'\t' '{printf "%s", $NF}' )"
+}
+
 ! function_exists "send_select_video_notif" && send_select_video_notif () {
 	#message=$title\nchannel: $channel
 	#${var#|} removes the extra | at the start of the text
@@ -1335,6 +1393,10 @@ parse_opt () {
 
 		x|clear-history)
 			clear_history && exit ;;
+        q|search-history)
+            search_history_menu ;;
+		X|clear-search-history)
+			clear_search_history && exit ;;
 
 		a|auto-select)
 			auto_select=${optarg:-1}
@@ -1455,7 +1517,7 @@ parse_opt () {
 }
 
 
-while getopts "LhDmdfxHaArltSsvNTPYn:U:-:" OPT; do
+while getopts "LhDmdfxXqHaArltSsvNTPYn:U:-:" OPT; do
 	# to parse extra-options in conf.sh
 	# when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
 	if [ "$OPT" = "-" ]; then
@@ -1499,8 +1561,14 @@ elif [ "$*" = "-" ]; then
 	do
 	    search_query="$search_query $line"
 	done
+    set_search_history
 fi
-check_if_url "${search_query:=$*}"
+if [ $enable_search_hist_menu -eq 1 ]; then
+    search_history_menu
+else
+    check_if_url "${search_query:=$*}"
+fi
+set_search_history
 
 # If in auto select mode dont download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0;
