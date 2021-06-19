@@ -202,9 +202,8 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -N, --notification                     Send notification when playing video
      -D, --ext-menu                         Use external menu(default dmenu) instead of fzf
      -H, --choose-from-history              Choose from history
-     -x, --clear-history                    Delete history
+     -x, --clear-history=[watch|search]     Delete history
      -q, --search-history                   Open a fzf menu to choose query from search history
-     -X, --clear-search-history             Delete search history
      -m, --audio-only                       Audio only (for music)
      -d, --download                         Download to current directory
      -f                                     Show available formats before proceeding
