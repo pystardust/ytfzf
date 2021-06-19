@@ -1184,7 +1184,7 @@ get_search_history () {
 }
 
 set_search_history () {
-    [ -z $search_query ] && return
+    [ -z "$search_query" ] && return
     [ $enable_search_hist -eq 1 ] && printf "%s\t%s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$search_query" >> "$search_history_file" ;
 }
 
