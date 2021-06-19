@@ -1192,7 +1192,10 @@ search_history_menu () {
     get_search_history
 
     choice="$( printf "%s\n" "$search_history" | fzf --print-query --no-multi -d '\t' --with-nth=2.. --expect='alt-enter' )"
+
     query="$( printf "%s" "$choice" | head -n1 )"
+    [ -z "$query" ] && exit
+
     key="$( printf "%s" "$choice" | head -n2 )"
     search="$( printf "%s" "$choice" | head -n3 )"
 
