@@ -1192,11 +1192,11 @@ search_history_menu () {
 
     choice="$( printf "%s\n" "$search_history" | fzf --print-query --no-multi -d '\t' --with-nth=2.. --expect='alt-enter' )"
 
-    query="$( printf "%s" "$choice" | head -n1 )"
+    query="$( printf "%s" "$choice" | sed -n '1p' )"
     [ -z "$query" ] && exit
 
-    key="$( printf "%s" "$choice" | head -n2 )"
-    search="$( printf "%s" "$choice" | head -n3 )"
+    key="$( printf "%s" "$choice" | sed -n '2p' )"
+    search="$( printf "%s" "$choice" | sed -n '3p' )"
 
     if [ -z "$search" ]; then
         search_query="$query"
