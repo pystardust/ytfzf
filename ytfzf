@@ -1577,10 +1577,7 @@ elif [ "$*" = "-" ]; then
 	done
 elif [ -n "$*" ]; then
     check_if_url "${search_query:=$*}"
-elif [ $enable_search_hist_menu -eq 1 ]; then
-    search_history_menu
 fi
-set_search_history
 
 # If in auto select mode dont download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0;
