@@ -1177,7 +1177,7 @@ get_search_history () {
 		search_history=$(printf "%s" "$hist_data" | uniq )
 	else
 		printf "Search history is not enabled. Please enable it to use this option (-q).\n";
-		exit;
+		exit 1;
 	fi
 	unset hist_data
 }
