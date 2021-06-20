@@ -1198,10 +1198,13 @@ search_history_menu () {
     fi
 
     query="$( printf "%s" "$choice" | sed -n '1p' )"
-    [ -z "$query" ] && exit
-
     key="$( printf "%s" "$choice" | sed -n '2p' )"
     search="$( printf "%s" "$choice" | sed -n '3p' )"
+
+    # exit if no selection
+    [ -z "$query" ] && [ -z "$search" ] && exit
+    # exit if alt-enter is pressed with empty query
+    [ -n "$key" ] && [ -z "$query" ] && exit 
 
     if [ -z "$search" ]; then
         search_query="$query"
