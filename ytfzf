@@ -1137,8 +1137,8 @@ get_history () {
 		videos_data=$(printf "%s" "$hist_data" | uniq )
 		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_fn)"
 	else
-		printf "History is not enabled. Please enable it to use this option (-H).\n";
-		exit;
+		printf "History is not enabled. Please enable it to use this option (-H).\n" >&2;
+		exit 1;
 	fi
 	unset hist_data
 }
@@ -1153,11 +1153,7 @@ clear_history () {
     exit_code=0
     IFS="|"
     for file in $h_file; do
-        if [ "$file" = "$history_file" ]; then
-            name="History"
-        else
-            name="Search History"
-        fi
+	[ "$file" = "$history_file" ] && name="History" || name="Search History"
         if [ -e "$file" ]; then
             : > "$file"
             printf "%s has been cleared\n" "$name"
@@ -1178,7 +1174,7 @@ get_search_history () {
 		#removes duplicate values from $history_data
 		search_history=$(printf "%s" "$hist_data" | uniq )
 	else
-		printf "Search history is not enabled. Please enable it to use this option (-q).\n";
+		printf "Search history is not enabled. Please enable it to use this option (-q).\n" >&2;
 		exit 1;
 	fi
 	unset hist_data
@@ -1568,6 +1564,9 @@ if [ $is_ext_menu -eq 1 ] && [ $show_thumbnails -eq 1 ]; then
 	show_thumbnails=0
 fi
 
+#is_url is 0 by default
+is_url=0
+
 #if stdin is given and no input (including -) is given, throw error
 #also make sure its not reading from ext_menu
 if [ ! -t 0 ] && [ -z "$*" ] && [ $is_ext_menu -eq 0 ]; then
@@ -1623,7 +1622,6 @@ scrape_fn () {
 }
 scrape_fn
 
-looped=0
 while true; do
 	user_selection
 	#to renable it for a new search
