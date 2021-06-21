@@ -874,11 +874,11 @@ scrape_yt () {
 get_search_query () {
 	#in case no query was provided
 	if [ -z "$search_query" ]; then
-		if [ "$is_ext_menu" -eq 1 ]; then
+        if [ $enable_search_hist_menu -eq 1 ]; then
+            search_history_menu
+		elif [ "$is_ext_menu" -eq 1 ]; then
 			#when using an external menu, the query will be done there
 			search_query=$( : | eval "$external_menu" )
-        elif [ $enable_search_hist_menu -eq 1 ]; then
-            search_history_menu
 		else
 			#otherwise use the search prompt
 			printf "$search_prompt"
