@@ -36,6 +36,7 @@ enable_hist=${YTFZF_HIST-${enable_hist-1}}
 enable_search_hist=${YTFZF_SEARCH_HIST-${enable_search_hist-1}}
 enable_search_hist_menu=${YTFZF_SEARCH_HIST_MENU-${enable_search_hist_menu-0}}
 allow_empty_search_hist=${YTFZF_ALLOW_EMPTY_SEARCH_HIST-${allow_empty_search_hist-0}}
+search_history_prompt=${YTFZF_SEARCH_HISTORY_PROMPT-${search_history_prompt-"> "}}
 #enable/disable looping
 enable_loop=${YTFZF_LOOP-${enable_loop-0}}
 #enable/disable outputting current track to $current_file
@@ -1195,7 +1196,7 @@ search_history_menu () {
     #when using an external menu, the search history will be done there
         choice=$( printf "%s\n" "$search_history" | eval "$external_menu" )
     else
-        choice="$( printf "%s\n" "$search_history" | fzf --print-query --no-multi -d '\t' --with-nth=2.. --expect='alt-enter' --bind='tab:replace-query' )"
+        choice="$( printf "%s\n" "$search_history" | fzf --prompt="$search_history_prompt" --print-query --no-multi -d '\t' --with-nth=2.. --expect='alt-enter' --bind='tab:replace-query' )"
     fi
 
     # first line is the fzf query (what the user types in fzf)
