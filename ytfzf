@@ -886,8 +886,8 @@ get_search_query () {
 			read -r search_query
 		fi
 		[ -z "$search_query" ] && clean_up && exit 0
-        set_search_history
 	fi
+    set_search_history
 	function_exists "on_get_search" && on_get_search "$search_query"
 }
 #> To select videos from videos_data
