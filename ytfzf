@@ -32,6 +32,11 @@ tmp_video_json_file="/tmp/ytfzf-subjson"
 
 #enable/disable history
 enable_hist=${YTFZF_HIST-${enable_hist-1}}
+#enable/disable search history
+enable_search_hist=${YTFZF_SEARCH_HIST-${enable_search_hist-1}}
+enable_search_hist_menu=${YTFZF_SEARCH_HIST_MENU-${enable_search_hist_menu-0}}
+allow_empty_search_hist=${YTFZF_ALLOW_EMPTY_SEARCH_HIST-${allow_empty_search_hist-0}}
+search_history_prompt=${YTFZF_SEARCH_HISTORY_PROMPT-${search_history_prompt-"> "}}
 #enable/disable looping
 enable_loop=${YTFZF_LOOP-${enable_loop-0}}
 #enable/disable outputting current track to $current_file
@@ -69,6 +74,7 @@ enable_fzf_default_opts=${YTFZF_ENABLE_FZF_DEFAULT_OPTS-${enable_fzf_default_opt
 
 #> files and directories
 history_file=${history_file-$cache_dir/ytfzf_hst}
+search_history_file=${search_history_file-$cache_dir/ytfzf_search_hst}
 current_file=${current_file-$cache_dir/ytfzf_cur}
 thumb_dir=${thumb_dir-$cache_dir/thumb}
 #> Stores urls of the video page of channels
@@ -198,7 +204,8 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -N, --notification                     Send notification when playing video
      -D, --ext-menu                         Use external menu(default dmenu) instead of fzf
      -H, --choose-from-history              Choose from history
-     -x, --clear-history                    Delete history
+     -x, --clear-history=[watch|search]     Delete history
+     -q, --search-history                   Open a fzf menu to choose query from search history
      -m, --audio-only                       Audio only (for music)
      -d, --download                         Download to current directory
      -f                                     Show available formats before proceeding
@@ -868,7 +875,9 @@ scrape_yt () {
 get_search_query () {
 	#in case no query was provided
 	if [ -z "$search_query" ]; then
-		if [ "$is_ext_menu" -eq 1 ]; then
+        if [ $enable_search_hist_menu -eq 1 ]; then
+            search_history_menu
+		elif [ "$is_ext_menu" -eq 1 ]; then
 			#when using an external menu, the query will be done there
 			search_query=$( : | eval "$external_menu" )
 		else
@@ -878,6 +887,7 @@ get_search_query () {
 		fi
 		[ -z "$search_query" ] && clean_up && exit 0
 	fi
+    set_search_history
 	function_exists "on_get_search" && on_get_search "$search_query"
 }
 #> To select videos from videos_data
@@ -1122,7 +1132,7 @@ get_history () {
 		[ -e "$history_file" ] || touch "$history_file"
 		#gets history data in reverse order (makes it most recent to least recent)
 		hist_data=$( sed '1!G; h; $!d' "$history_file" )
-		[ -z "$hist_data" ] && printf "History is empty!\n" >&2 && exit 1;
+		[ -z "$hist_data" ] && printf "History is empty!\n" >&2 && return 1;
 		#removes duplicate values from $history_data
 		videos_data=$(printf "%s" "$hist_data" | uniq )
 		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_fn)"
@@ -1134,13 +1144,84 @@ get_history () {
 }
 
 clear_history () {
-	if [ -e "$history_file" ]; then
-		: > "$history_file"
-		printf "History has been cleared\n"
+    case "$1" in
+        search) h_file="${search_history_file}" ;;
+        watch) h_file="${history_file}" ;;
+        *) h_file="${search_history_file}|${history_file}" ;;
+    esac
+
+    exit_code=0
+    IFS="|"
+    for file in $h_file; do
+        if [ "$file" = "$history_file" ]; then
+            name="History"
+        else
+            name="Search History"
+        fi
+        if [ -e "$file" ]; then
+            : > "$file"
+            printf "%s has been cleared\n" "$name"
+        else
+            printf "\033[31m%s file not found, history not cleared\033[0m\n" "$name" >&2
+            exit_code=1
+        fi
+    done
+    exit $exit_code
+}
+
+get_search_history () {
+	if [ "$enable_search_hist" -eq 1 ]; then
+		[ -e "$search_history_file" ] || touch "$search_history_file"
+		#gets history data in reverse order (makes it most recent to least recent)
+		hist_data=$( sed '1!G; h; $!d' "$search_history_file" )
+		[ -z "$hist_data" ] && printf "Search history is empty!\n" >&2 && return 1;
+		#removes duplicate values from $history_data
+		search_history=$(printf "%s" "$hist_data" | uniq )
 	else
-		printf "\033[31mHistory file not found, history not cleared\033[0m\n" >&2
-		exit 1
+		printf "Search history is not enabled. Please enable it to use this option (-q).\n";
+		exit 1;
 	fi
+	unset hist_data
+}
+
+set_search_history () {
+    [ -z "$search_query" ] && return
+    [ $enable_search_hist -eq 1 ] && printf "%s\t%s\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$search_query" >> "$search_history_file" ;
+}
+
+search_history_menu () {
+    ! get_search_history && [ "$allow_empty_search_hist" -eq 0 ] && exit 1
+
+    if [ "$is_ext_menu" -eq 1 ]; then
+    #when using an external menu, the search history will be done there
+        choice=$( printf "%s\n" "$search_history" | eval "$external_menu" )
+    else
+        choice="$( printf "%s\n" "$search_history" | fzf --prompt="$search_history_prompt" --print-query --no-multi -d '\t' --with-nth=2.. --expect='alt-enter' --bind='tab:replace-query' )"
+    fi
+
+    # first line is the fzf query (what the user types in fzf)
+    # second line is the fzf --expect key pressed
+    # third line is the search_history selection made
+    query="$( printf "%s" "$choice" | sed -n '1p' )"
+    key="$( printf "%s" "$choice" | sed -n '2p' )"
+    selection="$( printf "%s" "$choice" | sed -n '3p' )"
+
+    # if no search history selection has been made
+    # and the user typed a query, use that instead
+    if [ -z "$selection" ]; then
+        # exit if no selection or query
+        [ -z "$query" ] && exit
+        search_query="$query"
+        return
+    fi
+
+    case $key in
+        alt-enter) # Always use query
+            [ -z "$query" ] && exit
+            search_query="$query"
+            return;;
+    esac
+    search_query="$( printf "%s" "$selection" | awk -F'\t' '{printf "%s", $NF}' )"
 }
 
 ! function_exists "send_select_video_notif" && send_select_video_notif () {
@@ -1334,8 +1415,8 @@ parse_opt () {
 			scrape="history" ;;
 
 		x|clear-history)
-			clear_history && exit ;;
-
+			clear_history "${optarg}" && exit ;;
+        q|search-history) enable_search_hist_menu=1 ;;
 		a|auto-select)
 			auto_select=${optarg:-1}
 			is_non_number "$auto_select" && bad_opt_arg ;;
@@ -1455,7 +1536,7 @@ parse_opt () {
 }
 
 
-while getopts "LhDmdfxHaArltSsvNTPYn:U:-:" OPT; do
+while getopts "LhDmdfxqHaArltSsvNTPYn:U:-:" OPT; do
 	# to parse extra-options in conf.sh
 	# when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
 	if [ "$OPT" = "-" ]; then
@@ -1499,8 +1580,9 @@ elif [ "$*" = "-" ]; then
 	do
 	    search_query="$search_query $line"
 	done
+elif [ -n "$*" ]; then
+    check_if_url "${search_query:=$*}"
 fi
-check_if_url "${search_query:=$*}"
 
 # If in auto select mode dont download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0;
@@ -1526,7 +1608,7 @@ scrape_fn () {
 		scrape_subscriptions
 		;;
 	"history")
-		get_history
+		! get_history && exit 1
 		;;
 	"url")
 	    get_video_format

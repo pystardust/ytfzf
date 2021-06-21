@@ -113,6 +113,10 @@ selected_sub=""
 #any variables here can be set with options when running the command
 #see ytfzf --help for more info
 
+#enable/disable search history menu
+#same as -q
+enable_search_hist_menu=0
+
 #enable/disable using $external_menu
 #same as -D
 is_ext_menu=0
@@ -265,6 +269,18 @@ exit_on_opt_error=1
 
 #the file for storing watch history
 history_file="$cache_dir/ytfzf_hst"
+
+#enable/disable logging of search history
+enable_search_hist=1
+
+#the file for storing search history
+search_history_file="$cache_dir/ytfzf_search_hst"
+
+#prompt for search history menu
+search_history_prompt="> "
+
+#enable/disable launching menu if search history is empty
+allow_empty_search_hist=0
 
 #the file for writing the menu option that was chosen
 current_file="$cache_dir/ytfzf_cur"
