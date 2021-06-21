@@ -19,6 +19,17 @@ _You can create a configuration file to manage the different value instead of ex
 
 If you wish to find inspiration and see an example you can take a look at the [`sample configuration file`](conf.sh)
 
+### Breaking change in V 1.2
+applies to those that have copied the default config prior to 1.2, or have implemented this themselves.
+
+printing the shorturl in `video_info_text` previously was done like this
+
+`printf "%-${url_len}.${url_len}s\t" "$shorturl"`
+
+this has been deprecated, instead use this line
+
+`printf "%s" "$shorturl"`
+
 ---
 
 + ### Thumbnails

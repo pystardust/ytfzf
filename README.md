@@ -36,7 +36,7 @@ curl -sL "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" | sud
 - [`Usage Instruction`](docs/USAGE.md/#Usage-Instructions)
 - [`Configurations`](docs/USAGE.md/#Configurations)
 - [`Subscriptions`](docs/USAGE.md/#Subscriptions)
-- [`Update Log`](#Update-Log)
+- [`Update Log`](https://github.com/pystardust/ytfzf/releases)
 - [`Examples`](#Examples)
 - [`Todo`](#Todo)
 - [`Bugs`](#Bugs)
