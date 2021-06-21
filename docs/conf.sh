@@ -116,6 +116,9 @@ selected_sub=""
 #any variables here can be set with options when running the command
 #see ytfzf --help for more info
 
+# this emulates the -d flag if set to 1
+is_download=0
+
 #enable/disable search history menu
 #same as -q
 enable_search_hist_menu=0
