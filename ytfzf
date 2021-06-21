@@ -1191,7 +1191,6 @@ set_search_history () {
 search_history_menu () {
     ! get_search_history && [ "$allow_empty_search_hist" -eq 0 ] && exit 1
 
-
     if [ "$is_ext_menu" -eq 1 ]; then
     #when using an external menu, the search history will be done there
         choice=$( printf "%s\n" "$search_history" | eval "$external_menu" )
@@ -1199,24 +1198,29 @@ search_history_menu () {
         choice="$( printf "%s\n" "$search_history" | fzf --print-query --no-multi -d '\t' --with-nth=2.. --expect='alt-enter' --bind='tab:replace-query' )"
     fi
 
+    # first line is the fzf query (what the user types in fzf)
+    # second line is the fzf --expect key pressed
+    # third line is the search_history selection made
     query="$( printf "%s" "$choice" | sed -n '1p' )"
     key="$( printf "%s" "$choice" | sed -n '2p' )"
-    search="$( printf "%s" "$choice" | sed -n '3p' )"
+    selection="$( printf "%s" "$choice" | sed -n '3p' )"
 
-    # exit if no selection
-    [ -z "$query" ] && [ -z "$search" ] && exit
-    # exit if alt-enter is pressed with empty query
-    [ -n "$key" ] && [ -z "$query" ] && exit 
-
-    if [ -z "$search" ]; then
+    # if no search history selection has been made
+    # and the user typed a query, use that instead
+    if [ -z "$selection" ]; then
+        # exit if no selection or query
+        [ -z "$query" ] && exit
         search_query="$query"
         return
     fi
 
     case $key in
-        alt-enter) search_query="$query"; return;;
+        alt-enter) # Always use query
+            [ -z "$query" ] && exit
+            search_query="$query"
+            return;;
     esac
-    search_query="$( printf "%s" "$search" | awk -F'\t' '{printf "%s", $NF}' )"
+    search_query="$( printf "%s" "$selection" | awk -F'\t' '{printf "%s", $NF}' )"
 }
 
 ! function_exists "send_select_video_notif" && send_select_video_notif () {
