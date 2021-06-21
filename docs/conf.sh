@@ -97,9 +97,6 @@ is_audio_only=0
 #(YTFZF_AUDIO_PLAYER)
 audio_player="mpv --no-video"
 
-# this emulates the -d flag if set to 1
-is_download=0
-
 #enable/disable ytfzf's use of your $FZF_DEFAULT_OPTS
 #depending on your fzf settings, this could mess up the formatting of the menu
 #(YTFZF_ENABLE_FZF_DEFAULT_OPTS)
