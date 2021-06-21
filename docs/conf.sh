@@ -116,7 +116,8 @@ selected_sub=""
 #any variables here can be set with options when running the command
 #see ytfzf --help for more info
 
-# this emulates the -d flag if set to 1
+#download the video instead of watching/listening
+#same as -d
 is_download=0
 
 #enable/disable search history menu
