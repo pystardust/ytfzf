@@ -1522,7 +1522,9 @@ parse_opt () {
 
 		preview-side) export PREVIEW_SIDE=$optarg ;;
 
-		detach) detach_player=1 ;;
+		detach) 
+			detach_player=${optarg:-1}
+			is_non_number "$detach_player" && bad_opt_arg ;;
 
 		update) update_ytfzf "master" ;;
 		update-unstable) update_ytfzf "${optarg:-development}" ;;
