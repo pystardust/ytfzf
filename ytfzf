@@ -1415,7 +1415,9 @@ parse_opt () {
 
 		x|clear-history)
 			clear_history "${optarg}" && exit ;;
-        q|search-history) enable_search_hist_menu=1 ;;
+		q|search-history) 
+			enable_search_hist_menu=${optarg:-1}
+			is_non_number "$enable_search_hist_menu" && bad_opt_arg ;;
 		a|auto-select)
 			auto_select=${optarg:-1}
 			is_non_number "$auto_select" && bad_opt_arg ;;
