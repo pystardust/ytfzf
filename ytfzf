@@ -140,7 +140,7 @@ auto_caption=${auto_caption-0}
 #only play/download the audio if set to 1
 is_audio_only=${is_audio_only-0}
 #flag for downloading
-is_download=0
+is_download=${is_download-0}
 #the tab for trending, empty is the default page
 trending_tab="${trending_tab-}"
 #the sort name, if exists will be called and it will set functions for sorting

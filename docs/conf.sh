@@ -113,6 +113,10 @@ selected_sub=""
 #any variables here can be set with options when running the command
 #see ytfzf --help for more info
 
+#download the video instead of watching/listening
+#same as -d
+is_download=0
+
 #enable/disable search history menu
 #same as -q
 enable_search_hist_menu=0
