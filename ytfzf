@@ -991,7 +991,7 @@ format_user_selection () {
 			    selected_urls=$selected_urls$new_line"$(printf "%s" "$videos_json" | jq '.[].url' | grep -F "$surl" | tr -d '"')" ;;
 			*) continue ;;
 		esac
-		refined_selected_data=$refined_selected_data$new_line$data_line
+		refined_selected_data=$refined_selected_data$new_line$(printf '%s' "$videos_data" | grep "|$surl" )
 	done<<-EOF
 	$selected_data
 	EOF
@@ -1137,7 +1137,7 @@ check_if_url () {
 #> Loads history in videos_data
 get_history () {
 	if [ "$enable_hist" -eq 1 ]; then
-		[ -e "$history_file" ] || touch "$history_file"
+		[ -e "$history_file" ] || : > "$history_file"
 		#gets history data in reverse order (makes it most recent to least recent)
 		hist_data=$( sed '1!G; h; $!d' "$history_file" )
 		[ -z "$hist_data" ] && printf "History is empty!\n" >&2 && return 1;
@@ -1175,7 +1175,7 @@ clear_history () {
 
 get_search_history () {
 	if [ "$enable_search_hist" -eq 1 ]; then
-		[ -e "$search_history_file" ] || touch "$search_history_file"
+		[ -e "$search_history_file" ] || : > "$search_history_file"
 		#gets history data in reverse order (makes it most recent to least recent)
 		hist_data=$( sed '1!G; h; $!d' "$search_history_file" )
 		[ -z "$hist_data" ] && printf "Search history is empty!\n" >&2 && return 1;
