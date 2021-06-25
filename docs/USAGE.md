@@ -181,6 +181,9 @@ https://www.youtube.com/c/MentalOutlaw/videos                   # mental outlaw
 # Defaults to 10 results from each channel
 ytfzf -S
 
+# Sort subscriptions by upload date
+ytfzf -S --sort
+
 # To show 15 results instead
 ytfzf --subs=15
 ```

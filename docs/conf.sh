@@ -91,8 +91,6 @@ video_player="mpv"
 #(YTFZF_PLAYER_FORMAT)
 video_player_format="mpv --ytdl-format="
 
-# this emulates the -m flag if set to 1
-is_audio_only=0
 #the player to use for audio ( option -m )
 #(YTFZF_AUDIO_PLAYER)
 audio_player="mpv --no-video"
@@ -129,6 +127,20 @@ is_ext_menu=0
 #same as -t
 show_thumbnails=0
 
+#which quality thumbnails to use
+#1: better thumbnails (slower)
+#0: low resolution (faster)
+#same as --thumbnail-quality
+thumbnail_quailty=1
+
+#audio only
+#same as -m
+is_audio_only=0
+
+#download the video instead of watching/listening
+#same as -d
+is_download=0
+
 #enable/disable selecting the first result automatically
 #same as -a
 auto_select=0
@@ -144,6 +156,10 @@ random_select=0
 #the amount of links to select with -a or -r
 #same as -n{number}
 link_count=1
+
+#enable/disable searching again after the video ends
+#same as -s
+search_again=0
 
 #enable/disable only showing the selected video's link
 #same as -L
@@ -179,7 +195,12 @@ fancy_subscriptions_menu=1
 #pt_search is the same as -P (searches peertube)
 scrape="yt_search"
 
+#auto generated caption from youtube
+#same as --subt
+auto_caption=0
+
 #sort videos, history, and subscriptions by date from newest to oldest
+#same as --sort
 sort_videos_data=0
 
 #the tab of trending to select when scrape is trending
@@ -264,6 +285,10 @@ handle_custom_shortcuts () {
 #############
 #   Other   #
 #############
+
+#when no search is provided, or -s is given, use this prompt
+search_prompt="Search : "
+
 
 #useragent when using curl on youtube
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
