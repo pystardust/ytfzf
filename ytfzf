@@ -595,7 +595,7 @@ download_thumbnails () {
 		jq  -r '.[]|[.thumbs,.videoID]|@tsv' )
 
 	while IFS=$tab_space read -r Url Name; do
-		sleep 0.001
+	    sleep 0.001
 		{
 			image_download
 		} &
@@ -764,23 +764,28 @@ get_trending_url_data () {
 
 scrape_pt () {
      #gets a list of videos
-     videos_json=$(
+     pt_json=$(
      curl \
          -s "https://sepiasearch.org/api/v1/search/videos" \
-         -G --data-urlencode "search=$*" |
-     jq '[ .data | .[] |
-         {
-              title: .name,
-              channel: .channel.displayName,
-              duration: .duration,
-              views: .views,
-              date: .publishedAt,
-              videoID: .url,
-              thumbs: .thumbnailUrl
-          }
-     ]')
+	 -G --data-urlencode "search=$*") 
+     videos_json=$(printf "%s" "$pt_json" |\
+	jq '[ .data | .[] |
+	    {
+		title: .name,
+		channel: .channel.displayName,
+		duration: .duration,
+		views: .views,
+		date: .publishedAt,
+		videoID: .uuid,
+		url: .url,
+		thumbs: .thumbnailUrl
+	    }
+	]')
      export videos_json
      videos_data="$(get_video_data "$videos_json")"
+     function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$pt_json"
+     [ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+     unset pt_json
 }
 
 scrape_yt () {
@@ -975,16 +980,13 @@ format_user_selection () {
 		[ -z "$surl" ] && continue # to ignore the separators
 		#literally just check if there is :// to make sure it's a url (just in case the url doesn't use https or http)
 		#peertube urls can differ a lot
-		case $surl in
-			*'://'*) selected_urls=$selected_urls$new_line$surl ;;
-			*)
-				case ${#surl} in
+		case ${#surl} in
 					# youtube video
-					11) selected_urls=$selected_urls$new_line'https://www.youtube.com/watch?v='$surl ;;
-					34) selected_urls=$selected_urls$new_line'https://www.youtube.com/playlist?list='$surl ;;
-					*) continue ;;
-				esac
-				;;
+			11) selected_urls=$selected_urls$new_line'https://www.youtube.com/watch?v='$surl ;;
+			34) selected_urls=$selected_urls$new_line'https://www.youtube.com/playlist?list='$surl ;;
+			36)
+			    selected_urls=$selected_urls$new_line"$(printf "%s" "$videos_json" | jq '.[].url' | grep -F "$surl" | tr -d '"')" ;;
+			*) continue ;;
 		esac
 		refined_selected_data=$refined_selected_data$new_line$data_line
 	done<<-EOF
