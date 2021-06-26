@@ -79,13 +79,6 @@ first hit Q to save position and quit mpv, then choose your format using_
 
 	  ytfzf -faH
 
-## Todo
-
-* [ ] Playlists
-* [ ] More sites
-* [x] Subscriptions
-* [x] Thumbnails
-
 ## Bugs
 
 * _dwm with swallow patch: Images don't render when looped (ie, option `-l`)_
