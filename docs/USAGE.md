@@ -19,6 +19,17 @@ _You can create a configuration file to manage the different value instead of ex
 
 If you wish to find inspiration and see an example you can take a look at the [`sample configuration file`](conf.sh)
 
+### Breaking change in V 1.2
+applies to those that have copied the default config prior to 1.2, or have implemented this themselves.
+
+printing the shorturl in `video_info_text` previously was done like this
+
+`printf "%-${url_len}.${url_len}s\t" "$shorturl"`
+
+this has been deprecated, instead use this line
+
+`printf "%s" "$shorturl"`
+
 ---
 
 + ### Thumbnails
@@ -73,6 +84,21 @@ If you wish to find inspiration and see an example you can take a look at the [`
 	+ `-m`: (audio-only) Only audio format (best audio)
 
 	+ `-d`: (download) To **download** a video instead of playing it.
+	
++ ### Fzf Shortcuts
+
+    These shortcuts will currently only work in fzf
+
+    + `alt-l`: print the selected urls
+    + `alt-t`: print the selected video(s)' title
+    + `alt-o`: open the selected video(s) in a browser
+    + `alt-v`: watch the selected video(s)
+    + `alt-d`: download the selected video(s)
+    + `alt-m`: listen to the audio of the selected video(s)
+    + `alt-s`: search again
+    + `alt-enter`: detach video player
+
+    These shortcuts can all be changed in `~/.config/ytfzf/conf.sh` (see the [config](conf.sh) file and go to the `MISC` section for more)
 
 + ### Multi-selection
 

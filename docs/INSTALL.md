@@ -11,8 +11,13 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 * [`notify-send`](https://gitlab.gnome.org/GNOME/libnotify) (Optional) - _for desktop notifications_
 * [GNU `shuf`](https://www.gnu.org/software/coreutils/manual/html_node/shuf-invocation.html) or [ISC `shuf`](https://github.com/ibara/shuf) (Optional) - _for selecting random videos_
 * [`ueberzug`](https://github.com/seebye/ueberzug) (Optional) - _for thumbnails_
+* other thumbnail options
+    * [`chafa`](https://github.com/hpjansson/chafa)
+    * [`catimg`](https://github.com/posva/catimg)
+    * [`jp2a`](https://github.com/cslarsen/jp2a)
+> be sure to export `YTFZF_THUMB_DISP_METHOD` in your shell rc or `thumb_disp_method` in the [config](conf.sh) when not using ueberzug
 
-> Thumbnails only work with `fzf` and `Ueberzug` as of now.
+> Thumbnails only work with `fzf` as of now.
 
 + #### Arch based
 
