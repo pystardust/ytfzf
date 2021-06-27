@@ -878,6 +878,54 @@ scrape_yt () {
 	unset playlist_json yt_json yt_html
 }
 
+scrape_url () {
+	# needs url as $*
+	## Scrape data and store video information in videos_data ( and thumbnails )
+
+	print_info "Scraping url...\n"
+
+    # use youtube-dl to get json
+    url_json=$( youtube-dl -J "$*" )
+
+	#if the data couldn't be found
+	if [ -z "$url_json" ]; then
+		print_error "ERROR[#02]: Couldn't find data on site.\n"
+		exit 1
+	fi
+    # printf "%s" "$url_json" | jq
+    # exit
+
+	#gets a list of videos
+    videos_json=$(printf "%s" "$url_json" | jq '[{
+        title: .title,
+        channel: .channel,
+        duration: .duration,
+        views: .view_count,
+        date: .upload_date,
+        description: .description,
+        videoID: .id,
+        thumbs: .thumbnails[0].url
+    }]')
+
+	export videos_json
+
+	#checks if it's empty in case it was defined in a config function eg: on_get_search
+	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
+	#if there aren't videos
+	if [ -z "$videos_data" ]; then
+	    printf "No results found. Try different keywords.\n" >&2
+	    exit 1
+	fi
+
+	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$yt_json"
+
+	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_fn)
+
+	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+	# wait for thumbnails to download
+	wait
+    unset url_json
+}
 
 ############################
 #      User selection      #
