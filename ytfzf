@@ -885,7 +885,7 @@ scrape_url () {
 	print_info "Scraping url...\n"
 
     # use youtube-dl to get json
-    url_json=$( youtube-dl -J "$*" )
+    url_json=$( youtube-dl -J $* )
 
 	#if the data couldn't be found
 	if [ -z "$url_json" ]; then
