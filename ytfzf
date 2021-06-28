@@ -892,8 +892,6 @@ scrape_url () {
 		print_error "ERROR[#02]: Couldn't find data on site.\n"
 		exit 1
 	fi
-    # printf "%s" "$url_json" | jq
-    # exit
 
 	#gets a list of videos
     videos_json=$(printf "%s" "$url_json" | jq '[{
