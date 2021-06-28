@@ -1157,7 +1157,7 @@ clean_up () {
 }
 #> Saves data before exiting
 save_before_exit () {
-	[ $is_url -eq 1 ] && exit
+	[ $is_url -eq 1 ] && selected_data="$videos_data"
 	[ $enable_hist -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
 	[ $enable_cur -eq 1 ] && : > "$current_file" ;
 }
@@ -1669,7 +1669,9 @@ scrape_fn () {
 		;;
 	"url")
 	    get_video_format
+        scrape_url "$search_query"
 	    play_url
+        save_before_exit
 	    exit
 	    ;;
 	*)
