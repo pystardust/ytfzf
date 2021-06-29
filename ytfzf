@@ -915,7 +915,7 @@ scrape_url () {
 	    exit 1
 	fi
 
-	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$yt_json"
+	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$url_json"
 
 	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_fn)
 
