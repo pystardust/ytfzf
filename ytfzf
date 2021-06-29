@@ -919,10 +919,14 @@ scrape_url () {
 
 	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s\n" "$videos_data" | sort_video_data_fn)
 
+    unset url_json
+}
+
+scrape_url_with_thumb () {
+    scrape_url $*
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	# wait for thumbnails to download
 	wait
-    unset url_json
 }
 
 ############################
