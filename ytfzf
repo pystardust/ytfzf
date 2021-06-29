@@ -917,7 +917,7 @@ scrape_url () {
 
 	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$url_json"
 
-	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s" "$videos_data" | sort_video_data_fn)
+	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s\n" "$videos_data" | sort_video_data_fn)
 
 	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
 	# wait for thumbnails to download
@@ -1189,7 +1189,7 @@ get_history () {
 		[ -z "$hist_data" ] && printf "History is empty!\n" >&2 && return 1;
 		#removes duplicate values from $history_data
 		videos_data=$(printf "%s" "$hist_data" | uniq )
-		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_fn)"
+		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s\n" "$videos_data"  | sort_video_data_fn)"
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n" >&2;
 		exit 1;
