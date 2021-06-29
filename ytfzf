@@ -922,12 +922,6 @@ scrape_url () {
     unset url_json
 }
 
-scrape_url_with_thumb () {
-    scrape_url $*
-	[ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
-	# wait for thumbnails to download
-	wait
-}
 
 ############################
 #      User selection      #
@@ -1195,11 +1189,6 @@ get_history () {
 		videos_data=$(printf "%s" "$hist_data" | uniq )
 		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s\n" "$videos_data"  | sort_video_data_fn)"
 
-        if [ $show_thumbnails -eq 1 ]; then
-            # get videos_json for preview_img
-            shorturl="$( printf "%s" "$videos_data" | awk -F"\t|" '{print $6}' | sed 's/^|//' )"
-            scrape_url_with_thumb "$( printf "%s" "${shorturl}" )"
-        fi
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n" >&2;
 		exit 1;
