@@ -1664,6 +1664,8 @@ scrape_fn () {
 		scrape_subscriptions
 		;;
 	"history")
+        # Thumbnails are never used with history
+        show_thumbnails=0
 		! get_history && exit 1
 		;;
 	"url")
