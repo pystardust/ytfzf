@@ -878,6 +878,50 @@ scrape_yt () {
 	unset playlist_json yt_json yt_html
 }
 
+scrape_url () {
+	# needs url as $*
+	## Scrape data and store video information in videos_data ( and thumbnails )
+
+	print_info "Scraping url...\n"
+
+    # use youtube-dl to get json
+    url_json=$( youtube-dl -J $* )
+
+	#if the data couldn't be found
+	if [ -z "$url_json" ]; then
+		print_error "ERROR[#02]: Couldn't find data on site.\n"
+		exit 1
+	fi
+
+	#gets a list of videos
+    videos_json=$(printf "%s" "$url_json" | jq '[{
+        title: .title,
+        channel: .channel,
+        duration: .duration,
+        views: .view_count,
+        date: .upload_date,
+        description: .description,
+        videoID: .id,
+        thumbs: .thumbnails[0].url
+    }]')
+
+	export videos_json
+
+	#checks if it's empty in case it was defined in a config function eg: on_get_search
+	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
+	#if there aren't videos
+	if [ -z "$videos_data" ]; then
+	    printf "No results found. Try different keywords.\n" >&2
+	    exit 1
+	fi
+
+	function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$url_json"
+
+	[ "$sort_videos_data" -eq 1 ] && videos_data=$(printf "%s\n" "$videos_data" | sort_video_data_fn)
+
+    unset url_json
+}
+
 
 ############################
 #      User selection      #
@@ -1111,7 +1155,7 @@ clean_up () {
 }
 #> Saves data before exiting
 save_before_exit () {
-	[ $is_url -eq 1 ] && exit
+	[ $is_url -eq 1 ] && selected_data="$videos_data"
 	[ $enable_hist -eq 1 ] && printf "%s\n" "$selected_data" >> "$history_file" ;
 	[ $enable_cur -eq 1 ] && : > "$current_file" ;
 }
@@ -1143,7 +1187,8 @@ get_history () {
 		[ -z "$hist_data" ] && printf "History is empty!\n" >&2 && return 1;
 		#removes duplicate values from $history_data
 		videos_data=$(printf "%s" "$hist_data" | uniq )
-		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s" "$videos_data"  | sort_video_data_fn)"
+		[ "$sort_videos_data" -eq 1 ] && videos_data="$(printf "%s\n" "$videos_data"  | sort_video_data_fn)"
+
 	else
 		printf "History is not enabled. Please enable it to use this option (-H).\n" >&2;
 		exit 1;
@@ -1619,11 +1664,15 @@ scrape_fn () {
 		scrape_subscriptions
 		;;
 	"history")
+        # Thumbnails are never used with history
+        show_thumbnails=0
 		! get_history && exit 1
 		;;
 	"url")
 	    get_video_format
+        scrape_url "$search_query"
 	    play_url
+        save_before_exit
 	    exit
 	    ;;
 	*)
