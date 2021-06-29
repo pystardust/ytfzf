@@ -1350,7 +1350,6 @@ if ! function_exists "data_sort_fn"; then
 	sort -nr
     }
 fi
-# TODO: Fix, first line does not get returned
 sort_video_data_fn () {
 	while IFS= read -r line
 	do
