@@ -38,6 +38,8 @@ enable_search_hist=${YTFZF_SEARCH_HIST-${enable_search_hist-1}}
 enable_search_hist_menu=${YTFZF_SEARCH_HIST_MENU-${enable_search_hist_menu-0}}
 allow_empty_search_hist=${YTFZF_ALLOW_EMPTY_SEARCH_HIST-${allow_empty_search_hist-0}}
 search_history_prompt=${YTFZF_SEARCH_HISTORY_PROMPT-${search_history_prompt-"> "}}
+#enable/disable persistent
+enable_persistent=${YTFZF_PERSISTENT-${enable_persistent-0}}
 #enable/disable looping
 enable_loop=${YTFZF_LOOP-${enable_loop-0}}
 #enable/disable outputting current track to $current_file
@@ -949,6 +951,8 @@ get_search_query () {
 user_selection () {
 	#remove subscription separators
 	videos_data_clean=$(printf "%s" "$videos_data" | sed "/.*$tab_space$/d")
+    
+    [ "$enable_persistent" -eq 1 ] && persistent_binds=",enter:execute-silent(sh $0 -U \"selected_data_from_file \"{+f})"
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
@@ -967,7 +971,7 @@ user_selection () {
 		export YTFZF_THUMB_DISP_METHOD="$thumb_disp_method"
 		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
 		#thumbnails only work in fzf, use fzf
-		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
+        menu_command="fzf -m --tabstop=1 --bind 'change:top$persistent_binds' --delimiter=\"$tab_space\" \
 		--nth=1,2 --expect='$shortcuts' $FZF_DEFAULT_OPTS \
         --layout=reverse --preview \"sh $0 -U 'preview_img '{}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
@@ -975,6 +979,7 @@ user_selection () {
 		[ "$thumb_disp_method" = "ueberzug" ] && stop_ueberzug
 		# Deletes thumbnails if no video is selected
 		[ -z "$selected_data" ] && clean_up
+        [ "$enable_persistent" -eq 1 ] && exit
 	#show regular menu
 	else
 		selected_data=$( video_menu "$videos_data" )
