@@ -982,6 +982,17 @@ user_selection () {
 	unset videos_data_clean
 }
 
+selected_data_from_file () {
+    selected_data="$( cat "$*" )"
+    [ -z "$selected_data" ] && exit
+	format_user_selection
+	get_video_format
+	get_sub_lang
+	play_url
+	save_before_exit
+    exit
+}
+
 handle_shortcuts () {
     [ -z "$selected_key" ] && return 0
     #creates splits the variable shortcuts by , and assigns a variable to each string
@@ -1435,6 +1446,7 @@ parse_internal_opt (){
     val=${*#* }
     case "$arg" in
         preview_img*) preview_img "$val"; exit;;
+        selected_data_from_file*) selected_data_from_file "$val";
     esac
 }
 
