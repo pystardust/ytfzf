@@ -1225,7 +1225,7 @@ get_search_history () {
 		hist_data=$( sed '1!G; h; $!d' "$search_history_file" )
 		[ -z "$hist_data" ] && printf "Search history is empty!\n" >&2 && return 1;
 		#removes duplicate values from $history_data
-		search_history=$(printf "%s" "$hist_data" | uniq )
+		search_history=$(printf "%s" "$hist_data" | uniq -f2 )
 	else
 		printf "Search history is not enabled. Please enable it to use this option (-q).\n" >&2;
 		exit 1;
