@@ -152,6 +152,10 @@ trending_tab="${trending_tab-}"
 sort_name="${sort_name-}"
 #to detach the video player from the terminal
 detach_player=${detach_player-0}
+
+# in persistent mode the player always needs to detach
+[ "$enable_persistent" -eq 1 ] && detach_player=1
+
 # misc
 tab_space=$(printf '\t')
 new_line="
