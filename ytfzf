@@ -969,7 +969,7 @@ user_selection () {
 		#thumbnails only work in fzf, use fzf
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
 		--nth=1,2 --expect='$shortcuts' $FZF_DEFAULT_OPTS \
-		--layout=reverse --preview \"sh $0 -U {}\" \
+        --layout=reverse --preview \"sh $0 -U 'preview_img '{}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
 		selected_data=$( title_len=200 video_menu "$videos_data" )
 		[ "$thumb_disp_method" = "ueberzug" ] && stop_ueberzug
@@ -1430,6 +1430,14 @@ bad_opt_arg () {
 	exit 3
 }
 
+parse_internal_opt (){
+    arg=${*%% *}
+    val=${*#* }
+    case "$arg" in
+        preview_img*) preview_img "$val"; exit;;
+    esac
+}
+
 parse_opt () {
 	#the first arg is the option
 	opt=$1
@@ -1551,8 +1559,8 @@ parse_opt () {
 			link_count="$optarg"
 			is_non_number "$link_count" && bad_opt_arg "$link_count" "-n" ;;
 
-		U) 	preview_img "$optarg"; exit;
-			# This option is reserved for the script, to show image previews
+		U) 	parse_internal_opt "$optarg";
+			# This option is reserved for internal scripts
 			# Not to be used explicitly
 			;;
 
