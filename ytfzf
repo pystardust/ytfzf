@@ -92,9 +92,12 @@ pid_file="$cache_dir/.pid"
 #list of shortcuts to use in fzf
 #handle_custom_shortcuts will be called if defined (handle_custom_shortcuts can call handle_shortcuts to handle normal shortcuts)
 shortcuts="${shortcuts-alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter}"
-search_prompt=${search_prompt-Search: }
-#used when getting the html from youtube
+# these keys allow the use of shortcuts without leaving fzf
+persistent_shortcuts="${fzf_select_bindings_play-enter,alt-enter,alt-v,alt-d,alt-o}"
 
+search_prompt=${search_prompt-Search: }
+
+#used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 #used when fancy_subscriptions_menu is 1
 fancy_subscriptions_text=${fancy_subscriptions_text-             -------%s-------}
@@ -956,7 +959,22 @@ user_selection () {
 	#remove subscription separators
 	videos_data_clean=$(printf "%s" "$videos_data" | sed "/.*$tab_space$/d")
     
-    [ "$enable_loop" -eq 1 ] && loop_binds=",enter:execute-silent(sh $0 -U \"selected_data_from_file \"{+f})"
+    ## PERSISTENT SHORTCUTS
+    if [ "$enable_loop" -eq 1 ]; then
+        loop_binds=
+        # make sure every key code is surrounded by commas
+        shortcuts=",$shortcuts,"
+        IFS=','
+        for key in $persistent_shortcuts; do
+            bind_command=":execute-silent(sh $0 -U \"fzf_bind_command $key \"{+f})"
+            loop_binds="${loop_binds},${key}${bind_command}"
+            # Remove used keys from shortcut
+            shortcuts="$( printf "%s" "$shortcuts" | sed "s/,$key,/,/g" )"
+        done
+        unset IFS
+        shortcuts="${shortcuts%,*}"
+        shortcuts="${shortcuts#*,}"
+    fi
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
@@ -975,7 +993,8 @@ user_selection () {
 		export YTFZF_THUMB_DISP_METHOD="$thumb_disp_method"
 		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
 		#thumbnails only work in fzf, use fzf
-        menu_command="fzf -m --tabstop=1 --bind 'change:top$loop_binds' --delimiter=\"$tab_space\" \
+        menu_command="fzf -m --tabstop=1 \
+        --bind 'change:top$loop_binds' --delimiter=\"$tab_space\" \
 		--nth=1,2 --expect='$shortcuts' $FZF_DEFAULT_OPTS \
         --layout=reverse --preview \"sh $0 -U 'preview_img '{}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
@@ -990,10 +1009,19 @@ user_selection () {
 	unset videos_data_clean
 }
 
-selected_data_from_file () {
-    selected_data="$( cat "$*" )"
-    [ -z "$selected_data" ] && exit
-	format_user_selection
+fzf_bind_command () {
+    file=${*#* }
+    selected_data="$( cat "$file" )"
+    format_user_selection
+    selected_key=${*%% *}
+	handle_shortcuts
+	case "$?" in
+	    1)
+		save_before_exit
+		clean_up
+		exit ;;
+	    2) continue ;;
+	esac
 	get_video_format
 	get_sub_lang
 	play_url
@@ -1454,7 +1482,7 @@ parse_internal_opt (){
     val=${*#* }
     case "$arg" in
         preview_img*) preview_img "$val"; exit;;
-        selected_data_from_file*) selected_data_from_file "$val";
+        fzf_bind_command*) fzf_bind_command "$val";
     esac
 }
 
