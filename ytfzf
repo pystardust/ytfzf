@@ -93,7 +93,7 @@ pid_file="$cache_dir/.pid"
 #handle_custom_shortcuts will be called if defined (handle_custom_shortcuts can call handle_shortcuts to handle normal shortcuts)
 shortcuts="${shortcuts-alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter}"
 # these keys allow the use of shortcuts without leaving fzf
-persistent_shortcuts="${fzf_select_bindings_play-enter,alt-enter,alt-v,alt-d,alt-o}"
+persistent_shortcuts="${persistent_shortcuts-enter,alt-enter,alt-v,alt-d,alt-o}"
 
 search_prompt=${search_prompt-Search: }
 
