@@ -1010,8 +1010,8 @@ user_selection () {
 }
 
 fzf_bind_command () {
-    file=${*#* }
-    selected_data="$( cat "$file" )"
+    args=$*
+    selected_data="$( cat "${args#* }" )"
     format_user_selection
     selected_key=${*%% *}
 	handle_shortcuts
