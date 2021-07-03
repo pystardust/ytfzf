@@ -954,27 +954,30 @@ get_search_query () {
     set_search_history
 	function_exists "on_get_search" && on_get_search "$search_query"
 }
+
+persistent_shortcuts () {
+    binds=
+    # make sure every key code is surrounded by commas
+    shortcuts=",$shortcuts,"
+    IFS=','
+    for key in $persistent_shortcuts; do
+        bind_command=":execute-silent(sh $0 -U \"fzf_bind_command $key \"{+f})"
+        binds="${binds},${key}${bind_command}"
+        # Remove used keys from shortcut
+        shortcuts="$( printf "%s" "$shortcuts" | sed "s/,$key,/,/g" )"
+    done
+    unset IFS
+    shortcuts="${shortcuts%,*}"
+    shortcuts="${shortcuts#*,}"
+}
+
 #> To select videos from videos_data
 user_selection () {
+    # format persistent shortcuts for fzf
+    persistent_shortcuts
+
 	#remove subscription separators
 	videos_data_clean=$(printf "%s" "$videos_data" | sed "/.*$tab_space$/d")
-    
-    ## PERSISTENT SHORTCUTS
-    if [ "$enable_loop" -eq 1 ]; then
-        loop_binds=
-        # make sure every key code is surrounded by commas
-        shortcuts=",$shortcuts,"
-        IFS=','
-        for key in $persistent_shortcuts; do
-            bind_command=":execute-silent(sh $0 -U \"fzf_bind_command $key \"{+f})"
-            loop_binds="${loop_binds},${key}${bind_command}"
-            # Remove used keys from shortcut
-            shortcuts="$( printf "%s" "$shortcuts" | sed "s/,$key,/,/g" )"
-        done
-        unset IFS
-        shortcuts="${shortcuts%,*}"
-        shortcuts="${shortcuts#*,}"
-    fi
 
 	#$selected_data is the video the user picked
 	#picks the first n videos
@@ -994,7 +997,7 @@ user_selection () {
 		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
 		#thumbnails only work in fzf, use fzf
         menu_command="fzf -m --tabstop=1 \
-        --bind 'change:top$loop_binds' --delimiter=\"$tab_space\" \
+        --bind 'change:top$binds' --delimiter=\"$tab_space\" \
 		--nth=1,2 --expect='$shortcuts' $FZF_DEFAULT_OPTS \
         --layout=reverse --preview \"sh $0 -U 'preview_img '{}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
