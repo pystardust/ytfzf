@@ -91,9 +91,12 @@ pid_file="$cache_dir/.pid"
 #> config settings
 #list of shortcuts to use in fzf
 #handle_custom_shortcuts will be called if defined (handle_custom_shortcuts can call handle_shortcuts to handle normal shortcuts)
+# These binds are used for standard select function
+select_binds="${select_binds-enter,double-click}"
+# shortcuts are used for alternative functions apart from select
 shortcuts="${shortcuts-alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter}"
-# these keys allow the use of shortcuts without leaving fzf
-persistent_shortcuts="${persistent_shortcuts-enter,alt-enter,alt-v,alt-d,alt-o}"
+# these keys allow the use of shortcuts or select binds without leaving fzf
+persistent_shortcuts="${persistent_shortcuts-enter,alt-enter,alt-v,alt-d,alt-o,double-click}"
 
 search_prompt=${search_prompt-Search: }
 
@@ -956,9 +959,14 @@ get_search_query () {
 }
 
 persistent_shortcuts () {
+    # binds for `fzf --binds`
     binds=
+
     # make sure every key code is surrounded by commas
-    shortcuts=",$shortcuts,"
+    # by default, select_binds are shortcuts unless in persistent_binds
+    shortcuts=",${shortcuts},${select_binds},"
+
+    # Build fzf --bind command
     IFS=','
     for key in $persistent_shortcuts; do
         bind_command=":execute-silent(sh $0 -U \"fzf_bind_command $key \"{+f})"
@@ -966,7 +974,20 @@ persistent_shortcuts () {
         # Remove used keys from shortcut
         shortcuts="$( printf "%s" "$shortcuts" | sed "s/,$key,/,/g" )"
     done
+
+    # if in neither persistent_bind, shortcut or select_binds, ignore
+    # if in persistent_bind, always ignore
+    ignore_keys="enter,double-click"
+    ignore_binds=
+    for key in $ignore_keys; do
+        printf "%s%s" "$binds" "$shortcuts" | grep -q ",$key," || \
+            ignore_binds="${ignore_binds},${key}:ignore"
+        printf "%s" "$shortcuts" | grep -q ",$key," || continue
+        ignore_binds="${ignore_binds},${key}:ignore"
+    done
     unset IFS
+
+    # remove leading and tailing , in shortcuts
     shortcuts="${shortcuts%,*}"
     shortcuts="${shortcuts#*,}"
 }
@@ -997,7 +1018,7 @@ user_selection () {
 		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
 		#thumbnails only work in fzf, use fzf
         menu_command="fzf -m --tabstop=1 \
-        --bind 'change:top$binds' --delimiter=\"$tab_space\" \
+        --bind 'change:top$ignore_binds$binds' --delimiter=\"$tab_space\" \
 		--nth=1,2 --expect='$shortcuts' $FZF_DEFAULT_OPTS \
         --layout=reverse --preview \"sh $0 -U 'preview_img '{}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
@@ -1034,6 +1055,9 @@ fzf_bind_command () {
 
 handle_shortcuts () {
     [ -z "$selected_key" ] && return 0
+
+    printf ",%s," "$select_binds" | grep -q ",$selected_key," && return 0
+
     #creates splits the variable shortcuts by , and assigns a variable to each string
     #ei: $urls_shortcut will be equal to the first keybind
     IFS="," read -r \
