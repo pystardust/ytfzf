@@ -1038,21 +1038,12 @@ get_sub_lang () {
 
 open_player () {
 
-	if [ $is_audio_only -eq 1 ]; then
-		video_player=$audio_player
-		video_pref="bestaudio"
-	fi
+	[ $is_audio_only -eq 1 ] && video_player=$audio_player && video_pref="bestaudio"
 
-	if [ $detach_player -eq 1 ]; then
-		if [ -z "$video_pref" ] || [ $is_audio_only -eq 1 ]; then
-			printf "Opening Player: %s\n" "$video_player $*"
-			setsid -f $video_player "$@"  $YTFZF_SUBT_NAME >/dev/null 2>&1
-		else
-			printf "Opening Player: %s\n" "$video_player_format$video_pref $*"
-			setsid -f $video_player_format"$video_pref"  "$@"  $YTFZF_SUBT_NAME >/dev/null 2>&1
-		fi
-		return
-	fi
+	#if is download, set to youtube-dl, if audio only add -x flag (extract audio from video)
+	[ $is_download -eq 1 ] && video_player="youtube-dl" && [ $is_audio_only -eq 1 ] && video_player="youtube-dl -x"
+
+	[ $detach_player -eq 1 ] && video_player="setsid -f $video_player"
 
 	if [ $is_download -eq 0 ]; then
 		if [ -z "$video_pref" ] || [ $is_audio_only -eq 1 ]; then
@@ -1064,9 +1055,9 @@ open_player () {
 		fi
 	elif [ $is_download -eq 1 ]; then
 		if [ -z "$video_pref" ]; then
-			youtube-dl "$@"  "$YTFZF_SUBT_NAME"
+			$video_player "$@"  "$YTFZF_SUBT_NAME"
 		else
-			youtube-dl -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
+			$video_player -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
 		fi
 	fi
 }
