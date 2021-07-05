@@ -969,7 +969,10 @@ persistent_shortcuts () {
     # Build fzf --bind command
     IFS=','
     for key in $persistent_shortcuts; do
-        bind_command=":execute-silent(sh $0 -U \"fzf_bind_command $key \"{+f})"
+        # not sure why, but this won't work with `execute-silent`
+        # sleep is necessary to give the command enough time to execute before
+        # the fzf tmp file gets removed
+        bind_command=":execute(sh -c \"$0 -U \\\"fzf_bind_command $key {+f}\\\"\" >/dev/null 2>&1 & sleep 0.1)"
         binds="${binds},${key}${bind_command}"
         # Remove used keys from shortcut
         shortcuts="$( printf "%s" "$shortcuts" | sed "s/,$key,/,/g" )"
@@ -1018,7 +1021,7 @@ user_selection () {
 		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
 		#thumbnails only work in fzf, use fzf
         menu_command="fzf -m --tabstop=1 \
-        --bind 'change:top$ignore_binds$binds' --delimiter=\"$tab_space\" \
+        --bind 'change:top"$ignore_binds$binds"' --delimiter=\"$tab_space\" \
 		--nth=1,2 --expect='$shortcuts' $FZF_DEFAULT_OPTS \
         --layout=reverse --preview \"sh $0 -U 'preview_img '{}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
