@@ -1512,7 +1512,7 @@ parse_internal_opt (){
     val=${*#* }
     case "$arg" in
         preview_img*) preview_img "$val"; exit;;
-        fzf_bind_command*) fzf_bind_command "$val";
+        fzf_bind_command*) fzf_bind_command "$val";;
     esac
 }
 
