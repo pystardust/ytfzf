@@ -45,6 +45,13 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
 	  pkg install --glob "py3*-ueberzug"
 
++ #### Guix
+
+	Ytfzf can be deployed on any GNU/Linux Systems, using [Guix](https://guix.gnu.org).
+
+	To install in the user's default-profile, do `guix package --install ytfzf`
+
+	To test without installation, do `guix environment --pure --ad-hoc ytfzf curl nss-certs`
 
 + #### MacOS
 
