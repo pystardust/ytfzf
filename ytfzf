@@ -476,8 +476,7 @@ preview_img () {
 	shorturl=${args##*${tab_space}|}
 	shorturl="${shorturl%% *}"
 
-	json_obj=$(printf "%s" "$videos_json" | jq '.[]|select( .videoID == "'"$shorturl"'")')
-
+	json_obj=$(jq '.[]|select( .videoID == "'"$shorturl"'")' "$tmp_video_json_file")
 
 	IFS=$tab_space read -r title channel duration views date description <<-EOF
 	$(
@@ -784,7 +783,7 @@ scrape_pt () {
 		thumbs: .thumbnailUrl
 	    }
 	]')
-     export videos_json
+     printf "%s" "$videos_json" > "$tmp_video_json_file"
      videos_data="$(get_video_data "$videos_json")"
      function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$pt_json"
      [ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
@@ -859,7 +858,7 @@ scrape_yt () {
 	]')
 
 	videos_json=$playlist_json$videos_json
-	export videos_json
+	printf "%s" "$videos_json" > "$tmp_video_json_file"
 
 	#checks if it's empty in case it was defined in a config function eg: on_get_search
 	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
@@ -1321,8 +1320,6 @@ scrape_subscriptions () {
 	"$subscriptions_file")
 	EOF
 	wait
-	videos_json="$(cat "$tmp_video_json_file")"
-	export videos_json
 	if [ $sort_videos_data -eq 1 ]; then 
 		videos_data=$(sort_video_data_fn < "$tmp_video_data_file")
 	else
