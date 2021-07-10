@@ -407,7 +407,8 @@ format_menu () {
 	if [ "$is_ext_menu" -eq 0 ]; then
 		#dep_ck fzf here because it is only necessary to use here
 		dep_ck "fzf"
-		menu_command='column -t -s "$tab_space" | fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 --expect="$key_binds" $FZF_DEFAULT_OPTS'
+		menu_command="column -t -s '$tab_space' | fzf -m --bind 'change:top"$ignore_binds$binds"' --tabstop=1 --layout=reverse --delimiter='$tab_space' --nth=1,2 --expect='$key_binds' $FZF_DEFAULT_OPTS"
+        echo "$menu_command"
 		format_fzf
 	else
 		# Dmenu doesn't render tabs so removing it
@@ -1028,6 +1029,7 @@ user_selection () {
 		[ -z "$selected_data" ] && clean_up
 	#show regular menu
 	else
+        format_menu
 		selected_data=$( video_menu "$videos_data" )
 	fi
 	unset videos_data_clean
@@ -1723,9 +1725,6 @@ fi
 
 # If in auto select mode dont download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0;
-
-#format the menu screen
-format_menu
 
 #if sort_name is define it will define data_sort_key and data_sort_fn
 #otherwise nothing will happen
