@@ -1038,7 +1038,7 @@ fzf_bind_command () {
     args=$*
     selected_data="$( cat "${args#* }" )"
     format_user_selection
-    selected_key=${*%% *}
+    selected_key=${args%% *}
 	handle_key_binds
 	case "$?" in
 	    1)
@@ -1504,8 +1504,9 @@ bad_opt_arg () {
 }
 
 parse_internal_opt (){
-    arg=${*%% *}
-    val=${*#* }
+    arg=$*
+    val=${arg#* }
+    arg=${arg%% *}
     case "$arg" in
         preview_img*) preview_img "$val"; exit;;
         fzf_bind_command*) fzf_bind_command "$val";;
