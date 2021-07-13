@@ -193,6 +193,11 @@ preview_side="left"
 #same as --subs=
 sub_link_count=10
 
+#the maximum amount of videos to show
+#set to 0 to do nothing
+#same as --video-limit
+video_limit=0
+
 #whether or not to show --------------channel---------------- when viewing subscriptions
 #same as --fancy-subs=
 fancy_subscriptions_menu=1
