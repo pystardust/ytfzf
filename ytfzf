@@ -1604,10 +1604,8 @@ done
 shift $((OPTIND-1))
 
 if [ $video_limit -lt 0 ]; then
-    print_error "$video_limit cannot be less than 0" && exit 3
-elif [ $video_limit -eq 0 ]; then 
-    fancy_subscriptions_menu=1
-else
+    printf "\033[31m$video_limit cannot be less than 0\033[0m\n" && exit 3
+elif [ $video_limit -gt 0 ]; then
     fancy_subscriptions_menu=0
 fi
 
