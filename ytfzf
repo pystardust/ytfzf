@@ -98,6 +98,7 @@ persistent_key_binds="${persistent_key_binds-enter,alt-enter,alt-v,alt-d,alt-o,d
 
 # Depreciation warning for shortcuts
 [ -n "${shortcuts+shortcuts_is_defined}" ] && printf "\033[33mWarning: shortcuts is defined, use the 'key_binds' variable instead\033[0m\n" >&2
+command -v "handle_custom_shortcuts" > /dev/null 2>&1 && printf "\033[33mWarning: handle_custom_shortcuts is not supported, rename it to handle_custom_key_binds\033[0m\n" >&2
 
 search_prompt=${search_prompt-Search: }
 
