@@ -96,6 +96,9 @@ key_binds="${key_binds-alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter,enter
 # these keys allow the use of key_binds without leaving fzf
 persistent_key_binds="${persistent_key_binds-enter,alt-enter,alt-v,alt-d,alt-o,double-click}"
 
+# Depreciation warning for shortcuts
+[ -n "${shortcuts+shortcuts_is_defined}" ] && printf "\033[33mWarning: shortcuts is defined, use the 'key_binds' variable instead\033[0m\n" >&2
+
 search_prompt=${search_prompt-Search: }
 
 #used when getting the html from youtube
