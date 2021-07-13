@@ -472,12 +472,13 @@ start_ueberzug () {
     [ -e $FIFO ] || { mkfifo "$FIFO" || exit 1 ; }
     ueberzug layer --parser json --silent < "$FIFO" &
     exec 3>"$FIFO"
+    ueberzug_pid="$!"
 }
 stop_ueberzug () {
     exec 3>&-
     rm "$FIFO" > /dev/null 2>&1
     # make sure ueberzug is really dead
-    ps aux | grep 'ueberzug' | awk '{print $2}' | sed '1q' | xargs kill
+    kill "$ueberzug_pid"
 }
 
 preview_img () {
