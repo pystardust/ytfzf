@@ -1085,7 +1085,7 @@ open_player () {
 	[ $is_audio_only -eq 1 ] && video_player=$audio_player && video_pref="bestaudio"
 
 	#do this before download check because youtube-dl is different
-	[ -z "$video_pref" ] && video_player="$video_player_format""$video_pref"
+	[ -n "$video_pref" ] && video_player="$video_player_format""$video_pref"
 
 	#if is download, set to youtube-dl, if audio only add -x flag (extract audio from video)
 	[ $is_download -eq 1 ] && video_player="youtube-dl" && [ $is_audio_only -eq 1 ] && video_player="youtube-dl -x"
