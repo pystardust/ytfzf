@@ -32,10 +32,19 @@
 #(YTFZF_HIST)
 enable_hist=1
 
+#enable/disable logging of search history
+#history is stored in $search_history_file ($YTFZF_CACHE/ytfzf_search_hst by default, change $search_history_file to change this)
+#(YTFZF_SEARCH_HIST)
+enable_search_hist=1
+
 #enable/disable looping (disabled by default)
 #when enabled, after a video ends it will bring up the results menu again
 #(YTFZF_LOOP)
 enable_loop=0
+
+#enable/disable launching menu if search history is empty
+#(YTFZF_ALLOW_EMPTY_SEARCH_HIST)
+allow_empty_search_hist=0
 
 #the directory to store cache
 #history, thumbnails, and the currently playing video will be stored here
@@ -116,6 +125,7 @@ selected_sub=""
 is_download=0
 
 #enable/disable search history menu
+#also has an environment variable ($YTFZF_SEARCH_HIST_MENU)
 #same as -q
 enable_search_hist_menu=0
 
@@ -183,6 +193,11 @@ preview_side="left"
 #same as --subs=
 sub_link_count=10
 
+#the maximum amount of videos to show
+#set to 0 to do nothing
+#same as --video-limit
+video_limit=0
+
 #whether or not to show --------------channel---------------- when viewing subscriptions
 #same as --fancy-subs=
 fancy_subscriptions_menu=1
@@ -194,6 +209,10 @@ fancy_subscriptions_menu=1
 #trending is the same as -T
 #pt_search is the same as -P (searches peertube)
 scrape="yt_search"
+
+#enable/disable detaching player from terminal
+#same as --detach
+detach_player=0
 
 #auto generated caption from youtube
 #same as --subt
@@ -299,17 +318,11 @@ exit_on_opt_error=1
 #the file for storing watch history
 history_file="$cache_dir/ytfzf_hst"
 
-#enable/disable logging of search history
-enable_search_hist=1
-
 #the file for storing search history
 search_history_file="$cache_dir/ytfzf_search_hst"
 
 #prompt for search history menu
 search_history_prompt="> "
-
-#enable/disable launching menu if search history is empty
-allow_empty_search_hist=0
 
 #the file for writing the menu option that was chosen
 current_file="$cache_dir/ytfzf_cur"

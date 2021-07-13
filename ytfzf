@@ -154,7 +154,9 @@ trending_tab="${trending_tab-}"
 sort_name="${sort_name-}"
 #to detach the video player from the terminal
 detach_player=${detach_player-0}
-
+#the maximum amount of videos that can be displayed
+#0: no limit
+video_limit=${video_limit-0}
 # misc
 tab_space=$(printf '\t')
 new_line="
@@ -234,6 +236,8 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      --sort-name=         <function>        The function must contain the values of
                                             data_sort_key, data_sort_fn,
 					    see the example sort-name in the example config
+     --video-limit=       <limit>           The maximum number of videos that can be displayed.
+                                            Useful for subscriptions.
 
   Use - instead of <search-query> for stdin
 
@@ -484,7 +488,7 @@ preview_img () {
 	shorturl=${args##*${tab_space}|}
 	shorturl="${shorturl%% *}"
 
-	json_obj=$(printf "%s" "$videos_json" | jq '.[]|select( .videoID == "'"$shorturl"'")')
+	json_obj=$( jq '.[]|select( .videoID == "'"$shorturl"'")' "$tmp_video_json_file")
 
 
 	IFS=$tab_space read -r title channel duration views date description <<-EOF
@@ -867,7 +871,7 @@ scrape_yt () {
 	]')
 
 	videos_json=$playlist_json$videos_json
-	export videos_json
+	printf "%s" "$videos_json" > "$tmp_video_json_file"
 
 	#checks if it's empty in case it was defined in a config function eg: on_get_search
 	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
@@ -995,6 +999,7 @@ user_selection () {
     # format persistent key binds for fzf
     persistent_key_binds
 
+	[ $video_limit -gt 0 ] && videos_data="$(printf "%s" "$videos_data" | sed -n '1,'"$video_limit"'p')"
 	#remove subscription separators
 	videos_data_clean=$(printf "%s" "$videos_data" | sed "/.*$tab_space$/d")
 
@@ -1153,21 +1158,12 @@ get_sub_lang () {
 
 open_player () {
 
-	if [ $is_audio_only -eq 1 ]; then
-		video_player=$audio_player
-		video_pref="bestaudio"
-	fi
+	[ $is_audio_only -eq 1 ] && video_player=$audio_player && video_pref="bestaudio"
 
-	if [ $detach_player -eq 1 ]; then
-		if [ -z "$video_pref" ] || [ $is_audio_only -eq 1 ]; then
-			printf "Opening Player: %s\n" "$video_player $*"
-			setsid -f $video_player "$@"  $YTFZF_SUBT_NAME >/dev/null 2>&1
-		else
-			printf "Opening Player: %s\n" "$video_player_format$video_pref $*"
-			setsid -f $video_player_format"$video_pref"  "$@"  $YTFZF_SUBT_NAME >/dev/null 2>&1
-		fi
-		return
-	fi
+	#if is download, set to youtube-dl, if audio only add -x flag (extract audio from video)
+	[ $is_download -eq 1 ] && video_player="youtube-dl" && [ $is_audio_only -eq 1 ] && video_player="youtube-dl -x"
+
+	[ $detach_player -eq 1 ] && video_player="setsid -f $video_player"
 
 	if [ $is_download -eq 0 ]; then
 		if [ -z "$video_pref" ] || [ $is_audio_only -eq 1 ]; then
@@ -1179,9 +1175,9 @@ open_player () {
 		fi
 	elif [ $is_download -eq 1 ]; then
 		if [ -z "$video_pref" ]; then
-			youtube-dl "$@"  "$YTFZF_SUBT_NAME"
+			$video_player "$@"  "$YTFZF_SUBT_NAME"
 		else
-			youtube-dl -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
+			$video_player -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
 		fi
 	fi
 }
@@ -1438,7 +1434,6 @@ scrape_subscriptions () {
 	EOF
 	wait
 	videos_json="$(cat "$tmp_video_json_file")"
-	export videos_json
 	if [ $sort_videos_data -eq 1 ]; then 
 		videos_data=$(sort_video_data_fn < "$tmp_video_data_file")
 	else
@@ -1616,6 +1611,10 @@ parse_opt () {
 			command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[0m %s\n" "$(fzf --version)"
 			exit ;;
 
+		video-limit)
+			video_limit="$optarg"
+			is_non_number "$optarg" && bad_opt_arg ;;
+
 		subt)
 			auto_caption=${optarg:-1}
 			is_non_number "$auto_caption" && bad_opt_arg ;;
@@ -1683,6 +1682,12 @@ while getopts "LhDmdfxqHaArltSsvNTPYn:U:-:" OPT; do
 	parse_opt "$OPT" "$OPTARG"
 done
 shift $((OPTIND-1))
+
+if [ $video_limit -lt 0 ]; then
+    printf "\033[31m$video_limit cannot be less than 0\033[0m\n" && exit 3
+elif [ $video_limit -gt 0 ]; then
+    fancy_subscriptions_menu=0
+fi
 
 #only apply to ext_menu since they dont have a terminal to print to
 [ $is_ext_menu -eq 1 ] && command -v notify-send 1>/dev/null 2>&1 && ext_menu_notifs=1 || ext_menu_notifs=0
