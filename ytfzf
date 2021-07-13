@@ -89,12 +89,20 @@ pid_file="$cache_dir/.pid"
 [ -d "$thumb_dir" ] || mkdir -p "$thumb_dir"
 
 #> config settings
-#list of shortcuts to use in fzf
-#handle_custom_shortcuts will be called if defined (handle_custom_shortcuts can call handle_shortcuts to handle normal shortcuts)
-shortcuts="${shortcuts-alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter}"
-search_prompt=${search_prompt-Search: }
-#used when getting the html from youtube
+#handle_custom_key_binds will be called if defined (handle_custom_key_binds can call handle_key_binds to handle normal key binds)
+# key_binds sets the bindings to use for fzf
+# any undefined binds will be used to select
+key_binds="${key_binds-alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter,enter,double-click}"
+# these keys allow the use of key_binds without leaving fzf
+persistent_key_binds="${persistent_key_binds-enter,alt-enter,alt-v,alt-d,alt-o,double-click}"
 
+# Depreciation warning for shortcuts
+[ -n "${shortcuts+shortcuts_is_defined}" ] && printf "\033[33mWarning: shortcuts is defined, use the 'key_binds' variable instead\033[0m\n" >&2
+command -v "handle_custom_shortcuts" > /dev/null 2>&1 && printf "\033[33mWarning: handle_custom_shortcuts is not supported, rename it to handle_custom_key_binds\033[0m\n" >&2
+
+search_prompt=${search_prompt-Search: }
+
+#used when getting the html from youtube
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 #used when fancy_subscriptions_menu is 1
 fancy_subscriptions_text=${fancy_subscriptions_text-             -------%s-------}
@@ -404,7 +412,7 @@ format_menu () {
 	if [ "$is_ext_menu" -eq 0 ]; then
 		#dep_ck fzf here because it is only necessary to use here
 		dep_ck "fzf"
-		menu_command='column -t -s "$tab_space" | fzf -m --bind change:top --tabstop=1 --layout=reverse --delimiter="$tab_space" --nth=1,2 --expect="$shortcuts" $FZF_DEFAULT_OPTS'
+		menu_command="column -t -s '$tab_space' | fzf -m --bind 'change:top"$ignore_binds$binds"' --tabstop=1 --layout=reverse --delimiter='$tab_space' --nth=1,2 --expect='$key_binds' $FZF_DEFAULT_OPTS"
 		format_fzf
 	else
 		# Dmenu doesn't render tabs so removing it
@@ -469,10 +477,13 @@ start_ueberzug () {
     [ -e $FIFO ] || { mkfifo "$FIFO" || exit 1 ; }
     ueberzug layer --parser json --silent < "$FIFO" &
     exec 3>"$FIFO"
+    ueberzug_pid="$!"
 }
 stop_ueberzug () {
     exec 3>&-
     rm "$FIFO" > /dev/null 2>&1
+    # make sure ueberzug is really dead
+    kill "$ueberzug_pid"
 }
 
 preview_img () {
@@ -950,8 +961,48 @@ get_search_query () {
     set_search_history
 	function_exists "on_get_search" && on_get_search "$search_query"
 }
+
+persistent_key_binds () {
+    # binds for `fzf --binds`
+    binds=
+
+    # make sure every key code is surrounded by commas
+    key_binds=",${key_binds},"
+
+    # Build fzf --bind command
+    IFS=','
+    for key in $persistent_key_binds; do
+        # not sure why, but this won't work with `execute-silent`
+        # sleep is necessary to give the command enough time to execute before
+        # the fzf tmp file gets removed
+        bind_command=":execute(sh -c \"$0 -U \\\"fzf_bind_command $key {+f}\\\"\" >/dev/null 2>&1 & sleep 0.1)"
+        binds="${binds},${key}${bind_command}"
+        # Remove used keys from key_binds
+        key_binds="$( printf "%s" "$key_binds" | sed "s/,$key,/,/g" )"
+    done
+
+    # if in neither persistent_bind nor key_binds ignore
+    # if in persistent_bind, always ignore
+    ignore_keys="enter,double-click"
+    ignore_binds=
+    for key in $ignore_keys; do
+        printf "%s%s" "$binds" "$key_binds" | grep -q ",$key," || \
+            ignore_binds="${ignore_binds},${key}:ignore"
+        printf "%s" "$key_binds" | grep -q ",$key," || continue
+        ignore_binds="${ignore_binds},${key}:ignore"
+    done
+    unset IFS
+
+    # remove leading and tailing , in key_binds
+    key_binds="${key_binds%,*}"
+    key_binds="${key_binds#*,}"
+}
+
 #> To select videos from videos_data
 user_selection () {
+    # format persistent key binds for fzf
+    persistent_key_binds
+
 	[ $video_limit -gt 0 ] && videos_data="$(printf "%s" "$videos_data" | sed -n '1,'"$video_limit"'p')"
 	#remove subscription separators
 	videos_data_clean=$(printf "%s" "$videos_data" | sed "/.*$tab_space$/d")
@@ -973,9 +1024,10 @@ user_selection () {
 		export YTFZF_THUMB_DISP_METHOD="$thumb_disp_method"
 		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
 		#thumbnails only work in fzf, use fzf
-		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
-		--nth=1,2 --expect='$shortcuts' $FZF_DEFAULT_OPTS \
-		--layout=reverse --preview \"sh $0 -U {}\" \
+        menu_command="fzf -m --tabstop=1 \
+        --bind 'change:top"$ignore_binds$binds"' --delimiter=\"$tab_space\" \
+		--nth=1,2 --expect='$key_binds' $FZF_DEFAULT_OPTS \
+        --layout=reverse --preview \"sh $0 -U 'preview_img '{}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
 		selected_data=$( title_len=200 video_menu "$videos_data" )
 		[ "$thumb_disp_method" = "ueberzug" ] && stop_ueberzug
@@ -983,41 +1035,63 @@ user_selection () {
 		[ -z "$selected_data" ] && clean_up
 	#show regular menu
 	else
+        format_menu
 		selected_data=$( video_menu "$videos_data" )
 	fi
 	unset videos_data_clean
 }
 
-handle_shortcuts () {
+fzf_bind_command () {
+    args=$*
+    selected_data="$( cat "${args#* }" )"
+    format_user_selection
+    selected_key=${args%% *}
+	handle_key_binds
+	case "$?" in
+	    1)
+		save_before_exit
+		clean_up
+		exit ;;
+	    2) continue ;;
+	esac
+	get_video_format
+	get_sub_lang
+	play_url
+	save_before_exit
+    exit
+}
+
+handle_key_binds () {
     [ -z "$selected_key" ] && return 0
-    #creates splits the variable shortcuts by , and assigns a variable to each string
-    #ei: $urls_shortcut will be equal to the first keybind
+
+    #creates splits the variable key_binds by , and assigns a variable to each string
+    #ei: $urls_bind will be equal to the first keybind
     IFS="," read -r \
-	urls_shortcut title_shortcut open_browser_shortcut watch_shortcut \
-	download_shortcut audio_shortcut search_shortcut detach_shortcut _ <<-EOF
-	$shortcuts
+	urls_bind title_bind open_browser_bind watch_bind \
+	download_bind audio_bind search_bind detach_bind _ <<-EOF
+	$key_binds
 	EOF
 
     case $selected_key in
-	"$urls_shortcut") printf "%s\n" $selected_urls; return 1 ;;
-	"$title_shortcut") 
+	"$urls_bind") printf "%s\n" $selected_urls; return 1 ;;
+	"$title_bind") 
 	    printf "%s\n" "$selected_data" | awk -F "  " '{print $1}'; return 1 ;;
-	"$open_browser_shortcut")
+	"$open_browser_bind")
 	    for url in $selected_urls; do
 		nohup $BROWSER "$url" >/dev/null 2>&1
 	    done
 	    return 1 ;;
-	"$watch_shortcut") is_download=0; is_audio_only=0; return 0;;
-	"$download_shortcut") is_download=1; return 0;;
-	"$audio_shortcut") is_audio_only=1; return 0;;
-	"$detach_shortcut") detach_player=1; return 0;;
-	"$search_shortcut")
+	"$watch_bind") is_download=0; is_audio_only=0; return 0;;
+	"$download_bind") is_download=1; return 0;;
+	"$audio_bind") is_audio_only=1; return 0;;
+	"$detach_bind") detach_player=1; return 0;;
+	"$search_bind")
 	    unset videos_data search_query
 	    [ "$scrape" = "pt_search" ] && scrape_fn || scrape="yt_search" scrape_fn
 	    return 2 ;;
     esac
-    if function_exists "handle_custom_shortcuts"; then
-	handle_custom_shortcuts
+    if function_exists "handle_custom_key_binds"; then
+	handle_custom_key_binds
 	return $?
     fi
     return 0
@@ -1426,6 +1500,16 @@ bad_opt_arg () {
 	exit 3
 }
 
+parse_internal_opt (){
+    arg=$*
+    val=${arg#* }
+    arg=${arg%% *}
+    case "$arg" in
+        preview_img*) preview_img "$val"; exit;;
+        fzf_bind_command*) fzf_bind_command "$val";;
+    esac
+}
+
 parse_opt () {
 	#the first arg is the option
 	opt=$1
@@ -1551,8 +1635,8 @@ parse_opt () {
 			link_count="$optarg"
 			is_non_number "$link_count" && bad_opt_arg "$link_count" "-n" ;;
 
-		U) 	preview_img "$optarg"; exit;
-			# This option is reserved for the script, to show image previews
+		U) 	parse_internal_opt "$optarg";
+			# This option is reserved for internal scripts
 			# Not to be used explicitly
 			;;
 
@@ -1649,9 +1733,6 @@ fi
 # If in auto select mode dont download thumbnails
 [ $auto_select -eq 1 ] || [ $random_select -eq 1 ] && show_thumbnails=0;
 
-#format the menu screen
-format_menu
-
 #if sort_name is define it will define data_sort_key and data_sort_fn
 #otherwise nothing will happen
 $sort_name
@@ -1693,8 +1774,8 @@ while true; do
 	user_selection
 	#to renable it for a new search
 	format_user_selection
-	#if handle_shortcuts returns 1, exit
-	handle_shortcuts
+	#if handle_key_binds returns 1, exit
+	handle_key_binds
 	case "$?" in
 	    1)
 		save_before_exit
