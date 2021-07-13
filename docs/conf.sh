@@ -272,11 +272,11 @@ sp=""
 ####################
 
 #############
-# Shortcuts #
+# Key Binds #
 #############
 
-#the shortcuts to use in fzf
-#the first 6 are used for
+#the key binds to use in fzf
+#the first 7 are used for
     # printing the urls
     # printing the title
     # openeing selected urls in a browser
@@ -284,20 +284,33 @@ sp=""
     # downloading the video
     # listening to the video
     # search again
+    # detach player
 #in that order, these keys can be changed
-#any keys after will not have default behaviour and the behaviour must be defined in handle_custom_shortcuts
-shortcuts="alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter"
+#any keys after will not have default behaviour and the behaviour can be defined in handle_custom_key_binds
+#any undefined keys will be used for default selection behaviour
+#
+#Note: some parts of `key_binds` used to be handled by `shortcuts`,
+#which is no longer supported
+key_binds="alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter,enter,double-click"
+
+#this allows for the use of key_binds without leaving fzf
+#therefore fzf does not have to reload and the selection does not get reset
+#if you do not wish to use this behavior, simply leave this option blank
+persistent_key_binds="enter,alt-enter,alt-v,alt-d,alt-o,double-click"
 
 #some helpful variables to keep in mind:
-    #selected_key: they shortcut pressed
+    #selected_key: they key_bind pressed
     #selected_urls: the selected urls
     #selected_data: the line that was selected
     #play_url: a function that takes a url and plays it (play_url "$url") 
 #the return value matters in this function,
     #returning 0 will continue the program as normal
     #returning 1 will exit the program and will clean up after itself
-    #returning 2 will restart the main loop (this is used for the search_again shortcut)
-handle_custom_shortcuts () {
+    #returning 2 will restart the main loop (this is used for the search_again key_bind)
+# 
+#Note: `handle_custom_key_binds` used to be handled by `handle_custom_shortcuts`,
+#which is no longer supported
+handle_custom_key_binds () {
     return 0
 }
 
