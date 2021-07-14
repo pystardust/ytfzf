@@ -1001,7 +1001,7 @@ persistent_key_binds () {
 #> To select videos from videos_data
 user_selection () {
     # format persistent key binds for fzf
-    persistent_key_binds
+    [ $enable_loop -eq 1 ] && persistent_key_binds
 
 	[ $video_limit -gt 0 ] && videos_data="$(printf "%s" "$videos_data" | sed -n '1,'"$video_limit"'p')"
 	#remove subscription separators
