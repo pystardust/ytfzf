@@ -1597,7 +1597,7 @@ parse_opt () {
 
 		l|loop)
 			enable_loop=${optarg:-1}
-			enable_persistent_key_binds=1
+			enable_persistent_key_binds=${optarg:-1}
 			is_non_number "$enable_loop" && bad_opt_arg ;;
 
 		t|show-thumbnails)
