@@ -161,6 +161,8 @@ detach_player=${detach_player-0}
 #the maximum amount of videos that can be displayed
 #0: no limit
 video_limit=${video_limit-0}
+#whether or not persistent key binds are enabled
+enable_persistent_key_binds=${enable_persistent_key_binds-0}
 # misc
 tab_space=$(printf '\t')
 new_line="
@@ -972,13 +974,13 @@ persistent_key_binds () {
     # Build fzf --bind command
     IFS=','
     for key in $persistent_key_binds; do
-        # not sure why, but this won't work with `execute-silent`
-        # sleep is necessary to give the command enough time to execute before
-        # the fzf tmp file gets removed
-        bind_command=":execute(sh -c \"$0 -U \\\"fzf_bind_command $key {+f}\\\"\" >/dev/null 2>&1 & sleep 0.1)"
-        binds="${binds},${key}${bind_command}"
-        # Remove used keys from key_binds
-        key_binds="$( printf "%s" "$key_binds" | sed "s/,$key,/,/g" )"
+	# not sure why, but this won't work with `execute-silent`
+	# sleep is necessary to give the command enough time to execute before
+	# the fzf tmp file gets removed
+	bind_command=":execute(sh -c \"$0 -U \\\"fzf_bind_command $key {+f}\\\"\" >/dev/null 2>&1 & sleep 0.1)"
+	binds="${binds},${key}${bind_command}"
+	# Remove used keys from key_binds
+	key_binds="$( printf "%s" "$key_binds" | sed "s/,$key,/,/g" )"
     done
 
     # if in neither persistent_bind nor key_binds ignore
@@ -1001,7 +1003,8 @@ persistent_key_binds () {
 #> To select videos from videos_data
 user_selection () {
     # format persistent key binds for fzf
-    [ $enable_loop -eq 1 ] && persistent_key_binds
+	[ $enable_persistent_key_binds -eq 0 ] && persistent_key_binds=""
+	persistent_key_binds
 
 	[ $video_limit -gt 0 ] && videos_data="$(printf "%s" "$videos_data" | sed -n '1,'"$video_limit"'p')"
 	#remove subscription separators
@@ -1594,6 +1597,7 @@ parse_opt () {
 
 		l|loop)
 			enable_loop=${optarg:-1}
+			enable_persistent_key_binds=1
 			is_non_number "$enable_loop" && bad_opt_arg ;;
 
 		t|show-thumbnails)
