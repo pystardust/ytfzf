@@ -298,6 +298,10 @@ key_binds="alt-l,alt-t,alt-o,alt-v,alt-d,alt-m,alt-s,alt-enter,enter,double-clic
 #if you do not wish to use this behavior, simply leave this option blank
 persistent_key_binds="enter,alt-enter,alt-v,alt-d,alt-o,double-click"
 
+#if you wish to have persistent key binds when loop is not given enable this
+#this will automatically be enabled with -l
+enable_persistent_key_binds=0
+
 #some helpful variables to keep in mind:
     #selected_key: they key_bind pressed
     #selected_urls: the selected urls
