@@ -1113,7 +1113,7 @@ format_user_selection () {
 		case ${#surl} in
 					# youtube video
 			11) selected_urls=$selected_urls$new_line'https://www.youtube.com/watch?v='$surl ;;
-			34) selected_urls=$selected_urls$new_line'https://www.youtube.com/playlist?list='$surl ;;
+			34|18) selected_urls=$selected_urls$new_line'https://www.youtube.com/playlist?list='$surl ;;
 			36)
 			    selected_urls=$selected_urls$new_line"$(printf "%s" "$videos_json" | jq '.[].url' | grep -F "$surl" | tr -d '"')" ;;
 			*) continue ;;
