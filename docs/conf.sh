@@ -164,6 +164,11 @@ select_all=0
 random_select=0
 
 #the amount of links to select with -a or -r
+#with -a, this can also be a sed address but it must start with an s, eg:
+    # link_count=s4,$
+#the above will pick the 4th through last videos
+#when using regular expressions keep in mind that it will also be searching dates, upload times, etc
+#play a video from ytfzf and take a look at ~/.cache/ytfzf/ytfzf_cur for a better understanding of what is being parsed
 #same as -n{number}
 link_count=1
 
