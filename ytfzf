@@ -833,6 +833,7 @@ scrape_pt () {
      videos_data="$(get_video_data "$videos_json")"
      function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$pt_json"
      [ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+     wait
      unset pt_json
 }
 
@@ -877,6 +878,7 @@ scrape_odysee () {
     function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$odysee_json"
 
     [ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+    wait
     unset odysee_json
 
 }
