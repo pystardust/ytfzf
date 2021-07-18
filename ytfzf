@@ -817,6 +817,8 @@ scrape_odysee () {
 	    -G --data-urlencode "s=$*" \
 	    -G --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,content_type,description"
     )
+    [ -z "$odysee_json" ] && print_error "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n" && exit 1
+
     videos_json=$(printf "%s" "$odysee_json" |\
 	jq '[ .[] | select(.content_type == "video/mp4" or .content_type == "video/m4v" or .content_type == "video/webm") | 
 	    {
@@ -830,7 +832,9 @@ scrape_odysee () {
 		date: .cq_created_at,
 		thumbs: .thumbnail_url
 	    }
-	]') > /dev/null 2>&1 || print_error "Due to limitations with lighthouse.lbry, searches must be greater than 2 characters\n" && exit 2
+	]') > /dev/null 2>&1 || { print_error "Due to limitations with lighthouse.lbry, searches must be greater than 2 characters\n" && exit 2; }
+    [ -z "$videos_json" ] && { printf "No results found. Try different keywords.\n" >&2 && exit 1; }
+
     printf "%s" "$videos_json" > "$tmp_video_json_file"
     videos_data="$(get_video_data "$videos_json")"
     function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$odysee_json"
