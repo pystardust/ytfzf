@@ -272,8 +272,10 @@ all_help_info () {
      --upload-time=<time-range>           Time range can be one of,
                                           last-hour, today, this-week, this-month, this-year
                                           Filters can go directly: --today
-     --upload-sort=<sort-filter>          The filter to sort the videos can be one of
-                                          upload-date, view-count, rating
+     --upload-sort=<sort-filter>          For YouTube, the filter to sort the videos can be one of:
+					    upload-date, view-count, rating
+					  For Odysee, the filter can be one of:
+					    newest-first, oldest-first
                                           Filters can go directly: --upload-date
      --filter-id=<filter>                 The id of the filter to use for video results
          A filter id can be found by going to Youtube searching, filtering how you want
@@ -820,7 +822,14 @@ scrape_odysee () {
 	    -G --data-urlencode "s=$*" \
 	    -G --data-urlencode "mediaType=video,audio" \
 	    -G --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description" \
-	    -G --data-urlencode "size=$odysee_video_search_count"
+	    -G --data-urlencode "size=$odysee_video_search_count" \
+	    -G --data-urlencode "time_filter="$(printf "$upload_date_filter" | tr -d '-')"" \
+	    -G --data-urlencode "sort_by="$(
+		case "$sort_by_filter" in
+		    newest-first) printf "release_time" ;;
+		    oldest-first) printf "^release_time" ;;
+		esac
+	    )""
     )
     [ -z "$odysee_json" ] && print_error "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n" && exit 1
 
@@ -1699,7 +1708,7 @@ parse_opt () {
 		last-hour|today|this-week|this-month|this-year) upload_date_filter=$opt ;;
 
 		upload-sort) sort_by_filter=$optarg ;;
-		upload-date|view-count|rating) sort_by_filter=$opt ;;
+		upload-date|view-count|rating|newest-first|oldest-first) sort_by_filter=$opt ;;
 
 		filter-id|sp) sp=$optarg ;;
 
