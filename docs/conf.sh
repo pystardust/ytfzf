@@ -326,6 +326,9 @@ handle_custom_key_binds () {
 #when no search is provided, or -s is given, use this prompt
 search_prompt="Search : "
 
+#the amount of videos to search from odysee
+#this doesn't work for youtube/peertube because there is no way to implement it currently
+odysee_video_search_count=30
 
 #useragent when using curl on youtube
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"

@@ -106,6 +106,8 @@ search_prompt=${search_prompt-Search: }
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 #used when fancy_subscriptions_menu is 1
 fancy_subscriptions_text=${fancy_subscriptions_text-             -------%s-------}
+#the amount of videos to get from odysee
+odysee_video_search_count=${odysee_video_search_count-30}
 
 #> config scripting settings
 #whether or not to show errors when an invalid option is passed
@@ -816,12 +818,14 @@ scrape_odysee () {
 	curl \
 	    -s "https://lighthouse.lbry.com/search" \
 	    -G --data-urlencode "s=$*" \
-	    -G --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,content_type,description"
+	    -G --data-urlencode "mediaType=video,audio" \
+	    -G --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description" \
+	    -G --data-urlencode "size=$odysee_video_search_count"
     )
     [ -z "$odysee_json" ] && print_error "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n" && exit 1
 
     videos_json=$(printf "%s" "$odysee_json" |\
-	jq '[ .[] | select(.content_type == "video/mp4" or .content_type == "video/m4v" or .content_type == "video/webm") | 
+	jq '[ .[] | 
 	    {
 		scrape: "odysee",
 		title: .title,
