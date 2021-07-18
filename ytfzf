@@ -1135,7 +1135,6 @@ format_user_selection () {
 	selected_urls=
 	while read data_line; do
 		surl=${data_line##*|}
-		printf "%s\n" "$surl"
 		[ -z "$surl" ] && continue # to ignore the separators
 		if [ "$scrape" = "odysee_search" ]; then
 		    selected_urls=$selected_urls$new_line"$(printf "%s" "$videos_json" | jq '.[] | select(.videoID == "'"${surl#*$new_line}"'") | "https://www.odysee.com/" + .channel + "/" + .name' | tr -d '"')"
