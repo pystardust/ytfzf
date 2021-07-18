@@ -802,11 +802,40 @@ scrape_pt () {
 		thumbs: .thumbnailUrl
 	    }
 	]')
-     export videos_json
+     printf "%s" "$videos_json" > "$tmp_video_json_file"
      videos_data="$(get_video_data "$videos_json")"
      function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$pt_json"
      [ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
      unset pt_json
+}
+
+scrape_odysee () {
+    odysee_json=$(
+	curl \
+	    -s "https://lighthouse.lbry.com/search" \
+	    -G --data-urlencode "s=$*" \
+	    -G --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,content_type,description"
+    )
+    videos_json=$(printf "%s" "$odysee_json" |\
+	jq '[ .[] | select(.content_type == "video/mp4" or .content_type == "video/m4v" or .content_type == "video/webm") | 
+	    {
+		scrape: "odysee",
+		title: .title,
+		channel: .channel,
+		duration: .duration,
+		views: .view_cnt,
+		videoID: .name,
+		date: .cq_created_at,
+		thumbs: .thumbnail_url
+	    }
+	]')
+
+    printf "%s" "$videos_json" > "$tmp_video_json_file"
+    videos_data="$(get_video_data "$videos_json")"
+    function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$odysee_json"
+    [ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+    unset odysee_json
+
 }
 
 scrape_yt () {
@@ -922,8 +951,6 @@ scrape_url () {
         videoID: .id,
         thumbs: .thumbnails[0].url
     }]')
-
-	export videos_json
 
 	#checks if it's empty in case it was defined in a config function eg: on_get_search
 	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
@@ -1571,6 +1598,8 @@ parse_opt () {
 
 		P|peer-tube)
 			scrape="pt_search" ;;
+		O|odysee|lbry)
+			scrape="odysee_search" ;;
 		Y|youtube)
 			scrape="yt_search" ;;
 		sort)
@@ -1679,7 +1708,7 @@ parse_opt () {
 }
 
 
-while getopts "LhDmdfxqHaArltSsvNTPYn:U:-:" OPT; do
+while getopts "LhDmdfxqHaArltSsvNTPOYn:U:-:" OPT; do
 	# to parse extra-options in conf.sh
 	# when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
 	if [ "$OPT" = "-" ]; then
@@ -1745,6 +1774,9 @@ $sort_name
 
 scrape_fn () {
     case $scrape in
+	"odysee_search")
+		get_search_query
+		scrape_odysee "$search_query" ;;
 	"trending")
 		scrape_yt ;;
 	"yt_search")
