@@ -1193,6 +1193,7 @@ get_video_format () {
 	[ $show_format -eq 0 ] && return
         formats=$(youtube-dl -F "$(printf "$selected_urls")") 
         line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
+	[ $is_ext_menu -eq 0 ] && menu_command="fzf --layout=reverse"
         quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | eval "$menu_command" | sed "s/p//g")
 		[ -z "$quality"  ] && exit;
 		[ $quality = "Audio"  ] && video_pref= && video_player="$audio_player" || video_pref="bestvideo[height=?$quality][vcodec!=?vp9]+bestaudio/best"
