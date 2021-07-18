@@ -208,6 +208,7 @@ fancy_subscriptions_menu=1
 #yt_subs is the same as -S
 #trending is the same as -T
 #pt_search is the same as -P (searches peertube)
+#odysee_search is the same as -O (searches odysee)
 scrape="yt_search"
 
 #enable/disable detaching player from terminal

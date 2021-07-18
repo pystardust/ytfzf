@@ -213,7 +213,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -t, --show-thumbnails                  Show thumbnails (requires ueberzug)
                                             Doesn't work with -H -D
      --detach                               Detach the video player from the terminal
-     --thumbnail-quality=<0,1>              0: low quality (faster), 1: default
+     --thumbnail-quality=<0,1>              0: low quality (faster), 1: default (only works with youtube)
      --thumb-disp-method=<method>           the program to use for displaying images,
                                             see --help-thumb-disp for a list of choices
 
@@ -236,6 +236,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -T, --trending=<gaming/music/movies>   The trending tab, using --trending= you can choose a specific tab
      -Y, --youtube                          Search youtube (default)
      -P, --peertube                         Search peertube
+     -O, --lbry, --odysee                   Search odysee/lbry
      --preview-side=<left/right/top/bottom> The side of the screen to show thumbnails
      --subt                                 Select auto-generated subtitles
      --sort                                 Sorts videos by latest upload date
