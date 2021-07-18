@@ -969,7 +969,7 @@ persistent_key_binds () {
     binds=
 
     # make sure every key code is surrounded by commas
-    key_binds=",${key_binds},"
+    expect_binds=",${key_binds},"
 
     # Build fzf --bind command
     IFS=','
@@ -979,25 +979,25 @@ persistent_key_binds () {
 	# the fzf tmp file gets removed
 	bind_command=":execute(sh -c \"$0 -U \\\"fzf_bind_command $key {+f}\\\"\" >/dev/null 2>&1 & sleep 0.1)"
 	binds="${binds},${key}${bind_command}"
-	# Remove used keys from key_binds
-	key_binds="$( printf "%s" "$key_binds" | sed "s/,$key,/,/g" )"
+	# Remove used keys from expect_binds
+	expect_binds="$( printf "%s" "$expect_binds" | sed "s/,$key,/,/g" )"
     done
 
-    # if in neither persistent_bind nor key_binds ignore
+    # if in neither persistent_bind nor expect_binds ignore
     # if in persistent_bind, always ignore
     ignore_keys="enter,double-click"
     ignore_binds=
     for key in $ignore_keys; do
-        printf "%s%s" "$binds" "$key_binds" | grep -q ",$key," || \
+        printf "%s%s" "$binds" "$expect_binds" | grep -q ",$key," || \
             ignore_binds="${ignore_binds},${key}:ignore"
-        printf "%s" "$key_binds" | grep -q ",$key," || continue
+        printf "%s" "$expect_binds" | grep -q ",$key," || continue
         ignore_binds="${ignore_binds},${key}:ignore"
     done
     unset IFS
 
-    # remove leading and tailing , in key_binds
-    key_binds="${key_binds%,*}"
-    key_binds="${key_binds#*,}"
+    # remove leading and tailing , in expect_binds
+    expect_binds="${expect_binds%,*}"
+    expect_binds="${expect_binds#*,}"
 }
 
 #> To select videos from videos_data
@@ -1029,7 +1029,7 @@ user_selection () {
 		#thumbnails only work in fzf, use fzf
         menu_command="fzf -m --tabstop=1 \
         --bind 'change:top"$ignore_binds$binds"' --delimiter=\"$tab_space\" \
-		--nth=1,2 --expect='$key_binds' $FZF_DEFAULT_OPTS \
+		--nth=1,2 --expect='$expect_binds' $FZF_DEFAULT_OPTS \
         --layout=reverse --preview \"sh $0 -U 'preview_img '{}\" \
         	--preview-window \"$PREVIEW_SIDE:50%:noborder:wrap\""
 		selected_data=$( title_len=200 video_menu "$videos_data" )
