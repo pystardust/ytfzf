@@ -447,6 +447,8 @@ fi
 
 format_video_data () {
 	while IFS=$tab_space read -r title channel views duration date shorturl; do
+	    #make sure the duration is in h:m:s instead of seconds
+	    [ -n "$duration" ] && ! printf "%s" "$duration" | grep -q ":" && duration="|$(seconds_to_time_stamp "${duration#|}")"
 	    video_info_text
 	done << EOF
 $*
@@ -510,6 +512,9 @@ preview_img () {
 		'
 	)
 	EOF
+
+	#make sure the duration is in h:m:s instead of seconds
+	[ -n "$duration" ] && ! printf "%s" "$duration" | grep -q ":" && duration="$(seconds_to_time_stamp "${duration#|}")"
 
 	# if the entry is a channel separator then clear the image
 	if [ -z "${shorturl%% *}" ] ; then
@@ -786,6 +791,22 @@ get_trending_url_data () {
 	gaming) printf "%s" "4gIcGhpnYW1pbmdfY29ycHVzX21vc3RfcG9wdWxhcg%3D%3D" ;;
 	movies) printf "%s" "4gIKGgh0cmFpbGVycw%3D%3D" ;;
     esac
+}
+
+seconds_to_time_stamp () {
+    seconds="$1"
+    mins="$(printf "scale=4; %s/60\n" "$seconds" | bc)"
+    seconds="$(printf "%.0f" "$(printf "0.%s * 60\n" "${mins#*.}" | bc)")"
+    mins="${mins%.*}"
+    if [ -n "$mins" ] && [ "$mins" -ge 60 ]; then
+	mins="$(printf "scale=4; %s/60\n" "$mins" | bc)"
+	hours="$(printf "%.0f" "$(printf "0.%s * 60\n" "${mins#*.}" | bc)")"
+	mins="${mins%.*}"
+	printf "%02d:%02d:%02d" "$hours" "$mins" "$seconds"
+    else
+	printf "%01d:%02d" "$mins" "$seconds"
+    fi
+    unset seconds mins
 }
 
 scrape_pt () {
