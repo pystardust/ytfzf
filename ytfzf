@@ -847,11 +847,14 @@ scrape_odysee () {
 		thumbs: .thumbnail_url
 	    }
 	]') > /dev/null 2>&1 || { print_error "Due to limitations with lighthouse.lbry, searches must be greater than 2 characters\n" && exit 2; }
-    [ -z "$videos_json" ] && { printf "No results found. Try different keywords.\n" >&2 && exit 1; }
 
     printf "%s" "$videos_json" > "$tmp_video_json_file"
+
     videos_data="$(get_video_data "$videos_json")"
+    [ -z "$videos_data" ] && { printf "No results found. Try different keywords.\n" >&2 && exit 1; }
+
     function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$odysee_json"
+
     [ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
     unset odysee_json
 
