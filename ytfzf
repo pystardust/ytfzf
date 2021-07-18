@@ -789,6 +789,7 @@ scrape_pt () {
      curl \
          -s "https://sepiasearch.org/api/v1/search/videos" \
 	 -G --data-urlencode "search=$*") 
+
      videos_json=$(printf "%s" "$pt_json" |\
 	jq '[ .data | .[] |
 	    {
@@ -829,8 +830,7 @@ scrape_odysee () {
 		date: .cq_created_at,
 		thumbs: .thumbnail_url
 	    }
-	]')
-
+	]') > /dev/null 2>&1 || print_error "Due to limitations with lighthouse.lbry, searches must be greater than 2 characters\n" && exit 2
     printf "%s" "$videos_json" > "$tmp_video_json_file"
     videos_data="$(get_video_data "$videos_json")"
     function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$odysee_json"
