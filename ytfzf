@@ -824,7 +824,8 @@ scrape_odysee () {
 		channel: .channel,
 		duration: .duration,
 		views: .view_cnt,
-		videoID: .name,
+		videoID: .claimId,
+		name: .name,
 		date: .cq_created_at,
 		thumbs: .thumbnail_url
 	    }
@@ -1134,17 +1135,22 @@ format_user_selection () {
 	selected_urls=
 	while read data_line; do
 		surl=${data_line##*|}
+		printf "%s\n" "$surl"
 		[ -z "$surl" ] && continue # to ignore the separators
-		#literally just check if there is :// to make sure it's a url (just in case the url doesn't use https or http)
-		#peertube urls can differ a lot
-		case ${#surl} in
-					# youtube video
-			11) selected_urls=$selected_urls$new_line'https://www.youtube.com/watch?v='$surl ;;
-			34|18) selected_urls=$selected_urls$new_line'https://www.youtube.com/playlist?list='$surl ;;
-			36)
-			    selected_urls=$selected_urls$new_line"$(printf "%s" "$videos_json" | jq '.[].url' | grep -F "$surl" | tr -d '"')" ;;
-			*) continue ;;
-		esac
+		if [ "$scrape" = "odysee_search" ]; then
+		    selected_urls=$selected_urls$new_line"$(printf "%s" "$videos_json" | jq '.[] | select(.videoID == "'"${surl#*$new_line}"'") | "https://www.odysee.com/" + .channel + "/" + .name' | tr -d '"')"
+		else
+		    #literally just check if there is :// to make sure it's a url (just in case the url doesn't use https or http)
+		    #peertube urls can differ a lot
+		    case ${#surl} in
+					    # youtube video
+			    11) selected_urls=$selected_urls$new_line'https://www.youtube.com/watch?v='$surl ;;
+			    34|18) selected_urls=$selected_urls$new_line'https://www.youtube.com/playlist?list='$surl ;;
+			    36)
+				selected_urls=$selected_urls$new_line"$(printf "%s" "$videos_json" | jq '.[].url' | grep -F "$surl" | tr -d '"')" ;;
+			    *) continue ;;
+		    esac
+		fi
 		refined_selected_data=$refined_selected_data$new_line$(printf '%s' "$videos_data" | grep "|$surl" )
 	done<<-EOF
 	$selected_data
