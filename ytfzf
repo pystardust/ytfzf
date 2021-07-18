@@ -824,10 +824,10 @@ scrape_odysee () {
 	    -G --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description" \
 	    -G --data-urlencode "size=$odysee_video_search_count" \
 	    -G --data-urlencode "time_filter="$(printf "$upload_date_filter" | tr -d '-')"" \
-	    -G --data-urlencode "sort_by="$(
+	    -G --data-urlencode ""$(
 		case "$sort_by_filter" in
-		    newest-first) printf "release_time" ;;
-		    oldest-first) printf "^release_time" ;;
+		    newest-first) printf "sort_by=release_time" ;;
+		    oldest-first) printf "sort_by=^release_time" ;;
 		esac
 	    )""
     )
