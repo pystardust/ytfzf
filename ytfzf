@@ -1023,9 +1023,9 @@ user_selection () {
 
 	#show thumbnail menu
 	elif [ "$show_thumbnails" -eq 1 ] ; then
-		dep_ck "ueberzug" "fzf"
+		dep_ck "fzf"
 		export YTFZF_THUMB_DISP_METHOD="$thumb_disp_method"
-		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
+		[ "$thumb_disp_method" = "ueberzug" ] && dep_ck "ueberzug" && start_ueberzug
 		#thumbnails only work in fzf, use fzf
         menu_command="fzf -m --tabstop=1 \
         --bind 'change:top"$ignore_binds$binds"' --delimiter=\"$tab_space\" \
