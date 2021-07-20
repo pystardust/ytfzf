@@ -698,7 +698,7 @@ get_yt_html () {
     printf "%s" "$(
 	curl "$link" -s \
 	  -G --data-urlencode "search_query=$query" \
-	  -G --data-urlencode "sp=$sp" \
+	  --data-urlencode "sp=$sp" \
 	  -H 'Authority: www.youtube.com' \
 	  -H "User-Agent: $useragent" \
 	  -H 'Accept-Language: en-US,en;q=0.9' \
@@ -842,11 +842,11 @@ scrape_odysee () {
 	curl \
 	    -s "https://lighthouse.lbry.com/search" \
 	    -G --data-urlencode "s=$*" \
-	    -G --data-urlencode "mediaType=video,audio" \
-	    -G --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description" \
-	    -G --data-urlencode "size=$odysee_video_search_count" \
-	    -G --data-urlencode "time_filter="$(printf "$upload_date_filter" | tr -d '-')"" \
-	    -G --data-urlencode ""$(
+	    --data-urlencode "mediaType=video,audio" \
+	    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description" \
+	    --data-urlencode "size=$odysee_video_search_count" \
+	    --data-urlencode "time_filter="$(printf "$upload_date_filter" | tr -d '-')"" \
+	    --data-urlencode ""$(
 		case "$sort_by_filter" in
 		    newest-first) printf "sort_by=release_time" ;;
 		    oldest-first) printf "sort_by=^release_time" ;;
