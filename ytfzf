@@ -106,6 +106,8 @@ search_prompt=${search_prompt-Search: }
 useragent=${useragent-'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 #used when fancy_subscriptions_menu is 1
 fancy_subscriptions_text=${fancy_subscriptions_text-             -------%s-------}
+#the amount of videos to get from odysee
+odysee_video_search_count=${odysee_video_search_count-30}
 
 #> config scripting settings
 #whether or not to show errors when an invalid option is passed
@@ -213,7 +215,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -t, --show-thumbnails                  Show thumbnails (requires ueberzug)
                                             Doesn't work with -H -D
      --detach                               Detach the video player from the terminal
-     --thumbnail-quality=<0,1>              0: low quality (faster), 1: default
+     --thumbnail-quality=<0,1>              0: low quality (faster), 1: default (only works with youtube)
      --thumb-disp-method=<method>           the program to use for displaying images,
                                             see --help-thumb-disp for a list of choices
 
@@ -236,6 +238,7 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -T, --trending=<gaming/music/movies>   The trending tab, using --trending= you can choose a specific tab
      -Y, --youtube                          Search youtube (default)
      -P, --peertube                         Search peertube
+     -O, --lbry, --odysee                   Search odysee/lbry
      --preview-side=<left/right/top/bottom> The side of the screen to show thumbnails
      --subt                                 Select auto-generated subtitles
      --sort                                 Sorts videos by latest upload date
@@ -269,8 +272,10 @@ all_help_info () {
      --upload-time=<time-range>           Time range can be one of,
                                           last-hour, today, this-week, this-month, this-year
                                           Filters can go directly: --today
-     --upload-sort=<sort-filter>          The filter to sort the videos can be one of
-                                          upload-date, view-count, rating
+     --upload-sort=<sort-filter>          For YouTube, the filter to sort the videos can be one of:
+					    upload-date, view-count, rating
+					  For Odysee, the filter can be one of:
+					    newest-first, oldest-first
                                           Filters can go directly: --upload-date
      --filter-id=<filter>                 The id of the filter to use for video results
          A filter id can be found by going to Youtube searching, filtering how you want
@@ -442,6 +447,8 @@ fi
 
 format_video_data () {
 	while IFS=$tab_space read -r title channel views duration date shorturl; do
+	    #make sure the duration is in h:m:s instead of seconds
+	    [ -n "$duration" ] && ! printf "%s" "$duration" | grep -q ":" && duration="|$(seconds_to_time_stamp "${duration#|}")"
 	    video_info_text
 	done << EOF
 $*
@@ -505,6 +512,9 @@ preview_img () {
 		'
 	)
 	EOF
+
+	#make sure the duration is in h:m:s instead of seconds
+	[ -n "$duration" ] && ! printf "%s" "$duration" | grep -q ":" && duration="$(seconds_to_time_stamp "${duration#|}")"
 
 	# if the entry is a channel separator then clear the image
 	if [ -z "${shorturl%% *}" ] ; then
@@ -688,7 +698,7 @@ get_yt_html () {
     printf "%s" "$(
 	curl "$link" -s \
 	  -G --data-urlencode "search_query=$query" \
-	  -G --data-urlencode "sp=$sp" \
+	  --data-urlencode "sp=$sp" \
 	  -H 'Authority: www.youtube.com' \
 	  -H "User-Agent: $useragent" \
 	  -H 'Accept-Language: en-US,en;q=0.9' \
@@ -783,12 +793,29 @@ get_trending_url_data () {
     esac
 }
 
+seconds_to_time_stamp () {
+    seconds="$1"
+    mins="$(printf "scale=4; %s/60\n" "$seconds" | bc)"
+    seconds="$(printf "%.0f" "$(printf "0.%s * 60\n" "${mins#*.}" | bc)")"
+    mins="${mins%.*}"
+    if [ -n "$mins" ] && [ "$mins" -ge 60 ]; then
+	mins="$(printf "scale=4; %s/60\n" "$mins" | bc)"
+	hours="$(printf "%.0f" "$(printf "0.%s * 60\n" "${mins#*.}" | bc)")"
+	mins="${mins%.*}"
+	printf "%02d:%02d:%02d" "$hours" "$mins" "$seconds"
+    else
+	printf "%01d:%02d" "$mins" "$seconds"
+    fi
+    unset seconds mins
+}
+
 scrape_pt () {
      #gets a list of videos
      pt_json=$(
      curl \
          -s "https://sepiasearch.org/api/v1/search/videos" \
 	 -G --data-urlencode "search=$*") 
+
      videos_json=$(printf "%s" "$pt_json" |\
 	jq '[ .data | .[] |
 	    {
@@ -802,11 +829,58 @@ scrape_pt () {
 		thumbs: .thumbnailUrl
 	    }
 	]')
-     export videos_json
+     printf "%s" "$videos_json" > "$tmp_video_json_file"
      videos_data="$(get_video_data "$videos_json")"
      function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$pt_json"
      [ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+     wait
      unset pt_json
+}
+
+scrape_odysee () {
+    odysee_json=$(
+	curl \
+	    -s "https://lighthouse.lbry.com/search" \
+	    -G --data-urlencode "s=$*" \
+	    --data-urlencode "mediaType=video,audio" \
+	    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description" \
+	    --data-urlencode "size=$odysee_video_search_count" \
+	    --data-urlencode "time_filter="$(printf "$upload_date_filter" | tr -d '-')"" \
+	    --data-urlencode ""$(
+		case "$sort_by_filter" in
+		    newest-first) printf "sort_by=release_time" ;;
+		    oldest-first) printf "sort_by=^release_time" ;;
+		esac
+	    )""
+    )
+    [ -z "$odysee_json" ] && print_error "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n" && exit 1
+
+    videos_json=$(printf "%s" "$odysee_json" |\
+	jq '[ .[] | 
+	    {
+		scrape: "odysee",
+		title: .title,
+		channel: .channel,
+		duration: .duration,
+		views: .view_cnt,
+		videoID: .claimId,
+		name: .name,
+		date: .cq_created_at,
+		thumbs: .thumbnail_url
+	    }
+	]') > /dev/null 2>&1 || { print_error "Due to limitations with lighthouse.lbry, searches must be greater than 2 characters\n" && exit 2; }
+
+    printf "%s" "$videos_json" > "$tmp_video_json_file"
+
+    videos_data="$(get_video_data "$videos_json")"
+    [ -z "$videos_data" ] && { printf "No results found. Try different keywords.\n" >&2 && exit 1; }
+
+    function_exists "on_video_data_gotten" && on_video_data_gotten "$videos_data" "$videos_json" "$odysee_json"
+
+    [ $show_thumbnails -eq 1 ] && download_thumbnails "$videos_json"
+    wait
+    unset odysee_json
+
 }
 
 scrape_yt () {
@@ -922,8 +996,6 @@ scrape_url () {
         videoID: .id,
         thumbs: .thumbnails[0].url
     }]')
-
-	export videos_json
 
 	#checks if it's empty in case it was defined in a config function eg: on_get_search
 	[ -z "$videos_data" ] && videos_data=$(get_video_data "$videos_json")
@@ -1108,16 +1180,20 @@ format_user_selection () {
 	while read data_line; do
 		surl=${data_line##*|}
 		[ -z "$surl" ] && continue # to ignore the separators
-		#literally just check if there is :// to make sure it's a url (just in case the url doesn't use https or http)
-		#peertube urls can differ a lot
-		case ${#surl} in
-					# youtube video
-			11) selected_urls=$selected_urls$new_line'https://www.youtube.com/watch?v='$surl ;;
-			34|18) selected_urls=$selected_urls$new_line'https://www.youtube.com/playlist?list='$surl ;;
-			36)
-			    selected_urls=$selected_urls$new_line"$(printf "%s" "$videos_json" | jq '.[].url' | grep -F "$surl" | tr -d '"')" ;;
-			*) continue ;;
-		esac
+		if [ "$scrape" = "odysee_search" ]; then
+		    selected_urls=$selected_urls$new_line"$(printf "%s" "$videos_json" | jq '.[] | select(.videoID == "'"${surl#*$new_line}"'") | "https://www.odysee.com/" + .channel + "/" + .name' | tr -d '"')"
+		else
+		    #literally just check if there is :// to make sure it's a url (just in case the url doesn't use https or http)
+		    #peertube urls can differ a lot
+		    case ${#surl} in
+					    # youtube video
+			    11) selected_urls=$selected_urls$new_line'https://www.youtube.com/watch?v='$surl ;;
+			    34|18) selected_urls=$selected_urls$new_line'https://www.youtube.com/playlist?list='$surl ;;
+			    36)
+				selected_urls=$selected_urls$new_line"$(printf "%s" "$videos_json" | jq '.[].url' | grep -F "$surl" | tr -d '"')" ;;
+			    *) continue ;;
+		    esac
+		fi
 		refined_selected_data=$refined_selected_data$new_line$(printf '%s' "$videos_data" | grep "|$surl" )
 	done<<-EOF
 	$selected_data
@@ -1143,6 +1219,7 @@ get_video_format () {
 	[ $show_format -eq 0 ] && return
         formats=$(youtube-dl -F "$(printf "$selected_urls")") 
         line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
+	[ $is_ext_menu -eq 0 ] && menu_command="fzf --layout=reverse"
         quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | eval "$menu_command" | sed "s/p//g")
 		[ -z "$quality"  ] && exit;
 		[ $quality = "Audio"  ] && video_pref= && video_player="$audio_player" || video_pref="bestvideo[height=?$quality][vcodec!=?vp9]+bestaudio/best"
@@ -1571,6 +1648,8 @@ parse_opt () {
 
 		P|peer-tube)
 			scrape="pt_search" ;;
+		O|odysee|lbry)
+			scrape="odysee_search" ;;
 		Y|youtube)
 			scrape="yt_search" ;;
 		sort)
@@ -1656,7 +1735,7 @@ parse_opt () {
 		last-hour|today|this-week|this-month|this-year) upload_date_filter=$opt ;;
 
 		upload-sort) sort_by_filter=$optarg ;;
-		upload-date|view-count|rating) sort_by_filter=$opt ;;
+		upload-date|view-count|rating|newest-first|oldest-first) sort_by_filter=$opt ;;
 
 		filter-id|sp) sp=$optarg ;;
 
@@ -1679,7 +1758,7 @@ parse_opt () {
 }
 
 
-while getopts "LhDmdfxqHaArltSsvNTPYn:U:-:" OPT; do
+while getopts "LhDmdfxqHaArltSsvNTPOYn:U:-:" OPT; do
 	# to parse extra-options in conf.sh
 	# when there is no = in OPTARG and it's a longopt, OPTARG will = OPT
 	if [ "$OPT" = "-" ]; then
@@ -1745,6 +1824,9 @@ $sort_name
 
 scrape_fn () {
     case $scrape in
+	"odysee_search")
+		get_search_query
+		scrape_odysee "$search_query" ;;
 	"trending")
 		scrape_yt ;;
 	"yt_search")
