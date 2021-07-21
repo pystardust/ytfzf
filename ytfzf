@@ -346,8 +346,8 @@ print_info () {
 }
 
 print_error () {
-    [ $ext_menu_notifs -eq 1 ] && notify-send "error" "$*" || printf "\033[31m$*\033[0m" >&2
-    [ $ext_menu_notifs -eq 1 ] && notify-send "Check for new versions and report at: https://github.com/pystardust/ytfzf\n" || printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n" >&2
+    [ $ext_menu_notifs -eq 1 ] && notify-send -c ytfzf-error "error" "$*" || printf "\033[31m$*\033[0m" >&2
+    [ $ext_menu_notifs -eq 1 ] && notify-send -c ytfzf-error "Check for new versions and report at: https://github.com/pystardust/ytfzf\n" || printf "Check for new versions and report at: https://github.com/pystardust/ytfzf\n" >&2
 }
 
 ############################
@@ -1442,7 +1442,7 @@ search_history_menu () {
 
 	#if downloading, say Downloading not currently playing
 	[ $is_download -eq 1 ] && title="Downloading" || title="Currently playing"
-	notify-send "$title" "$message" -i "$video_thumb"
+	notify-send -c ytfzf-play-video "$title" "$message" -i "$video_thumb"
 
 	unset message video_thumb title
 }
@@ -1791,7 +1791,7 @@ fi
 #so print this error instead and set $show_thumbnails to 0
 if [ $is_ext_menu -eq 1 ] && [ $show_thumbnails -eq 1 ]; then
 	[ $ext_menu_notifs -eq 1 ] &&\
-	    notify-send "warning" "Currently thumbnails do not work in external menus" ||\
+	    notify-send -c ytfzf-warning "warning" "Currently thumbnails do not work in external menus" ||\
 	    printf "\033[33mWARNING: Currently thumbnails do not work in external menus\033[0m\n" >&2
 	show_thumbnails=0
 fi
