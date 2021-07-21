@@ -1862,15 +1862,19 @@ while true; do
 	user_selection
 	#to renable it for a new search
 	format_user_selection
-	#if handle_key_binds returns 1, exit
-	handle_key_binds
-	case "$?" in
-	    1)
-		save_before_exit
-		clean_up
-		exit ;;
-	    2) continue ;;
-	esac
+
+	if [ $is_ext_menu -eq 0 ]; then
+	    #if handle_key_binds returns 1, exit
+	    handle_key_binds
+	    case "$?" in
+		1)
+		    save_before_exit
+		    clean_up
+		    exit ;;
+		2) continue ;;
+	    esac
+	fi
+
 	print_data
 	get_video_format
 	get_sub_lang
