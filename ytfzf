@@ -13,6 +13,7 @@
 [ -d "$cache_dir" ] || mkdir -p "$cache_dir"
 
 tab_space=$(printf '\t')
+gap_space="                                                                   "
 # }}}
 
 # Scraping {{{
@@ -137,9 +138,44 @@ interface_text () {
 #}}}
 
 # Thumbnail Interface {{{
+
+# Ueberzug Related Functions {{{
+ueberzug_start () {
+	# starts uberzug to this fifo
+	export UEBERZUG_FIFO="/tmp/ytfzf-ueberzug-fifo"
+	rm -f "$UEBERZUG_FIFO"
+	mkfifo "$UEBERZUG_FIFO"
+	ueberzug layer --parser simple < "$UEBERZUG_FIFO" &
+	exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
+}
+ueberzug_stop () {
+	exec 3>&- # close file descriptor 3, closing ueberzug
+}
+ueberzug_preview_img () {
+	line=$1
+	video_json_file=$2
+	id=${line##*|}
+
+	jq '.[]|select( .ID == "'"$id"'")' < "$video_json_file"
+
+	printf '%s\t' \
+		"action" "add" \
+		"identifier" "ytfzf" \
+		"path" "$thumb_dir/${id}.jpg" \
+		"x" "2" \
+		"y" "10" \
+		"scaler" "fit_contain" \
+		"width" "$((FZF_PREVIEW_COLUMNS-5))" > "$UEBERZUG_FIFO"
+	printf '%s\t%s\n' \
+		"height" "$((FZF_PREVIEW_LINES-10))" > "$UEBERZUG_FIFO"
+	exit
+}
+#}}}
+
 interface_thumbnails () {
 	# Takes video json file and downloads the thumnails as ${ID}.png to thumb_dir
 	video_json_file=$1
+	selected_id_file=$2
 	mkdir -p "$thumb_dir"
 
 	# Dowload thumbnails, curl version > 7.66.0. ( else remove -Z )
@@ -150,7 +186,15 @@ interface_thumbnails () {
 			curl -Z -K -
 	}
 	
-	# TODO: start ueberzug and fzf menu
+	ueberzug_start
+
+	jq -r '.[]|[.title,"'"$gap_space"'|"+.ID]|@tsv' < "$video_json_file" |
+	fzf -m \
+	--preview "sh $0 -U {} '$video_json_file'" \
+	--preview-window "left:50%:noborder:wrap" --layout=reverse |
+	rev | cut -f1 -d "|" | rev > "$selected_id_file"
+
+	ueberzug_stop
 }
 #}}}
 
@@ -169,6 +213,7 @@ player () {
 		while IFS= read id; do
 			urls=${urls}" "$(jq -r '.[]|select(.ID == "'"$id"'").url' < "$video_json_file")
 		done < "$id_file"
+		[ -z "$urls" ] && exit
 	}
 	set -f
 	set -- $urls
@@ -176,15 +221,28 @@ player () {
 }
 #}}}
 
+# Options {{{
+while getopts 'U' OPT; do
+	case $OPT in
+		U)
+			shift
+			ueberzug_preview_img "$@"
+			;;
+	esac
+done
+shift $((OPTIND-1))
+#}}}
+
 # Main {{{
 json_file=$(mktemp)
 id_file=$(mktemp)
-scrape_youtube "$*" json_file
-interface_text json_file id_file
-player json_file id_file
+scrape_youtube "$*" "$json_file"
+interface_thumbnails "$json_file" "$id_file"
+cat $id_file
+player "$json_file" "$id_file"
 #}}}
 
 # Clean up {{{
 rm "$json_file"
 rm "$id_file"
-#}}}
+#}
