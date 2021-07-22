@@ -14,6 +14,20 @@
 
 tab_space=$(printf '\t')
 gap_space="                                                                   "
+print_info () {
+	printf '%s\n' "$1" >&2
+}
+
+# colors {{{
+c_red="\033[1;31m"
+c_green="\033[1;32m"
+c_yellow="\033[1;33m"
+c_blue="\033[1;34m"
+c_magenta="\033[1;35m"
+c_cyan="\033[1;36m"
+c_reset="\033[0m"
+#}}}
+
 # }}}
 
 # Scraping {{{
@@ -116,6 +130,7 @@ interface_text () {
 	dur_len=7
 	view_len=10
 	date_len=100
+
 	video_info_text () {
 		printf "%-${title_len}.${title_len}s\t" "$title"
 		printf "%-${channel_len}.${channel_len}s\t" "$channel"
@@ -156,7 +171,24 @@ ueberzug_preview_img () {
 	video_json_file=$2
 	id=${line##*|}
 
-	jq '.[]|select( .ID == "'"$id"'")' < "$video_json_file"
+    thumbnail_video_info_text () {
+	printf "\n ${c_cyan}%s" "$title"
+	printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
+	printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
+	printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
+	printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
+	printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
+    }
+
+	IFS=$tab_space read -r title channel duration views date description <<-EOF
+	$(
+		jq -r '.[]|select( .ID == "'"$id"'")|
+			[.title,.channel,.duration,.views,.date,.description]|
+			@tsv' < "$video_json_file"
+	)
+	EOF
+
+	thumbnail_video_info_text
 
 	printf '%s\t' \
 		"action" "add" \
@@ -180,6 +212,7 @@ interface_thumbnails () {
 
 	# Dowload thumbnails, curl version > 7.66.0. ( else remove -Z )
 	{
+		print_info "getting thumbnails...."
 		jq -r '.[]|"
 			url = \"\(.thumbs)\"
 			output = \"'"$thumb_dir"'/\(.ID).jpg\""' < "$video_json_file" |
@@ -195,6 +228,7 @@ interface_thumbnails () {
 	rev | cut -f1 -d "|" | rev > "$selected_id_file"
 
 	ueberzug_stop
+	rm -r "$thumb_dir"
 }
 #}}}
 
@@ -236,13 +270,13 @@ shift $((OPTIND-1))
 # Main {{{
 json_file=$(mktemp)
 id_file=$(mktemp)
+print_info "Scraping site..."
 scrape_youtube "$*" "$json_file"
 interface_thumbnails "$json_file" "$id_file"
-cat $id_file
 player "$json_file" "$id_file"
 #}}}
 
 # Clean up {{{
 rm "$json_file"
 rm "$id_file"
-#}
+#}}}
