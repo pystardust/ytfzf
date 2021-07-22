@@ -6,13 +6,18 @@
 # User Interface: video json -> user selection -> ID
 # Player: ID -> video player
 
-# Global Variables {{{
+# Global Variables and Start Up {{{
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
+: ${cache_dir=$HOME/.cache/ytfzf}
+: ${thumb_dir=$cache_dir/thumb}
+[ -d "$cache_dir" ] || mkdir -p "$cache_dir"
+
+tab_space=$(printf '\t')
 # }}}
 
 # Scraping {{{
-# * a scraper function takes a search query as $1 and returns video json to stdout
-# * argument 2 and above are undefined and can be used for filters
+# * a scraper function takes a search query as $1 and returns video json to file $2
+# * argument 3 and above are undefined and can be used for filters
 # * return codes:
 #            1 : no response from site
 
@@ -29,6 +34,7 @@
 
 scrape_youtube () {
 	query=$1
+	output_json_file=$2
 	scraped_json=$(mktemp)
 
 	{
@@ -38,7 +44,7 @@ scrape_youtube () {
 		  -H 'Authority: www.youtube.com' \
 		  -H "User-Agent: $useragent" \
 		  -H 'Accept-Language: en-US,en;q=0.9' \
-		  --compressed 
+		  --compressed
 	} | {
 		# Separates the json embedded in the youtube html page
 		# * removes the content after ytInitialData
@@ -47,44 +53,46 @@ scrape_youtube () {
 			tr -d '\n' |
 			sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
 	} > "$scraped_json"
-		
-	# Parse the json to the required keys
-	{ 
-		# Playlists
-		jq '[ .contents|
-		..|.playlistRenderer? |
-		select(. !=null) |
-			{
-				ID: .playlistId,
-				url: "https://www.youtube.com/playlist?list=\(.playlistId)",
-				title: "[Playlist] \(.title.simpleText)",
-				thumbs: .thumbnails[0].thumbnails[0].url,
-				channel: .longBylineText.runs[0].text,
-				duration: "\(.videoCount) videos",
-				views: "playlist",
-				date: "playlist"
-			}
-		]'
-	} < "$scraped_json"
 
-	{ 
-		# Videos
-		jq '[ .contents|
-		..|.videoRenderer? |
-		select(. !=null) |
-			{
-				ID: .videoId,
-				url: "https://www.youtube.com/watch?v=\(.videoId)",
-				title: .title.runs[0].text,
-				thumbs: .thumbnail.thumbnails[0].url,
-				channel: .longBylineText.runs[0].text,
-				duration:.lengthText.simpleText,
-				views: .shortViewCountText.simpleText,
-				date: .publishedTimeText.simpleText,
-				description: .detailedMetadataSnippets[0].snippetText.runs[0].text
-			}
-		]'
-	} < "$scraped_json"
+	{
+		# Parse the json to the required keys
+		{
+			# Playlists
+			jq '[ .contents|
+			..|.playlistRenderer? |
+			select(. !=null) |
+				{
+					ID: .playlistId,
+					url: "https://www.youtube.com/playlist?list=\(.playlistId)",
+					title: "[Playlist] \(.title.simpleText)",
+					thumbs: .thumbnails[0].thumbnails[0].url|sub("\\?.*";""),
+					channel: .longBylineText.runs[0].text,
+					duration: "\(.videoCount) videos",
+					views: "playlist",
+					date: "playlist"
+				}
+			]'
+		} < "$scraped_json"
+
+		{
+			# Videos
+			jq '[ .contents|
+			..|.videoRenderer? |
+			select(. !=null) |
+				{
+					ID: .videoId,
+					url: "https://www.youtube.com/watch?v=\(.videoId)",
+					title: .title.runs[0].text,
+					thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
+					channel: .longBylineText.runs[0].text,
+					duration:.lengthText.simpleText,
+					views: .shortViewCountText.simpleText,
+					date: .publishedTimeText.simpleText,
+					description: .detailedMetadataSnippets[0].snippetText.runs[0].text
+				}
+			]'
+		} < "$scraped_json"
+	}> "$output_json_file"
 
 	rm "$scraped_json"
 }
@@ -92,26 +100,91 @@ scrape_youtube () {
 
 # }}}
 
-# Data handling {{{
-# 	Given ID ($1) of a video it returns it's json
-get_object () {
-	_ID=$1
-	jq '.[]|select( .videoID == "'"$_ID"'")'
-}
-# }}}
-
 # User Interface {{{
-# Takes video json file as $1 and returns the selected video IDs
+# Takes video json file as $1 and returns the selected video IDs to file $2
 
-interface_text() {
-	: # TODO
-}
+# Text interface {{{
+interface_text () {
+	video_json_file=$1
+	selected_id_file=$2
 
-# Takes video json file and downloads the thumnails as ${ID}.png to the thumbs_dir
-download_thumbnails() {
-	: # TODO
+	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
+	TTY_COLS=$(tput cols)
+	title_len=$((TTY_COLS/2))
+	channel_len=$((TTY_COLS/5))
+	dur_len=7
+	view_len=10
+	date_len=100
+	video_info_text () {
+		printf "%-${title_len}.${title_len}s\t" "$title"
+		printf "%-${channel_len}.${channel_len}s\t" "$channel"
+		printf "%-${dur_len}.${dur_len}s\t" "$duration"
+		printf "%-${view_len}.${view_len}s\t" "$views"
+		printf "%-${date_len}.${date_len}s\t" "$date"
+		printf "%s" "$shorturl"
+		printf "\n"
+	}
+
+	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
+		while IFS=$tab_space read title channel duration views date shorturl
+		do
+			video_info_text
+		done |
+		column -t -s "$tab_space" |
+		fzf -m --tabstop=1 --layout=reverse |
+		rev | cut -f1 -d "|" | rev > "$selected_id_file"
 }
-interface_thumbnails() {
-	: # TODO
+#}}}
+
+# Thumbnail Interface {{{
+interface_thumbnails () {
+	# Takes video json file and downloads the thumnails as ${ID}.png to thumb_dir
+	video_json_file=$1
+	mkdir -p "$thumb_dir"
+
+	# Dowload thumbnails, curl version > 7.66.0. ( else remove -Z )
+	{
+		jq -r '.[]|"
+			url = \"\(.thumbs)\"
+			output = \"'"$thumb_dir"'/\(.ID).jpg\""' < "$video_json_file" |
+			curl -Z -K -
+	}
+	
+	# TODO: start ueberzug and fzf menu
 }
-# }}}
+#}}}
+
+#}}}
+
+# Player {{{
+player () {
+	# takes the json data file as $1 and the selected id file as $2
+	video_json_file=$1
+	id_file=$2
+
+	url_file=$(mktemp)
+	{
+		# get urls from the ids
+		urls=
+		while IFS= read id; do
+			urls=${urls}" "$(jq -r '.[]|select(.ID == "'"$id"'").url' < "$video_json_file")
+		done < "$id_file"
+	}
+	set -f
+	set -- $urls
+	mpv "$@"
+}
+#}}}
+
+# Main {{{
+json_file=$(mktemp)
+id_file=$(mktemp)
+scrape_youtube "$*" json_file
+interface_text json_file id_file
+player json_file id_file
+#}}}
+
+# Clean up {{{
+rm "$json_file"
+rm "$id_file"
+#}}}
