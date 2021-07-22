@@ -1072,6 +1072,16 @@ persistent_key_binds () {
     expect_binds="${expect_binds#*,}"
 }
 
+#for -a link_count can be an exact number, or a sed address
+parse_link_count () {
+    case "$(printf "%s" "$link_count" | cut -c 1)" in
+	s) 
+	    link_count="${link_count#s}"
+	    auto_select_type="sed_addr" ;;
+	*) auto_select_type="normal" ;;
+    esac
+}
+
 #> To select videos from videos_data
 user_selection () {
     # format persistent key binds for fzf
@@ -1087,9 +1097,14 @@ user_selection () {
 	if [ "$select_all" -eq 1 ] ; then
 		selected_data=$videos_data_clean
 	elif [ "$auto_select" -eq 1 ] ; then
-		selected_data=$(printf "%s\n" "$videos_data_clean" | sed "${link_count}"q )
+		parse_link_count	
+		case "$auto_select_type" in
+		    sed_addr) selected_data=$(printf "%s\n" "$videos_data_clean" | sed -n "${link_count}"p) ;;
+		    normal) selected_data=$(printf "%s\n" "$videos_data_clean" | sed "${link_count}"q ) ;;
+		esac
 	#picks n random videos
 	elif [ "$random_select" -eq 1 ] ; then
+	    is_non_number "$link_count" && bad_opt_arg "$link_count" "-n"
 	    selected_data=$(printf "%s\n" "$videos_data_clean" | posix_shuf | head -n${link_count}) 
 	    #posix_shuf, pick the first $link_count videos
 
@@ -1717,8 +1732,7 @@ parse_opt () {
 			is_non_number "$silent_mode" && bad_opt_arg ;;
 
 		n|link-count)
-			link_count="$optarg"
-			is_non_number "$link_count" && bad_opt_arg "$link_count" "-n" ;;
+			link_count="$optarg";;
 
 		U) 	parse_internal_opt "$optarg";
 			# This option is reserved for internal scripts
