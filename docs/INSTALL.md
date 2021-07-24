@@ -98,6 +98,13 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 	emerge -a1 net-misc/ytfzf
 	```
 
+5. #### Debian and Ubuntu LTS can get it from [MPR](https://mpr.hunterwittenborn.com/)
+	
+	```
+	git clone https://mpr.hunterwittenborn.com/ytfzf.git
+	makedeb -i
+	```
+	
 ### Installation by cloning the repository
 
 ```sh
