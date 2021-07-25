@@ -21,10 +21,20 @@
 
 # format options
 : ${is_audio_only=0}
+: ${is_download=0}
+: ${video_pref=}
+: ${show_link_only=0}
+
+: ${show_thumbnails=0}
+: ${is_ext_menu=0}
+
+# scrape
+: ${scrape=youtube}
 
 tab_space=$(printf '\t')
 gap_space="                                                                   "
 print_info () {
+	# information goes to stdout ( does not disturb show_link_only )
 	printf "$1" >&2
 }
 
@@ -39,6 +49,10 @@ c_reset="\033[0m"
 #}}}
 
 # }}}
+
+usage () {
+	:  # TODO
+}
 
 # Scraping {{{
 # * a scraper function takes a search query as $1 and returns video json to file $2
@@ -208,8 +222,6 @@ scrape_youtube () {
 
 	case $pagetype in
 		''|search)
-			print_info "Searching Youtube...\n"
-
 			# TODO: sp
 			_youtube_get_request "https://www.youtube.com/results" "$page_query" > "$_tmp_html"
 
@@ -221,8 +233,7 @@ scrape_youtube () {
 			} > "$output_json_file"
 			;;
 		trending)
-			print_info "Getting Trending...\n"
-			trending_tab=$options
+			trending_tab=$query
 
 			case $trending_tab in
 				 music) tab_data="4gINGgt5dG1hX2NoYXJ0cw%3D%3D" ;;
@@ -406,7 +417,7 @@ preview_start () {
 			export UEBERZUG_FIFO="/tmp/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
-			ueberzug layer --parser simple < "$UEBERZUG_FIFO" &
+			ueberzug layer --parser simple < "$UEBERZUG_FIFO" 2>/dev/null &
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
 	esac
@@ -465,15 +476,15 @@ interface_thumbnails () {
 	selected_id_file=$2
 	mkdir -p "$thumb_dir"
 
-	# Dowload thumbnails, curl version > 7.66.0. ( else remove -Z )
+	# Dowload thumbnails, 
 	{
-		print_info 'getting thumbnails....'
+		print_info 'Fetching thumbnails...\n'
 		curl_config_file=$(mktemp)
 		jq -r '.[]|"
 			url = \"\(.thumbs)\"
 			output = \"'"$thumb_dir"'/\(.ID).jpg\""' \
 				< "$video_json_file" > "$curl_config_file"
-
+			# curl version > 7.66.0 for parallel downloads ( else remove -Z )
 			curl -Z -K "$curl_config_file" || curl -K "$curl_config_file"
 		rm "$curl_config_file"
 	}
@@ -499,7 +510,23 @@ interface_thumbnails () {
 
 # Player {{{
 open_player () {
-	: # TODO
+	# isaudio, isdownload, video_pref
+	print_info "Playing $# videos\n"
+
+	if [ $show_link_only -eq 1 ]; then
+		printf '%s\n' "$@"
+		return
+	fi
+
+	if [ $is_download -eq 1 ]; then
+		[ -n "$video_pref" ] && video_pref="$best"
+		youtube-dl -f "$video_pref" "$@"
+		return
+	fi
+
+	[ -n "$video_pref" ] && video_player="$video_player_format$video_pref"
+	[ $is_audio_only -eq 1 ] && video_player=$audio_player && video_pref="bestaudio"
+	$video_player "$@"
 }
 player () {
 	# takes the json data file as $1 and the selected id file as $2
@@ -519,18 +546,22 @@ player () {
 
 	set -f
 	set -- $urls
-	open_player "$options" "$@"
+	open_player "$@"
 }
 #}}}
 
 # Options {{{
-while getopts 'mU' OPT; do
+while getopts 'hdmfc:tTDU' OPT; do
 	case $OPT in
-		m)
-			is_audio_only=1
-			;;
-		U)
-			# Reserved for internal use
+		h) usage ;;
+		d) is_download=1 ;;
+		m) is_audio_only=1 ;;
+		f) # TODO
+			: ;;
+		c) scrape=$OPTARG ;;
+		t) show_thumbnails=1 ;;
+		D) is_ext_menu=1 ;;
+		U) # Reserved for internal use
 			shift
 			case $1 in
 				preview_img)
@@ -547,10 +578,22 @@ shift $((OPTIND-1))
 # Main {{{
 json_file=$(mktemp)
 id_file=$(mktemp)
-print_info 'Scraping site...'
-scrape_youtube "$*" "$json_file"
+print_info 'Scraping site...\n'
 
-interface_text "$json_file" "$id_file"
+case $scrape in
+	youtube) scrape_youtube  "$*" "$json_file" ;;
+	youtube-trending) scrape_youtube  "" "$json_file" "trending";;
+	peertube) scrape_peertube "$*" "$json_file" ;;
+	odysee|lbry) scrape_odysee "$*" "$json_file" ;;
+	*) print_info 'invalid channel\n'; exit 1 ;;
+esac
+
+case 1 in
+	"$show_thumbnails") interface_thumbnails "$json_file" "$id_file" ;;
+	    "$is_ext_menu") interface_external   "$json_file" "$id_file" ;;
+	                 1) interface_text       "$json_file" "$id_file" ;;
+esac
+
 player "$json_file" "$id_file"
 #}}}
 
