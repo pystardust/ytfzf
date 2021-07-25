@@ -1,7 +1,5 @@
 #!/bin/sh
 
-# vim:foldmethod=marker
-
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
 # Player: ID -> video player
@@ -11,6 +9,18 @@
 : ${cache_dir=$HOME/.cache/ytfzf}
 : ${thumb_dir=$cache_dir/thumb}
 [ -d "$cache_dir" ] || mkdir -p "$cache_dir"
+
+#the menu to use instead of fzf when -D is specified
+: ${external_menu=dmenu -i -l 30 -p Search:}}
+#number of columns (characters on a line) the external menu can have
+: ${external_menu_len=220}
+# Players
+: ${video_player=mpv}
+: ${video_player_format=mpv --ytdl-format=}
+: ${audio_player=mpv --no-video}
+
+# format options
+: ${is_audio_only=0}
 
 tab_space=$(printf '\t')
 gap_space="                                                                   "
@@ -317,6 +327,24 @@ scrape_odysee () {
 
 # User Interface {{{
 # Takes video json file as $1 and returns the selected video IDs to file $2
+video_info_text () {
+	printf "%-${title_len}.${title_len}s\t" "$title"
+	printf "%-${channel_len}.${channel_len}s\t" "$channel"
+	printf "%-${dur_len}.${dur_len}s\t" "$duration"
+	printf "%-${view_len}.${view_len}s\t" "$views"
+	printf "%-${date_len}.${date_len}s\t" "$date"
+	printf "%s" "$shorturl"
+	printf "\n"
+}
+
+thumbnail_video_info_text () {
+	printf "\n ${c_cyan}%s" "$title"
+	printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
+	printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
+	printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
+	printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
+	printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
+}
 
 # Text interface {{{
 interface_text () {
@@ -331,16 +359,6 @@ interface_text () {
 	view_len=10
 	date_len=100
 
-	video_info_text () {
-		printf "%-${title_len}.${title_len}s\t" "$title"
-		printf "%-${channel_len}.${channel_len}s\t" "$channel"
-		printf "%-${dur_len}.${dur_len}s\t" "$duration"
-		printf "%-${view_len}.${view_len}s\t" "$views"
-		printf "%-${date_len}.${date_len}s\t" "$date"
-		printf "%s" "$shorturl"
-		printf "\n"
-	}
-
 	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
 		while IFS=$tab_space read title channel duration views date shorturl
 		do
@@ -349,6 +367,31 @@ interface_text () {
 		column -t -s "$tab_space" |
 		fzf -m --tabstop=1 --layout=reverse |
 		rev | cut -f1 -d "|" | rev > "$selected_id_file"
+}
+#}}}
+
+# External interface {{{
+interface_external () {
+	video_json_file=$1
+	selected_id_file=$2
+
+	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
+	TTY_COLS=$external_menu_len
+	title_len=$((TTY_COLS/2))
+	channel_len=$((TTY_COLS/5))
+	dur_len=7
+	view_len=10
+	date_len=100
+
+
+	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
+		while IFS=$tab_space read title channel duration views date shorturl
+		do
+			video_info_text
+		done | tr -d "$tab_space" | 
+		$external_menu |
+		rev | cut -f1 -d "|" | rev > "$selected_id_file"
+	# TODO: external menu into a function
 }
 #}}}
 
@@ -403,15 +446,6 @@ preview_img () {
 	video_json_file=$3
 	id=${line##*|}
 
-    thumbnail_video_info_text () {
-		printf "\n ${c_cyan}%s" "$title"
-		printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
-		printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
-		printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
-		printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
-		printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
-    }
-
 	IFS=$tab_space read -r title channel duration views date description <<-EOF
 	$(
 		jq -r '.[]|select( .ID == "'"$id"'")|
@@ -464,10 +498,14 @@ interface_thumbnails () {
 #}}}
 
 # Player {{{
+open_player () {
+	: # TODO
+}
 player () {
 	# takes the json data file as $1 and the selected id file as $2
 	video_json_file=$1
 	id_file=$2
+	options=$3
 
 	url_file=$(mktemp)
 	{
@@ -478,15 +516,19 @@ player () {
 		done < "$id_file"
 		[ -z "$urls" ] && exit
 	}
+
 	set -f
 	set -- $urls
-	mpv "$@"
+	open_player "$options" "$@"
 }
 #}}}
 
 # Options {{{
-while getopts 'U' OPT; do
+while getopts 'mU' OPT; do
 	case $OPT in
+		m)
+			is_audio_only=1
+			;;
 		U)
 			# Reserved for internal use
 			shift
@@ -506,8 +548,9 @@ shift $((OPTIND-1))
 json_file=$(mktemp)
 id_file=$(mktemp)
 print_info 'Scraping site...'
-scrape_youtube "hello" "$json_file"
-interface_thumbnails "$json_file" "$id_file"
+scrape_youtube "$*" "$json_file"
+
+interface_text "$json_file" "$id_file"
 player "$json_file" "$id_file"
 #}}}
 
@@ -515,3 +558,4 @@ player "$json_file" "$id_file"
 rm "$json_file"
 rm "$id_file"
 #}}}
+# vim:foldmethod=marker
