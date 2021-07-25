@@ -15,7 +15,7 @@
 tab_space=$(printf '\t')
 gap_space="                                                                   "
 print_info () {
-	printf '%s\n' "$1" >&2
+	printf "$1" >&2
 }
 
 # colors {{{
@@ -44,74 +44,274 @@ c_reset="\033[0m"
 
 
 ## Youtube {{{
-# * get youtube search html and extract the json
-# * parse the json
+_youtube_get_request () {
+	_base_url=$1
+	_query=$2
+	_sp=$3
+	# Get search query from youtube
+	curl "$_base_url" -s -L \
+	  -G --data-urlencode "search_query=$_query" \
+	  --data-urlencode "sp=$_sp" \
+	  -H 'Authority: www.youtube.com' \
+	  -H "User-Agent: $useragent" \
+	  -H 'Accept-Language: en-US,en;q=0.9' \
+	  --compressed
+}
+_youtube_get_json () {
+	# Separates the json embedded in the youtube html page
+	# * removes the content after ytInitialData
+	# * removes all newlines and trims the json out
+	sed -n '/var *ytInitialData/,$p' |
+		tr -d '\n' |
+		sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
+}
+
+# Search Related functions {{{
+_youtube_search_json_playlist () {
+	jq '[ .contents|
+	..|.playlistRenderer? |
+	select(. !=null) |
+		{
+			ID: .playlistId,
+			url: "https://www.youtube.com/playlist?list=\(.playlistId)",
+			title: "[Playlist] \(.title.simpleText)",
+			thumbs: .thumbnails[0].thumbnails[0].url|sub("\\?.*";""),
+			channel: .longBylineText.runs[0].text,
+			duration: "\(.videoCount) videos",
+			views: "playlist",
+			date: "playlist"
+		}
+	]'
+}
+_youtube_search_json_videos () {
+	jq '[ .contents| ..|.videoRenderer? | select(. !=null) |
+		{
+			ID: .videoId,
+			url: "https://www.youtube.com/watch?v=\(.videoId)",
+			title: .title.runs[0].text,
+			channel: .longBylineText.runs[0].text,
+			thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
+			duration:.lengthText.simpleText,
+			views: .shortViewCountText.simpleText,
+			date: .publishedTimeText.simpleText,
+			description: .detailedMetadataSnippets[0].snippetText.runs[0].text
+		}
+	]'
+}
+_youtube_get_sp_filter () {
+
+	if [ -n "$sp" ]; then
+		#youtube puts in %253d one ore more times in the filter id, it doesn't seem useful, so we are removing it if it's in the filter
+		sp=${sp%%%*}
+		return
+	fi
+
+	sort_by_filter=$1
+	upload_date_filter=$2
+
+	#filter_id is a variable that keeps changing throught this function
+	filter_id=
+
+	#sp is the final filter id that is used in the search query
+	sp=
+
+	#the way youtube uses these has a pattern, for example
+	    #in the sort_by_filter the only difference is the 3rd character, I just don't know how to use this information efficiently
+	case $sort_by_filter in
+		upload-date) filter_id="CAISBAgAEAE" ;;
+		view-count) filter_id="CAMSBAgAEAE" ;;
+		rating) filter_id="CAESBAgAEAE" ;;
+	esac
+
+	#another example is sort by filter + upload date filter only changes one character as well
+	if [ -n "$filter_id" ]; then
+		#gets the character in the filter_id that needs to be replaced if upload_date_filter is also given
+		upload_date_character=$(printf "%s" "$filter_id" | awk '{print substr($1, 8, 1)}')
+	fi
+
+	#For each of these, if upload_date_character is unset, the filter_id should be the normal filter
+	#Otherwise set the upload_date_character to the right upload_date_character
+	case $upload_date_filter in
+		last-hour)
+			[ -z "$upload_date_character" ] && filter_id="EgQIARAB" || upload_date_character="B" ;;
+		today)
+			[ -z "$upload_date_character" ] && filter_id="EgQIAhAB" || upload_date_character="C" ;;
+		this-week)
+			[ -z "$upload_date_character" ] && filter_id="EgQIAxAB" || upload_date_character="D" ;;
+		this-month)
+			[ -z "$upload_date_character" ] && filter_id="EgQIBBAB" || upload_date_character="E" ;;
+		this-year)
+			[ -z "$upload_date_character" ] && filter_id="EgQIBRAB" || upload_date_character="F" ;;
+	esac
+
+	#if upload_date_character isn't empty, set sp to upload_date filter + sort_by filter
+	if [ -n "$upload_date_character" ]; then
+		#replaces the 8th character in the filter_id with the appropriate character
+		#the 8th character specifies the upload_date_filter
+		sp=$(printf "%s" "$filter_id" | sed 's/\(.\{7\}\)./\1'"$upload_date_character"'/')
+	#otherwise set it to the filter_id
+	else
+		sp=$filter_id
+	fi
+	unset upload_date_character filter_id
+}
+#}}}
+
+# Channel Related functions {{{
+_youtube_channel_name () {
+	# takes channel page html (stdin) and returns the channel name
+	grep -o '<title>.*</title>' |
+		sed \
+		-e 's/ - YouTube//' \
+		-e 's/<\/\?title>//g' \
+		-e "s/&apos;/'/g" \
+		-e "s/&#39;/'/g" \
+		-e "s/&quot;/\"/g" \
+		-e "s/&#34;/\"/g" \
+		-e "s/&amp;/\&/g" \
+		-e "s/&#38;/\&/g"
+}
+_youtube_channel_json () {
+	channel_name=$1
+	jq '[ .contents | ..|.gridVideoRenderer? | select(. !=null) |
+	    {
+	    	ID: .videoId,
+			url: "https://www.youtube.com/watch?v=\(.videoId)",
+	    	title: .title.simpleText,
+	    	channel: "'"$channel_name"'",
+	    	thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
+	    	duration:.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,
+	    	views: .shortViewCountText.simpleText,
+	    	date: .publishedTimeText.simpleText,
+	    }
+	]'
+}
+#}}}
 
 scrape_youtube () {
-	query=$1
+	page_query=$1
 	output_json_file=$2
-	scraped_json=$(mktemp)
+	pagetype=$3
+	
+	_tmp_html=$(mktemp)
+	_tmp_json=$(mktemp)
 
-	{
-		# Get search query from youtube
-		curl 'https://www.youtube.com/results' -s -L \
-		  -G --data-urlencode "search_query=$query" \
-		  -H 'Authority: www.youtube.com' \
-		  -H "User-Agent: $useragent" \
-		  -H 'Accept-Language: en-US,en;q=0.9' \
-		  --compressed
-	} | {
-		# Separates the json embedded in the youtube html page
-		# * removes the content after ytInitialData
-		# * removes all newlines and trims the json out
-		sed -n '/var *ytInitialData/,$p' |
-			tr -d '\n' |
-			sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
-	} > "$scraped_json"
+	case $pagetype in
+		''|search)
+			print_info "Searching Youtube...\n"
 
-	{
-		# Parse the json to the required keys
-		{
-			# Playlists
-			jq '[ .contents|
-			..|.playlistRenderer? |
-			select(. !=null) |
-				{
-					ID: .playlistId,
-					url: "https://www.youtube.com/playlist?list=\(.playlistId)",
-					title: "[Playlist] \(.title.simpleText)",
-					thumbs: .thumbnails[0].thumbnails[0].url|sub("\\?.*";""),
-					channel: .longBylineText.runs[0].text,
-					duration: "\(.videoCount) videos",
-					views: "playlist",
-					date: "playlist"
-				}
-			]'
-		} < "$scraped_json"
+			# TODO: sp
+			_youtube_get_request "https://www.youtube.com/results" "$page_query" > "$_tmp_html"
 
-		{
-			# Videos
-			jq '[ .contents|
-			..|.videoRenderer? |
-			select(. !=null) |
-				{
-					ID: .videoId,
-					url: "https://www.youtube.com/watch?v=\(.videoId)",
-					title: .title.runs[0].text,
-					thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
-					channel: .longBylineText.runs[0].text,
-					duration:.lengthText.simpleText,
-					views: .shortViewCountText.simpleText,
-					date: .publishedTimeText.simpleText,
-					description: .detailedMetadataSnippets[0].snippetText.runs[0].text
-				}
-			]'
-		} < "$scraped_json"
-	}> "$output_json_file"
+			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
 
-	rm "$scraped_json"
+			{
+				_youtube_search_json_videos < "$_tmp_json"
+				_youtube_search_json_playlist < "$_tmp_json"
+			} > "$output_json_file"
+			;;
+		trending)
+			print_info "Getting Trending...\n"
+			trending_tab=$options
+
+			case $trending_tab in
+				 music) tab_data="4gINGgt5dG1hX2NoYXJ0cw%3D%3D" ;;
+				gaming) tab_data="4gIcGhpnYW1pbmdfY29ycHVzX21vc3RfcG9wdWxhcg%3D%3D" ;;
+				movies) tab_data="4gIKGgh0cmFpbGVycw%3D%3D" ;;
+			esac
+
+			_youtube_get_request "https://www.youtube.com/feed/trending?bp=$tab_data" "" "" > "$_tmp_html"
+
+			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
+			{
+				_youtube_search_json_videos < "$_tmp_json"
+				_youtube_search_json_playlist < "$_tmp_json"
+			} > "$output_json_file"
+			;;
+		channel)
+			channel_url=$page_query
+
+			# Converting channel title page url to channel video url
+			case $channel_url in
+				*featured)
+				channel_url=${channel_url%featured}videos
+					;;
+			esac
+
+			_youtube_get_request "$channel_url" "" "" > "$_tmp_html"
+			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
+
+			channel_name=$(_youtube_channel_name < "$_tmp_html" )
+			_youtube_channel_json "$channel_name" < "$_tmp_json"  > "$output_json_file"
+			;;
+	esac
+
+	rm "$_tmp_html" "$_tmp_json"
 }
 ## }}}
+
+## Peertube {{{
+scrape_peertube () {
+	page_query=$1
+	output_json_file=$2
+
+	_tmp_json=$(mktemp)
+
+	#gets a list of videos
+	curl -s "https://sepiasearch.org/api/v1/search/videos" \
+	  -G --data-urlencode "search=$1" > "$_tmp_json"
+
+	jq '[ .data | .[] |
+			{
+				ID: .uuid,
+				url: .url,
+				title: .name,
+				channel: .channel.displayName,
+				thumbs: .thumbnailUrl,
+				duration: .duration,
+				views: .views,
+				date: .publishedAt
+			}
+		]' < "$_tmp_json" > "$output_json_file"
+
+	rm "$_tmp_json"
+}
+## }}}
+
+## Odysee {{{
+scrape_odysee () {
+
+	page_query=$1
+	output_json_file=$2
+
+	_tmp_json=$(mktemp)
+
+	# TODO: filters
+	curl \
+	    -s "https://lighthouse.lbry.com/search" \
+	    -G --data-urlencode "s=$page_query" \
+	    --data-urlencode "mediaType=video,audio" \
+	    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description" \
+	    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json"
+
+	jq '[ .[] | 
+	    {
+			ID: .claimId,
+			title: .title,
+			url: "https://www.odysee.com/\(.channel)/\(.name)",
+			channel: .channel,
+			thumbs: .thumbnail_url,
+			duration: .duration,
+			views: .view_cnt,
+			date: .cq_created_at
+	    }
+	]' < "$_tmp_json" > "$output_json_file" 
+	# TODO:  error handling 2 character
+
+	rm "$_tmp_json"
+}
+## }}}
+
 
 # }}}
 
@@ -154,30 +354,62 @@ interface_text () {
 
 # Thumbnail Interface {{{
 
-# Ueberzug Related Functions {{{
-ueberzug_start () {
-	# starts uberzug to this fifo
-	export UEBERZUG_FIFO="/tmp/ytfzf-ueberzug-fifo"
-	rm -f "$UEBERZUG_FIFO"
-	mkfifo "$UEBERZUG_FIFO"
-	ueberzug layer --parser simple < "$UEBERZUG_FIFO" &
-	exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
+# Image preview {{{
+preview_start () {
+	thumbnail_viewer=$1
+	case $thumbnail_viewer in
+		ueberzug)
+			# starts uberzug to this fifo
+			export UEBERZUG_FIFO="/tmp/ytfzf-ueberzug-fifo"
+			rm -f "$UEBERZUG_FIFO"
+			mkfifo "$UEBERZUG_FIFO"
+			ueberzug layer --parser simple < "$UEBERZUG_FIFO" &
+			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
+			;;
+	esac
 }
-ueberzug_stop () {
-	exec 3>&- # close file descriptor 3, closing ueberzug
+preview_stop () {
+	thumbnail_viewer=$1
+	case $thumbnail_viewer in
+		ueberzug)
+			exec 3>&- # close file descriptor 3, closing ueberzug
+			;;
+	esac
 }
-ueberzug_preview_img () {
-	line=$1
-	video_json_file=$2
+preview_display_image () {
+	thumbnail_viewer=$1
+	id=$2
+	case $thumbnail_viewer in
+		ueberzug)
+			printf '%s\t' \
+				'action' 'add' \
+				'identifier' 'ytfzf' \
+				'path' "$thumb_dir/${id}.jpg" \
+				'x' '2' \
+				'y' '10' \
+				'scaler' 'fit_contain' \
+				'width' "$((FZF_PREVIEW_COLUMNS))" > "$UEBERZUG_FIFO"
+			printf '%s\t%s\n' \
+				'height' "$((FZF_PREVIEW_LINES-10))" > "$UEBERZUG_FIFO"
+			;;
+	esac
+}
+#}}}
+
+preview_img () {
+	# This function is common to every thumbnail viewer
+	thumbnail_viewer=$1
+	line=$2
+	video_json_file=$3
 	id=${line##*|}
 
     thumbnail_video_info_text () {
-	printf "\n ${c_cyan}%s" "$title"
-	printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
-	printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
-	printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
-	printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
-	printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
+		printf "\n ${c_cyan}%s" "$title"
+		printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
+		printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
+		printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
+		printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
+		printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
     }
 
 	IFS=$tab_space read -r title channel duration views date description <<-EOF
@@ -188,21 +420,10 @@ ueberzug_preview_img () {
 	)
 	EOF
 
-	thumbnail_video_info_text
-
-	printf '%s\t' \
-		"action" "add" \
-		"identifier" "ytfzf" \
-		"path" "$thumb_dir/${id}.jpg" \
-		"x" "2" \
-		"y" "10" \
-		"scaler" "fit_contain" \
-		"width" "$((FZF_PREVIEW_COLUMNS-5))" > "$UEBERZUG_FIFO"
-	printf '%s\t%s\n' \
-		"height" "$((FZF_PREVIEW_LINES-10))" > "$UEBERZUG_FIFO"
+	thumbnail_video_info_text "$id"
+	preview_display_image "$thumbnail_viewer" "$id"
 	exit
 }
-#}}}
 
 interface_thumbnails () {
 	# Takes video json file and downloads the thumnails as ${ID}.png to thumb_dir
@@ -212,22 +433,30 @@ interface_thumbnails () {
 
 	# Dowload thumbnails, curl version > 7.66.0. ( else remove -Z )
 	{
-		print_info "getting thumbnails...."
+		print_info 'getting thumbnails....'
+		curl_config_file=$(mktemp)
 		jq -r '.[]|"
 			url = \"\(.thumbs)\"
-			output = \"'"$thumb_dir"'/\(.ID).jpg\""' < "$video_json_file" |
-			curl -Z -K -
+			output = \"'"$thumb_dir"'/\(.ID).jpg\""' \
+				< "$video_json_file" > "$curl_config_file"
+
+			curl -Z -K "$curl_config_file" || curl -K "$curl_config_file"
+		rm "$curl_config_file"
 	}
 	
-	ueberzug_start
+	thumbnail_viewer=ueberzug
 
+	preview_start "$thumbnail_viewer"
+
+	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	jq -r '.[]|[.title,"'"$gap_space"'|"+.ID]|@tsv' < "$video_json_file" |
 	fzf -m \
-	--preview "sh $0 -U {} '$video_json_file'" \
-	--preview-window "left:50%:noborder:wrap" --layout=reverse |
+	--preview "sh $0 -U preview_img '"$thumbnail_viewer"' {} '"$video_json_file"'" \
+	--preview-window "left:50%:wrap" --layout=reverse |
 	rev | cut -f1 -d "|" | rev > "$selected_id_file"
 
-	ueberzug_stop
+	preview_stop "$thumbnail_viewer"
+
 	rm -r "$thumb_dir"
 }
 #}}}
@@ -245,7 +474,7 @@ player () {
 		# get urls from the ids
 		urls=
 		while IFS= read id; do
-			urls=${urls}" "$(jq -r '.[]|select(.ID == "'"$id"'").url' < "$video_json_file")
+			urls=${urls}' '$(jq -r '.[]|select(.ID == "'"$id"'").url' < "$video_json_file")
 		done < "$id_file"
 		[ -z "$urls" ] && exit
 	}
@@ -259,8 +488,14 @@ player () {
 while getopts 'U' OPT; do
 	case $OPT in
 		U)
+			# Reserved for internal use
 			shift
-			ueberzug_preview_img "$@"
+			case $1 in
+				preview_img)
+					shift
+					preview_img "$@"
+					;;
+			esac
 			;;
 	esac
 done
@@ -270,8 +505,8 @@ shift $((OPTIND-1))
 # Main {{{
 json_file=$(mktemp)
 id_file=$(mktemp)
-print_info "Scraping site..."
-scrape_youtube "$*" "$json_file"
+print_info 'Scraping site...'
+scrape_youtube "hello" "$json_file"
 interface_thumbnails "$json_file" "$id_file"
 player "$json_file" "$id_file"
 #}}}
