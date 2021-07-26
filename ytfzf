@@ -10,10 +10,12 @@
 : ${thumb_dir=$cache_dir/thumb}
 [ -d "$cache_dir" ] || mkdir -p "$cache_dir"
 
+# menu options
 #the menu to use instead of fzf when -D is specified
 : ${external_menu=dmenu -i -l 30 -p Search:}}
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len=220}
+
 # Players
 : ${video_player=mpv}
 : ${video_player_format=mpv --ytdl-format=}
@@ -30,6 +32,7 @@
 
 # scrape
 : ${scrape=youtube}
+: ${sub_link_count=10}
 
 tab_space=$(printf '\t')
 gap_space="                                                                   "
@@ -336,6 +339,22 @@ scrape_odysee () {
 
 # }}}
 
+# TODO: sorting
+sort_video_data_fn () {
+
+	if [ $is_sort -eq 1 ]; then
+		while IFS= read -r line
+		do
+			id=${line##*|}
+			date=$(printf "%s" "$line" | rev | cut -f2 -d "|" | rev )
+			date=${date#*Streamed} # youtube_specific
+			
+			#run the key function to get the value to sort by
+			printf "%s\t%s\n" "$(date -d "$date" '+%s')" "$line"
+		done | sort -nr | cut -f2-
+	fi
+}
+
 # User Interface {{{
 # Takes video json file as $1 and returns the selected video IDs to file $2
 video_info_text () {
@@ -374,7 +393,7 @@ interface_text () {
 		while IFS=$tab_space read title channel duration views date shorturl
 		do
 			video_info_text
-		done |
+		done |  
 		column -t -s "$tab_space" |
 		fzf -m --tabstop=1 --layout=reverse |
 		rev | cut -f1 -d "|" | rev > "$selected_id_file"
@@ -484,7 +503,7 @@ interface_thumbnails () {
 			url = \"\(.thumbs)\"
 			output = \"'"$thumb_dir"'/\(.ID).jpg\""' \
 				< "$video_json_file" > "$curl_config_file"
-			# curl version > 7.66.0 for parallel downloads ( else remove -Z )
+			# curl version > 7.66.0 ( else remove -Z )
 			curl -Z -K "$curl_config_file" || curl -K "$curl_config_file"
 		rm "$curl_config_file"
 	}
@@ -494,7 +513,7 @@ interface_thumbnails () {
 	preview_start "$thumbnail_viewer"
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
-	jq -r '.[]|[.title,"'"$gap_space"'|"+.ID]|@tsv' < "$video_json_file" |
+	jq -r '.[]|[.title,"'"$gap_space"'|"+.date,"|"+.ID]|@tsv' < "$video_json_file" |
 	fzf -m \
 	--preview "sh $0 -U preview_img '"$thumbnail_viewer"' {} '"$video_json_file"'" \
 	--preview-window "left:50%:wrap" --layout=reverse |
@@ -551,11 +570,12 @@ player () {
 #}}}
 
 # Options {{{
-while getopts 'hdmfc:tTDU' OPT; do
+while getopts 'hdmfc:tLTDU' OPT; do
 	case $OPT in
 		h) usage ;;
 		d) is_download=1 ;;
 		m) is_audio_only=1 ;;
+		L) show_link_only=1 ;;
 		f) # TODO
 			: ;;
 		c) scrape=$OPTARG ;;
@@ -583,6 +603,31 @@ print_info 'Scraping site...\n'
 case $scrape in
 	youtube) scrape_youtube  "$*" "$json_file" ;;
 	youtube-trending) scrape_youtube  "" "$json_file" "trending";;
+	youtube-subscriptions)#{{{
+		subscription_file=~/.config/ytfzf/subscriptions
+
+		if ! [ -f "$subscription_file" ]; then
+			print_info "subcription file doesn't exist\n"
+			exit 1
+		fi
+
+		while IFS= read channel_url || [ -n "$channel_url" ] ; do
+			{
+				_tmp_subfile=$(mktemp)
+				scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
+				jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$json_file"
+				rm "$_tmp_subfile"
+			} &
+			sleep 0.01
+		done <<-EOF
+		$(sed \
+		-e "s/#.*//" \
+		-e "/^[[:space:]]*$/d" \
+		-e "s/[[:space:]]*//g" \
+		"$subscription_file" )
+		EOF
+		wait
+		;;#}}}
 	peertube) scrape_peertube "$*" "$json_file" ;;
 	odysee|lbry) scrape_odysee "$*" "$json_file" ;;
 	*) print_info 'invalid channel\n'; exit 1 ;;
