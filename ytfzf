@@ -49,7 +49,7 @@ function_exists "audio_player" || audio_player () {
 function_exists "downloader" || downloader () {
 	case $is_audio_only in
 	    0) youtube-dl -f "${video_pref:-best}" "$@"	;;
-	    1) youtube-dl -x -f "${video_pref:-best}" "$@" ;;
+	    1) youtube-dl -x "$@" ;;
 	esac
 }
 
