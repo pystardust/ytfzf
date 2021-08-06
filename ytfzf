@@ -30,16 +30,28 @@ print_info () {
 
 # menu options
 #the menu to use instead of fzf when -D is specified
-function_exists 'external_menu' || external_menu () {
+function_exists "external_menu" || external_menu () {
 	dmenu -i -l 30 -p Search: 
 }
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len=220}
 
 # Players
-: ${video_player=mpv}
-: ${video_player_format=mpv --ytdl-format=}
-: ${audio_player=mpv --no-video}
+function_exists "video_player" || video_player () {
+	mpv "$@"
+}
+function_exists "video_player_format" || video_player () {
+	mpv --ytdl-format="$video_pref" "$@"
+}
+function_exists "audio_player" || audio_player () {
+       	mpv --no-video "$@"
+}
+function_exists "downloader" || downloader () {
+	case $is_audio_only in
+	    0) youtube-dl -f "${video_pref:-best}" "$@"	;;
+	    1) youtube-dl -x -f "${video_pref:-best}" "$@" ;;
+	esac
+}
 
 # format options
 : ${is_audio_only=0}
@@ -450,7 +462,6 @@ interface_external () {
 		done | tr -d "$tab_space" | 
 		external_menu |
 		rev | cut -f1 -d "|" | rev > "$selected_id_file"
-	# TODO: external menu into a function
 }
 #}}}
 
@@ -559,22 +570,23 @@ interface_thumbnails () {
 # Player {{{
 open_player () {
 	# isaudio, isdownload, video_pref
-	print_info "Playing $# videos\n"
-
 	if [ $show_link_only -eq 1 ]; then
 		printf '%s\n' "$@"
 		return
 	fi
 
 	if [ $is_download -eq 1 ]; then
-		[ -n "$video_pref" ] && video_pref="$best"
-		youtube-dl -f "$video_pref" "$@"
+		print_info "Downloading $# video(s)\n"
+		[ -n "$video_pref" ] && video_pref="best"
+		downloader "$@"
 		return
 	fi
 
-	[ -n "$video_pref" ] && video_player="$video_player_format$video_pref"
-	[ $is_audio_only -eq 1 ] && video_player=$audio_player && video_pref="bestaudio"
-	$video_player "$@"
+	print_info "Playing $# videos\n"
+
+	[ -n "$video_pref" ] && { video_player_format "$@"; exit; }
+	[ $is_audio_only -eq 1 ] && video_pref="bestaudio" && { audio_player "$@"; exit; }
+	video_player "$@"; exit
 }
 player () {
 	# takes the json data file as $1 and the selected id file as $2
