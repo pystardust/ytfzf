@@ -13,6 +13,11 @@ function_exists () {
 	type "$1" > /dev/null 2>&1
 }
 
+print_info () {
+	# information goes to stdout ( does not disturb show_link_only )
+	printf "$1" >&2
+}
+
 # }}}
 
 # Global Variables and Start Up {{{
@@ -49,10 +54,6 @@ function_exists 'external_menu' || external_menu () {
 
 tab_space=$(printf '\t')
 gap_space="                                                                   "
-print_info () {
-	# information goes to stdout ( does not disturb show_link_only )
-	printf "$1" >&2
-}
 
 # colors {{{
 c_red="\033[1;31m"
