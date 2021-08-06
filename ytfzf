@@ -1,5 +1,7 @@
 #!/bin/sh
 
+YTFZF_VERSION="2.0_alpha"
+
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
 # Player: ID -> video player
@@ -54,7 +56,20 @@ c_reset="\033[0m"
 # }}}
 
 usage () {
-	:  # TODO
+	printf "%s" \
+"Usage: ytfzf [OPTIONS...] <search-query>
+    OPTIONS:
+	-h			Show this help text
+	-d			Download the selected video(s)
+	-m			Only play audio
+	-L			Show the link of selected video(s)
+	-c			The scraper to use,
+				Builtin scrapers:
+				    youtube, youtube-trending, youtube-subscriptions,
+				    peertube, odysee/lbry
+	-t			Show thumbnails
+	-D			Use an external menu
+"
 }
 
 # Scraping {{{
@@ -572,7 +587,7 @@ player () {
 # Options {{{
 while getopts 'hdmfc:tLTDU' OPT; do
 	case $OPT in
-		h) usage ;;
+		h) usage; exit ;;
 		d) is_download=1 ;;
 		m) is_audio_only=1 ;;
 		L) show_link_only=1 ;;
