@@ -4,6 +4,17 @@
 # User Interface: video json -> user selection -> ID
 # Player: ID -> video player
 
+# Utility functions {{{
+dep_check() {
+	command -v "$1" > /dev/null 2>&1
+}
+
+function_exists () {
+	type "$1" > /dev/null 2>&1
+}
+
+# }}}
+
 # Global Variables and Start Up {{{
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 : ${cache_dir=$HOME/.cache/ytfzf}
@@ -12,7 +23,9 @@
 
 # menu options
 #the menu to use instead of fzf when -D is specified
-: ${external_menu=dmenu -i -l 30 -p Search:}}
+function_exists 'external_menu' || external_menu () {
+	dmenu -i -l 30 -p Search: 
+}
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len=220}
 
@@ -419,7 +432,7 @@ interface_external () {
 		do
 			video_info_text
 		done | tr -d "$tab_space" | 
-		$external_menu |
+		external_menu |
 		rev | cut -f1 -d "|" | rev > "$selected_id_file"
 	# TODO: external menu into a function
 }
