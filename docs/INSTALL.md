@@ -82,7 +82,7 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 3. #### FreeBSD users can install ytfzf as a binary package with [pkg(8)](https://www.freshports.org/multimedia/ytfzf/)
 
 	```
-	pkg instal ytfzf
+	pkg install ytfzf
 	```
 
 	Or alternatively, build the port from source
