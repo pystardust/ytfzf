@@ -53,6 +53,12 @@ function_exists "downloader" || downloader () {
 	esac
 }
 
+# directories
+: ${cache_dir=$HOME/.cache/ytfzf}
+
+# files
+: ${ytfzf_cur=$cache_dir/ytfzf_cur}
+
 # format options
 : ${is_audio_only=0}
 : ${is_download=0}
@@ -437,6 +443,7 @@ interface_text () {
 		done |  
 		column -t -s "$tab_space" |
 		fzf -m --tabstop=1 --layout=reverse |
+		tee "$ytfzf_cur" |
 		rev | cut -f1 -d "|" | rev > "$selected_id_file"
 }
 #}}}
@@ -460,7 +467,8 @@ interface_external () {
 		do
 			video_info_text
 		done | tr -d "$tab_space" | 
-		external_menu |
+		external_menu | 
+		tee "$ytfzf_cur" |
 		rev | cut -f1 -d "|" | rev > "$selected_id_file"
 }
 #}}}
@@ -557,6 +565,7 @@ interface_thumbnails () {
 	fzf -m \
 	--preview "sh $0 -U preview_img '"$thumbnail_viewer"' {} '"$video_json_file"'" \
 	--preview-window "left:50%:wrap" --layout=reverse |
+	tee "$ytfzf_cur" |
 	rev | cut -f1 -d "|" | rev > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
