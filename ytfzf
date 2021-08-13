@@ -40,7 +40,7 @@ function_exists "external_menu" || external_menu () {
 function_exists "video_player" || video_player () {
 	mpv "$@"
 }
-function_exists "video_player_format" || video_player () {
+function_exists "video_player_format" || video_player_format () {
 	mpv --ytdl-format="$video_pref" "$@"
 }
 function_exists "audio_player" || audio_player () {
