@@ -769,7 +769,7 @@ scrape_pt () {
      pt_json=$(
      curl \
          -s "https://sepiasearch.org/api/v1/search/videos" \
-	 -G --data-urlencode "search=$*") 
+	 -G --data-urlencode "search=$*")
      videos_json=$(printf "%s" "$pt_json" |\
 	jq '[ .data | .[] |
 	    {
@@ -913,14 +913,14 @@ user_selection () {
 		selected_data=$(printf "%s\n" "$videos_data_clean" | sed "${link_count}"q )
 	#picks n random videos
 	elif [ "$random_select" -eq 1 ] ; then
-	    selected_data=$(printf "%s\n" "$videos_data_clean" | posix_shuf | head -n${link_count}) 
+	    selected_data=$(printf "%s\n" "$videos_data_clean" | posix_shuf | head -n${link_count})
 	    #posix_shuf, pick the first $link_count videos
 
 	#show thumbnail menu
 	elif [ "$show_thumbnails" -eq 1 ] ; then
-		dep_ck "ueberzug" "fzf"
+		dep_ck "fzf"
 		export YTFZF_THUMB_DISP_METHOD="$thumb_disp_method"
-		[ "$thumb_disp_method" = "ueberzug" ] && start_ueberzug
+		[ "$thumb_disp_method" = "ueberzug" ] && dep_ck "ueberzug" && start_ueberzug
 		#thumbnails only work in fzf, use fzf
 		menu_command="fzf -m --tabstop=1 --bind change:top --delimiter=\"$tab_space\" \
 		--nth=1,2 --expect='$shortcuts' $FZF_DEFAULT_OPTS \
@@ -949,7 +949,7 @@ handle_shortcuts () {
 
     case $selected_key in
 	"$urls_shortcut") printf "%s\n" $selected_urls; return 1 ;;
-	"$title_shortcut") 
+	"$title_shortcut")
 	    printf "%s\n" "$selected_data" | awk -F "  " '{print $1}'; return 1 ;;
 	"$open_browser_shortcut")
 	    for url in $selected_urls; do
@@ -1013,7 +1013,7 @@ print_data () {
 get_video_format () {
 	# select format if flag given
 	[ $show_format -eq 0 ] && return
-        formats=$(youtube-dl -F "$(printf "$selected_urls")") 
+        formats=$(youtube-dl -F "$(printf "$selected_urls")")
         line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
         quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | eval "$menu_command" | sed "s/p//g")
 		[ -z "$quality"  ] && exit;
@@ -1300,7 +1300,7 @@ sort_video_data_fn () {
 		#run the key function to get the value to sort by
 		printf "%s\t%s\n" "$(data_sort_key $line)" "$line"
 	done | data_sort_fn | cut -f2-
-	unset IFS line 
+	unset IFS line
 }
 
 scrape_subscriptions () {
@@ -1320,7 +1320,7 @@ scrape_subscriptions () {
 	"$subscriptions_file")
 	EOF
 	wait
-	if [ $sort_videos_data -eq 1 ]; then 
+	if [ $sort_videos_data -eq 1 ]; then
 		videos_data=$(sort_video_data_fn < "$tmp_video_data_file")
 	else
 		videos_data=$(cat "$tmp_video_data_file")
@@ -1417,7 +1417,7 @@ parse_opt () {
 
 		x|clear-history)
 			clear_history "${optarg}" && exit ;;
-		q|search-history) 
+		q|search-history)
 			enable_search_hist_menu=${optarg:-1}
 			is_non_number "$enable_search_hist_menu" && bad_opt_arg ;;
 		a|auto-select)
@@ -1447,7 +1447,7 @@ parse_opt () {
 			sort_videos_data=1
 			sort_name="$optarg" ;;
 
-		S)	
+		S)
 			scrape="yt_subs" ;;
 		subs)
 			sub_link_count=$optarg
@@ -1457,8 +1457,8 @@ parse_opt () {
 		fancy-subs)
 			fancy_subscriptions_menu=${optarg:-1}
 			is_non_number "$fancy_subscriptions_menu" && bad_opt_arg ;;
-			
-		T|trending)	
+
+		T|trending)
 			trending_tab=${optarg:-}
 			scrape="trending" ;;
 
@@ -1524,7 +1524,7 @@ parse_opt () {
 
 		preview-side) export PREVIEW_SIDE=$optarg ;;
 
-		detach) 
+		detach)
 			detach_player=${optarg:-1}
 			is_non_number "$detach_player" && bad_opt_arg ;;
 
