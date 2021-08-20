@@ -20,6 +20,24 @@ print_info () {
 	printf "$1" >&2
 }
 
+#rev (the utility) is not posix compliant, use this function instead
+rev () {
+    #for each line in stdin
+    while IFS= read line; do
+	#clear the reverse string
+	rev=
+	#while line is not empty
+	while [ -n "$line" ]; do
+	    #rev = next_char + rev
+	    rev=$(printf '%.1s' "$line")$rev
+	    #remove next_char
+	    line=${line#?}
+	done
+	#print reversed line
+	printf "%s\n" "$rev"
+    done
+}
+
 # }}}
 
 # Global Variables and Start Up {{{
