@@ -20,6 +20,13 @@ print_info () {
 	printf "$1" >&2
 }
 
+# Clean up {{{
+clean_up () {
+    rm "$json_file"
+    rm "$id_file"
+}
+#}}}
+
 # }}}
 
 # Global Variables and Start Up {{{
@@ -57,13 +64,14 @@ function_exists "downloader" || downloader () {
 : ${cache_dir=$HOME/.cache/ytfzf}
 
 # files
-: ${ytfzf_cur=$cache_dir/ytfzf_cur}
+: ${ytfzf_selected_ids=$cache_dir/ids}
+: ${ytfzf_video_json_file=$cache_dir/videos_json}
 
 # format options
 : ${is_audio_only=0}
 : ${is_download=0}
 : ${video_pref=}
-: ${show_link_only=0}
+: ${info_to_print=}
 
 : ${show_thumbnails=0}
 : ${is_ext_menu=0}
@@ -443,7 +451,6 @@ interface_text () {
 		done |  
 		column -t -s "$tab_space" |
 		fzf -m --tabstop=1 --layout=reverse |
-		tee "$ytfzf_cur" |
 		rev | cut -f1 -d "|" | rev > "$selected_id_file"
 }
 #}}}
@@ -468,7 +475,6 @@ interface_external () {
 			video_info_text
 		done | tr -d "$tab_space" | 
 		external_menu | 
-		tee "$ytfzf_cur" |
 		rev | cut -f1 -d "|" | rev > "$selected_id_file"
 }
 #}}}
@@ -565,7 +571,6 @@ interface_thumbnails () {
 	fzf -m \
 	--preview "sh $0 -U preview_img '"$thumbnail_viewer"' {} '"$video_json_file"'" \
 	--preview-window "left:50%:wrap" --layout=reverse |
-	tee "$ytfzf_cur" |
 	rev | cut -f1 -d "|" | rev > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
@@ -577,12 +582,21 @@ interface_thumbnails () {
 #}}}
 
 # Player {{{
+print_requested_info () {
+    for request in $(printf "%s" "$info_to_print" | tr ',[[:lower:]]' ' [[:upper:]]'); do
+	case "$request" in
+	    L|LINK) printf '%s\n' "$@" ;;
+	    VJ|VIDEO-JSON) while read -r line; do jq '.[]|select(.ID=="'"$line"'")' < "$video_json_file"; done < "$id_file" ;;
+	    J|JSON) jq < "$video_json_file" ;;
+	    R|RAW) while read -r line; do jq -r '.[]|select(.ID=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file"; done < "$id_file" ;;
+	esac
+    done
+    exit
+}
+
 open_player () {
 	# isaudio, isdownload, video_pref
-	if [ $show_link_only -eq 1 ]; then
-		printf '%s\n' "$@"
-		return
-	fi
+	[ -n "$info_to_print"  ] && print_requested_info "$@"
 
 	if [ $is_download -eq 1 ]; then
 		print_info "Downloading $# video(s)\n"
@@ -620,17 +634,18 @@ player () {
 #}}}
 
 # Options {{{
-while getopts 'hdmfc:tLTDU' OPT; do
+while getopts 'hdmfc:tI:LTDU:' OPT; do
 	case $OPT in
 		h) usage; exit ;;
 		d) is_download=1 ;;
 		m) is_audio_only=1 ;;
-		L) show_link_only=1 ;;
+		L) info_to_print="$info_to_print,L" ;;
 		f) # TODO
 			: ;;
 		c) scrape=$OPTARG ;;
 		t) show_thumbnails=1 ;;
 		D) is_ext_menu=1 ;;
+		I) info_to_print="$OPTARG" ;;
 		U) # Reserved for internal use
 			shift
 			case $1 in
@@ -648,6 +663,9 @@ shift $((OPTIND-1))
 # Main {{{
 json_file=$(mktemp)
 id_file=$(mktemp)
+#provide easy access to the id, and json
+ln -sf "$id_file" "$ytfzf_selected_ids"
+ln -sf "$json_file" "$ytfzf_video_json_file"
 print_info 'Scraping site...\n'
 
 case $scrape in
@@ -689,11 +707,9 @@ case 1 in
 	                 1) interface_text       "$json_file" "$id_file" ;;
 esac
 
-player "$json_file" "$id_file"
+[ -f "$id_file" ] && player "$json_file" "$id_file"
 #}}}
 
-# Clean up {{{
-rm "$json_file"
-rm "$id_file"
-#}}}
+clean_up
+
 # vim:foldmethod=marker
