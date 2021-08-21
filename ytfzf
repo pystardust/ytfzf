@@ -20,6 +20,12 @@ print_info () {
 	printf "$1" >&2
 }
 
+trim_id () {
+	while IFS= read _line;do
+		printf '%s\n' "${_line##*|}"
+	done
+}
+
 # }}}
 
 # Global Variables and Start Up {{{
@@ -437,7 +443,7 @@ interface_text () {
 		done |  
 		column -t -s "$tab_space" |
 		fzf -m --tabstop=1 --layout=reverse |
-		rev | cut -f1 -d "|" | rev > "$selected_id_file"
+		trim_id > "$selected_id_file"
 }
 #}}}
 
@@ -461,7 +467,7 @@ interface_external () {
 			video_info_text
 		done | tr -d "$tab_space" | 
 		external_menu |
-		rev | cut -f1 -d "|" | rev > "$selected_id_file"
+		trim_id > "$selected_id_file"
 }
 #}}}
 
@@ -535,7 +541,7 @@ interface_thumbnails () {
 	selected_id_file=$2
 	mkdir -p "$thumb_dir"
 
-	# Dowload thumbnails, 
+	# Download thumbnails,
 	{
 		print_info 'Fetching thumbnails...\n'
 		curl_config_file=$(mktemp)
@@ -557,7 +563,7 @@ interface_thumbnails () {
 	fzf -m \
 	--preview "sh $0 -U preview_img '"$thumbnail_viewer"' {} '"$video_json_file"'" \
 	--preview-window "left:50%:wrap" --layout=reverse |
-	rev | cut -f1 -d "|" | rev > "$selected_id_file"
+	trim_id > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
 
