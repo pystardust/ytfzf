@@ -390,27 +390,36 @@ scrape_odysee () {
 
 # }}}
 
-# TODO: sorting
+# Sorting {{{
+
+function_exists "get_sort_by" || get_sort_by () {
+    line="$1"    
+    date="${line%|*}"
+    date=${date##*|}
+    #youtube specific
+    date=${date#*Streamed}
+    date=${date#*Premiered}
+    date -d "$date" '+%s' 2>/dev/null || date -f "$date" '+%s' 2> /dev/null || printf "null"
+    unset line
+}
+
+function_exists "data_sort_fn" || data_sort_fn () {
+    sort -nr
+}
+
 sort_video_data_fn () {
 
 	if [ $is_sort -eq 1 ]; then
 		while IFS= read -r line
 		do
-			date=${line%|*}
-			date=${date##*|}
-			date=${date#*Streamed} # youtube_specific
-			date=$(date -d "$date" '+%s') >/dev/null 2>&1 || date=null
-
 			#run the key function to get the value to sort by
-			printf "%s\t%s\n" "$date" "$line"
-		done | sort -nr | cut -f2-
+			printf "%s\t%s\n" "$(get_sort_by "$line")" "$line"
+		done | data_sort_fn | cut -f2-
 	else
-		while IFS= read -r line
-		do
-			printf '%s\n' "$line"
-		done
+		cat
 	fi
 }
+#}}}
 
 # User Interface {{{
 # Takes video json file as $1 and returns the selected video IDs to file $2
@@ -571,7 +580,7 @@ interface_thumbnails () {
 	preview_start "$thumbnail_viewer"
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
-	jq -r '.[]|[.title,"'"$gap_space"'|"+.date,"|"+.ID]|@tsv' < "$video_json_file" |
+	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.ID]|@tsv' < "$video_json_file" |
 	sort_video_data_fn |
 	fzf -m \
 	--preview "sh $0 -U preview_img '"$thumbnail_viewer"' {} '"$video_json_file"'" \
