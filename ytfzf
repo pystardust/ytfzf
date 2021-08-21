@@ -44,10 +44,10 @@ function_exists "external_menu" || external_menu () {
 : ${external_menu_len=210}
 
 # Players
-function_exists "video_player" || video_player () {
-	mpv "$@"
+function_exists "video_detach_player" || video_detach_player () {
+	setsid -f mpv --ytdl-format="$video_pref" "$@" 1>/dev/null 2>&1
 }
-function_exists "video_player_format" || video_player_format () {
+function_exists "video_player" || video_player () {
 	mpv --ytdl-format="$video_pref" "$@"
 }
 function_exists "audio_player" || audio_player () {
@@ -55,19 +55,20 @@ function_exists "audio_player" || audio_player () {
 }
 function_exists "downloader" || downloader () {
 	case $is_audio_only in
-	    0) youtube-dl -f "${video_pref:-best}" "$@"	;;
+	    0) youtube-dl -f "${video_pref}" "$@"	;;
 	    1) youtube-dl -x "$@" ;;
 	esac
 }
 
 # format options
 #variable for switching on sort (date)
-: ${is_sort=0}
+: ${is_detach=0}
 : ${is_audio_only=0}
 : ${is_download=0}
-: ${video_pref=}
+: ${video_pref=best}
 : ${show_link_only=0}
 
+: ${is_sort=0}
 : ${show_thumbnails=0}
 : ${is_ext_menu=0}
 
@@ -588,6 +589,7 @@ interface_thumbnails () {
 # Player {{{
 open_player () {
 	# isaudio, isdownload, video_pref
+	: ${video_pref:=best}
 	if [ $show_link_only -eq 1 ]; then
 		printf '%s\n' "$@"
 		return
@@ -595,7 +597,6 @@ open_player () {
 
 	if [ $is_download -eq 1 ]; then
 		print_info "Downloading $# video(s)\n"
-		[ -n "$video_pref" ] && video_pref="best"
 		downloader "$@"
 		return
 	fi
@@ -607,13 +608,12 @@ open_player () {
 		return
 	fi
 
-	if [ -n "$video_pref" ]; then
-		video_player_format "$@"
-		return
-	else
-		video_player "$@";
+	if [ $is_detach -eq 1 ]; then
+		video_detach_player "$@"
 		return
 	fi
+
+	video_player "$@"
 }
 
 player () {
@@ -632,6 +632,7 @@ player () {
 		[ -z "$urls" ] && exit
 	}
 
+	unset IFS
 	set -f
 	set -- $urls
 	open_player "$@"
@@ -654,6 +655,7 @@ while getopts 'hdmfc:tLTDv:U' OPT; do
 			case ${OPTARG%%=*} in
 				is_sort) is_sort=${OPTARG#*=};;
 				video_pref) video_pref=${OPTARG#*=};;
+				is_detach) is_detach=${OPTARG#*=};;
 			esac
 			;;
 		U) # Reserved for internal use
