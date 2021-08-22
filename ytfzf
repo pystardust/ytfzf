@@ -595,10 +595,10 @@ print_requested_info () {
     IFS=,
     for request in $info_to_print; do
 	case "$request" in
-	    [Ll]) printf '%s\n' "$@" ;;
-	    VJ|vj) while read -r line; do jq '.[]|select(.ID=="'"$line"'")' < "$video_json_file"; done < "$id_file" ;;
-	    [Jj]) jq < "$video_json_file" ;;
-	    [Rr]) while read -r line; do jq -r '.[]|select(.ID=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file"; done < "$id_file" ;;
+	    [Ll]|link) printf '%s\n' "$@" ;;
+	    VJ|vj|video-json) while read -r line; do jq '.[]|select(.ID=="'"$line"'")' < "$video_json_file"; done < "$id_file" ;;
+	    [Jj]|json) jq < "$video_json_file" ;;
+	    [Rr]|raw) while read -r line; do jq -r '.[]|select(.ID=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file"; done < "$id_file" ;;
 	esac
     done
     exit
