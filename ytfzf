@@ -109,6 +109,14 @@ usage () {
 				    peertube, odysee/lbry
 	-t			Show thumbnails
 	-D			Use an external menu
+	-I <info>               Instead of playing the selected video(s), get information about them.
+				Options can be separated with a comma, eg: L,R
+	                        Options for info:
+				    L:         print the link of the video
+				    VJ:        print the json of the video
+				    J:         print the json of all videos shown in the search
+				    R:         print the data of the selected videos, as appears in the menu
+				
 "
 }
 
@@ -583,12 +591,14 @@ interface_thumbnails () {
 
 # Player {{{
 print_requested_info () {
-    for request in $(printf "%s" "$info_to_print" | tr ',[[:lower:]]' ' [[:upper:]]'); do
+    set -f
+    IFS=,
+    for request in $info_to_print; do
 	case "$request" in
-	    L|LINK) printf '%s\n' "$@" ;;
-	    VJ|VIDEO-JSON) while read -r line; do jq '.[]|select(.ID=="'"$line"'")' < "$video_json_file"; done < "$id_file" ;;
-	    J|JSON) jq < "$video_json_file" ;;
-	    R|RAW) while read -r line; do jq -r '.[]|select(.ID=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file"; done < "$id_file" ;;
+	    [Ll]) printf '%s\n' "$@" ;;
+	    VJ|vj) while read -r line; do jq '.[]|select(.ID=="'"$line"'")' < "$video_json_file"; done < "$id_file" ;;
+	    [Jj]) jq < "$video_json_file" ;;
+	    [Rr]) while read -r line; do jq -r '.[]|select(.ID=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file"; done < "$id_file" ;;
 	esac
     done
     exit
