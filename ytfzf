@@ -27,6 +27,11 @@ trim_id () {
 	done
 }
 
+is_number () {
+    #-eq only works on numbers
+    [ "$1" -eq "$1" ] > /dev/null 2>&1
+}
+
 # }}}
 
 # Global Variables and Start Up {{{
@@ -75,6 +80,8 @@ function_exists "downloader" || downloader () {
 # scrape
 : ${scrape=youtube}
 : ${sub_link_count=10}
+: ${auto_select=}
+: ${random_select:=0}
 
 tab_space=$(printf '\t')
 gap_space="                                                                   "
@@ -99,6 +106,12 @@ usage () {
 	-d			Download the selected video(s)
 	-m			Only play audio
 	-L			Show the link of selected video(s)
+	-a <n>                  Automatically select the n'th video
+	                        n is a sed address eg:
+				    1 (first video)
+				    1,3 (first through third videos)
+				    1,$ (all videos)
+        -r <n>                  Automatically select n random videos (n is not a sed address)
 	-c			The scraper to use,
 				Builtin scrapers:
 				    youtube, youtube-trending, youtube-subscriptions,
@@ -413,6 +426,16 @@ sort_video_data_fn () {
 }
 
 # User Interface {{{
+set_text_lengths () {
+	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
+	TTY_COLS=$(tput cols)
+	title_len=$((TTY_COLS/2))
+	channel_len=$((TTY_COLS/5))
+	dur_len=7
+	view_len=10
+	date_len=100
+}
+
 # Takes video json file as $1 and returns the selected video IDs to file $2
 video_info_text () {
 	printf "%-${title_len}.${title_len}s\t" "$title"
@@ -433,18 +456,43 @@ thumbnail_video_info_text () {
 	printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
 }
 
+# Random select interface {{{
+interface_random_select () {
+	video_json_file=$1
+
+	set_text_lengths
+
+	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
+		while IFS=$tab_space read title channel duration views date shorturl
+		do
+			video_info_text
+		done |
+		awk 'BEGIN{srand()} {print rand()"'"$tab_space"'"$0}' | sort -n |
+		cut -f2- | sed "${random_select}"q
+}
+#}}}
+
+# Auto select interface {{{
+interface_auto_select () {
+	video_json_file=$1
+
+	set_text_lengths
+
+	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
+		sort_video_data_fn |
+		while IFS=$tab_space read title channel duration views date shorturl
+		do
+			video_info_text
+		done |
+		sed -n "${auto_select}"p
+}
+#}}}
+
 # Text interface {{{
 interface_text () {
 	video_json_file=$1
-	selected_id_file=$2
 
-	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
-	TTY_COLS=$(tput cols)
-	title_len=$((TTY_COLS/2))
-	channel_len=$((TTY_COLS/5))
-	dur_len=7
-	view_len=10
-	date_len=100
+	set_text_lengths
 
 	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
 		sort_video_data_fn |
@@ -453,24 +501,15 @@ interface_text () {
 			video_info_text
 		done |
 		column -t -s "$tab_space" |
-		fzf -m --tabstop=1 --layout=reverse |
-		trim_id > "$selected_id_file"
+		fzf -m --tabstop=1 --layout=reverse
 }
 #}}}
 
 # External interface {{{
 interface_external () {
 	video_json_file=$1
-	selected_id_file=$2
 
-	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
-	TTY_COLS=$external_menu_len
-	title_len=$((TTY_COLS/2))
-	channel_len=$((TTY_COLS/5))
-	dur_len=7
-	view_len=10
-	date_len=100
-
+	set_text_lengths
 
 	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
 		sort_video_data_fn |
@@ -478,8 +517,7 @@ interface_external () {
 		do
 			video_info_text
 		done | tr -d "$tab_space" |
-		external_menu |
-		trim_id > "$selected_id_file"
+		external_menu
 }
 #}}}
 
@@ -550,7 +588,6 @@ preview_img () {
 interface_thumbnails () {
 	# Takes video json file and downloads the thumnails as ${ID}.png to thumb_dir
 	video_json_file=$1
-	selected_id_file=$2
 	mkdir -p "$thumb_dir"
 
 	# Download thumbnails,
@@ -575,8 +612,7 @@ interface_thumbnails () {
 	sort_video_data_fn |
 	fzf -m \
 	--preview "sh $0 -U preview_img '"$thumbnail_viewer"' {} '"$video_json_file"'" \
-	--preview-window "left:50%:wrap" --layout=reverse |
-	trim_id > "$selected_id_file"
+	--preview-window "left:50%:wrap" --layout=reverse
 
 	preview_stop "$thumbnail_viewer"
 
@@ -640,7 +676,7 @@ player () {
 #}}}
 
 # Options {{{
-while getopts 'hdmfc:tLTDv:U' OPT; do
+while getopts 'hdmfc:tLTDa:r:v:U' OPT; do
 	case $OPT in
 		h) usage; exit ;;
 		d) is_download=1 ;;
@@ -651,6 +687,10 @@ while getopts 'hdmfc:tLTDv:U' OPT; do
 		c) scrape=$OPTARG ;;
 		t) show_thumbnails=1 ;;
 		D) is_ext_menu=1 ;;
+		a) auto_select="$OPTARG";;
+		r) 
+		    random_select="$OPTARG"
+		    is_number "$random_select" || { print_info "-r must be a number, $OPTARG is not a number"; exit 1; } ;;
 		v) # set variable
 			case ${OPTARG%%=*} in
 				is_sort) is_sort=${OPTARG#*=};;
@@ -670,6 +710,13 @@ while getopts 'hdmfc:tLTDv:U' OPT; do
 	esac
 done
 shift $((OPTIND-1))
+#}}}
+
+# Post opt-setting checks {{{
+#auto_select could be set in config, check after getopts, not in
+[ -z "$auto_select" ] && auto_select_menu=0 || auto_select_menu=1 
+#same with random_select
+random_select_menu="$((random_select > 0))"
 #}}}
 
 # Main {{{
@@ -711,10 +758,12 @@ case $scrape in
 esac
 
 case 1 in
+     "$random_select_menu") interface_random_select "$json_file" "$id_file" ;;
+       "$auto_select_menu") interface_auto_select "$json_file" "$id_file" ;;
 	"$show_thumbnails") interface_thumbnails "$json_file" "$id_file" ;;
 	    "$is_ext_menu") interface_external   "$json_file" "$id_file" ;;
 	                 1) interface_text       "$json_file" "$id_file" ;;
-esac
+esac | trim_id > "$id_file"
 
 player "$json_file" "$id_file"
 #}}}
