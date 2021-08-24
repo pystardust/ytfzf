@@ -22,8 +22,8 @@ print_info () {
 
 # Clean up {{{
 clean_up () {
-    rm "$json_file"
-    rm "$id_file"
+    rm "$ytfzf_video_json_file"
+    rm "$ytfzf_selected_ids"
 }
 #}}}
 
@@ -671,16 +671,12 @@ shift $((OPTIND-1))
 #}}}
 
 # Main {{{
-json_file=$(mktemp)
-id_file=$(mktemp)
 #provide easy access to the id, and json
-ln -sf "$id_file" "$ytfzf_selected_ids"
-ln -sf "$json_file" "$ytfzf_video_json_file"
 print_info 'Scraping site...\n'
 
 case $scrape in
-	youtube) scrape_youtube  "$*" "$json_file" ;;
-	youtube-trending) scrape_youtube  "" "$json_file" "trending";;
+	youtube) scrape_youtube  "$*" "$ytfzf_video_json_file" ;;
+	youtube-trending) scrape_youtube  "" "$ytfzf_video_json_file" "trending";;
 	youtube-subscriptions)#{{{
 		subscription_file=~/.config/ytfzf/subscriptions
 
@@ -693,7 +689,7 @@ case $scrape in
 			{
 				_tmp_subfile=$(mktemp)
 				scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
-				jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$json_file"
+				jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 				rm "$_tmp_subfile"
 			} &
 			sleep 0.01
@@ -706,18 +702,18 @@ case $scrape in
 		EOF
 		wait
 		;;#}}}
-	peertube) scrape_peertube "$*" "$json_file" ;;
-	odysee|lbry) scrape_odysee "$*" "$json_file" ;;
+	peertube) scrape_peertube "$*" "$ytfzf_video_json_file" ;;
+	odysee|lbry) scrape_odysee "$*" "$ytfzf_video_json_file" ;;
 	*) print_info 'invalid channel\n'; exit 1 ;;
 esac
 
 case 1 in
-	"$show_thumbnails") interface_thumbnails "$json_file" "$id_file" ;;
-	    "$is_ext_menu") interface_external   "$json_file" "$id_file" ;;
-	                 1) interface_text       "$json_file" "$id_file" ;;
+	"$show_thumbnails") interface_thumbnails "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
+	    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
+	                 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 esac
 
-[ -f "$id_file" ] && player "$json_file" "$id_file"
+[ -f "$ytfzf_selected_ids" ] && player "$ytfzf_video_json_file" "$ytfzf_selected_ids"
 #}}}
 
 clean_up
