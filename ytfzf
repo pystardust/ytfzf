@@ -24,9 +24,14 @@ print_info () {
 
 # Clean up {{{
 clean_up () {
-    rm "$ytfzf_video_json_file"
-    rm "$ytfzf_selected_ids"
+	#another instance with the same search may have already removed the directory
+    	[ $keep_cache_dir -eq 0 ] && [ -d "$cache_dir" ] && rm -r "$cache_dir"
+	#removing the cache_dir may have removed these files
+	[ -f "$ytfzf_selected_ids" ] && rm "$ytfzf_selected_ids"
+	[ -f "$ytfzf_video_json_file" ] && rm "$ytfzf_video_json_file"
+	[ -d "$thumb_dir" ] && rm -r "$thumb_dir"
 }
+trap clean_up 2 9 15
 #}}}
 
 trim_id () {
@@ -39,9 +44,10 @@ trim_id () {
 
 # Global Variables and Start Up {{{
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
-: ${cache_dir=$HOME/.cache/ytfzf}
-: ${thumb_dir=$cache_dir/thumb}
-[ -d "$cache_dir" ] || mkdir -p "$cache_dir"
+
+# Clean up options{{{
+: "${keep_cache_dir:=0}"
+#}}}
 
 # menu options
 #the menu to use instead of fzf when -D is specified
@@ -67,13 +73,6 @@ function_exists "downloader" || downloader () {
 	    1) youtube-dl -x "$@" ;;
 	esac
 }
-
-# directories
-: ${cache_dir=$HOME/.cache/ytfzf}
-
-# files
-: ${ytfzf_selected_ids=$cache_dir/ids}
-: ${ytfzf_video_json_file=$cache_dir/videos_json}
 
 # format options
 #variable for switching on sort (date)
@@ -485,7 +484,7 @@ interface_text () {
 			video_info_text
 		done |
 		column -t -s "$tab_space" |
-		fzf -m --tabstop=1 --layout=reverse |
+		fzf -m --tabstop=1 --layout=reverse || { [ $? -eq 130 ] && clean_up && exit; } |
 		trim_id > "$selected_id_file"
 }
 #}}}
@@ -607,7 +606,7 @@ interface_thumbnails () {
 	sort_video_data_fn |
 	fzf -m \
 	--preview "sh $0 -U preview_img '"$thumbnail_viewer"' {} '"$video_json_file"'" \
-	--preview-window "left:50%:wrap" --layout=reverse |
+	--preview-window "left:50%:wrap" --layout=reverse || { [ $? -eq 130 ] && clean_up && exit; } |
 	trim_id > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
@@ -684,7 +683,6 @@ player () {
 	open_player "$@"
 }
 #}}}
-
 # Options {{{
 while getopts 'hdmfc:tI:LTDv:U:' OPT; do
 	case $OPT in
@@ -719,12 +717,27 @@ done
 shift $((OPTIND-1))
 #}}}
 
+search_query="$*"
+
+#this is down here because $search_query is unknown until this point
+# Directory/file config {{{
+# directories
+cache_dir="${cache_dir:-$HOME/.cache/ytfzf}/$search_query"
+: ${thumb_dir=$cache_dir/thumb}
+#if cache_dir exists, remove it, exit from the subshell as error so mkdir -p will always happen
+[ -d "$cache_dir" ] && ( rm -r "$cache_dir"; exit 1 ) || mkdir -p "$cache_dir"
+
+# files
+: ${ytfzf_selected_ids=$cache_dir/ids}
+: ${ytfzf_video_json_file=$cache_dir/videos_json}
+#}}}
+
 # Main {{{
 #provide easy access to the id, and json
 print_info 'Scraping site...\n'
 
 case $scrape in
-	youtube) scrape_youtube  "$*" "$ytfzf_video_json_file" ;;
+	youtube) scrape_youtube  "$search_query" "$ytfzf_video_json_file" ;;
 	youtube-trending) scrape_youtube  "" "$ytfzf_video_json_file" "trending";;
 	youtube-subscriptions)#{{{
 		subscription_file=~/.config/ytfzf/subscriptions
@@ -751,8 +764,8 @@ case $scrape in
 		EOF
 		wait
 		;;#}}}
-	peertube) scrape_peertube "$*" "$ytfzf_video_json_file" ;;
-	odysee|lbry) scrape_odysee "$*" "$ytfzf_video_json_file" ;;
+	peertube) scrape_peertube "$search_query" "$ytfzf_video_json_file" ;;
+	odysee|lbry) scrape_odysee "$search_query" "$ytfzf_video_json_file" ;;
 	*) print_info 'invalid channel\n'; exit 1 ;;
 esac
 
