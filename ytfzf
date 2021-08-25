@@ -21,6 +21,14 @@ print_info () {
 	printf "$1" >&2
 }
 
+
+# Clean up {{{
+clean_up () {
+    rm "$ytfzf_video_json_file"
+    rm "$ytfzf_selected_ids"
+}
+#}}}
+
 trim_id () {
 	while IFS= read _line;do
 		printf '%s\n' "${_line##*|}"
@@ -60,13 +68,20 @@ function_exists "downloader" || downloader () {
 	esac
 }
 
+# directories
+: ${cache_dir=$HOME/.cache/ytfzf}
+
+# files
+: ${ytfzf_selected_ids=$cache_dir/ids}
+: ${ytfzf_video_json_file=$cache_dir/videos_json}
+
 # format options
 #variable for switching on sort (date)
 : ${is_detach=0}
 : ${is_audio_only=0}
 : ${is_download=0}
+: ${info_to_print=}
 : ${video_pref=best}
-: ${show_link_only=0}
 
 : ${is_sort=0}
 : ${show_thumbnails=0}
@@ -105,6 +120,14 @@ usage () {
 				    peertube, odysee/lbry
 	-t			Show thumbnails
 	-D			Use an external menu
+	-I <info>               Instead of playing the selected video(s), get information about them.
+				Options can be separated with a comma, eg: L,R
+	                        Options for info:
+				    L:         print the link of the video
+				    VJ:        print the json of the video
+				    J:         print the json of all videos shown in the search
+				    R:         print the data of the selected videos, as appears in the menu
+				
 "
 }
 
@@ -596,13 +619,27 @@ interface_thumbnails () {
 #}}}
 
 # Player {{{
+print_requested_info () {
+    set -f
+    IFS=,
+    for request in $info_to_print; do
+	case "$request" in
+	    [Ll]|link) printf '%s\n' "$@" ;;
+	    VJ|vj|video-json) while read -r line; do jq '.[]|select(.ID=="'"$line"'")' < "$video_json_file"; done < "$id_file" ;;
+	    [Jj]|json) jq < "$video_json_file" ;;
+	    [Rr]|raw) while read -r line; do jq -r '.[]|select(.ID=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file"; done < "$id_file" ;;
+	esac
+    done
+    exit
+}
+
 open_player () {
 	# isaudio, isdownload, video_pref
+
+	[ -n "$info_to_print"  ] && print_requested_info "$@"
+
 	: ${video_pref:=best}
-	if [ $show_link_only -eq 1 ]; then
-		printf '%s\n' "$@"
-		return
-	fi
+
 
 	if [ $is_download -eq 1 ]; then
 		print_info "Downloading $# video(s)\n"
@@ -649,17 +686,18 @@ player () {
 #}}}
 
 # Options {{{
-while getopts 'hdmfc:tLTDv:U' OPT; do
+while getopts 'hdmfc:tI:LTDv:U:' OPT; do
 	case $OPT in
 		h) usage; exit ;;
 		d) is_download=1 ;;
 		m) is_audio_only=1 ;;
-		L) show_link_only=1 ;;
+		L) info_to_print="$info_to_print,L" ;;
 		f) # TODO
 			: ;;
 		c) scrape=$OPTARG ;;
 		t) show_thumbnails=1 ;;
 		D) is_ext_menu=1 ;;
+		I) info_to_print="$OPTARG" ;;
 		v) # set variable
 			case ${OPTARG%%=*} in
 				is_sort) is_sort=${OPTARG#*=};;
@@ -682,13 +720,12 @@ shift $((OPTIND-1))
 #}}}
 
 # Main {{{
-json_file=$(mktemp)
-id_file=$(mktemp)
+#provide easy access to the id, and json
 print_info 'Scraping site...\n'
 
 case $scrape in
-	youtube) scrape_youtube  "$*" "$json_file" ;;
-	youtube-trending) scrape_youtube  "" "$json_file" "trending";;
+	youtube) scrape_youtube  "$*" "$ytfzf_video_json_file" ;;
+	youtube-trending) scrape_youtube  "" "$ytfzf_video_json_file" "trending";;
 	youtube-subscriptions)#{{{
 		subscription_file=~/.config/ytfzf/subscriptions
 
@@ -701,7 +738,7 @@ case $scrape in
 			{
 				_tmp_subfile=$(mktemp)
 				scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
-				jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$json_file"
+				jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 				rm "$_tmp_subfile"
 			} &
 			sleep 0.01
@@ -714,21 +751,20 @@ case $scrape in
 		EOF
 		wait
 		;;#}}}
-	peertube) scrape_peertube "$*" "$json_file" ;;
-	odysee|lbry) scrape_odysee "$*" "$json_file" ;;
+	peertube) scrape_peertube "$*" "$ytfzf_video_json_file" ;;
+	odysee|lbry) scrape_odysee "$*" "$ytfzf_video_json_file" ;;
 	*) print_info 'invalid channel\n'; exit 1 ;;
 esac
 
 case 1 in
-	"$show_thumbnails") interface_thumbnails "$json_file" "$id_file" ;;
-	    "$is_ext_menu") interface_external   "$json_file" "$id_file" ;;
-	                 1) interface_text       "$json_file" "$id_file" ;;
+	"$show_thumbnails") interface_thumbnails "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
+	    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
+	                 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 esac
 
-player "$json_file" "$id_file"
+[ -f "$ytfzf_selected_ids" ] && player "$ytfzf_video_json_file" "$ytfzf_selected_ids"
 #}}}
 
-# Clean up {{{
-rm "$json_file"
-rm "$id_file"
-#}}}
+clean_up
+
+# vim:foldmethod=marker
