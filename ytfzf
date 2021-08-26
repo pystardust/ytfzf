@@ -199,7 +199,6 @@ _youtube_search_json_videos () {
 	]'
 }
 _youtube_get_sp_filter () {
-
 	if [ -n "$sp" ]; then
 		#youtube puts in %253d one ore more times in the filter id, it doesn't seem useful, so we are removing it if it's in the filter
 		sp=${sp%%%*}
@@ -309,7 +308,7 @@ scrape_youtube () {
 			} > "$output_json_file"
 			;;
 		trending)
-			trending_tab=$query
+			trending_tab=$page_query
 
 			case $trending_tab in
 				 music) tab_data="4gINGgt5dG1hX2NoYXJ0cw%3D%3D" ;;
@@ -734,11 +733,14 @@ cache_dir="${cache_dir:-$HOME/.cache/ytfzf}/$search_query"
 
 # Main {{{
 #provide easy access to the id, and json
+: > "$ytfzf_video_json_file"
+: > "$ytfzf_selected_ids"
+
 print_info 'Scraping site...\n'
 
 case $scrape in
 	youtube) scrape_youtube  "$search_query" "$ytfzf_video_json_file" ;;
-	youtube-trending) scrape_youtube  "" "$ytfzf_video_json_file" "trending";;
+	youtube-trending) scrape_youtube  "$search_query" "$ytfzf_video_json_file" "trending";;
 	youtube-subscriptions)#{{{
 		subscription_file=~/.config/ytfzf/subscriptions
 
