@@ -1260,20 +1260,20 @@ EOF
 
 update_ytfzf () {
 	branch="$1"
-	updatefile="/tmp/ytfzf-update"
+	updatefile="$(mktemp)"
 	curl -L "https://raw.githubusercontent.com/pystardust/ytfzf/$branch/ytfzf" -o "$updatefile"
 
 	if sed -n '1p' < "$updatefile" | grep -q '#!/bin/sh'; then
 		chmod 755 "$updatefile"
-		[ "$(uname)" = "Darwin" ] && prefix="/usr/local/bin" || prefix="/usr/bin"
 		function_exists "sudo" && doasroot="sudo" || doasroot="doas"
-		$doasroot cp "$updatefile" "$prefix/ytfzf"
-		unset prefix doasroot
+		mv -f "$updatefile" "$0" 2>/dev/null || $doasroot mv -f "$updatefile" "$0"
+		unset doasroot
+		printf "%bytfzf successfully updated.%b\n" "$c_green" "$c_reset"
+
 	else
-		printf "%bFailed to update ytfzf. Try again later.%b" "$c_red" "$c_reset"
+		printf "%bFailed to update ytfzf. Try again later.%b\n" "$c_red" "$c_reset"
 	fi
 
-	rm "$updatefile"
 	exit 0
 }
 

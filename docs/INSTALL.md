@@ -35,7 +35,7 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
 	  pip install ueberzug
 
-	_Note youtube-dl is usually outdated in debian repos, I suggest getting it from  [youtube-dl github](https://github.com/ytdl-org/youtube-dl)_
+	_Note youtube-dl is usually outdated in debian repos, I suggest getting it from pip or [youtube-dl github](https://github.com/ytdl-org/youtube-dl)_
 
 + #### FreeBSD
 
@@ -66,10 +66,8 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 1. #### Installation by direct download
 
 	```sh
-	curl -sL "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" | sudo tee /usr/bin/ytfzf >/dev/null && sudo chmod 755 /usr/bin/ytfzf
+	curl -sL "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" | sudo tee /usr/local/bin/ytfzf >/dev/null && sudo chmod 755 /usr/local/bin/ytfzf
 	```
-
-   _MacOS users might need to change their installation path from  `/usr/bin/` to `/usr/local/bin/`_
 
 2. #### Arch users can install ytfzf from the [AUR](https://aur.archlinux.org/packages/ytfzf/)
 
