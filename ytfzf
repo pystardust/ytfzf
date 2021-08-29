@@ -459,6 +459,7 @@ thumbnail_video_info_text () {
 # Random select interface {{{
 interface_random_select () {
 	video_json_file=$1
+	video_id_file=$2
 
 	set_text_lengths
 
@@ -468,13 +469,14 @@ interface_random_select () {
 			video_info_text
 		done |
 		awk 'BEGIN{srand()} {print rand()"'"$tab_space"'"$0}' | sort -n |
-		cut -f2- | sed "${random_select}"q
+		cut -f2- | sed "${random_select}"q | trim_id > "$video_id_file"
 }
 #}}}
 
 # Auto select interface {{{
 interface_auto_select () {
 	video_json_file=$1
+	video_id_file=$2
 
 	set_text_lengths
 
@@ -484,7 +486,7 @@ interface_auto_select () {
 		do
 			video_info_text
 		done |
-		sed -n "${auto_select}"p
+		sed -n "${auto_select}"p | trim_id > "$video_id_file"
 }
 #}}}
 
@@ -508,8 +510,10 @@ interface_text () {
 # External interface {{{
 interface_external () {
 	video_json_file=$1
+	video_id_file=$2
 
 	set_text_lengths
+	TTY_COLS=$external_menu_len
 
 	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
 		sort_video_data_fn |
@@ -517,7 +521,7 @@ interface_external () {
 		do
 			video_info_text
 		done | tr -d "$tab_space" |
-		external_menu
+		external_menu | trim_id > "$video_id_file"
 }
 #}}}
 
@@ -588,6 +592,7 @@ preview_img () {
 interface_thumbnails () {
 	# Takes video json file and downloads the thumnails as ${ID}.png to thumb_dir
 	video_json_file=$1
+	video_id_file=$2
 	mkdir -p "$thumb_dir"
 
 	# Download thumbnails,
@@ -612,7 +617,7 @@ interface_thumbnails () {
 	sort_video_data_fn |
 	fzf -m \
 	--preview "sh $0 -U preview_img '"$thumbnail_viewer"' {} '"$video_json_file"'" \
-	--preview-window "left:50%:wrap" --layout=reverse
+	--preview-window "left:50%:wrap" --layout=reverse | trim_id > "$video_id_file"
 
 	preview_stop "$thumbnail_viewer"
 
@@ -763,7 +768,7 @@ case 1 in
 	"$show_thumbnails") interface_thumbnails "$json_file" "$id_file" ;;
 	    "$is_ext_menu") interface_external   "$json_file" "$id_file" ;;
 	                 1) interface_text       "$json_file" "$id_file" ;;
-esac | trim_id > "$id_file"
+esac
 
 player "$json_file" "$id_file"
 #}}}
