@@ -775,7 +775,7 @@ scrape_pt () {
 	    {
 		title: .name,
 		channel: .channel.displayName,
-		duration: .duration,
+		duration: "\(.duration / 60 | floor):\(.duration % 60)",
 		views: .views,
 		date: .publishedAt,
 		videoID: .uuid,
