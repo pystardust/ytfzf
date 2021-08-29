@@ -1267,14 +1267,21 @@ update_ytfzf () {
 		chmod 755 "$updatefile"
 		function_exists "sudo" && doasroot="sudo" || doasroot="doas"
 		mv -f "$updatefile" "$0" 2>/dev/null || $doasroot mv -f "$updatefile" "$0"
-		unset doasroot
-		printf "%bytfzf successfully updated.%b\n" "$c_green" "$c_reset"
-
+		if [ $? -eq 0 ] ; then
+			unset doasroot
+			printf "%bytfzf successfully updated.%b\n" "$c_green" "$c_reset"
+			exit 0
+		else
+			unset doasroot
+			printf "%bFailed to update ytfzf.%b\n" "$c_red" "$c_reset"
+			rm "$updatefile"
+			exit 1
+		fi
 	else
 		printf "%bFailed to update ytfzf. Try again later.%b\n" "$c_red" "$c_reset"
+		rm "$updatefile"
+		exit 1
 	fi
-
-	exit 0
 }
 
 #gives a value to sort by (this will give the unix time the video was uploaded)
