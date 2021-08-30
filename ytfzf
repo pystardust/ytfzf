@@ -810,7 +810,7 @@ esac
 
 case 1 in
  "$random_select_menu") interface_random_select "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
-   "$auto_select_menu") interface_auto_select "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;3
+   "$auto_select_menu") interface_auto_select "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
    	"$show_thumbnails") interface_thumbnails "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 	      "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 	                   1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
