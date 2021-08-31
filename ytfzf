@@ -640,12 +640,15 @@ shift $((OPTIND-1))
 # Main {{{
 json_file=$(mktemp)
 id_file=$(mktemp)
+
+search="$*"
+
 print_info 'Scraping site...\n'
 
 scrape_website () {
     case $curr_scrape in
-	    youtube|Y) scrape_youtube  "$*" "$json_file" ;;
-	    youtube-trending|T) scrape_youtube  "" "$json_file" "trending";;
+	    youtube|Y) scrape_youtube  "$search" "$json_file" ;;
+	    youtube-trending|T) scrape_youtube  "$search" "$json_file" "trending";;
 	    youtube-subscriptions|S)#{{{
 		    subscription_file=~/.config/ytfzf/subscriptions
 
@@ -671,8 +674,8 @@ scrape_website () {
 EOF
 		    wait
 		    ;;#}}}
-	    peertube|P) scrape_peertube "$*" "$json_file" ;;
-	    odysee|lbry|O) scrape_odysee "$*" "$json_file" ;;
+	    peertube|P) scrape_peertube "$search" "$json_file" ;;
+	    odysee|lbry|O) scrape_odysee "$search" "$json_file" ;;
 	    *) print_info 'invalid channel\n'; exit 1 ;;
     esac
 }
