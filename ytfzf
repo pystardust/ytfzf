@@ -525,6 +525,7 @@ interface_auto_select () {
 # Text interface {{{
 interface_text () {
 	video_json_file=$1
+	video_id_file=$2
 
 	set_text_lengths
 
