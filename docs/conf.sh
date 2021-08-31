@@ -147,10 +147,6 @@ thumbnail_quailty=1
 #same as -m
 is_audio_only=0
 
-#download the video instead of watching/listening
-#same as -d
-is_download=0
-
 #enable/disable selecting the first result automatically
 #same as -a
 auto_select=0
@@ -332,9 +328,6 @@ odysee_video_search_count=30
 
 #useragent when using curl on youtube
 useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
-
-#whether or not to exit when an invalid opt is passed
-exit_on_opt_error=1
 
 #the file for storing watch history
 history_file="$cache_dir/ytfzf_hst"
