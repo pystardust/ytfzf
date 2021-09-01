@@ -21,6 +21,13 @@ print_info () {
 	printf "$1" >&2
 }
 
+die () {
+	_return_status=$1
+	printf "$2" >&2
+	clean_up
+	exit "$_return_status"
+}
+
 
 # Clean up {{{
 clean_up () {
@@ -86,6 +93,12 @@ function_exists "downloader" || downloader () {
 : ${is_sort=0}
 : ${show_thumbnails=0}
 : ${is_ext_menu=0}
+
+: ${is_interface_scripting=0}
+: ${scripting_video_count=1}
+: ${is_auto_select=0}
+: ${is_random_select=0}
+
 
 # scrape
 : ${scrape=youtube}
@@ -304,8 +317,8 @@ scrape_youtube () {
 			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
 
 			{
-				_youtube_search_json_videos < "$_tmp_json"
 				_youtube_search_json_playlist < "$_tmp_json"
+				_youtube_search_json_videos < "$_tmp_json"
 			} > "$output_json_file"
 			;;
 		trending)
@@ -464,6 +477,22 @@ thumbnail_video_info_text () {
 	printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
 }
 
+# Scripting interfaces {{{
+interface_scripting () {
+	video_json_file=$1
+	selected_id_file=$2
+	case 1 in
+		"$is_auto_select")
+		jq -r '.[]|.ID' < "$video_json_file"  | head -n "$scripting_video_count" > "$selected_id_file"
+			;;
+		"$is_random_select")
+		jq -r '.[]|.ID' < "$video_json_file"  | shuf | head -n "$scripting_video_count" > "$selected_id_file"
+			;;
+	esac
+	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
+}
+# }}}
+
 # Text interface {{{
 interface_text () {
 	video_json_file=$1
@@ -491,26 +520,26 @@ interface_text () {
 
 # External interface {{{
 interface_external () {
-	video_json_file=$1
-	selected_id_file=$2
+       video_json_file=$1
+       selected_id_file=$2
 
-	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
-	TTY_COLS=$external_menu_len
-	title_len=$((TTY_COLS/2))
-	channel_len=$((TTY_COLS/5))
-	dur_len=7
-	view_len=10
-	date_len=100
+       # video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
+       TTY_COLS=$external_menu_len
+       title_len=$((TTY_COLS/2))
+       channel_len=$((TTY_COLS/5))
+       dur_len=7
+       view_len=10
+       date_len=100
 
 
-	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
-		sort_video_data_fn |
-		while IFS=$tab_space read title channel duration views date shorturl
-		do
-			video_info_text
-		done | tr -d "$tab_space" |
-		external_menu |
-		trim_id > "$selected_id_file"
+       jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
+               sort_video_data_fn |
+               while IFS=$tab_space read title channel duration views date shorturl
+               do
+                       video_info_text
+               done | tr -d "$tab_space" |
+               external_menu |
+               trim_id > "$selected_id_file"
 }
 #}}}
 
@@ -629,13 +658,15 @@ print_requested_info () {
 	    [Rr]|raw) while read -r line; do jq -r '.[]|select(.ID=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file"; done < "$id_file" ;;
 	esac
     done
-    exit
 }
 
 open_player () {
 	# isaudio, isdownload, video_pref
 
-	[ -n "$info_to_print"  ] && print_requested_info "$@"
+	if [ -n "$info_to_print"  ]; then
+		print_requested_info "$@"
+		return
+	fi
 
 	: ${video_pref:=best}
 
@@ -671,10 +702,11 @@ player () {
 	{
 		# get urls from the ids
 		urls=
-		while IFS= read id; do
-			urls=${urls}' '$(jq -r '.[]|select(.ID == "'"$id"'").url' < "$video_json_file")
+		while IFS= read id || [ -n "$id" ] ; do
+			# head is used so that only url is selected (a search query may have dublicates)
+			urls=${urls}' '$(jq -r --arg id "$id" '.[]|select(.ID == $id).url' < "$video_json_file" | head -n 1 )
 		done < "$id_file"
-		[ -z "$urls" ] && exit
+		[ -z "$urls" ] && return
 	}
 
 	unset IFS
@@ -685,9 +717,12 @@ player () {
 #}}}
 
 # Options {{{
-while getopts 'hdmfc:tI:LTDv:U:' OPT; do
+while getopts 'han:dmfc:tI:LTDv:U:' OPT; do
 	case $OPT in
 		h) usage; exit ;;
+		a) is_interface_scripting=1;is_auto_select=1;; 
+		r) is_interface_scripting=1;is_random_select=1;; 
+		n) scripting_video_count=$OPTARG;; 
 		d) is_download=1 ;;
 		m) is_audio_only=1 ;;
 		L) info_to_print="$info_to_print,L" ;;
@@ -732,8 +767,7 @@ case $scrape in
 		subscription_file=~/.config/ytfzf/subscriptions
 
 		if ! [ -f "$subscription_file" ]; then
-			print_info "subcription file doesn't exist\n"
-			exit 1
+			die 1 "subcription file doesn't exist\n"
 		fi
 
 		while IFS= read channel_url || [ -n "$channel_url" ] ; do
@@ -755,10 +789,11 @@ case $scrape in
 		;;#}}}
 	peertube) scrape_peertube "$*" "$ytfzf_video_json_file" ;;
 	odysee|lbry) scrape_odysee "$*" "$ytfzf_video_json_file" ;;
-	*) print_info 'invalid channel\n'; exit 1 ;;
+	*) die 1 'invalid channel\n';;
 esac
 
 case 1 in
+	 "$is_interface_scripting") interface_scripting "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 	"$show_thumbnails") interface_thumbnails "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 	    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 	                 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
