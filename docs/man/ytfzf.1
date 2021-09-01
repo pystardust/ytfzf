@@ -9,6 +9,7 @@ ytfzf \- search and play videos
 .RI [ search\-query ]
 
 .SH DESCRIPTION
+.PP
 .B ytfzf
 is a POSIX script that helps you find videos
 from Youtube, Peertube or Odysee
@@ -90,12 +91,25 @@ The configuration file to use.
 The defualt is
 .I $YTFZF_CONFIG_DIR/conf.sh
 
+.SH FILES
+.TP
+.I ~/.config/ytfzf/conf.sh
+The configuration file
+.TP
+.I ~/.config/ytfzf/subscriptions
+The subscriptions file.
+
 .SH AUTHOR
-Originally written by pystardust. <https://github.com/pystardust>
+Originally written by pystardust.
+.RI < https://github.com/pystardust >
+
+.SH BUGS
+Report bugs on github
+.RI < https://github.com/pystardust/ytfzf/issues >
 
 .SH SEE ALSO
 .BR ytfzf (5)
-.BR youtub\-dl (1),
+.BR youtube\-dl (1),
 .BR fzf (1)
 .BR dmenu (1)
 
@@ -110,4 +124,5 @@ without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 See the GNU General Public License for more details.
 .PP
 You should have received a copy of the GNU General Public License along with \fBytfzf\fR.
-If not, see <https://www.gnu.org/licenses/>.
+If not, see
+.RI < https://www.gnu.org/licenses/ >.
