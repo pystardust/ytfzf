@@ -42,6 +42,10 @@ trim_id () {
 	done
 }
 
+# Traps {{{
+trap 'clean_up' EXIT
+trap 'exit' INT TERM HUP
+#}}}
 
 # }}}
 
@@ -94,10 +98,17 @@ function_exists "downloader" || downloader () {
 : ${is_auto_select=0}
 : ${is_random_select=0}
 
+# option parsing
+: ${long_opt_char:=-}
 
 # scrape
 : ${scrape=youtube}
 : ${sub_link_count=10}
+
+# Option Checks {{{
+printf '%s' "$long_opt_char" | grep -v '[-v[:punct:]]' && print_info "long_opt_char must be v or non alphanumeric" && die 1
+[ ${#long_opt_char} -ne 1 ] && print_info "long_opt_char must be one character" && die 1
+#}}}
 
 tab_space=$(printf '\t')
 gap_space="                                                                   "
@@ -139,30 +150,6 @@ usage () {
 "
 }
 
-# Sessions {{{
-
-trap 'clean_up' EXIT
-trap 'exit' INT TERM HUP
-
-# each session has its own cache dir in cache_dir
-# YTFZF_PID: the pid of parent
-if [ -z "$YTFZF_PID" ]; then
-	YTFZF_PID=$$
-	export YTFZF_PID
-	session_cache_dir=$cache_dir/$YTFZF_PID
-	thumb_dir=$session_cache_dir/thumbnails
-	mkdir -p "$session_cache_dir" "$thumb_dir"
-else
-	# this is when we call ytfzf using ytfzf -U
-	session_cache_dir=$cache_dir/$YTFZF_PID
-	thumb_dir=$session_cache_dir/thumbnails
-fi
-
-# files
-: ${ytfzf_selected_ids=$session_cache_dir/ids}
-: ${ytfzf_video_json_file=$session_cache_dir/videos_json}
-
-# }}}
 
 # Scraping {{{
 # * a scraper function takes a search query as $1 and returns video json to file $2
@@ -756,17 +743,15 @@ parse_opt () {
 		L) info_to_print="$info_to_print,L" ;;
 		c) scrape=$optarg ;;
 		I) info_to_print=$optarg ;;
-		v) # set variable
+		"$long_opt_char") # set variable
 			case ${OPTARG%%=*} in
-				is_sort) is_sort=${OPTARG#*=};;
-				video_pref) video_pref=${OPTARG#*=};;
-				is_detach) is_detach=${OPTARG#*=};;
+				is-sort) is_sort=${OPTARG#*=};;
+				video-pref) video_pref=${OPTARG#*=};;
+				is-detach) is_detach=${OPTARG#*=};;
 			esac
 			;;
 	esac
 }
-
-long_opt_char='-'
 
 while getopts "han:dmfc:tI:LTD${long_opt_char}:U" OPT; do
 	case $OPT in
@@ -788,6 +773,29 @@ while getopts "han:dmfc:tI:LTD${long_opt_char}:U" OPT; do
 done
 shift $((OPTIND-1))
 #}}}
+
+# Sessions {{{
+
+# each session has its own cache dir in cache_dir
+# YTFZF_PID: the pid of parent
+if [ -z "$YTFZF_PID" ]; then
+	YTFZF_PID=$$
+	export YTFZF_PID
+	session_cache_dir=$cache_dir/$(printf "%s" "$*" | tr '/' '_')-$YTFZF_PID
+	thumb_dir=$session_cache_dir/thumbnails
+	mkdir -p "$session_cache_dir" "$thumb_dir"
+else
+	# this is when we call ytfzf using ytfzf -U
+	session_cache_dir=$cache_dir/$YTFZF_PID
+	thumb_dir=$session_cache_dir/thumbnails
+fi
+
+# files
+: ${ytfzf_selected_ids=$session_cache_dir/ids}
+: ${ytfzf_video_json_file=$session_cache_dir/videos_json}
+
+# }}}
+
 
 # Main {{{
 : > "$ytfzf_video_json_file"
