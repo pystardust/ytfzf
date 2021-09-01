@@ -759,6 +759,8 @@ while getopts "han:dmfc:tI:LTD${long_opt_char}:U" OPT; do
 			shift $((OPTIND-1))
 			case $1 in
 				preview_img)
+					session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
+					thumb_dir=$session_cache_dir/thumbnails
 					shift
 					preview_img "$@"
 					;;
@@ -786,10 +788,6 @@ if [ -z "$YTFZF_PID" ]; then
 	session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
 	thumb_dir=$session_cache_dir/thumbnails
 	mkdir -p "$session_cache_dir" "$thumb_dir"
-else
-	# this is when we call ytfzf using ytfzf -U
-	session_cache_dir=$cache_dir/SEARCH_PREFIX-$YTFZF_PID
-	thumb_dir=$session_cache_dir/thumbnails
 fi
 
 # files
