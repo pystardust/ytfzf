@@ -12,62 +12,219 @@ The configuration file is a \fI.sh\fR file and can be used as such.
 The file can be completely empty and \fBytfzf\fR will still work with the default settings.
 The options should be set as environment variables.
 
-.SH OPTIONS
-.TP
-.BI is_download=  0 \fR| 1
-Download the selected videos instead of playing them.
-This is the same as the \fB\-d\fR option.
-.TP
-.BI is_audio_only=  0 \fR| 1
-Play or download only audio.
-This is the same as the \fB\-m\fR option.
-.TP
-.BI show_thumbnails=  0 \fR| 1
-Show thumbnails of the videos. This doesn't work with externl menu.
-This is the same as the \fB\-t\fR option.
-.TP
-.BI is_ext_menu=  0 \fR| 1
-Use an external menu instead of fzf.
-This is the same as the \fB\-D\fR option.
-.TP
-.BI is_detach=  0 \fR| 1
-Detach the player from the terminal.
-.TP
-.BI sub_link_count= number
-Set the number of videos to fetch from each subscription.
-.TP
-.B scrape
-Set which scraper to use.
-The currently supported builtin scrapers are
-.IR youtube ,
-.IR youtube-trending ,
-.IR youtube-subscriptions ,
-.IR peertube ,
-.IR odysee / lbry .
-
-.TP
-.B cache_dir
-The cache directory.
-The default is
-.I $HOME/.cache/ytfzf
-
-.SH AUTHOR
-Originally written by pystardust.
-.RI < https://github.com/pystardust >
-
-.SH SEE ALSO
-.BR ytfzf (1)
-
-.SH COPYRIGHT
+.SH CONFIGURATION FILES
 .PP
-\fBytfzf\fR is free software:
-you can redistribute it and/or modify it under the terms of the
-\fIGNU General Public License version 3\fR as published by the Free Software Foundation.
+Configuration files are stored in $HOME/.config/ytfzf/
+
+.SS conf.sh
 .PP
-\fBytfzf\fR is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the GNU General Public License for more details.
+a shell script that gets sourced into ytfzf when ytfzf is run.
+
+.SS subscriptions
 .PP
-You should have received a copy of the GNU General Public License along with \fBytfzf\fR.
-If not, see
-.RI < https://www.gnu.org/licenses/ >.
+a file that is a list of links to youtube channel's video page, such as: https://www.youtube.com/c/SomeOrdinaryGamers/videos.
+.br
+a comment can be created by having
+.br
+    #comment
+.br
+on it's own line, or
+.br
+    link-to-channel #best channel
+.br
+after a link.
+
+
+.SH CONFIGURATION OPTIONS
+
+.SS VARIABLES
+
+.PP
+conf.sh is used mainly for setting variables for ytfzf.
+If a variable has no default, that means it is set to an empty string.
+
+.TP
+\fB$useragent\fR
+.br
+The useragent to use when scraping websites.
+.br
+default:
+.br
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
+
+.TP
+\fB$cache_dir\fR
+.br
+The directory to store cache files in.
+.br
+default:
+.br
+    $HOME/.cache/ytfzf
+
+.TP
+\fB$thumb_dir\fR
+.br
+The directory to store thumbnails in.
+.br
+default:
+.br
+    $cache_dir/thumb
+
+.TP
+\fB$ytfzf_selected_ids\fR
+.br
+The file to store the ids of selected video(s) in.
+.br
+default:
+.br
+    $cache_dir/ids
+
+.TP
+\fB$ytfzf_video_json_file\fR
+.br
+The file to store the json data of scraped videos.
+.br
+default:
+.br
+    $cache_dir/videos_json
+
+.TP
+\fB$is_detach\fR
+.br
+Whether or not to detach the video player from the terminal.
+.br
+default:
+.br
+    0
+
+.TP
+\fB$is_audio_only\fR
+.br
+Whether or not to only play audio.
+.br
+default:
+.br
+    0
+
+.TP
+\fB$is_download\fR
+.br
+Whether or not to download selected video(s) instead of playing them.
+.br
+default:
+.br
+    0
+
+.TP
+\fB$info_to_print\fR
+.br
+The information to print instead of playing a video
+
+.TP
+\fB$video_pref\fR
+.br
+The video preference to use for youtube-dl in mpv
+.br
+default:
+.br
+    best
+    
+.TP
+\fB$is_sort\fR
+.br
+Whether or not to sort scraped videos by date in the menu
+.br
+default:
+.br
+    0
+
+.TP
+\fB$show_thumbnails\fR
+.br
+Whether or not to show thumbnails in fzf.
+.br
+default:
+.br
+    0
+
+.TP
+\fB$is_ext_menu\fR
+.br
+Whether or not to use a menu other than fzf.
+.br
+default:
+.br
+    0
+
+.TP
+\fB$scrape\fR
+.br
+The website to scrape by default.
+.br
+default:
+.br
+    youtube
+
+.TP
+\fB$sub_link_count\fR
+.br
+The amount of videos to scrape per channel when getting subscriptions.
+.br
+default:
+.br
+    10
+
+.SS FUNCTIONS
+.PP
+Sometimes a variable is not good enough, instead functions should be defined.
+To find the default value of these, check the source code by searching for \fIfunction_exists "<function_you_are_looking_for>"\fR
+
+.TP
+\fBexternal_menu()\fR
+.br
+When $is_ext_menu is 1, call this function instead of fzf.
+.br
+This function has no arguments, instead all data is piped into it.
+
+.TP
+\fBvideo_detach_player()\fR
+.br
+When $is_detach is 1, call this function instead of the normal video_player() function.
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+\fBvideo_player()\fR
+.br
+The player that is called by default.
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+\fBaudio_player()\fR
+.br
+The player that is called when $is_audio_only is 1.
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+\fBdownloader()\fR
+.br
+The function that is called when $is_download is 1
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+
+.TP
+\fBget_sort_by()\fR
+.br
+This function is called to get the value to sort by when $is_sort is 1.
+.br
+This function takes in a line in the form of "title    |channel    |duration    |views    |date    |id"
+
+.TP
+\fBdata_sort_fn()\fR
+.br
+This function sorts the data that is being piped into it.
+.br
+This function takes no arguments, all data is piped into it.
