@@ -106,8 +106,11 @@ function_exists "downloader" || downloader () {
 : ${sub_link_count=10}
 
 # Option Checks {{{
-printf '%s' "$long_opt_char" | grep -v '[-v[:punct:]]' && print_info "long_opt_char must be v or non alphanumeric" && die 1
-[ ${#long_opt_char} -ne 1 ] && print_info "long_opt_char must be one character" && die 1
+case "$long_opt_char" in
+        [a-uw-zA-UW-Z0-9]) print_info "long_opt_char must be v or non alphanumeric" && die 1 ;;
+	#? = 1 char, * = 1+ chars; ?* = 2+ chars
+	?*) print_info "long_opt_char must be 1 char" && die 1 ;;
+esac
 #}}}
 
 tab_space=$(printf '\t')
