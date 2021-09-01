@@ -122,7 +122,7 @@ usage () {
 	-d			Download the selected video(s)
 	-m			Only play audio
 	-L			Show the link of selected video(s)
-	-c			The scraper to use,
+	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
 				    youtube/Y, youtube-trending/T, youtube-subscriptions/S,
 				    peertube/P, odysee/lbry/O
@@ -339,6 +339,7 @@ scrape_youtube () {
 
 			{
 				_youtube_search_json_playlist < "$_tmp_json"
+				_youtube_search_json_videos < "$_tmp_json"
 			} >> "$output_json_file"
 			;;
 		trending)
@@ -754,7 +755,9 @@ parse_opt () {
 		t|show-thumbnails) show_thumbnails=1 ;;
 		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit;;
 		L) info_to_print="$info_to_print,L" ;;
-		c) scrape=$optarg ;;
+		c|scrape) scrape=$optarg ;;
+		scrape+) scrape="$scrape,$optarg" ;;
+		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
 		I) info_to_print=$optarg ;;
 		v) # set variable
 			case ${OPTARG%%=*} in
@@ -798,10 +801,11 @@ search="$*"
 print_info 'Scraping site...\n'
 
 scrape_website () {
-    case $curr_scrape in
-	    youtube|Y) scrape_youtube  "$search" "$json_file" ;;
-	    youtube-trending|T) scrape_youtube  "$search" "$json_file" "trending";;
-	    youtube-subscriptions|S)#{{{
+	scrape_type="$1"	
+	case $scrape_type in
+		youtube|Y) scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
+		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
+		youtube-subscriptions|S)#{{{
 		    subscription_file=~/.config/ytfzf/subscriptions
 
 		    if ! [ -f "$subscription_file" ]; then
@@ -823,19 +827,23 @@ scrape_website () {
 		    -e "/^[[:space:]]*$/d" \
 		    -e "s/[[:space:]]*//g" \
 		    "$subscription_file" )
-EOF
+		EOF
 		    wait
 		    ;;#}}}
-	    peertube|P) scrape_peertube "$search" "$json_file" ;;
-	    odysee|lbry|O) scrape_odysee "$search" "$json_file" ;;
-	    *) print_info 'invalid channel\n'; exit 1 ;;
-    esac
+		peertube|P) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
+		odysee|lbry|O) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
+		'') return 1;; #stops the while loop
+		*) print_info "invalid scraper: $scrape_type\n"; exit 1 ;;
+	esac
+	unset scrape_type
+	return 0
 }
 
-for curr_scrape in $(echo "$scrape" | tr ',' ' '); do
-    scrape_website "$curr_scrape"
+#the while loop will be infinite without this
+scrape="$scrape,"
+while scrape_website "${scrape%%,*}"; do
+	scrape="${scrape#*,}"
 done
-unset curr_scrape
 
 case 1 in
 	 "$is_interface_scripting") interface_scripting "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;

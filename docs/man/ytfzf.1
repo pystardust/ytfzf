@@ -58,14 +58,21 @@ Auto\-play a random result,
 .B \-L
 Print the URL of the selected videos.
 .TP
-.BI \-c " scraper"
+.BI \-c " scrapers" ", " "\-\-scrape=scrapers"
 Set which scraper to use.
+Multiple scrapers can be seperated by ,
 The currently supported builtin scrapers are
 .IR youtube ,
 .IR youtube\-trending ,
 .IR youtube\-subscriptions ,
 .IR peertube ,
 .IR odysee / lbry .
+.TP
+.BI "\-\-scrape+=scrapers"
+Same as \-c, but keeps the default scrape as well.
+.TP
+.BI \-\-scraper-=scrapers
+Removes scraper from list of scrapers to use
 .TP
 .BR \-t ", " \-\-show\-thumbnails
 Show thumbnails.
