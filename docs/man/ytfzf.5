@@ -1,0 +1,208 @@
+.TH YTFZF 5 "2021 September" "ytfzf 2.0"
+
+.SH NAME
+ytfzf \- the configuration file for \fBytfzf\fR.
+
+.SH SYNOPSIS
+.I ~/.config/ytfzf/conf.sh
+
+.SH DESCRIPTION
+.PP
+The configuration file is a \fI.sh\fR file and can be used as such.
+The file can be completely empty and \fBytfzf\fR will still work with the default settings.
+The options should be set as environment variables and functions.
+
+.SH CONFIGURATION FILES
+.PP
+Configuration files are stored in
+.IR $HOME/.config/ytfzf/ .
+
+.SS conf.sh
+.PP
+A shell script that gets sourced into ytfzf when ytfzf is run.
+
+.SS subscriptions
+.PP
+A file that is a list of links to youtube channel's video page, such as:
+.RS
+.EX
+.I https://www.youtube.com/c/SomeOrdinaryGamers
+.EE
+.RE
+.PP
+A comment can be created by having '#comment' on it's own line or after a link.
+For example:
+.RS
+.EX
+.I link-to-channel
+#comment
+.IR link-to-channel " #best channel"
+.EE
+.RE
+
+
+.SH CONFIGURATION OPTIONS
+
+.SS VARIABLES
+
+.PP
+conf.sh is used mainly for setting variables for \fBytfzf\fR.
+If a variable has no default, that means it is set to an empty string.
+
+.TP
+.RB $ useragent
+The useragent to use when scraping websites.
+.br
+.RI default: " \(dqMozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36\(dq"
+
+.TP
+.RB $ cache_dir
+The directory to store cache files in.
+.br
+.RI default: " $HOME/.cache/ytfzf"
+
+.TP
+.RB $ thumb_dir
+The directory to store thumbnails in.
+.br
+.RI default: " $cache_dir/thumb"
+
+.TP
+.RB $ ytfzf_selected_ids
+The file to store the ids of selected video(s) in.
+.br
+.RI default: " $cache_dir/ids"
+
+.TP
+.RB $ ytfzf_video_json_file
+The file to store the json data of scraped videos.
+.br
+.RI default: " $cache_dir/videos_json"
+
+.TP
+.RB $ is_detach
+Whether or not to detach the video player from the terminal.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ is_audio_only
+Whether or not to only play audio.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ is_download
+Whether or not to download selected video(s) instead of playing them.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ info_to_print
+The information to print instead of playing a video.
+The available options for this variable are:
+.RS
+.TP
+.IR L " | " l " | " link
+Print the URL of the selected videos.
+.TP
+.IR VJ " | " vj " | " video\-json
+Prints the json of the selected videos.
+.TP
+.IR J " | " j " | " json
+Prints the json of all the videos in the search results.
+.TP
+.IR R " | " r " | " raw
+Prints the data of the selected videos, as appears in the menu.
+.RE
+
+.TP
+.RB $ video_pref
+The video preference to use for youtube-dl in mpv.
+.br
+.RI default: " best"
+    
+.TP
+.RB $ is_sort
+Whether or not to sort scraped videos by date in the menu
+.br
+.RI default: " 0"
+
+.TP
+.RB $ show_thumbnails
+Whether or not to show thumbnails in fzf.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ is_ext_menu
+Whether or not to use a menu other than fzf.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ scrape
+The website to scrape by default.
+The currently supported options are
+.IR youtube ,
+.IR youtube\-trending ,
+.IR youtube\-subscriptions ,
+.IR peertube ,
+.IR odysee / lbry .
+.br
+.RI default: " youtube"
+
+.TP
+.RB $ sub_link_count
+The amount of videos to scrape per channel when getting subscriptions.
+.br
+.RI default: " 10"
+
+.SS FUNCTIONS
+.PP
+Sometimes a variable is not good enough, instead functions should be defined.
+To find the default value of these, check the source code by searching for
+.IR "function_exists \(dq<function_you_are_looking_for>\(dq" .
+
+.TP
+.BR external_menu ()
+When $\fBis_ext_menu\fR is \fI1\fR, call this function instead of fzf.
+.br
+This function has no arguments, instead all data is piped into it.
+
+.TP
+.BR video_detach_player ()
+When $\fBis_detach\fR is \fI1\fR, call this function instead of the normal \fBvideo_player\fR() function.
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+.BR video_player ()
+The player that is called by default.
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+.BR audio_player ()
+The player that is called when $\fBis_audio_only\fR is \fI1\fR.
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+.BR downloader ()
+The function that is called when $\fBis_download\fR is \fI1\fR.
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+.BR get_sort_by ()
+This function is called to get the value to sort by when $\fBis_sort\fR is \fI1\fR.
+.br
+This function takes in a line in the form of
+.IR "\(dqtitle    |channel    |duration    |views    |date    |id\(dq" .
+
+.TP
+.BR data_sort_fn ()
+This function sorts the data that is being piped into it.
+.br
+This function takes no arguments, all data is piped into it.
