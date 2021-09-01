@@ -16,25 +16,25 @@ function_exists () {
 	type "$1" > /dev/null 2>&1
 }
 
+
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
 	printf "$1" >&2
 }
 
+clean_up () {
+	print_info "cleaning up\n"
+	# clean up only as parent process
+	if [ "$YTFZF_PID" = "$$" ]; then
+		[ -d "$session_cache_dir" ] && rm -r "$session_cache_dir"
+	fi
+}
+
 die () {
 	_return_status=$1
 	printf "$2" >&2
-	clean_up
 	exit "$_return_status"
 }
-
-
-# Clean up {{{
-clean_up () {
-    rm "$ytfzf_video_json_file"
-    rm "$ytfzf_selected_ids"
-}
-#}}}
 
 trim_id () {
 	while IFS= read _line;do
@@ -42,13 +42,12 @@ trim_id () {
 	done
 }
 
+
 # }}}
 
 # Global Variables and Start Up {{{
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 : ${cache_dir=$HOME/.cache/ytfzf}
-: ${thumb_dir=$cache_dir/thumb}
-[ -d "$cache_dir" ] || mkdir -p "$cache_dir"
 
 # menu options
 #the menu to use instead of fzf when -D is specified
@@ -77,10 +76,6 @@ function_exists "downloader" || downloader () {
 
 # directories
 : ${cache_dir=$HOME/.cache/ytfzf}
-
-# files
-: ${ytfzf_selected_ids=$cache_dir/ids}
-: ${ytfzf_video_json_file=$cache_dir/videos_json}
 
 # format options
 #variable for switching on sort (date)
@@ -143,6 +138,31 @@ usage () {
 				
 "
 }
+
+# Sessions {{{
+
+trap 'clean_up' EXIT
+trap 'exit' INT TERM HUP
+
+# each session has its own cache dir in cache_dir
+# YTFZF_PID: the pid of parent
+if [ -z "$YTFZF_PID" ]; then
+	YTFZF_PID=$$
+	export YTFZF_PID
+	session_cache_dir=$cache_dir/$YTFZF_PID
+	thumb_dir=$session_cache_dir/thumbnails
+	mkdir -p "$session_cache_dir" "$thumb_dir"
+else
+	# this is when we call ytfzf using ytfzf -U
+	session_cache_dir=$cache_dir/$YTFZF_PID
+	thumb_dir=$session_cache_dir/thumbnails
+fi
+
+# files
+: ${ytfzf_selected_ids=$session_cache_dir/ids}
+: ${ytfzf_video_json_file=$session_cache_dir/videos_json}
+
+# }}}
 
 # Scraping {{{
 # * a scraper function takes a search query as $1 and returns video json to file $2
@@ -520,26 +540,25 @@ interface_text () {
 
 # External interface {{{
 interface_external () {
-       video_json_file=$1
-       selected_id_file=$2
+	video_json_file=$1
+	selected_id_file=$2
 
-       # video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
-       TTY_COLS=$external_menu_len
-       title_len=$((TTY_COLS/2))
-       channel_len=$((TTY_COLS/5))
-       dur_len=7
-       view_len=10
-       date_len=100
+	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
+	TTY_COLS=$external_menu_len
+	title_len=$((TTY_COLS/2))
+	channel_len=$((TTY_COLS/5))
+	dur_len=7
+	view_len=10
+	date_len=100
 
-
-       jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
-               sort_video_data_fn |
-               while IFS=$tab_space read title channel duration views date shorturl
-               do
-                       video_info_text
-               done | tr -d "$tab_space" |
-               external_menu |
-               trim_id > "$selected_id_file"
+	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
+		sort_video_data_fn |
+		while IFS=$tab_space read title channel duration views date shorturl
+		do
+			video_info_text
+		done | tr -d "$tab_space" |
+		external_menu |
+		trim_id > "$selected_id_file"
 }
 #}}}
 
@@ -604,7 +623,6 @@ preview_img () {
 
 	thumbnail_video_info_text "$id"
 	preview_display_image "$thumbnail_viewer" "$id"
-	exit
 }
 
 interface_thumbnails () {
@@ -747,6 +765,7 @@ while getopts 'han:dmfc:tI:LTDv:U:' OPT; do
 					preview_img "$@"
 					;;
 			esac
+			exit
 			;;
 	esac
 done
@@ -754,7 +773,6 @@ shift $((OPTIND-1))
 #}}}
 
 # Main {{{
-#provide easy access to the id, and json
 : > "$ytfzf_video_json_file"
 : > "$ytfzf_selected_ids"
 
@@ -801,7 +819,5 @@ esac
 
 [ -f "$ytfzf_selected_ids" ] && player "$ytfzf_video_json_file" "$ytfzf_selected_ids"
 #}}}
-
-clean_up
 
 # vim:foldmethod=marker
