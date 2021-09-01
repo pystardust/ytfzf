@@ -18,18 +18,42 @@ and opens/downloads them using mpv/youtube\-dl.
 
 .SH OPTIONS
 .TP
-.B \-h
+.BR \-h ", " \-\-help
 Show help text.
 .TP
-.B \-d
+.BR \-v
+Show ytfzf's version.
+.TP
+.BR \-d ", " \-\-download
 Download the selected videos.
 This can also be set in the config file with
 .BR is_download .
 .TP
-.BR \-m
+.BR \-m ", " \-\-audio\-only
 Play audio only.
 This can also be set in the config file with
 .BR is_audio_only .
+.TP
+.BR \-f ", " \-\-formats
+Show available formats before proceeding.
+.TP
+.BR \-H ", " \-\-history
+Choose video from history.
+.TP
+.BR \-x ", " \-\-history\-clear
+Clear history.
+.TP
+.BR \-q ", " \-\-search\-history
+Open a menu to choose a query from search history.
+.TP
+.BR \-a ", " \-\-auto\-select
+Auto\-play the first result,
+.TP
+.BR \-A ", " \-\-select\-all
+Select all results.
+.TP
+.BR \-r ", " \-\-random\-select
+Auto\-play a random result,
 .TP
 .B \-L
 Print the URL of the selected videos.
@@ -38,23 +62,25 @@ Print the URL of the selected videos.
 Set which scraper to use.
 The currently supported builtin scrapers are
 .IR youtube ,
-.IR youtube-trending ,
-.IR youtube-subscriptions ,
+.IR youtube\-trending ,
+.IR youtube\-subscriptions ,
 .IR peertube ,
 .IR odysee / lbry .
 .TP
-.B \-t
+.BR \-t ", " \-\-show\-thumbnails
 Show thumbnails.
-Doesn't work with
-.BR \-D .
+Doesn't work with \fB\-D\fR or \fB\-H\fR.
 This can also be set in the config file with
 .BR show_thumbnails .
 .TP
-.B \-D
+.BR \-D ", " \-\-external\-menu
 Use an external menu instead of fzf.
 The default is \fIdmenu\fR.
 This can also be set in the config file with
 .BR is_ext_menu .
+.TP
+.BR \-n ", " \-\-link\-count=\fInumber
+The \fInumber\fR of videos to select with \fB\-a\fR or \fB\-r\fR.
 .TP
 .BI \-I " option"
 Instead of playing the selected videos,
@@ -65,7 +91,7 @@ The available options are:
 .IR L | l | link
 Print the URL of the selected videos.
 .TP
-.IR VJ | vj | video-json
+.IR VJ | vj | video\-json
 Prints the json of the selected videos.
 .TP
 .IR J | j | json
