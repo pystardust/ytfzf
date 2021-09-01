@@ -1,0 +1,71 @@
+.TH YTFZF 5 "2021 September" "ytfzf 2.0"
+
+.SH NAME
+ytfzf \- the configuration file for \fBytfzf\fR.
+
+.SH SYNOPSIS
+.I ~/.config/ytfzf/conf.sh
+
+.SH DESCRIPTION
+The configuration file is a \fI.sh\fR file and can be used as such.
+The file can be completely empty and \fBytfzf\fR will still work with the default settings.
+The options should be set as environment variables.
+
+.SH OPTIONS
+.TP
+.BI is_download=  0 \fR| 1
+Download the selected videos instead of playing them.
+This is the same as the \fB\-d\fR option.
+.TP
+.BI is_audio_only=  0 \fR| 1
+Play or download only audio.
+This is the same as the \fB\-m\fR option.
+.TP
+.BI show_thumbnails=  0 \fR| 1
+Show thumbnails of the videos. This doesn't work with externl menu.
+This is the same as the \fB\-t\fR option.
+.TP
+.BI is_ext_menu=  0 \fR| 1
+Use an external menu instead of fzf.
+This is the same as the \fB\-D\fR option.
+.TP
+.BI is_detach=  0 \fR| 1
+Detach the player from the terminal.
+.TP
+.BI sub_link_count= number
+Set the number of videos to fetch from each subscription.
+.TP
+.B scrape
+Set which scraper to use.
+The currently supported builtin scrapers are
+.IR youtube ,
+.IR youtube-trending ,
+.IR youtube-subscriptions ,
+.IR peertube ,
+.IR odysee / lbry .
+
+.TP
+.B cache_dir
+The cache directory.
+The default is
+.I $HOME/.cache/ytfzf
+
+.SH AUTHOR
+Originally written by pystardust.
+<https://github.com/pystardust>
+
+.SH SEE ALSO
+.BR ytfzf (1)
+
+.SH COPYRIGHT
+.PP
+\fBytfzf\fR is free software:
+you can redistribute it and/or modify it under the terms of the
+\fIGNU General Public License version 3\fR as published by the Free Software Foundation.
+.PP
+\fBytfzf\fR is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+.PP
+You should have received a copy of the GNU General Public License along with \fBytfzf\fR.
+If not, see <https://www.gnu.org/licenses/>.

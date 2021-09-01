@@ -1,0 +1,113 @@
+.TH YTFZF 1 "2021 September" "ytfzf 2.0"
+
+.SH NAME
+ytfzf \- search and play videos
+
+.SH SYNOPSIS
+.SY ytfzf
+.RI [ options ]
+.RI [ search\-query ]
+
+.SH DESCRIPTION
+.B ytfzf
+is a POSIX script that helps you find videos
+from Youtube, Peertube or Odysee
+(without API)
+and opens/downloads them using mpv/youtube\-dl.
+
+.SH OPTIONS
+.TP
+.B \-h
+Show help text.
+.TP
+.B \-d
+Download the selected videos.
+This can also be set in the config file with
+.BR is_download .
+.TP
+.BR \-m
+Play audio only.
+This can also be set in the config file with
+.BR is_audio_only .
+.TP
+.B \-L
+Print the URL of the selected videos.
+.TP
+.BI \-c " scraper"
+Set which scraper to use.
+The currently supported builtin scrapers are
+.IR youtube ,
+.IR youtube-trending ,
+.IR youtube-subscriptions ,
+.IR peertube ,
+.IR odysee / lbry .
+.TP
+.B \-t
+Show thumbnails.
+Doesn't work with
+.BR \-D .
+This can also be set in the config file with
+.BR show_thumbnails .
+.TP
+.B \-D
+Use an external menu instead of fzf.
+The default is \fIdmenu\fR.
+This can also be set in the config file with
+.BR is_ext_menu .
+.TP
+.BI \-I " option"
+Instead of playing the selected videos,
+get information about them in the selected format.
+The available options are:
+.RS
+.TP
+.IR L | l | link
+Print the URL of the selected videos.
+.TP
+.IR VJ | vj | video-json
+Prints the json of the selected videos.
+.TP
+.IR J | j | json
+Prints the json of all the videos in the search results.
+.TP
+.IR R | r | raw
+Prints the data of the selected videos, as appears in the menu.
+.RE
+
+.SH CONFIGURATION
+The default behaviour of \fBytfzf\fR can be changed by modifying the config file.
+See \fBytfzf\fR(5) for more information.
+
+.SH ENVIRONMENT
+.TP
+.B YTFZF_CONFIG_DIR
+The directory to store config files.
+The default is
+.I ~/.config/ytfzf
+.TP
+.B YTFZF_CONFIG_FILE
+The configuration file to use.
+The defualt is
+.I $YTFZF_CONFIG_DIR/conf.sh
+
+.SH AUTHOR
+Originally written by pystardust. <https://github.com/pystardust>
+
+.SH SEE ALSO
+.BR ytfzf (5)
+.BR youtub\-dl (1),
+.BR fzf (1)
+.BR dmenu (1)
+
+.SH COPYRIGHT
+.PP
+\fBytfzf\fR is free software:
+you can redistribute it and/or modify it under the terms of the
+\fIGNU General Public License version 3\fR as published by the Free Software Foundation.
+.PP
+\fBytfzf\fR is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details.
+.PP
+You should have received a copy of the GNU General Public License along with \fBytfzf\fR.
+If not, see <https://www.gnu.org/licenses/>.
