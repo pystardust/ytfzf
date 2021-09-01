@@ -780,13 +780,15 @@ shift $((OPTIND-1))
 # YTFZF_PID: the pid of parent
 if [ -z "$YTFZF_PID" ]; then
 	YTFZF_PID=$$
+	SEARCH_PREFIX=$(printf "%s" "$*" | tr '/' '_')
 	export YTFZF_PID
-	session_cache_dir=$cache_dir/$(printf "%s" "$*" | tr '/' '_')-$YTFZF_PID
+	export SEARCH_PREFIX
+	session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
 	thumb_dir=$session_cache_dir/thumbnails
 	mkdir -p "$session_cache_dir" "$thumb_dir"
 else
 	# this is when we call ytfzf using ytfzf -U
-	session_cache_dir=$cache_dir/$(printf "%s" "$*" | tr '/' '_')-$YTFZF_PID
+	session_cache_dir=$cache_dir/SEARCH_PREFIX-$YTFZF_PID
 	thumb_dir=$session_cache_dir/thumbnails
 fi
 
