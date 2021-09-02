@@ -109,7 +109,7 @@ function_exists "downloader" || downloader () {
 case "$long_opt_char" in
         [a-uw-zA-UW-Z0-9]) print_info "long_opt_char must be v or non alphanumeric" && die 1 ;;
 	#? = 1 char, * = 1+ chars; ?* = 2+ chars
-	?*) print_info "long_opt_char must be 1 char" && die 1 ;;
+	??*) print_info "long_opt_char must be 1 char" && die 1 ;;
 esac
 #}}}
 
@@ -453,7 +453,6 @@ function_exists "data_sort_fn" || data_sort_fn () {
 }
 
 sort_video_data_fn () {
-
 	if [ $is_sort -eq 1 ]; then
 		while IFS= read -r line
 		do
@@ -746,13 +745,10 @@ parse_opt () {
 		L) info_to_print="$info_to_print,L" ;;
 		c) scrape=$optarg ;;
 		I) info_to_print=$optarg ;;
-		"$long_opt_char") # set variable
-			case ${OPTARG%%=*} in
-				is-sort) is_sort=${OPTARG#*=};;
-				video-pref) video_pref=${OPTARG#*=};;
-				is-detach) is_detach=${OPTARG#*=};;
-			esac
-			;;
+		#long-opt exclusives
+		is-sort) is_sort=$optarg ;;
+		video-pref) video_pref=$optarg ;;
+		is-detach) is_detach=$optarg ;;
 	esac
 }
 
