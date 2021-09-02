@@ -817,7 +817,7 @@ scrape_website () {
 			    {
 				    _tmp_subfile=$(mktemp)
 				    scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
-				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$json_file"
+				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 				    rm "$_tmp_subfile"
 			    } &
 			    sleep 0.01
