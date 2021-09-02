@@ -61,6 +61,8 @@ function_exists "external_menu" || external_menu () {
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len=210}
 
+: ${search_prompt=Search: }
+
 # Players
 function_exists "video_detach_player" || video_detach_player () {
 	setsid -f mpv --ytdl-format="$video_pref" "$@" 1>/dev/null 2>&1
@@ -775,13 +777,21 @@ done
 shift $((OPTIND-1))
 #}}}
 
+# Get search{{{
+case "$*" in
+	-) print_info "Reading stdin\n"; read -r search ;;
+	'') echo "$search_prompt"; read -r search ;; #this will read stdin if - is not given
+	*) search="$*" ;;
+esac
+#}}}
+
 # Sessions {{{
 
 # each session has its own cache dir in cache_dir
 # YTFZF_PID: the pid of parent
 if [ -z "$YTFZF_PID" ]; then
 	YTFZF_PID=$$
-	SEARCH_PREFIX=$(printf "%s" "$*" | tr '/' '_')
+	SEARCH_PREFIX=$(printf "%s" "$search" | tr '/' '_')
 	export YTFZF_PID
 	export SEARCH_PREFIX
 	session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
@@ -795,16 +805,16 @@ fi
 
 # }}}
 
-
 # Main {{{
+
 : > "$ytfzf_video_json_file"
 : > "$ytfzf_selected_ids"
 
 print_info 'Scraping site...\n'
 
 case $scrape in
-	youtube) scrape_youtube  "$*" "$ytfzf_video_json_file" ;;
-	youtube-trending) scrape_youtube  "$*" "$ytfzf_video_json_file" "trending";;
+	youtube) scrape_youtube  "$search" "$ytfzf_video_json_file" ;;
+	youtube-trending) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
 	youtube-subscriptions)#{{{
 		subscription_file=~/.config/ytfzf/subscriptions
 
@@ -829,8 +839,8 @@ case $scrape in
 		EOF
 		wait
 		;;#}}}
-	peertube) scrape_peertube "$*" "$ytfzf_video_json_file" ;;
-	odysee|lbry) scrape_odysee "$*" "$ytfzf_video_json_file" ;;
+	peertube) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
+	odysee|lbry) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
 	*) die 1 'invalid channel\n';;
 esac
 
