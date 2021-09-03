@@ -73,8 +73,8 @@ function_exists "audio_player" || audio_player () {
 }
 function_exists "downloader" || downloader () {
 	case $is_audio_only in
-	    0) youtube-dl -f "${video_pref}" $ytdl_opts "$@"	;;
-	    1) youtube-dl -x $ytdl_opts "$@" ;;
+	    0) ${ytdl_path:-youtube-dl} -f "${video_pref}" $ytdl_opts "$@"	;;
+	    1) ${ytdl_path:-youtube-dl} -x $ytdl_opts "$@" ;;
 	esac
 }
 
@@ -753,6 +753,7 @@ parse_opt () {
 		video-pref) video_pref=$optarg ;;
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;
+		ytdl-path) ytdl_path="$optarg" ;;
 	esac
 }
 
