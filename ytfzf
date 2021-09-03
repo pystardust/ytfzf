@@ -727,28 +727,31 @@ player () {
 parse_opt () {
 	opt=$1
 	optarg=$2
+	#for some reason optarg may equal opt intentionally,
+	#this checks the unmodified optarg, which will only be equal if there is no = sign
+	[ "$opt" = "$OPTARG" ] && optarg=""
 	case $opt in
 		h|help) usage; exit ;;
-		D|external-menu) is_ext_menu=1 ;;
-		m|audio-only) is_audio_only=1 ;;
-		d|download) is_download=1 ;;
+		D|external-menu) is_ext_menu=${optarg:-1} ;;
+		m|audio-only) is_audio_only=${optarg:-1} ;;
+		d|download) is_download=${optarg:-1} ;;
 		f|formats) : ;; # TODO
 		H|history) : ;; # TODO
 		x|history-clear) : ;; # TODO
 		q|search-history) : ;; # TODO
-		a|auto-select) is_interface_scripting=1; is_auto_select=1 ;;
-		A|select-all) is_interface_scripting=1; is_auto_select=1; scripting_video_count=100 ;;
-		r|random-select) is_interface_scripting=1;is_random_select=1 ;; 
+		a|auto-select) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1} ;;
+		A|select-all) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1}; scripting_video_count=100 ;;
+		r|random-select) is_interface_scripting=${optarg:-1};is_random_select=${optarg:-1} ;; 
 		n|link-count) scripting_video_count=$optarg;; 
-		t|show-thumbnails) show_thumbnails=1 ;;
+		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
 		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit;;
 		L) info_to_print="$info_to_print,L" ;;
 		c) scrape=$optarg ;;
 		I) info_to_print=$optarg ;;
 		#long-opt exclusives
-		is-sort) is_sort=$optarg ;;
+		sort) is_sort=${optarg:-1} ;;
 		video-pref) video_pref=$optarg ;;
-		is-detach) is_detach=$optarg ;;
+		detach) is_detach=${optarg:-1} ;;
 	esac
 }
 
@@ -768,7 +771,7 @@ while getopts "han:dmfc:tI:LTD${long_opt_char}:U" OPT; do
 			;;
 		"$long_opt_char")
 			parse_opt "${OPTARG%%=*}" "${OPTARG#*=}" ;;
-			*)
+		*)
 			parse_opt "${OPT}" "${OPTARG}" ;;
 	esac
 done
