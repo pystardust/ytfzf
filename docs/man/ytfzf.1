@@ -64,6 +64,15 @@ Auto\-play a random result,
 .B \-L
 Print the URL of the selected videos.
 .TP
+.BI \-\-ytdl\-opts= option
+Pass command\-line options to youtube\-dl when downloading.
+.EX
+.RB "example: " \-\-ytdl\-opts= "\fI\'\-o ~/Videos/%(title)s.%(ext)s\'"
+.EE
+.TP
+.BI \-\-ytdl\-path= path
+Specify the path to youtube\-dl or a fork of youtube\-dl for downloading.
+.TP
 .BI \-c " scraper"
 Set which scraper to use.
 The currently supported builtin scrapers are
