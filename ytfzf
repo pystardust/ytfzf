@@ -727,7 +727,9 @@ player () {
 parse_opt () {
 	opt=$1
 	optarg=$2
-	[ "$opt" = "$optarg" ] && optarg=""
+	#for some reason optarg may equal opt intentionally,
+	#this checks the unmodified optarg, which will only be equal if there is no = sign
+	[ "$opt" = "$OPTARG" ] && optarg=""
 	case $opt in
 		h|help) usage; exit ;;
 		D|external-menu) is_ext_menu=${optarg:-1} ;;
