@@ -81,6 +81,12 @@ function_exists "downloader" || downloader () {
 # directories
 : ${cache_dir=$HOME/.cache/ytfzf}
 
+# files
+: ${hist_file:=$cache_dir/watch_hist}
+
+# history
+: ${enable_hist=1}
+
 # format options
 #variable for switching on sort (date)
 : ${is_detach=0}
@@ -432,6 +438,13 @@ scrape_odysee () {
 }
 ## }}}
 
+# History{{{
+scrape_history () {
+	output_json_file="$2"
+	enable_hist=0 #enabling history while scrape is history causes issues
+	cat "$hist_file" > "$output_json_file" 2>/dev/null
+}
+#}}}
 
 # }}}
 
@@ -465,6 +478,24 @@ sort_video_data_fn () {
 }
 #}}}
 
+# History Management {{{
+add_to_hist () {
+	read -r id
+	[ $enable_hist -eq 1 ] && [ -n "$id" ] && {
+		json_to_add="$(jq '.[]|select(.ID=="'"$id"'")' < "$video_json_file")"
+		[ -n "$json_to_add" ] && printf '[\n%s\n]' "$json_to_add" >> "$hist_file"
+	}
+	echo "$id" 
+	unset json_to_add hist_data id
+}
+
+clear_hist () {
+	#start with empty array
+	: > "$hist_file"
+}
+
+#}}}
+
 # User Interface {{{
 # Takes video json file as $1 and returns the selected video IDs to file $2
 video_info_text () {
@@ -490,12 +521,13 @@ thumbnail_video_info_text () {
 interface_scripting () {
 	video_json_file=$1
 	selected_id_file=$2
+	data_string_template='.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"'
 	case 1 in
 		"$is_auto_select")
-		jq -r '.[]|.ID' < "$video_json_file"  | head -n "$scripting_video_count" > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | head -n "$scripting_video_count" |  trim_id  | add_to_hist > "$selected_id_file"
 			;;
 		"$is_random_select")
-		jq -r '.[]|.ID' < "$video_json_file"  | shuf | head -n "$scripting_video_count" > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | shuf | head -n "$scripting_video_count" | trim_id | add_to_hist > "$selected_id_file"
 			;;
 	esac
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
@@ -523,7 +555,7 @@ interface_text () {
 		done |
 		column -t -s "$tab_space" |
 		fzf -m --tabstop=1 --layout=reverse |
-		trim_id > "$selected_id_file"
+		trim_id | add_to_hist > "$selected_id_file"
 }
 #}}}
 
@@ -547,7 +579,7 @@ interface_external () {
 			video_info_text
 		done | tr -d "$tab_space" |
 		external_menu |
-		trim_id > "$selected_id_file"
+		trim_id | add_to_hist > "$selected_id_file"
 }
 #}}}
 
@@ -643,7 +675,7 @@ interface_thumbnails () {
 	fzf -m \
 	--preview "sh $0 -U preview_img '""$thumbnail_viewer""' {} '""$video_json_file""'" \
 	--preview-window "left:50%:wrap" --layout=reverse |
-	trim_id > "$selected_id_file"
+	trim_id | add_to_hist > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
 
@@ -736,8 +768,8 @@ parse_opt () {
 		m|audio-only) is_audio_only=${optarg:-1} ;;
 		d|download) is_download=${optarg:-1} ;;
 		f|formats) : ;; # TODO
-		H|history) : ;; # TODO
-		x|history-clear) : ;; # TODO
+		H|history) scrape="H" ;; # TODO
+		x|history-clear) clear_hist; exit 0 ;;
 		q|search-history) : ;; # TODO
 		a|auto-select) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1} ;;
 		A|select-all) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1}; scripting_video_count=100 ;;
@@ -755,7 +787,7 @@ parse_opt () {
 	esac
 }
 
-while getopts "han:dmfc:tI:LTD${long_opt_char}:U" OPT; do
+while getopts "ac:dfhmn:rtxADHI:LTU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
@@ -806,6 +838,7 @@ fi
 print_info 'Scraping site...\n'
 
 case $scrape in
+	history|H) [ $enable_hist -eq 0 ] && print_info "enable_hist must be set to 1 for this option" || scrape_history "" "$ytfzf_video_json_file" ;;
 	youtube) scrape_youtube  "$*" "$ytfzf_video_json_file" ;;
 	youtube-trending) scrape_youtube  "$*" "$ytfzf_video_json_file" "trending";;
 	youtube-subscriptions)#{{{
