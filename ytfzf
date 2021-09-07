@@ -42,6 +42,10 @@ trim_id () {
 	done
 }
 
+# Traps {{{
+trap 'clean_up' EXIT
+trap 'exit' INT TERM HUP
+#}}}
 
 # }}}
 
@@ -69,8 +73,8 @@ function_exists "audio_player" || audio_player () {
 }
 function_exists "downloader" || downloader () {
 	case $is_audio_only in
-	    0) youtube-dl -f "${video_pref}" "$@"	;;
-	    1) youtube-dl -x "$@" ;;
+	    0) ${ytdl_path:-youtube-dl} -f "${video_pref}" $ytdl_opts "$@"	;;
+	    1) ${ytdl_path:-youtube-dl} -x $ytdl_opts "$@" ;;
 	esac
 }
 
@@ -94,10 +98,20 @@ function_exists "downloader" || downloader () {
 : ${is_auto_select=0}
 : ${is_random_select=0}
 
+# option parsing
+: ${long_opt_char:=-}
 
 # scrape
 : ${scrape=youtube}
 : ${sub_link_count=10}
+
+# Option Checks {{{
+case "$long_opt_char" in
+        [a-uw-zA-UW-Z0-9]) print_info "long_opt_char must be v or non alphanumeric" && die 1 ;;
+	#? = 1 char, * = 1+ chars; ?* = 2+ chars
+	??*) print_info "long_opt_char must be 1 char" && die 1 ;;
+esac
+#}}}
 
 tab_space=$(printf '\t')
 gap_space="                                                                   "
@@ -140,30 +154,6 @@ usage () {
 "
 }
 
-# Sessions {{{
-
-trap 'clean_up' EXIT
-trap 'exit' INT TERM HUP
-
-# each session has its own cache dir in cache_dir
-# YTFZF_PID: the pid of parent
-if [ -z "$YTFZF_PID" ]; then
-	YTFZF_PID=$$
-	export YTFZF_PID
-	session_cache_dir=$cache_dir/$YTFZF_PID
-	thumb_dir=$session_cache_dir/thumbnails
-	mkdir -p "$session_cache_dir" "$thumb_dir"
-else
-	# this is when we call ytfzf using ytfzf -U
-	session_cache_dir=$cache_dir/$YTFZF_PID
-	thumb_dir=$session_cache_dir/thumbnails
-fi
-
-# files
-: ${ytfzf_selected_ids=$session_cache_dir/ids}
-: ${ytfzf_video_json_file=$session_cache_dir/videos_json}
-
-# }}}
 
 # Scraping {{{
 # * a scraper function takes a search query as $1 and returns video json to file $2
@@ -464,7 +454,6 @@ function_exists "data_sort_fn" || data_sort_fn () {
 }
 
 sort_video_data_fn () {
-
 	if [ $is_sort -eq 1 ]; then
 		while IFS= read -r line
 		do
@@ -653,7 +642,7 @@ interface_thumbnails () {
 	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.ID]|@tsv' < "$video_json_file" |
 	sort_video_data_fn |
 	fzf -m \
-	--preview "sh $0 -U preview_img '"$thumbnail_viewer"' {} '"$video_json_file"'" \
+	--preview "sh $0 -U preview_img '""$thumbnail_viewer""' {} '""$video_json_file""'" \
 	--preview-window "left:50%:wrap" --layout=reverse |
 	trim_id > "$selected_id_file"
 
@@ -739,37 +728,37 @@ player () {
 parse_opt () {
 	opt=$1
 	optarg=$2
+	#for some reason optarg may equal opt intentionally,
+	#this checks the unmodified optarg, which will only be equal if there is no = sign
+	[ "$opt" = "$OPTARG" ] && optarg=""
 	case $opt in
 		h|help) usage; exit ;;
-		D|external-menu) is_ext_menu=1 ;;
-		m|audio-only) is_audio_only=1 ;;
-		d|download) is_download=1 ;;
+		D|external-menu) is_ext_menu=${optarg:-1} ;;
+		m|audio-only) is_audio_only=${optarg:-1} ;;
+		d|download) is_download=${optarg:-1} ;;
 		f|formats) : ;; # TODO
 		H|history) : ;; # TODO
 		x|history-clear) : ;; # TODO
 		q|search-history) : ;; # TODO
-		a|auto-select) is_interface_scripting=1; is_auto_select=1 ;;
-		A|select-all) is_interface_scripting=1; is_auto_select=1; scripting_video_count=100 ;;
-		r|random-select) is_interface_scripting=1;is_random_select=1 ;; 
+		a|auto-select) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1} ;;
+		A|select-all) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1}; scripting_video_count=100 ;;
+		r|random-select) is_interface_scripting=${optarg:-1};is_random_select=${optarg:-1} ;; 
 		n|link-count) scripting_video_count=$optarg;; 
-		t|show-thumbnails) show_thumbnails=1 ;;
+		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
 		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit;;
 		L) info_to_print="$info_to_print,L" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
 		I) info_to_print=$optarg ;;
-		v) # set variable
-			case ${OPTARG%%=*} in
-				is_sort) is_sort=${OPTARG#*=};;
-				video_pref) video_pref=${OPTARG#*=};;
-				is_detach) is_detach=${OPTARG#*=};;
-			esac
-			;;
+		#long-opt exclusives
+		sort) is_sort=${optarg:-1} ;;
+		video-pref) video_pref=$optarg ;;
+		detach) is_detach=${optarg:-1} ;;
+		ytdl-opts) ytdl_opts="$optarg" ;;
+		ytdl-path) ytdl_path="$optarg" ;;
 	esac
 }
-
-long_opt_char='-'
 
 while getopts "han:dmfc:tI:LTD${long_opt_char}:U" OPT; do
 	case $OPT in
@@ -777,6 +766,8 @@ while getopts "han:dmfc:tI:LTD${long_opt_char}:U" OPT; do
 			shift $((OPTIND-1))
 			case $1 in
 				preview_img)
+					session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
+					thumb_dir=$session_cache_dir/thumbnails
 					shift
 					preview_img "$@"
 					;;
@@ -785,12 +776,33 @@ while getopts "han:dmfc:tI:LTD${long_opt_char}:U" OPT; do
 			;;
 		"$long_opt_char")
 			parse_opt "${OPTARG%%=*}" "${OPTARG#*=}" ;;
-			*)
+		*)
 			parse_opt "${OPT}" "${OPTARG}" ;;
 	esac
 done
 shift $((OPTIND-1))
 #}}}
+
+# Sessions {{{
+
+# each session has its own cache dir in cache_dir
+# YTFZF_PID: the pid of parent
+if [ -z "$YTFZF_PID" ]; then
+	YTFZF_PID=$$
+	SEARCH_PREFIX=$(printf "%s" "$*" | tr '/' '_')
+	export YTFZF_PID
+	export SEARCH_PREFIX
+	session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
+	thumb_dir=$session_cache_dir/thumbnails
+	mkdir -p "$session_cache_dir" "$thumb_dir"
+fi
+
+# files
+: ${ytfzf_selected_ids=$session_cache_dir/ids}
+: ${ytfzf_video_json_file=$session_cache_dir/videos_json}
+
+# }}}
+
 
 # Main {{{
 : > "$ytfzf_video_json_file"

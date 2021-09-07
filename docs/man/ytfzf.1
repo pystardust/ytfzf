@@ -34,6 +34,12 @@ Play audio only.
 This can also be set in the config file with
 .BR is_audio_only .
 .TP
+.BR \-\-sort
+Sorts videos by upload date.
+.TP
+.BR \-\-detach
+Detach the video player from the terminal.
+.TP
 .BR \-f ", " \-\-formats
 Show available formats before proceeding.
 .TP
@@ -57,6 +63,15 @@ Auto\-play a random result,
 .TP
 .B \-L
 Print the URL of the selected videos.
+.TP
+.BI \-\-ytdl\-opts= option
+Pass command\-line options to youtube\-dl when downloading.
+.EX
+.RB "example: " \-\-ytdl\-opts= "\fI\'\-o ~/Videos/%(title)s.%(ext)s\'"
+.EE
+.TP
+.BI \-\-ytdl\-path= path
+Specify the path to youtube\-dl or a fork of youtube\-dl for downloading.
 .TP
 .BI \-c " scrapers" ", " "\-\-scrape=scrapers"
 Set which scraper to use.
