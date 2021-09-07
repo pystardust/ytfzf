@@ -104,6 +104,12 @@ cd ytfzf
 sudo make install
 ```
 
++ **To install the man pages**
+
+```sh
+sudo make man
+```
+
 + **Uninstall with the Makefile**
 
 ```sh
