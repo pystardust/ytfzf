@@ -136,10 +136,11 @@ usage () {
 	-d			Download the selected video(s)
 	-m			Only play audio
 	-L			Show the link of selected video(s)
-	-c			The scraper to use,
+	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
-				    youtube, youtube-trending, youtube-subscriptions,
-				    peertube, odysee/lbry
+				    youtube/Y, youtube-trending/T, youtube-subscriptions/S,
+				    peertube/P, odysee/lbry/O
+				you can use multiple scrapers by separating each with a , eg: youtube,odysee
 	-t			Show thumbnails
 	-D			Use an external menu
 	-I <info>               Instead of playing the selected video(s), get information about them.
@@ -329,7 +330,7 @@ scrape_youtube () {
 			{
 				_youtube_search_json_playlist < "$_tmp_json"
 				_youtube_search_json_videos < "$_tmp_json"
-			} > "$output_json_file"
+			} >> "$output_json_file"
 			;;
 		trending)
 			trending_tab=$page_query
@@ -346,7 +347,7 @@ scrape_youtube () {
 			{
 				_youtube_search_json_videos < "$_tmp_json"
 				_youtube_search_json_playlist < "$_tmp_json"
-			} > "$output_json_file"
+			} >> "$output_json_file"
 			;;
 		channel)
 			channel_url=$page_query
@@ -362,7 +363,7 @@ scrape_youtube () {
 			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
 
 			channel_name=$(_youtube_channel_name < "$_tmp_html" )
-			_youtube_channel_json "$channel_name" < "$_tmp_json"  > "$output_json_file"
+			_youtube_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
 			;;
 	esac
 
@@ -392,7 +393,7 @@ scrape_peertube () {
 				views: .views,
 				date: .publishedAt
 			}
-		]' < "$_tmp_json" > "$output_json_file"
+		]' < "$_tmp_json" >> "$output_json_file"
 
 	rm "$_tmp_json"
 }
@@ -425,7 +426,7 @@ scrape_odysee () {
 			views: .view_cnt,
 			date: .cq_created_at
 	    }
-	]' < "$_tmp_json" > "$output_json_file"
+	]' < "$_tmp_json" >> "$output_json_file" 
 	# TODO:  error handling 2 character
 
 	rm "$_tmp_json"
@@ -746,7 +747,9 @@ parse_opt () {
 		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
 		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit;;
 		L) info_to_print="$info_to_print,L" ;;
-		c) scrape=$optarg ;;
+		c|scrape) scrape=$optarg ;;
+		scrape+) scrape="$scrape,$optarg" ;;
+		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
 		I) info_to_print=$optarg ;;
 		#long-opt exclusives
 		sort) is_sort=${optarg:-1} ;;
@@ -805,39 +808,54 @@ fi
 : > "$ytfzf_video_json_file"
 : > "$ytfzf_selected_ids"
 
+search="$*"
+
 print_info 'Scraping site...\n'
 
-case $scrape in
-	youtube) scrape_youtube  "$*" "$ytfzf_video_json_file" ;;
-	youtube-trending) scrape_youtube  "$*" "$ytfzf_video_json_file" "trending";;
-	youtube-subscriptions)#{{{
-		subscription_file=~/.config/ytfzf/subscriptions
+scrape_website () {
+	scrape_type="$1"	
+	case $scrape_type in
+		youtube|Y) scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
+		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
+		youtube-subscriptions|S)#{{{
+		    subscription_file=~/.config/ytfzf/subscriptions
 
-		if ! [ -f "$subscription_file" ]; then
-			die 1 "subcription file doesn't exist\n"
-		fi
+		    if ! [ -f "$subscription_file" ]; then
+			    print_info "subcription file doesn't exist\n"
+			    exit 1
+		    fi
 
-		while IFS= read channel_url || [ -n "$channel_url" ] ; do
-			{
-				_tmp_subfile=$(mktemp)
-				scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
-				jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
-				rm "$_tmp_subfile"
-			} &
-			sleep 0.01
-		done <<-EOF
-		$(sed \
-		-e "s/#.*//" \
-		-e "/^[[:space:]]*$/d" \
-		-e "s/[[:space:]]*//g" \
-		"$subscription_file" )
+		    while IFS= read channel_url || [ -n "$channel_url" ] ; do
+			    {
+				    _tmp_subfile=$(mktemp)
+				    scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
+				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
+				    rm "$_tmp_subfile"
+			    } &
+			    sleep 0.01
+		    done <<- EOF
+		    $(sed \
+		    -e "s/#.*//" \
+		    -e "/^[[:space:]]*$/d" \
+		    -e "s/[[:space:]]*//g" \
+		    "$subscription_file" )
 		EOF
-		wait
-		;;#}}}
-	peertube) scrape_peertube "$*" "$ytfzf_video_json_file" ;;
-	odysee|lbry) scrape_odysee "$*" "$ytfzf_video_json_file" ;;
-	*) die 1 'invalid channel\n';;
-esac
+		    wait
+		    ;;#}}}
+		peertube|P) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
+		odysee|lbry|O) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
+		'') return 1;; #stops the while loop
+		*) print_info "invalid scraper: $scrape_type\n"; die 1 ;;
+	esac
+	unset scrape_type
+	return 0
+}
+
+#the while loop will be infinite without this
+scrape="$scrape,"
+while scrape_website "${scrape%%,*}"; do
+	scrape="${scrape#*,}"
+done
 
 case 1 in
 	 "$is_interface_scripting") interface_scripting "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
