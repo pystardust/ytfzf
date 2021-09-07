@@ -848,12 +848,12 @@ scrape_website () {
 		    -e "s/[[:space:]]*//g" \
 		    "$subscription_file" )
 		EOF
-		wait
-		;;#}}}
-	peertube) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
-	odysee|lbry) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
-	'') return 1;; #stops the while loop
-	*) print_info "invalid scraper: $scrape_type\n"; die 1 ;;
+		    wait
+		    ;;#}}}
+		peertube|P) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
+		odysee|lbry|O) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
+		'') return 1;; #stops the while loop
+		*) print_info "invalid scraper: $scrape_type\n"; die 1 ;;
 	esac
 	unset scrape_type
 	return 0
