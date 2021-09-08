@@ -412,7 +412,7 @@ scrape_odysee () {
 	    -s "https://lighthouse.lbry.com/search" \
 	    -G --data-urlencode "s=$page_query" \
 	    --data-urlencode "mediaType=video,audio" \
-	    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description" \
+	    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
 	    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json"
 
 	jq '[ .[] |
