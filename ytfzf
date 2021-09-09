@@ -324,6 +324,7 @@ scrape_youtube () {
 
 	case $pagetype in
 		''|search)
+			print_info "Scraping YouTube\n"
 			# TODO: sp
 			_youtube_get_request "https://www.youtube.com/results" "$page_query" > "$_tmp_html"
 
@@ -335,6 +336,7 @@ scrape_youtube () {
 			} >> "$output_json_file"
 			;;
 		trending)
+			print_info "Scraping YouTube trending\n"
 			trending_tab=$page_query
 
 			case $trending_tab in
@@ -352,6 +354,7 @@ scrape_youtube () {
 			} >> "$output_json_file"
 			;;
 		channel)
+			print_info "Scraping YouTube channel\n"
 			channel_url=$page_query
 
 			# Converting channel title page url to channel video url
@@ -375,6 +378,7 @@ scrape_youtube () {
 
 ## Peertube {{{
 scrape_peertube () {
+	print_info "Scraping Peertube\n"
 	page_query=$1
 	output_json_file=$2
 
@@ -403,7 +407,7 @@ scrape_peertube () {
 
 ## Odysee {{{
 scrape_odysee () {
-
+	print_info "Scraping Odysee\n"
 	page_query=$1
 	output_json_file=$2
 
@@ -786,11 +790,12 @@ shift $((OPTIND-1))
 #}}}
 
 # Get search{{{
-get_search(){
-	case "$*" in
+input="$*"
+get_search () {
+	case "$input" in
 		-) print_info "Reading stdin\n"; read -r search ;;
-		'') [ $is_ext_menu -eq 1 ] && search="$(echo | external_menu)" || { printf "$search_prompt"; read -r search; } ;; #this will also read stdin if - is not given
-		*) search="$*" ;;
+		'') [ $is_ext_menu -eq 1 ] && search="$(echo | external_menu)" || { printf "$search_prompt"; read -r search; } ;;
+		*) search="$input" ;;
 	esac
 }
 #}}}
@@ -801,7 +806,7 @@ get_search(){
 # YTFZF_PID: the pid of parent
 if [ -z "$YTFZF_PID" ]; then
 	YTFZF_PID=$$
-	SEARCH_PREFIX=$(printf "%s" "$search" | tr '/' '_')
+	SEARCH_PREFIX=$(printf "%s" "$input" | tr '/' '_')
 	export YTFZF_PID
 	export SEARCH_PREFIX
 	session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
@@ -819,8 +824,6 @@ fi
 
 : > "$ytfzf_video_json_file"
 : > "$ytfzf_selected_ids"
-
-print_info 'Scraping site...\n'
 
 scrape_website () {
 	scrape_type="$1"	
