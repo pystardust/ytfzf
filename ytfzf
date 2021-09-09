@@ -166,6 +166,7 @@ usage () {
 # * argument 3 and above are undefined and can be used for filters
 # * return codes:
 #            1 : no response from site
+#            5 : scrape is disabled
 
 # Json keys:
 #	Needed:
@@ -441,6 +442,7 @@ scrape_odysee () {
 
 # History{{{
 scrape_history () {
+	[ $enable_hist -eq 0 ] && print_info "enable_hist must be set to 1 for this option" && return 5
 	output_json_file="$2"
 	enable_hist=0 #enabling history while scrape is history causes issues
 	cat "$hist_file" > "$output_json_file" 2>/dev/null
@@ -844,10 +846,17 @@ search="$*"
 
 print_info 'Scraping site...\n'
 
+handle_scrape_error () {
+	case "$1" in
+		1) print_info "$curr_scrape failed to load website\n" ;;
+		5) : ;;
+	esac
+}
+
 scrape_website () {
 	scrape_type="$1"	
 	case $scrape_type in
-		history|H) [ $enable_hist -eq 0 ] && print_info "enable_hist must be set to 1 for this option" || scrape_history "" "$ytfzf_video_json_file" ;;
+		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
 		youtube|Y) scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
 		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
@@ -877,18 +886,21 @@ scrape_website () {
 		    ;;#}}}
 		peertube|P) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
 		odysee|lbry|O) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
-		'') return 1;; #stops the while loop
 		*) print_info "invalid scraper: $scrape_type\n"; die 1 ;;
 	esac
+	rv="$?"
 	unset scrape_type
-	return 0
+	return $rv
 }
 
 #the while loop will be infinite without this
-scrape="$scrape,"
-while scrape_website "${scrape%%,*}"; do
-	scrape="${scrape#*,}"
+IFS=","
+set -f
+for curr_scrape in $scrape; do
+	scrape_website "$curr_scrape"
+	handle_scrape_error "$?"
 done
+set +f
 
 case 1 in
 	 "$is_interface_scripting") interface_scripting "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
