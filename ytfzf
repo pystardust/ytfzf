@@ -42,6 +42,13 @@ trim_id () {
 	done
 }
 
+search_is_empty () {
+	case "$search" in
+		-|'') return 0 ;;
+	esac
+	return 1
+}
+
 # Traps {{{
 trap 'clean_up' EXIT
 trap 'exit' INT TERM HUP
@@ -58,10 +65,18 @@ trap 'exit' INT TERM HUP
 function_exists "external_menu" || external_menu () {
 	dmenu -i -l 30 -p Search:
 }
+
+function_exists "search_prompt_menu" || search_prompt_menu () {
+	if [ $is_ext_menu -eq 1 ]; then
+		search="$(printf '' | external_menu)"
+	else
+		printf "Search: "
+		read -r search
+	fi
+}
+
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len=210}
-
-: ${search_prompt=Search: }
 
 # Players
 function_exists "video_detach_player" || video_detach_player () {
@@ -133,6 +148,7 @@ c_reset="\033[0m"
 usage () {
 	printf "%s" \
 "Usage: ytfzf [OPTIONS...] <search-query>
+    If search-query is -, stdin will be read as the search query
     OPTIONS:
 	-h			Show this help text
 	-d			Download the selected video(s)
@@ -790,12 +806,11 @@ shift $((OPTIND-1))
 #}}}
 
 # Get search{{{
-input="$*"
+search="$*"
 get_search () {
-	case "$input" in
+	case "$search" in
 		-) print_info "Reading stdin\n"; read -r search ;;
-		'') [ $is_ext_menu -eq 1 ] && search="$(echo | external_menu)" || { printf "$search_prompt"; read -r search; } ;;
-		*) search="$input" ;;
+		'') search_prompt_menu ;;
 	esac
 }
 #}}}
@@ -806,7 +821,7 @@ get_search () {
 # YTFZF_PID: the pid of parent
 if [ -z "$YTFZF_PID" ]; then
 	YTFZF_PID=$$
-	SEARCH_PREFIX=$(printf "%s" "$input" | tr '/' '_')
+	SEARCH_PREFIX=$(printf "%s" "$search" | tr '/' '_')
 	export YTFZF_PID
 	export SEARCH_PREFIX
 	session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
@@ -828,7 +843,7 @@ fi
 scrape_website () {
 	scrape_type="$1"	
 	case $scrape_type in
-		youtube|Y) [ -z "$search" ] && get_search; scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
+		youtube|Y) search_is_empty && get_search; scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
 		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
 		    subscription_file=~/.config/ytfzf/subscriptions
@@ -855,8 +870,8 @@ scrape_website () {
 		EOF
 		    wait
 		    ;;#}}}
-		peertube|P) [ -z "$search" ] && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
-		odysee|lbry|O) [ -z "$search" ] && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
+		peertube|P) search_is_empty && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
+		odysee|lbry|O) search_is_empty && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
 		'') return 1;; #stops the while loop
 		*) print_info "invalid scraper: $scrape_type\n"; die 1 ;;
 	esac
