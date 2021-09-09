@@ -53,7 +53,7 @@ trap 'exit' INT TERM HUP
 #configuration handling {{{
 : "${YTFZF_CONFIG_DIR:=$HOME/.config/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
-: "${YTFZF_SUBSCRIPTIONS_FILE:=$HOME/.config/subscriptions}"
+: "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
 
 . "$YTFZF_CONFIG_FILE"
 #}}}
@@ -844,7 +844,7 @@ scrape_website () {
 		    -e "s/#.*//" \
 		    -e "/^[[:space:]]*$/d" \
 		    -e "s/[[:space:]]*//g" \
-		    "$subscription_file" )
+		    "$YTFZF_SUBSCRIPTIONS_FILE" )
 		EOF
 		    wait
 		    ;;#}}}
