@@ -786,11 +786,13 @@ shift $((OPTIND-1))
 #}}}
 
 # Get search{{{
-case "$*" in
-	-) print_info "Reading stdin\n"; read -r search ;;
-	'') printf "$search_prompt"; read -r search ;; #this will also read stdin if - is not given
-	*) search="$*" ;;
-esac
+get_search(){
+	case "$*" in
+		-) print_info "Reading stdin\n"; read -r search ;;
+		'') [ $is_ext_menu -eq 1 ] && search="$(echo | external_menu)" || { printf "$search_prompt"; read -r search; } ;; #this will also read stdin if - is not given
+		*) search="$*" ;;
+	esac
+}
 #}}}
 
 # Sessions {{{
@@ -823,7 +825,7 @@ print_info 'Scraping site...\n'
 scrape_website () {
 	scrape_type="$1"	
 	case $scrape_type in
-		youtube|Y) scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
+		youtube|Y) [ -z "$search" ] && get_search; scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
 		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
 		    subscription_file=~/.config/ytfzf/subscriptions
@@ -850,8 +852,8 @@ scrape_website () {
 		EOF
 		    wait
 		    ;;#}}}
-		peertube|P) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
-		odysee|lbry|O) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
+		peertube|P) [ -z "$search" ] && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
+		odysee|lbry|O) [ -z "$search" ] && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
 		'') return 1;; #stops the while loop
 		*) print_info "invalid scraper: $scrape_type\n"; die 1 ;;
 	esac
