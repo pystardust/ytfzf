@@ -758,6 +758,7 @@ parse_opt () {
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
 	esac
+	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
 
 while getopts "han:dmfc:tI:LTD${long_opt_char}:U" OPT; do
