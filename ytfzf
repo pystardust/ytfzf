@@ -2,7 +2,6 @@
 
 YTFZF_VERSION="2.0_alpha"
 
-
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
 # Player: ID -> video player
@@ -57,6 +56,15 @@ trap 'exit' INT TERM HUP
 # }}}
 
 # Global Variables and Start Up {{{
+
+#configuration handling {{{
+: "${YTFZF_CONFIG_DIR:=$HOME/.config/ytfzf}"
+: "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
+: "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
+
+. "$YTFZF_CONFIG_FILE"
+#}}}
+
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 : ${cache_dir=$HOME/.cache/ytfzf}
 
@@ -846,9 +854,7 @@ scrape_website () {
 		youtube|Y) search_is_empty && get_search; scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
 		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
-		    subscription_file=~/.config/ytfzf/subscriptions
-
-		    if ! [ -f "$subscription_file" ]; then
+		    if ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ]; then
 			    print_info "subcription file doesn't exist\n"
 			    exit 1
 		    fi
@@ -866,7 +872,7 @@ scrape_website () {
 		    -e "s/#.*//" \
 		    -e "/^[[:space:]]*$/d" \
 		    -e "s/[[:space:]]*//g" \
-		    "$subscription_file" )
+		    "$YTFZF_SUBSCRIPTIONS_FILE" )
 		EOF
 		    wait
 		    ;;#}}}
