@@ -763,7 +763,7 @@ parse_opt () {
 	[ "$opt" = "$OPTARG" ] && optarg=""
 	case $opt in
 		h|help) usage; exit ;;
-		D|external-menu) is_ext_menu=${optarg:-1} ;;
+		D|external-menu) is_ext_menu=${optarg:-1}; [ $is_ext_menu -eq 1 ] && show_thumbnails=0 ;;
 		m|audio-only) is_audio_only=${optarg:-1} ;;
 		d|download) is_download=${optarg:-1} ;;
 		f|formats) : ;; # TODO
@@ -774,7 +774,7 @@ parse_opt () {
 		A|select-all) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1}; scripting_video_count=100 ;;
 		r|random-select) is_interface_scripting=${optarg:-1};is_random_select=${optarg:-1} ;; 
 		n|link-count) scripting_video_count=$optarg;; 
-		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
+		t|show-thumbnails) show_thumbnails=${optarg:-1}; [ $show_thumbnails -eq 1 ] && is_ext_menu=0 ;;
 		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit;;
 		L) info_to_print="$info_to_print,L" ;;
 		c|scrape) scrape=$optarg ;;
