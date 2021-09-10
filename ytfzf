@@ -49,8 +49,8 @@ search_is_empty () {
 }
 
 # Traps {{{
-trap 'clean_up' EXIT
-trap 'exit' INT TERM HUP
+[ -z "$UEBERZUG_FIFO" ] && trap 'clean_up' EXIT
+[ -z "$UEBERZUG_FIFO" ] && trap 'exit' INT TERM HUP
 #}}}
 
 # }}}
@@ -652,10 +652,10 @@ interface_thumbnails () {
 	# Takes video json file and downloads the thumnails as ${ID}.png to thumb_dir
 	video_json_file=$1
 	selected_id_file=$2
-	mkdir -p "$thumb_dir"
 
-	# Download thumbnails,
-	{
+	# Download thumbnails, only if they're not already downloaded
+	set +f
+	ls "$thumb_dir"/* > /dev/null 2>&1 || {
 		print_info 'Fetching thumbnails...\n'
 		curl_config_file=$(mktemp)
 		jq -r '.[]|"
@@ -680,8 +680,6 @@ interface_thumbnails () {
 	trim_id > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
-
-	rm -r "$thumb_dir"
 }
 #}}}
 
@@ -739,7 +737,6 @@ player () {
 	id_file=$2
 	options=$3
 
-	url_file=$(mktemp)
 	{
 		# get urls from the ids
 		urls=
