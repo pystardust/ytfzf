@@ -163,6 +163,7 @@ usage () {
 	-h			Show this help text
 	-d			Download the selected video(s)
 	-m			Only play audio
+	-l                      Reopen the menu when the video stops playing
 	-L			Show the link of selected video(s)
 	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
