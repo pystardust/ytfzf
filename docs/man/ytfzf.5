@@ -40,6 +40,12 @@ For example:
 .EE
 .RE
 
+.SS scrapers
+.PP
+A folder that contains executable files that scrape websites
+See CUSTOM SCRAPERS for more information
+.RE
+
 
 .SH CONFIGURATION OPTIONS
 
@@ -222,3 +228,42 @@ This function takes in a line in the form of
 This function sorts the data that is being piped into it.
 .br
 This function takes no arguments, all data is piped into it.
+
+.SH CUSTOM SCRAPERS
+.PP
+Custom scrapers are programs located in $YTFZF_CUSTOM_SCRAPERS_DIR.
+.RE
+.PP
+A custom scraper will take the search query as the first argument to the program
+.br
+The second argument will be a path to the file to store the final JSON of the scraped content.
+.br
+Arguments 3+ are undefined
+.RE
+.PP
+The final JSON shall be
+.B APPENDED
+to the file given as an argument.
+.br
+Required JSON keys:
+.RS
+.EX
+ID (string): a unique id to the video (unique on the website)
+url (string): the url to the video
+title (string): the title of the video
+.EE
+.RE
+.PP
+Optional JSON keys:
+.RS
+.EX
+thumbs (string): a url to a thumbnail/image
+channel (string): the channel name
+duration (string): length of the video in (standard: [HH:]MM:SS)
+views (int): amount of views a video has
+date (string): upload date (standard: date is relative to current day, eg: 3 days ago)
+.EE
+.RE
+.PP
+A custom scraper can be written in any programming language so long as the file can be run as a normal command
+.RE

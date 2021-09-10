@@ -65,6 +65,10 @@ trap 'exit' INT TERM HUP
 . "$YTFZF_CONFIG_FILE"
 #}}}
 
+# Custom Scrapers {{{
+: "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
+#}}}
+
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 : ${cache_dir=$HOME/.cache/ytfzf}
 
@@ -879,7 +883,16 @@ scrape_website () {
 		peertube|P) search_is_empty && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
 		odysee|lbry|O) search_is_empty && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
 		'') return 1;; #stops the while loop
-		*) print_info "invalid scraper: $scrape_type\n"; die 1 ;;
+                *)
+                        #custom scrapers {{{
+                        set +f
+                        if printf "%s\n" "$YTFZF_CUSTOM_SCRAPERS_DIR/"* | grep -Fq "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type"; then
+                                ls -l "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" | awk '{print $1}' | grep -q 'x' || { print_info "Scraper: \"$scrape_type\" does not have execute permissions\n"; die 1; }
+                                "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" "$search" "$ytfzf_video_json_file"
+                        else
+                                print_info "invalid scraper: $scrape_type\n"; die 1
+                        fi ;;
+                        #}}}
 	esac
 	unset scrape_type
 	return 0
