@@ -885,8 +885,7 @@ scrape_website () {
 		'') return 1;; #stops the while loop
                 *)
                         #custom scrapers {{{
-                        set +f
-                        if printf "%s\n" "$YTFZF_CUSTOM_SCRAPERS_DIR/"* | grep -Fq "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type"; then
+                        if find "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" > /dev/null 2>&1; then
                                 ls -l "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" | awk '{print $1}' | grep -q 'x' || { print_info "Scraper: \"$scrape_type\" does not have execute permissions\n"; die 1; }
                                 "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" "$search" "$ytfzf_video_json_file"
                         else
