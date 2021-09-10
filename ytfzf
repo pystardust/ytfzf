@@ -453,7 +453,7 @@ scrape_odysee () {
 			channel: .channel,
 			thumbs: .thumbnail_url,
 			duration: "\(.duration / 60 | floor):\(.duration % 60)",
-			views: .view_cnt,
+			views: "\(.view_cnt)",
 			date: .cq_created_at
 	    }
 	]' < "$_tmp_json" >> "$output_json_file" 
