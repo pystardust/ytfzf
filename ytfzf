@@ -476,7 +476,7 @@ scrape_history () {
 	[ $enable_hist -eq 0 ] && print_info "enable_hist must be set to 1 for this option" && return 5
 	output_json_file="$2"
 	enable_hist=0 #enabling history while scrape is history causes issues
-	cat "$hist_file" > "$output_json_file" 2>/dev/null
+	cp "$hist_file" "$output_json_file" 2>/dev/null
 }
 #}}}
 
@@ -524,7 +524,6 @@ add_to_hist () {
 }
 
 clear_hist () {
-	#start with empty array
 	: > "$hist_file"
 }
 
