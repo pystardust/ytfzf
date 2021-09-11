@@ -171,7 +171,8 @@ usage () {
 	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
 				    youtube/Y, youtube-trending/T, youtube-subscriptions/S,
-				    peertube/P, odysee/lbry/O
+				    peertube/P, odysee/lbry/O,
+				    history/H
 				you can use multiple scrapers by separating each with a , eg: youtube,odysee
 	-t			Show thumbnails
 	-D			Use an external menu
@@ -801,7 +802,6 @@ parse_opt () {
 		m|audio-only) is_audio_only=${optarg:-1} ;;
 		d|download) is_download=${optarg:-1} ;;
 		f|formats) : ;; # TODO
-		H|history) scrape="H" ;; # TODO
 		x|history-clear) clear_hist; exit 0 ;;
 		q|search-history) : ;; # TODO
 		a|auto-select) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1} ;;
@@ -824,7 +824,7 @@ parse_opt () {
 	esac
 }
 
-while getopts "ac:dfhmn:rtxADHI:LTU${long_opt_char}:" OPT; do
+while getopts "ac:dfhmn:rtxADI:LTU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
@@ -885,7 +885,6 @@ fi
 handle_scrape_error () {
 	case "$1" in
 		1) print_info "$curr_scrape failed to load website\n" ;;
-		5) : ;;
 	esac
 }
 
