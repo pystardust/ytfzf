@@ -80,12 +80,21 @@ Specify the path to youtube\-dl or a fork of youtube\-dl for downloading.
 .BI \-c " scrapers" ", " "\-\-scrape=scrapers"
 Set which scraper to use.
 Multiple scrapers can be seperated by ,
-The currently supported builtin scrapers are
-.IR youtube ,
-.IR youtube\-trending ,
-.IR youtube\-subscriptions ,
-.IR peertube ,
-.IR odysee / lbry .
+The currently supported builtin scrapers are:
+.RS
+.TP
+.IR youtube | Y
+.TP
+.IR youtube\-trending | T
+.TP
+.IR youtube\-subscriptions | S
+.TP
+.IR peertube | P
+.TP
+.IR odysee | lbry | O
+.TP
+.IR history | H
+(Only if $enable_hist is enabled)
 .TP
 .BI "\-\-scrape+=scrapers"
 Same as \-c, but keeps the default scrape as well.
