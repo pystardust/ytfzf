@@ -49,8 +49,8 @@ search_is_empty () {
 }
 
 # Traps {{{
-trap 'clean_up' EXIT
-trap 'exit' INT TERM HUP
+[ -z "$UEBERZUG_FIFO" ] && trap 'clean_up' EXIT
+[ -z "$UEBERZUG_FIFO" ] && trap 'exit' INT TERM HUP
 #}}}
 
 # }}}
@@ -85,6 +85,8 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len=210}
+
+: ${is_loop:=0}
 
 # Players
 function_exists "video_detach_player" || video_detach_player () {
@@ -161,6 +163,7 @@ usage () {
 	-h			Show this help text
 	-d			Download the selected video(s)
 	-m			Only play audio
+	-l                      Reopen the menu when the video stops playing
 	-L			Show the link of selected video(s)
 	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
@@ -649,10 +652,9 @@ interface_thumbnails () {
 	# Takes video json file and downloads the thumnails as ${ID}.png to thumb_dir
 	video_json_file=$1
 	selected_id_file=$2
-	mkdir -p "$thumb_dir"
 
-	# Download thumbnails,
-	{
+	# Download thumbnails, only if they're not already downloaded
+	[ -z "$(ls -1 "$thumb_dir" 2>/dev/null)" ] && {
 		print_info 'Fetching thumbnails...\n'
 		curl_config_file=$(mktemp)
 		jq -r '.[]|"
@@ -677,8 +679,6 @@ interface_thumbnails () {
 	trim_id > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
-
-	rm -r "$thumb_dir"
 }
 #}}}
 
@@ -736,7 +736,6 @@ player () {
 	id_file=$2
 	options=$3
 
-	url_file=$(mktemp)
 	{
 		# get urls from the ids
 		urls=
@@ -774,6 +773,7 @@ parse_opt () {
 		A|select-all) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1}; scripting_video_count=100 ;;
 		r|random-select) is_interface_scripting=${optarg:-1};is_random_select=${optarg:-1} ;; 
 		n|link-count) scripting_video_count=$optarg;; 
+		l|loop) is_loop=${optarg:-1} ;;
 		t|show-thumbnails) show_thumbnails=${optarg:-1}; [ $show_thumbnails -eq 1 ] && is_ext_menu=0 ;;
 		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit;;
 		L) info_to_print="$info_to_print,L" ;;
@@ -790,7 +790,7 @@ parse_opt () {
 	esac
 }
 
-while getopts "han:dmfc:tI:LTD${long_opt_char}:U" OPT; do
+while getopts "hlan:dmfc:tI:LTD${long_opt_char}:U" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
@@ -891,14 +891,17 @@ while scrape_website "${scrape%%,*}"; do
 	scrape="${scrape#*,}"
 done
 
-case 1 in
-	 "$is_interface_scripting") interface_scripting "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
-	"$show_thumbnails") interface_thumbnails "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
-	    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
-	                 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
-esac
+while :; do
+	case 1 in
+		 "$is_interface_scripting") interface_scripting "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
+		"$show_thumbnails") interface_thumbnails "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
+		    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
+				 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
+	esac
 
-player "$ytfzf_video_json_file" "$ytfzf_selected_ids"
+	player "$ytfzf_video_json_file" "$ytfzf_selected_ids"
+	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_ids" ] && break
+done
 #}}}
 
 # vim:foldmethod=marker
