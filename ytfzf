@@ -491,7 +491,8 @@ sort_video_data_fn () {
 		while IFS= read -r line
 		do
 			#run the key function to get the value to sort by
-			printf "%s\t%s\n" "$(get_sort_by "$line")" "$line"
+			get_sort_by "$line" | tr -d '\n'
+			printf "\t%s\n" "$line"
 		done | data_sort_fn | cut -f2-
 	else
 		cat
