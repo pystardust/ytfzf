@@ -26,6 +26,7 @@ clean_up () {
 	# clean up only as parent process
 	if [ "$YTFZF_PID" = "$$" ]; then
 		[ -d "$session_cache_dir" ] && rm -r "$session_cache_dir"
+		[ -d "$session_temp_dir" ] && rm -r "$session_temp_dir"
 	fi
 }
 
@@ -346,8 +347,8 @@ scrape_youtube () {
 	output_json_file=$2
 	pagetype=$3
 
-	_tmp_html=$(mktemp)
-	_tmp_json=$(mktemp)
+	_tmp_html="$session_temp_dir/yt.html"
+	_tmp_json="$session_temp_dir/yt.json"
 
 	case $pagetype in
 		''|search)
@@ -409,7 +410,7 @@ scrape_peertube () {
 	page_query=$1
 	output_json_file=$2
 
-	_tmp_json=$(mktemp)
+	_tmp_json="$session_temp_dir/peertube.json"
 
 	#gets a list of videos
 	curl -s "https://sepiasearch.org/api/v1/search/videos" \
@@ -438,7 +439,7 @@ scrape_odysee () {
 	page_query=$1
 	output_json_file=$2
 
-	_tmp_json=$(mktemp)
+	_tmp_json="$session_temp_dir/odysee.json"
 
 	# TODO: filters
 	curl \
@@ -657,7 +658,7 @@ interface_thumbnails () {
 	# Download thumbnails, only if they're not already downloaded
 	find "$thumb_dir" -maxdepth 0 -type d -empty | grep -q . && {
 		print_info 'Fetching thumbnails...\n'
-		curl_config_file=$(mktemp)
+		curl_config_file="$session_temp_dir/curl_config"
 		jq -r '.[]|"
 			url = \"\(.thumbs)\"
 			output = \"'"$thumb_dir"'/\(.ID).jpg\""' \
@@ -834,8 +835,9 @@ if [ -z "$YTFZF_PID" ]; then
 	export YTFZF_PID
 	export SEARCH_PREFIX
 	session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
+	session_temp_dir="/tmp/$SEARCH_PREFIX-$YTFZF_PID"
 	thumb_dir=$session_cache_dir/thumbnails
-	mkdir -p "$session_cache_dir" "$thumb_dir"
+	mkdir -p "$session_cache_dir" "$session_temp_dir" "$thumb_dir"
 fi
 
 # files
@@ -862,7 +864,7 @@ scrape_website () {
 
 		    while IFS= read channel_url || [ -n "$channel_url" ] ; do
 			    {
-				    _tmp_subfile=$(mktemp)
+				    _tmp_subfile="$session_temp_dir/yt_subfile"
 				    scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
 				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 				    rm "$_tmp_subfile"
