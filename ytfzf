@@ -655,7 +655,7 @@ interface_thumbnails () {
 	selected_id_file=$2
 
 	# Download thumbnails, only if they're not already downloaded
-	[ -z "$(ls -1 "$thumb_dir" 2>/dev/null)" ] && {
+	find "$thumb_dir" -maxdepth 0 -type d -empty | grep -q . && {
 		print_info 'Fetching thumbnails...\n'
 		curl_config_file=$(mktemp)
 		jq -r '.[]|"
