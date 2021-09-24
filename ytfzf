@@ -832,7 +832,7 @@ if [ -z "$YTFZF_PID" ]; then
 	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	session_temp_dir="${session_cache_dir}/tmp"
 	thumb_dir="${session_cache_dir}/thumbnails"
-	mkdir -p "$session_cache_dir" "$session_temp_dir" "$thumb_dir"
+	mkdir -p "$session_temp_dir" "$thumb_dir"
 fi
 
 # files
