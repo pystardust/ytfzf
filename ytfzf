@@ -346,8 +346,8 @@ scrape_youtube () {
 	output_json_file=$2
 	pagetype=$3
 
-	_tmp_html="$session_temp_dir/yt.html"
-	_tmp_json="$session_temp_dir/yt.json"
+	_tmp_html="${session_temp_dir}/yt.html"
+	_tmp_json="${session_temp_dir}/yt.json"
 
 	case $pagetype in
 		''|search)
@@ -408,7 +408,7 @@ scrape_peertube () {
 	page_query=$1
 	output_json_file=$2
 
-	_tmp_json="$session_temp_dir/peertube.json"
+	_tmp_json="${session_temp_dir}/peertube.json"
 
 	#gets a list of videos
 	curl -s "https://sepiasearch.org/api/v1/search/videos" \
@@ -436,7 +436,7 @@ scrape_odysee () {
 	page_query=$1
 	output_json_file=$2
 
-	_tmp_json="$session_temp_dir/odysee.json"
+	_tmp_json="${session_temp_dir}/odysee.json"
 
 	# TODO: filters
 	curl \
@@ -654,7 +654,7 @@ interface_thumbnails () {
 	# Download thumbnails, only if they're not already downloaded
 	find "$thumb_dir" -type d -empty | grep -q "$thumb_dir" && {
 		print_info 'Fetching thumbnails...\n'
-		curl_config_file="$session_temp_dir/curl_config"
+		curl_config_file="${session_temp_dir}/curl_config"
 		jq -r '.[]|"
 			url = \"\(.thumbs)\"
 			output = \"'"$thumb_dir"'/\(.ID).jpg\""' \
@@ -829,9 +829,9 @@ if [ -z "$YTFZF_PID" ]; then
 	SEARCH_PREFIX=$(printf "%s" "$search" | tr '/' '_')
 	export YTFZF_PID
 	export SEARCH_PREFIX
-	session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
-	session_temp_dir="$session_cache_dir/tmp"
-	thumb_dir=$session_cache_dir/thumbnails
+	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+	session_temp_dir="${session_cache_dir}/tmp"
+	thumb_dir="${session_cache_dir}/thumbnails"
 	mkdir -p "$session_cache_dir" "$session_temp_dir" "$thumb_dir"
 fi
 
@@ -859,7 +859,7 @@ scrape_website () {
 
 		    while IFS= read channel_url || [ -n "$channel_url" ] ; do
 			    {
-				    _tmp_subfile="$session_temp_dir/yt_subfile"
+				    _tmp_subfile="${session_temp_dir}/yt_subfile"
 				    scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
 				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 			    } &
