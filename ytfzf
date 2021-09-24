@@ -515,17 +515,20 @@ sort_video_data_fn () {
 
 # History Management {{{
 add_to_hist () {
-	read -r id
-	[ $enable_hist -eq 1 ] && [ -n "$id" ] && {
-		json_to_add="$(jq '.[]|select(.ID=="'"$id"'")' < "$video_json_file")"
-		[ -n "$json_to_add" ] && printf '[\n%s\n]' "$json_to_add" >> "$hist_file"
-	}
-	echo "$id" 
+	#id of the video to add to hist will be passed through stdin
+	#if multiple videos are selected, multiple ids will be present on multiple lines
+	while read -r id; do
+		[ -n "$id" ] && {
+			json_to_add="$(jq '.[]|select(.ID=="'"$id"'")' < "$video_json_file")"
+			[ -n "$json_to_add" ] && printf '[\n%s\n]' "$json_to_add" >> "$hist_file"
+		}
+	done
 	unset json_to_add hist_data id
 }
 
 clear_hist () {
 	: > "$hist_file"
+	print_info "History cleared\n"
 }
 
 #}}}
@@ -558,10 +561,10 @@ interface_scripting () {
 	data_string_template='.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"'
 	case 1 in
 		"$is_auto_select")
-		jq -r "$data_string_template"  < "$video_json_file"  | head -n "$scripting_video_count" |  trim_id  | add_to_hist > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | head -n "$scripting_video_count" |  trim_id  | > "$selected_id_file"
 			;;
 		"$is_random_select")
-		jq -r "$data_string_template"  < "$video_json_file"  | shuf | head -n "$scripting_video_count" | trim_id | add_to_hist > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | shuf | head -n "$scripting_video_count" | trim_id > "$selected_id_file"
 			;;
 	esac
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
@@ -589,7 +592,7 @@ interface_text () {
 		done |
 		column -t -s "$tab_space" |
 		fzf -m --tabstop=1 --layout=reverse |
-		trim_id | add_to_hist > "$selected_id_file"
+		trim_id > "$selected_id_file"
 }
 #}}}
 
@@ -613,7 +616,7 @@ interface_external () {
 			video_info_text
 		done | tr -d "$tab_space" |
 		external_menu |
-		trim_id | add_to_hist > "$selected_id_file"
+		trim_id > "$selected_id_file"
 }
 #}}}
 
@@ -707,7 +710,7 @@ interface_thumbnails () {
 	fzf -m \
 	--preview "sh $0 -U preview_img '""$thumbnail_viewer""' {} '""$video_json_file""'" \
 	--preview-window "left:50%:wrap" --layout=reverse |
-	trim_id | add_to_hist > "$selected_id_file"
+	trim_id > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
 }
@@ -797,6 +800,7 @@ parse_opt () {
 		m|audio-only) is_audio_only=${optarg:-1} ;;
 		d|download) is_download=${optarg:-1} ;;
 		f|formats) : ;; # TODO
+		H|history) scrape="history" ;;
 		x|history-clear) clear_hist; exit 0 ;;
 		q|search-history) : ;; # TODO
 		a|auto-select) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1} ;;
@@ -820,7 +824,7 @@ parse_opt () {
 	esac
 }
 
-while getopts "ac:dfhmn:rtxADI:LTU${long_opt_char}:" OPT; do
+while getopts "ac:dfhmn:rtxADHI:LTU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
@@ -922,7 +926,6 @@ scrape_website () {
 	return $rv
 }
 
-#the while loop will be infinite without this
 IFS=","
 set -f
 for curr_scrape in $scrape; do
@@ -937,6 +940,7 @@ while :; do
 		    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 				 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 	esac
+	[ $enable_hist -eq 1 ] && add_to_hist < "$ytfzf_selected_ids"
 
 	player "$ytfzf_video_json_file" "$ytfzf_selected_ids"
 	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_ids" ] && break
