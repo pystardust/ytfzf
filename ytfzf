@@ -26,7 +26,6 @@ clean_up () {
 	# clean up only as parent process
 	if [ "$YTFZF_PID" = "$$" ]; then
 		[ -d "$session_cache_dir" ] && rm -r "$session_cache_dir"
-		[ -d "$session_temp_dir" ] && rm -r "$session_temp_dir"
 	fi
 }
 
@@ -831,7 +830,7 @@ if [ -z "$YTFZF_PID" ]; then
 	export YTFZF_PID
 	export SEARCH_PREFIX
 	session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
-	session_temp_dir="/tmp/$SEARCH_PREFIX-$YTFZF_PID"
+	session_temp_dir="$session_cache_dir/tmp"
 	thumb_dir=$session_cache_dir/thumbnails
 	mkdir -p "$session_cache_dir" "$session_temp_dir" "$thumb_dir"
 fi
