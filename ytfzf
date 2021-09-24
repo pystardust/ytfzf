@@ -346,8 +346,8 @@ scrape_youtube () {
 	output_json_file=$2
 	pagetype=$3
 
-	_tmp_html=$(mktemp)
-	_tmp_json=$(mktemp)
+	_tmp_html="${session_temp_dir}/yt.html"
+	_tmp_json="${session_temp_dir}/yt.json"
 
 	case $pagetype in
 		''|search)
@@ -399,7 +399,6 @@ scrape_youtube () {
 			;;
 	esac
 
-	rm "$_tmp_html" "$_tmp_json"
 }
 ## }}}
 
@@ -409,7 +408,7 @@ scrape_peertube () {
 	page_query=$1
 	output_json_file=$2
 
-	_tmp_json=$(mktemp)
+	_tmp_json="${session_temp_dir}/peertube.json"
 
 	#gets a list of videos
 	curl -s "https://sepiasearch.org/api/v1/search/videos" \
@@ -428,7 +427,6 @@ scrape_peertube () {
 			}
 		]' < "$_tmp_json" >> "$output_json_file"
 
-	rm "$_tmp_json"
 }
 ## }}}
 
@@ -438,7 +436,7 @@ scrape_odysee () {
 	page_query=$1
 	output_json_file=$2
 
-	_tmp_json=$(mktemp)
+	_tmp_json="${session_temp_dir}/odysee.json"
 
 	# TODO: filters
 	curl \
@@ -462,7 +460,6 @@ scrape_odysee () {
 	]' < "$_tmp_json" >> "$output_json_file" 
 	# TODO:  error handling 2 character
 
-	rm "$_tmp_json"
 }
 ## }}}
 
@@ -491,7 +488,8 @@ sort_video_data_fn () {
 		while IFS= read -r line
 		do
 			#run the key function to get the value to sort by
-			printf "%s\t%s\n" "$(get_sort_by "$line")" "$line"
+			get_sort_by "$line" | tr -d '\n'
+			printf "\t%s\n" "$line"
 		done | data_sort_fn | cut -f2-
 	else
 		cat
@@ -654,16 +652,15 @@ interface_thumbnails () {
 	selected_id_file=$2
 
 	# Download thumbnails, only if they're not already downloaded
-	[ -z "$(ls -1 "$thumb_dir" 2>/dev/null)" ] && {
+	find "$thumb_dir" -type d -empty | grep -q "$thumb_dir" && {
 		print_info 'Fetching thumbnails...\n'
-		curl_config_file=$(mktemp)
+		curl_config_file="${session_temp_dir}/curl_config"
 		jq -r '.[]|"
 			url = \"\(.thumbs)\"
 			output = \"'"$thumb_dir"'/\(.ID).jpg\""' \
 				< "$video_json_file" > "$curl_config_file"
 			# curl version > 7.66.0 ( else remove -Z )
 			curl -Z -K "$curl_config_file" || curl -K "$curl_config_file"
-		rm "$curl_config_file"
 	}
 
 	thumbnail_viewer=ueberzug
@@ -832,9 +829,10 @@ if [ -z "$YTFZF_PID" ]; then
 	SEARCH_PREFIX=$(printf "%s" "$search" | tr '/' '_')
 	export YTFZF_PID
 	export SEARCH_PREFIX
-	session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
-	thumb_dir=$session_cache_dir/thumbnails
-	mkdir -p "$session_cache_dir" "$thumb_dir"
+	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+	session_temp_dir="${session_cache_dir}/tmp"
+	thumb_dir="${session_cache_dir}/thumbnails"
+	mkdir -p "$session_temp_dir" "$thumb_dir"
 fi
 
 # files
@@ -861,10 +859,9 @@ scrape_website () {
 
 		    while IFS= read channel_url || [ -n "$channel_url" ] ; do
 			    {
-				    _tmp_subfile=$(mktemp)
+				    _tmp_subfile="${session_temp_dir}/yt_subfile"
 				    scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
 				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
-				    rm "$_tmp_subfile"
 			    } &
 			    sleep 0.01
 		    done <<- EOF
