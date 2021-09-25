@@ -651,6 +651,16 @@ preview_display_image () {
 			printf '\n'
 			dep_check "catimg" || die 1 "\ncatimg is not installed"
 			catimg -c -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_dir/${id}.jpg" ;;
+		display)
+			killall display
+			dep_check "display" || die 1 "\nimagemagick is not installed"
+			display "$thumb_dir/${id}.jpg" ;;
+		custom) 
+			if function_exists "img_display_function"; then
+				img_display_function ;;
+			else
+				die 1 "img_display_function is not defined"
+			fi
 	esac
 }
 #}}}
