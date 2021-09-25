@@ -396,7 +396,7 @@ scrape_youtube () {
 					;;
 			esac
 
-			_youtube_get_request "$channel_url" "" "" > "$_tmp_html"
+			_youtube_get_request "${channel_url##* }" "" "" > "$_tmp_html"
 			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
 
 			channel_name=$(_youtube_channel_name < "$_tmp_html" )
@@ -878,7 +878,7 @@ scrape_website () {
 		    -e "s/#.*//" \
 		    -e "/^[[:space:]]*$/d" \
 		    -e "s/[[:space:]]*//g" \
-		    "$YTFZF_SUBSCRIPTIONS_FILE" )
+		"$YTFZF_SUBSCRIPTIONS_FILE" )
 		EOF
 		    wait
 		    ;;#}}}
