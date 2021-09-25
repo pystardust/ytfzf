@@ -153,6 +153,12 @@ Whether or not to use a menu other than fzf.
 .RI default: " 0"
 
 .TP
+.RB $ is_loop
+Whether or not to show the menu after the selected videos have stopped playing.
+.br
+.RI default: " 0"
+
+.TP
 .RB $ scrape
 The website to scrape by default.
 The currently supported options are
@@ -228,6 +234,33 @@ This function takes in a line in the form of
 This function sorts the data that is being piped into it.
 .br
 This function takes no arguments, all data is piped into it.
+
+.TP
+.BR on_opt_parse ()
+This function gets called after an option is parsed, and sets variables based the options passed into it.
+.br
+This function takes 4 arguments:
+.EX
+.I 1
+.ti +4
+    The current option being parsed
+.I 2
+.ti +4
+    The current option argument being parsed
+.I 3
+.ti +4
+    The unmodified option being parsed.
+.ti +4
+    For an option such as \-a, this value will be the same as $1.
+.ti +4
+    However, for every \-\-long\-option this value will be "\-".
+.I 4
+.ti +4
+    The unmodified option argument being parsed.
+.ti +4
+    For an option such as \-c S, this value will be the same as $2.
+.ti +4
+    However, for every \-\-long\-option=value, this value will be \-long\-option=value.
 
 .SH CUSTOM SCRAPERS
 .PP
