@@ -391,6 +391,11 @@ scrape_youtube () {
 		channel)
 			print_info "Scraping YouTube channel\n"
 			channel_url=$page_query
+			#if these 2 vars aren't unique, weird things happen,
+			# i is defined in at the while loop for scraping channels
+			# it may be better to instead make this channel part it's own function, and pass a var for the tmp files
+			_tmp_html="${session_temp_dir}/channel-$i.html"
+			_tmp_json="${session_temp_dir}/channel-$i.json"
 
 			# Converting channel title page url to channel video url
 			case $channel_url in
@@ -822,6 +827,7 @@ parse_opt () {
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
 	esac
+	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
 
 while getopts "ac:dfhmn:rtxADHI:LTU${long_opt_char}:" OPT; do
@@ -901,9 +907,12 @@ scrape_website () {
 			    exit 1
 		    fi
 
+		    #if _tmp_subfile does not have a unique name, weird things happen
+		    i=0
 		    while IFS= read channel_url || [ -n "$channel_url" ] ; do
+			    i=$((i+1))
 			    {
-				    _tmp_subfile="${session_temp_dir}/yt_subfile"
+				    _tmp_subfile="${session_temp_dir}/channel-$i"
 				    scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
 				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 			    } &
