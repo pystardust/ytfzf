@@ -885,12 +885,12 @@ scrape_website () {
 		'') return 1;; #stops the while loop
                 *)
                         #custom scrapers {{{
-                        if find "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" > /dev/null 2>&1; then
-                                ls -l "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" | awk '{print $1}' | grep -q 'x' || { print_info "Scraper: \"$scrape_type\" does not have execute permissions\n"; die 1; }
-                                "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" "$search" "$ytfzf_video_json_file"
-                        else
-                                print_info "invalid scraper: $scrape_type\n"; die 1
-                        fi ;;
+			#if the file doesn't exist, it will exit with code 127
+			"${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" "$search" "$ytfzf_video_json_file" 2>/dev/null
+			case "$?" in
+				126) die $? "$scrape_type does not have execute permissions\n";;
+				127) die 1 "invalid scraper: $scrape_type\n" ;;
+			esac
                         #}}}
 	esac
 	unset scrape_type
