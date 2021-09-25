@@ -430,7 +430,7 @@ scrape_peertube () {
 				channel: .channel.displayName,
 				thumbs: .thumbnailUrl,
 				duration: "\(.duration / 60 | floor):\(.duration % 60)",
-				views: .views,
+				views: "\(.views)",
 				date: .publishedAt
 			}
 		]' < "$_tmp_json" >> "$output_json_file"
