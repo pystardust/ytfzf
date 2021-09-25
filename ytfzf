@@ -96,7 +96,7 @@ function_exists "video_player" || video_player () {
 	mpv --ytdl-format="$video_pref" "$@"
 }
 function_exists "audio_player" || audio_player () {
-       	mpv --no-video "$@"
+	mpv --no-video "$@"
 }
 function_exists "downloader" || downloader () {
 	case $is_audio_only in
@@ -134,7 +134,7 @@ function_exists "downloader" || downloader () {
 
 # Option Checks {{{
 case "$long_opt_char" in
-        [a-uw-zA-UW-Z0-9]) print_info "long_opt_char must be v or non alphanumeric" && die 1 ;;
+	[a-uw-zA-UW-Z0-9]) print_info "long_opt_char must be v or non alphanumeric" && die 1 ;;
 	#? = 1 char, * = 1+ chars; ?* = 2+ chars
 	??*) print_info "long_opt_char must be 1 char" && die 1 ;;
 esac
@@ -474,18 +474,18 @@ scrape_odysee () {
 # Sorting {{{
 
 function_exists "get_sort_by" || get_sort_by () {
-    line="$1"    
-    date="${line%|*}"
-    date=${date##*|}
-    #youtube specific
-    date=${date#*Streamed}
-    date=${date#*Premiered}
-    date -d "$date" '+%s' 2>/dev/null || date -f "$date" '+%s' 2> /dev/null || printf "null"
-    unset line
+	line="$1"    
+	date="${line%|*}"
+	date=${date##*|}
+	#youtube specific
+	date=${date#*Streamed}
+	date=${date#*Premiered}
+	date -d "$date" '+%s' 2>/dev/null || date -f "$date" '+%s' 2> /dev/null || printf "null"
+	unset line
 }
 
 function_exists "data_sort_fn" || data_sort_fn () {
-    sort -nr
+	sort -nr
 }
 
 sort_video_data_fn () {
@@ -688,16 +688,16 @@ interface_thumbnails () {
 
 # Player {{{
 print_requested_info () {
-    set -f
-    IFS=,
-    for request in $info_to_print; do
+	set -f
+	IFS=,
+	for request in $info_to_print; do
 	case "$request" in
 	    [Ll]|link) printf '%s\n' "$@" ;;
 	    VJ|vj|video-json) while read -r line; do jq '.[]|select(.ID=="'"$line"'")' < "$video_json_file"; done < "$id_file" ;;
 	    [Jj]|json) jq < "$video_json_file" ;;
 	    [Rr]|raw) while read -r line; do jq -r '.[]|select(.ID=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file"; done < "$id_file" ;;
 	esac
-    done
+	done
 }
 
 open_player () {
@@ -874,12 +874,12 @@ scrape_website () {
 			    } &
 			    sleep 0.01
 		    done <<- EOF
-		    $(sed \
-		    -e "s/#.*//" \
-		    -e "/^[[:space:]]*$/d" \
-		    -e "s/[[:space:]]*//g" \
-		"$YTFZF_SUBSCRIPTIONS_FILE" )
-		EOF
+			$(sed \
+				-e "s/#.*//" \
+				-e "/^[[:space:]]*$/d" \
+				-e "s/[[:space:]]*//g" \
+				"$YTFZF_SUBSCRIPTIONS_FILE" )
+			EOF
 		    wait
 		    ;;#}}}
 		peertube|P) search_is_empty && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
