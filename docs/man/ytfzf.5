@@ -274,11 +274,13 @@ The second argument will be a path to the file to store the final JSON of the sc
 Arguments 3+ are undefined
 .RE
 .PP
+The JSON should be structured as a list of objects, where each object represents a video.
+.br
 The final JSON shall be
 .B APPENDED
 to the file given as an argument.
-.br
-Required JSON keys:
+.PP
+Required object keys:
 .RS
 .EX
 ID (string): a unique id to the video (unique on the website)
@@ -287,7 +289,7 @@ title (string): the title of the video
 .EE
 .RE
 .PP
-Optional JSON keys:
+Optional object keys:
 .RS
 .EX
 thumbs (string): a url to a thumbnail/image
@@ -297,6 +299,17 @@ views (string): amount of views a video has
 date (string): upload date (standard: date is relative to current day, eg: 3 days ago)
 .EE
 .RE
+.PP
+Example JSON:
+.EX
+[
+    {
+	"ID": "dQw4w9WgXcQ",
+	"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+	"title": "definitely not never gonna give you up"
+    }
+]
+.EE
 .PP
 A custom scraper can be written in any programming language so long as the file can be run as a normal command
 .RE
