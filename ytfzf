@@ -132,6 +132,8 @@ function_exists "downloader" || downloader () {
 : ${scrape=youtube}
 : ${sub_link_count=10}
 
+: "${thumbnail_viewer:=ueberzug}"
+
 # Option Checks {{{
 case "$long_opt_char" in
         [a-uw-zA-UW-Z0-9]) print_info "long_opt_char must be v or non alphanumeric" && die 1 ;;
@@ -617,6 +619,7 @@ preview_display_image () {
 	id=$2
 	case $thumbnail_viewer in
 		ueberzug)
+			dep_check "ueberzug" || die 1 "ueberzug is not installed"
 			printf '%s\t' \
 				'action' 'add' \
 				'identifier' 'ytfzf' \
@@ -628,6 +631,26 @@ preview_display_image () {
 			printf '%s\t%s\n' \
 				'height' "$((FZF_PREVIEW_LINES-10))" > "$UEBERZUG_FIFO"
 			;;
+		chafa)
+			printf '\n'
+			dep_check "chafa" || die 1 "\nchafa is not installed"
+			chafa -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
+		chafa-16)
+			printf '\n'
+			dep_check "chafa" || die 1 "\nchafa is not installed"
+			chafa -c 240 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
+		chafa-tty)
+			printf '\n'
+			dep_check "chafa" || die 1 "\nchafa is not installed"
+			chafa -c 16 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
+		catimg)
+			printf '\n'
+			dep_check "catimg" || die 1 "\ncatimg is not installed"
+			catimg -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_dir/${id}.jpg" ;;
+		catimg-256)
+			printf '\n'
+			dep_check "catimg" || die 1 "\ncatimg is not installed"
+			catimg -c -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_dir/${id}.jpg" ;;
 	esac
 }
 #}}}
@@ -667,8 +690,6 @@ interface_thumbnails () {
 			# curl version > 7.66.0 ( else remove -Z )
 			curl -Z -K "$curl_config_file" || curl -K "$curl_config_file"
 	}
-
-	thumbnail_viewer=ueberzug
 
 	preview_start "$thumbnail_viewer"
 
@@ -789,6 +810,7 @@ parse_opt () {
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
+		thumb-viewer) thumbnail_viewer="$optarg" ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
