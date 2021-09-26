@@ -54,15 +54,29 @@ If a variable has no default, that means it is set to an empty string.
 The program to display images for thumbnail previews
 .br
 Valid options:
-.in +4
-.I chafa
-.br
-.I catimg
-.br
-.I ueberzug
-.br
-.in -4
+.RS
+.TP
+.IR chafa
+.TP
+.IR chafa-16
+Uses chafa with 16 colors
+.TP
+.IR chafa-tty
+Uses chafa with 4 colors
+.TP
+.IR catimg
+.TP
+.IR catimg-256
+Uses catimg with 256 colors
+.TP
+.IR display
+Uses imagemagick's preview image
+.TP
+.IR custom
+Calls the user defined img_display_function()
+.TP
 .RI default: " ueberzug"
+.RE
 
 .TP
 .RB $ useragent
@@ -243,6 +257,23 @@ This function takes in a line in the form of
 This function sorts the data that is being piped into it.
 .br
 This function takes no arguments, all data is piped into it.
+
+.TP
+.BR img_display_function ()
+This function displays the currently selected video's thumbnail in fzf.
+.br
+This function takes 3 arguments:
+.RS
+.TP
+.IR 1
+Path to the image to display
+.TP
+.IR 2
+Maximum width
+.TP
+.IR 3
+Maximum height
+.RE
 
 .TP
 .BR on_opt_parse ()

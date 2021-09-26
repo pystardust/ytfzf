@@ -657,7 +657,7 @@ preview_display_image () {
 			display "$thumb_dir/${id}.jpg" ;;
 		custom) 
 			if function_exists "img_display_function"; then
-				img_display_function ;;
+				img_display_function "$thumb_dir/${id}.jpg" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" ;;
 			else
 				die 1 "img_display_function is not defined"
 			fi
