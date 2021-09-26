@@ -93,7 +93,6 @@ search_is_empty () {
 #}}}
 
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
-: ${cache_dir:=$HOME/.cache/ytfzf}
 
 # menu options
 #the menu to use instead of fzf when -D is specified
@@ -133,7 +132,7 @@ function_exists "downloader" || downloader () {
 }
 
 # directories
-: ${cache_dir:=$HOME/.cache/ytfzf}
+: "${cache_dir:=$HOME/.cache/ytfzf}"
 
 # format options
 #variable for switching on sort (date)
