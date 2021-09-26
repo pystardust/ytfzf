@@ -280,24 +280,21 @@ Maximum height
 This function gets called after an option is parsed, and sets variables based the options passed into it.
 .br
 This function takes 4 arguments:
-.EX
-.I 1
-.ti +4
-    The current option being parsed
-.I 2
-.ti +4
-    The current option argument being parsed
-.I 3
-.ti +4
-    The unmodified option being parsed.
-.ti +4
-    For an option such as \-a, this value will be the same as $1.
-.ti +4
-    However, for every \-\-long\-option this value will be "\-".
-.I 4
-.ti +4
-    The unmodified option argument being parsed.
-.ti +4
-    For an option such as \-c S, this value will be the same as $2.
-.ti +4
-    However, for every \-\-long\-option=value, this value will be \-long\-option=value.
+.RS
+.TP
+.IR 1
+The current option being parsed
+.TP
+.IR 2
+The current option argument being parsed
+.TP
+.IR 3
+The unmodified option being parsed.
+For an option such as \-a, this value will be the same as $1.
+However, for every \-\-long\-option this value will be "\-".
+.TP
+.IR 4
+The unmodified option argument being parsed.
+For an option such as \-c S, this value will be the same as $2.
+However, for every \-\-long\-option=value, this value will be \-long\-option=value.
+.RE
