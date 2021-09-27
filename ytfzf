@@ -67,6 +67,7 @@ search_is_empty () {
 
 # Custom Scrapers {{{
 : "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
+: "${custom_scraper_variables=}"
 #}}}
 
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
@@ -892,7 +893,8 @@ scrape_website () {
                 *)
                         #custom scrapers {{{
 			#if the file doesn't exist, it will exit with code 127
-			"${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" "$search" "$ytfzf_video_json_file" 2>/dev/null
+			set -- $(eval printf '"%s"' $custom_scraper_variables)
+			"${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" "$search" "$ytfzf_video_json_file" "$@" 2>/dev/null
 			case "$?" in
 				126) die $? "$scrape_type does not have execute permissions\n";;
 				127) die 1 "invalid scraper: $scrape_type\n" ;;

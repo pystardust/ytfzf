@@ -270,9 +270,14 @@ Custom scrapers are programs located in $YTFZF_CUSTOM_SCRAPERS_DIR.
 A custom scraper will take the search query as the first argument to the program
 .br
 The second argument will be a path to the file to store the final JSON of the scraped content.
-.br
-Arguments 3+ are undefined
+.PP
+Extra arguments needed shall be defined with $custom_scraper_variables:
+.RS
+.EX
+custom_scraper_variables='$info_to_print $useragent'
+.EE
 .RE
+this will make argument 3 the value of $info_to_print, and argument 4 the value of $useragent
 .PP
 The JSON should be structured as a list of objects, where each object represents a video.
 .br
