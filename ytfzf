@@ -892,8 +892,9 @@ scrape_website () {
 		'') return 1;; #stops the while loop
                 *)
                         #custom scrapers {{{
-			#if the file doesn't exist, it will exit with code 127
+			#this sets each variable's value (even with spaces) to it's own field
 			set -- $(eval printf '"%s"' $custom_scraper_variables)
+			#if the file doesn't exist, it will exit with code 127
 			"${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" "$search" "$ytfzf_video_json_file" "$@" 2>/dev/null
 			case "$?" in
 				126) die $? "$scrape_type does not have execute permissions\n";;
