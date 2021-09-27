@@ -165,7 +165,7 @@ function_exists "downloader" || downloader () {
 : ${sub_link_count:=10}
 
 # debugging
-: ${log_level:=0}
+: ${log_level:=2}
 
 # Option Checks {{{
 case "$long_opt_char" in
