@@ -92,6 +92,23 @@ The file to store the json data of scraped videos.
 .RI default: " $cache_dir/videos_json"
 
 .TP
+.RB $ log_level
+How much debug information to log.
+.RS
+.TP
+.IR 0
+Log everything
+.TP 
+.IR 1
+Log only warnings and errors
+.TP
+.IR 2
+Log only errors
+.TP
+.RI default: " 2"
+.RE
+
+.TP
 .RB $ search_prompt
 The text to display when no search is given.
 .br

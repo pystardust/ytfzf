@@ -6,6 +6,24 @@ YTFZF_VERSION="2.0_alpha"
 # User Interface: video json -> user selection -> ID
 # Player: ID -> video player
 
+# error codes:
+# 0: success
+# 1: general error
+# 2: invalid -opt or command argument, invalid argument for opt, configuration error
+	# eg: ytfzf -c terminal (invalid scrape)
+# 3: missing dependancy
+# 4: scraping error
+
+# colors {{{
+c_red="\033[1;31m"
+c_green="\033[1;32m"
+c_yellow="\033[1;33m"
+c_blue="\033[1;34m"
+c_magenta="\033[1;35m"
+c_cyan="\033[1;36m"
+c_reset="\033[0m"
+#}}}
+
 # Utility functions {{{
 dep_check() {
 	command -v "$1" > /dev/null 2>&1
@@ -18,7 +36,13 @@ function_exists () {
 
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
-	printf "$1" >&2
+	[ $log_level -ge 0 ] && printf "$1" >&2
+}
+print_warning () {
+	[ $log_level -ge 1 ] && printf "${c_yellow}${1}${c_reset}" >&2
+}
+print_error () {
+	[ $log_level -ge 2 ] && printf "${c_red}${1}${c_reset}" >&2
 }
 
 clean_up () {
@@ -31,7 +55,7 @@ clean_up () {
 
 die () {
 	_return_status=$1
-	printf "$2" >&2
+	print_error "$2"
 	exit "$_return_status"
 }
 
@@ -57,6 +81,9 @@ search_is_empty () {
 
 # Global Variables and Start Up {{{
 
+# expansions where the variable is a string and globbing shouldn't happen should be surrounded by quotes
+# variables that cannot be empty should use := instead of just =
+
 #configuration handling {{{
 : "${YTFZF_CONFIG_DIR:=$HOME/.config/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
@@ -66,7 +93,6 @@ search_is_empty () {
 #}}}
 
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
-: ${cache_dir=$HOME/.cache/ytfzf}
 
 # menu options
 #the menu to use instead of fzf when -D is specified
@@ -84,7 +110,7 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 }
 
 #number of columns (characters on a line) the external menu can have
-: ${external_menu_len=210}
+: ${external_menu_len:=210}
 
 : ${is_loop:=0}
 
@@ -106,7 +132,7 @@ function_exists "downloader" || downloader () {
 }
 
 # directories
-: ${cache_dir=$HOME/.cache/ytfzf}
+: "${cache_dir:=$HOME/.cache/ytfzf}"
 
 # files
 : ${hist_file:=$cache_dir/watch_hist}
@@ -116,48 +142,41 @@ function_exists "downloader" || downloader () {
 
 # format options
 #variable for switching on sort (date)
-: ${is_detach=0}
-: ${is_audio_only=0}
-: ${is_download=0}
+: ${is_detach:=0}
+: ${is_audio_only:=0}
+: ${is_download:=0}
 : ${info_to_print=}
 : ${video_pref=best}
 
-: ${is_sort=0}
-: ${show_thumbnails=0}
-: ${is_ext_menu=0}
+: ${is_sort:=0}
+: ${show_thumbnails:=0}
+: ${is_ext_menu:=0}
 
-: ${is_interface_scripting=0}
-: ${scripting_video_count=1}
-: ${is_auto_select=0}
-: ${is_random_select=0}
+: ${is_interface_scripting:=0}
+: ${scripting_video_count:=1}
+: ${is_auto_select:=0}
+: ${is_random_select:=0}
 
 # option parsing
-: ${long_opt_char:=-}
+: "${long_opt_char:=-}"
 
 # scrape
-: ${scrape=youtube}
-: ${sub_link_count=10}
+: "${scrape=youtube}"
+: ${sub_link_count:=10}
+
+# debugging
+: ${log_level:=2}
 
 # Option Checks {{{
 case "$long_opt_char" in
-	[a-uw-zA-UW-Z0-9]) print_info "long_opt_char must be v or non alphanumeric" && die 1 ;;
+        [a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric" ;;
 	#? = 1 char, * = 1+ chars; ?* = 2+ chars
-	??*) print_info "long_opt_char must be 1 char" && die 1 ;;
+	??*) die 2 "long_opt_char must be 1 char" ;;
 esac
 #}}}
 
 tab_space=$(printf '\t')
 gap_space="                                                                   "
-
-# colors {{{
-c_red="\033[1;31m"
-c_green="\033[1;32m"
-c_yellow="\033[1;33m"
-c_blue="\033[1;34m"
-c_magenta="\033[1;35m"
-c_cyan="\033[1;36m"
-c_reset="\033[0m"
-#}}}
 
 # }}}
 
@@ -389,8 +408,8 @@ scrape_youtube () {
 			} >> "$output_json_file"
 			;;
 		channel)
-			print_info "Scraping YouTube channel\n"
 			channel_url=$page_query
+			print_info "Scraping Youtube channel: $channel_url\n"
 			#if these 2 vars aren't unique, weird things happen,
 			# i is defined in at the while loop for scraping channels
 			# it may be better to instead make this channel part it's own function, and pass a var for the tmp files
@@ -800,7 +819,7 @@ parse_opt () {
 	#this checks the unmodified optarg, which will only be equal if there is no = sign
 	[ "$opt" = "$OPTARG" ] && optarg=""
 	case $opt in
-		h|help) usage; exit ;;
+		h|help) usage; exit 0 ;;
 		D|external-menu) is_ext_menu=${optarg:-1}; [ $is_ext_menu -eq 1 ] && show_thumbnails=0 ;;
 		m|audio-only) is_audio_only=${optarg:-1} ;;
 		d|download) is_download=${optarg:-1} ;;
@@ -814,7 +833,7 @@ parse_opt () {
 		n|link-count) scripting_video_count=$optarg;; 
 		l|loop) is_loop=${optarg:-1} ;;
 		t|show-thumbnails) show_thumbnails=${optarg:-1}; [ $show_thumbnails -eq 1 ] && is_ext_menu=0 ;;
-		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit;;
+		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
@@ -842,7 +861,7 @@ while getopts "ac:dfhmn:rtxADHI:LTU${long_opt_char}:" OPT; do
 					preview_img "$@"
 					;;
 			esac
-			exit
+			exit 0
 			;;
 		"$long_opt_char")
 			parse_opt "${OPTARG%%=*}" "${OPTARG#*=}" ;;
@@ -871,7 +890,8 @@ if [ -z "$YTFZF_PID" ]; then
 	YTFZF_PID=$$
 	SEARCH_PREFIX=$(printf "%s" "$search" | tr '/' '_')
 	export YTFZF_PID
-	export SEARCH_PREFIX
+	#if no search is provided, use a fallback value of SCRAPE-$scrape
+	export SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	session_temp_dir="${session_cache_dir}/tmp"
 	thumb_dir="${session_cache_dir}/thumbnails"
@@ -902,10 +922,7 @@ scrape_website () {
 		youtube|Y) search_is_empty && get_search; scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
 		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
-		    if ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ]; then
-			    print_info "subcription file doesn't exist\n"
-			    exit 1
-		    fi
+		    ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
 
 		    #if _tmp_subfile does not have a unique name, weird things happen
 		    i=0
@@ -928,7 +945,7 @@ scrape_website () {
 		    ;;#}}}
 		peertube|P) search_is_empty && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
 		odysee|lbry|O) search_is_empty && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
-		*) print_info "invalid scraper: $scrape_type\n"; die 1 ;;
+		*) die 2 "invalid scraper: $scrape_type\n" ;;
 	esac
 	rv="$?"
 	unset scrape_type
