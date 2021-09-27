@@ -146,6 +146,7 @@ function_exists "downloader" || downloader () {
 : ${is_audio_only:=0}
 : ${is_download:=0}
 : ${info_to_print=}
+: ${exit_on_info_to_print:=1}
 : ${video_pref=best}
 
 : ${is_sort:=0}
@@ -761,7 +762,7 @@ open_player () {
 
 	if [ -n "$info_to_print"  ]; then
 		print_requested_info "$@"
-		return
+		[ $exit_on_info_to_print -eq 1 ] && exit 0
 	fi
 
 	: ${video_pref:=best}
@@ -845,6 +846,7 @@ parse_opt () {
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
+		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
