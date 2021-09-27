@@ -147,6 +147,9 @@ Prints the json of the selected videos.
 .IR J " | " j " | " json
 Prints the json of all the videos in the search results.
 .TP
+.IR F " | " f " | " format
+Prints the video format being used.
+.TP
 .IR R " | " r " | " raw
 Prints the data of the selected videos, as appears in the menu.
 .RE
@@ -156,6 +159,12 @@ Prints the data of the selected videos, as appears in the menu.
 The video preference to use for youtube-dl in mpv.
 .br
 .RI default: " best"
+
+.TP
+.RB $ show_formats
+Whether or not to bring up the format selection menu.
+.br
+.RI default: " 0"
     
 .TP
 .RB $ is_sort
@@ -219,7 +228,7 @@ To find the default value of these, check the source code by searching for
 .BR external_menu ()
 When $\fBis_ext_menu\fR is \fI1\fR, call this function instead of fzf.
 .br
-This function has no arguments, instead all data is piped into it.
+This function takes 1 argument, a prompt string.
 
 .TP
 .BR video_detach_player ()
