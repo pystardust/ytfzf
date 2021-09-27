@@ -108,6 +108,12 @@ function_exists "downloader" || downloader () {
 # directories
 : ${cache_dir=$HOME/.cache/ytfzf}
 
+# files
+: ${hist_file:=$cache_dir/watch_hist}
+
+# history
+: ${enable_hist=1}
+
 # format options
 #variable for switching on sort (date)
 : ${is_detach=0}
@@ -168,7 +174,8 @@ usage () {
 	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
 				    youtube/Y, youtube-trending/T, youtube-subscriptions/S,
-				    peertube/P, odysee/lbry/O
+				    peertube/P, odysee/lbry/O,
+				    history/H
 				you can use multiple scrapers by separating each with a , eg: youtube,odysee
 	-t			Show thumbnails
 	-D			Use an external menu
@@ -189,6 +196,7 @@ usage () {
 # * argument 3 and above are undefined and can be used for filters
 # * return codes:
 #            1 : no response from site
+#            5 : scrape is disabled
 
 # Json keys:
 #	Needed:
@@ -427,7 +435,7 @@ scrape_peertube () {
 				channel: .channel.displayName,
 				thumbs: .thumbnailUrl,
 				duration: "\(.duration / 60 | floor):\(.duration % 60)",
-				views: .views,
+				views: "\(.views)",
 				date: .publishedAt
 			}
 		]' < "$_tmp_json" >> "$output_json_file"
@@ -468,6 +476,14 @@ scrape_odysee () {
 }
 ## }}}
 
+# History{{{
+scrape_history () {
+	[ $enable_hist -eq 0 ] && print_info "enable_hist must be set to 1 for this option" && return 5
+	output_json_file="$2"
+	enable_hist=0 #enabling history while scrape is history causes issues
+	cp "$hist_file" "$output_json_file" 2>/dev/null
+}
+#}}}
 
 # }}}
 
@@ -502,6 +518,26 @@ sort_video_data_fn () {
 }
 #}}}
 
+# History Management {{{
+add_to_hist () {
+	#id of the video to add to hist will be passed through stdin
+	#if multiple videos are selected, multiple ids will be present on multiple lines
+	while read -r id; do
+		[ -n "$id" ] && {
+			json_to_add="$(jq '.[]|select(.ID=="'"$id"'")' < "$video_json_file")"
+			[ -n "$json_to_add" ] && printf '[\n%s\n]' "$json_to_add" >> "$hist_file"
+		}
+	done
+	unset json_to_add hist_data id
+}
+
+clear_hist () {
+	: > "$hist_file"
+	print_info "History cleared\n"
+}
+
+#}}}
+
 # User Interface {{{
 # Takes video json file as $1 and returns the selected video IDs to file $2
 video_info_text () {
@@ -527,12 +563,13 @@ thumbnail_video_info_text () {
 interface_scripting () {
 	video_json_file=$1
 	selected_id_file=$2
+	data_string_template='.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"'
 	case 1 in
 		"$is_auto_select")
-		jq -r '.[]|.ID' < "$video_json_file"  | head -n "$scripting_video_count" > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | head -n "$scripting_video_count" |  trim_id  | > "$selected_id_file"
 			;;
 		"$is_random_select")
-		jq -r '.[]|.ID' < "$video_json_file"  | shuf | head -n "$scripting_video_count" > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | shuf | head -n "$scripting_video_count" | trim_id > "$selected_id_file"
 			;;
 	esac
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
@@ -768,8 +805,8 @@ parse_opt () {
 		m|audio-only) is_audio_only=${optarg:-1} ;;
 		d|download) is_download=${optarg:-1} ;;
 		f|formats) : ;; # TODO
-		H|history) : ;; # TODO
-		x|history-clear) : ;; # TODO
+		H|history) scrape="history" ;;
+		x|history-clear) clear_hist; exit 0 ;;
 		q|search-history) : ;; # TODO
 		a|auto-select) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1} ;;
 		A|select-all) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1}; scripting_video_count=100 ;;
@@ -793,7 +830,7 @@ parse_opt () {
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
 
-while getopts "hlan:dmfc:tI:LTD${long_opt_char}:U" OPT; do
+while getopts "ac:dfhmn:rtxADHI:LTU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
@@ -852,9 +889,16 @@ fi
 : > "$ytfzf_video_json_file"
 : > "$ytfzf_selected_ids"
 
+handle_scrape_error () {
+	case "$1" in
+		1) print_info "$curr_scrape failed to load website\n" ;;
+	esac
+}
+
 scrape_website () {
 	scrape_type="$1"	
 	case $scrape_type in
+		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
 		youtube|Y) search_is_empty && get_search; scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
 		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
@@ -884,17 +928,18 @@ scrape_website () {
 		    ;;#}}}
 		peertube|P) search_is_empty && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
 		odysee|lbry|O) search_is_empty && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
-		'') return 1;; #stops the while loop
 		*) print_info "invalid scraper: $scrape_type\n"; die 1 ;;
 	esac
+	rv="$?"
 	unset scrape_type
-	return 0
+	return $rv
 }
 
-#the while loop will be infinite without this
-scrape="$scrape,"
-while scrape_website "${scrape%%,*}"; do
-	scrape="${scrape#*,}"
+IFS=","
+set -f
+for curr_scrape in $scrape; do
+	scrape_website "$curr_scrape"
+	handle_scrape_error "$?"
 done
 
 while :; do
@@ -904,6 +949,7 @@ while :; do
 		    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 				 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 	esac
+	[ $enable_hist -eq 1 ] && add_to_hist < "$ytfzf_selected_ids"
 
 	player "$ytfzf_video_json_file" "$ytfzf_selected_ids"
 	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_ids" ] && break
