@@ -6,6 +6,24 @@ YTFZF_VERSION="2.0_alpha"
 # User Interface: video json -> user selection -> ID
 # Player: ID -> video player
 
+# error codes:
+# 0: success
+# 1: general error
+# 2: invalid -opt or command argument, invalid argument for opt, configuration error
+	# eg: ytfzf -c terminal (invalid scrape)
+# 3: missing dependancy
+# 4: scraping error
+
+# colors {{{
+c_red="\033[1;31m"
+c_green="\033[1;32m"
+c_yellow="\033[1;33m"
+c_blue="\033[1;34m"
+c_magenta="\033[1;35m"
+c_cyan="\033[1;36m"
+c_reset="\033[0m"
+#}}}
+
 # Utility functions {{{
 dep_check() {
 	command -v "$1" > /dev/null 2>&1
@@ -18,7 +36,13 @@ function_exists () {
 
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
-	printf "$1" >&2
+	[ $log_level -ge 0 ] && printf "$1" >&2
+}
+print_warning () {
+	[ $log_level -ge 1 ] && printf "${c_yellow}${1}${c_reset}" >&2
+}
+print_error () {
+	[ $log_level -ge 2 ] && printf "${c_red}${1}${c_reset}" >&2
 }
 
 clean_up () {
@@ -31,7 +55,7 @@ clean_up () {
 
 die () {
 	_return_status=$1
-	printf "$2" >&2
+	print_error "$2"
 	exit "$_return_status"
 }
 
@@ -57,6 +81,9 @@ search_is_empty () {
 
 # Global Variables and Start Up {{{
 
+# expansions where the variable is a string and globbing shouldn't happen should be surrounded by quotes
+# variables that cannot be empty should use := instead of just =
+
 #configuration handling {{{
 : "${YTFZF_CONFIG_DIR:=$HOME/.config/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
@@ -71,7 +98,6 @@ search_is_empty () {
 #}}}
 
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
-: ${cache_dir=$HOME/.cache/ytfzf}
 
 # menu options
 #the menu to use instead of fzf when -D is specified
@@ -89,7 +115,7 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 }
 
 #number of columns (characters on a line) the external menu can have
-: ${external_menu_len=210}
+: ${external_menu_len:=210}
 
 : ${is_loop:=0}
 
@@ -101,7 +127,7 @@ function_exists "video_player" || video_player () {
 	mpv --ytdl-format="$video_pref" "$@"
 }
 function_exists "audio_player" || audio_player () {
-       	mpv --no-video "$@"
+	mpv --no-video "$@"
 }
 function_exists "downloader" || downloader () {
 	case $is_audio_only in
@@ -111,52 +137,51 @@ function_exists "downloader" || downloader () {
 }
 
 # directories
-: ${cache_dir=$HOME/.cache/ytfzf}
+: "${cache_dir:=$HOME/.cache/ytfzf}"
+
+# files
+: ${hist_file:=$cache_dir/watch_hist}
+
+# history
+: ${enable_hist=1}
 
 # format options
 #variable for switching on sort (date)
-: ${is_detach=0}
-: ${is_audio_only=0}
-: ${is_download=0}
+: ${is_detach:=0}
+: ${is_audio_only:=0}
+: ${is_download:=0}
 : ${info_to_print=}
 : ${video_pref=best}
 
-: ${is_sort=0}
-: ${show_thumbnails=0}
-: ${is_ext_menu=0}
+: ${is_sort:=0}
+: ${show_thumbnails:=0}
+: ${is_ext_menu:=0}
 
-: ${is_interface_scripting=0}
-: ${scripting_video_count=1}
-: ${is_auto_select=0}
-: ${is_random_select=0}
+: ${is_interface_scripting:=0}
+: ${scripting_video_count:=1}
+: ${is_auto_select:=0}
+: ${is_random_select:=0}
 
 # option parsing
-: ${long_opt_char:=-}
+: "${long_opt_char:=-}"
 
 # scrape
-: ${scrape=youtube}
-: ${sub_link_count=10}
+: "${scrape=youtube}"
+: ${sub_link_count:=10}
+
+# debugging
+: ${log_level:=2}
 
 # Option Checks {{{
 case "$long_opt_char" in
-        [a-uw-zA-UW-Z0-9]) print_info "long_opt_char must be v or non alphanumeric" && die 1 ;;
+        [a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric" ;;
 	#? = 1 char, * = 1+ chars; ?* = 2+ chars
-	??*) print_info "long_opt_char must be 1 char" && die 1 ;;
+	??*) die 2 "long_opt_char must be 1 char" ;;
 esac
 #}}}
 
 tab_space=$(printf '\t')
 gap_space="                                                                   "
-
-# colors {{{
-c_red="\033[1;31m"
-c_green="\033[1;32m"
-c_yellow="\033[1;33m"
-c_blue="\033[1;34m"
-c_magenta="\033[1;35m"
-c_cyan="\033[1;36m"
-c_reset="\033[0m"
-#}}}
 
 # }}}
 
@@ -173,7 +198,8 @@ usage () {
 	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
 				    youtube/Y, youtube-trending/T, youtube-subscriptions/S,
-				    peertube/P, odysee/lbry/O
+				    peertube/P, odysee/lbry/O,
+				    history/H
 				you can use multiple scrapers by separating each with a , eg: youtube,odysee
 	-t			Show thumbnails
 	-D			Use an external menu
@@ -194,6 +220,7 @@ usage () {
 # * argument 3 and above are undefined and can be used for filters
 # * return codes:
 #            1 : no response from site
+#            5 : scrape is disabled
 
 # Json keys:
 #	Needed:
@@ -386,8 +413,8 @@ scrape_youtube () {
 			} >> "$output_json_file"
 			;;
 		channel)
-			print_info "Scraping YouTube channel\n"
 			channel_url=$page_query
+			print_info "Scraping Youtube channel: $channel_url\n"
 			#if these 2 vars aren't unique, weird things happen,
 			# i is defined in at the while loop for scraping channels
 			# it may be better to instead make this channel part it's own function, and pass a var for the tmp files
@@ -401,7 +428,7 @@ scrape_youtube () {
 					;;
 			esac
 
-			_youtube_get_request "$channel_url" "" "" > "$_tmp_html"
+			_youtube_get_request "${channel_url##* }" "" "" > "$_tmp_html"
 			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
 
 			channel_name=$(_youtube_channel_name < "$_tmp_html" )
@@ -432,7 +459,7 @@ scrape_peertube () {
 				channel: .channel.displayName,
 				thumbs: .thumbnailUrl,
 				duration: "\(.duration / 60 | floor):\(.duration % 60)",
-				views: .views,
+				views: "\(.views)",
 				date: .publishedAt
 			}
 		]' < "$_tmp_json" >> "$output_json_file"
@@ -473,24 +500,32 @@ scrape_odysee () {
 }
 ## }}}
 
+# History{{{
+scrape_history () {
+	[ $enable_hist -eq 0 ] && print_info "enable_hist must be set to 1 for this option" && return 5
+	output_json_file="$2"
+	enable_hist=0 #enabling history while scrape is history causes issues
+	cp "$hist_file" "$output_json_file" 2>/dev/null
+}
+#}}}
 
 # }}}
 
 # Sorting {{{
 
 function_exists "get_sort_by" || get_sort_by () {
-    line="$1"    
-    date="${line%|*}"
-    date=${date##*|}
-    #youtube specific
-    date=${date#*Streamed}
-    date=${date#*Premiered}
-    date -d "$date" '+%s' 2>/dev/null || date -f "$date" '+%s' 2> /dev/null || printf "null"
-    unset line
+	line="$1"    
+	date="${line%|*}"
+	date=${date##*|}
+	#youtube specific
+	date=${date#*Streamed}
+	date=${date#*Premiered}
+	date -d "$date" '+%s' 2>/dev/null || date -f "$date" '+%s' 2> /dev/null || printf "null"
+	unset line
 }
 
 function_exists "data_sort_fn" || data_sort_fn () {
-    sort -nr
+	sort -nr
 }
 
 sort_video_data_fn () {
@@ -505,6 +540,26 @@ sort_video_data_fn () {
 		cat
 	fi
 }
+#}}}
+
+# History Management {{{
+add_to_hist () {
+	#id of the video to add to hist will be passed through stdin
+	#if multiple videos are selected, multiple ids will be present on multiple lines
+	while read -r id; do
+		[ -n "$id" ] && {
+			json_to_add="$(jq '.[]|select(.ID=="'"$id"'")' < "$video_json_file")"
+			[ -n "$json_to_add" ] && printf '[\n%s\n]' "$json_to_add" >> "$hist_file"
+		}
+	done
+	unset json_to_add hist_data id
+}
+
+clear_hist () {
+	: > "$hist_file"
+	print_info "History cleared\n"
+}
+
 #}}}
 
 # User Interface {{{
@@ -532,12 +587,13 @@ thumbnail_video_info_text () {
 interface_scripting () {
 	video_json_file=$1
 	selected_id_file=$2
+	data_string_template='.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"'
 	case 1 in
 		"$is_auto_select")
-		jq -r '.[]|.ID' < "$video_json_file"  | head -n "$scripting_video_count" > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | head -n "$scripting_video_count" |  trim_id  | > "$selected_id_file"
 			;;
 		"$is_random_select")
-		jq -r '.[]|.ID' < "$video_json_file"  | shuf | head -n "$scripting_video_count" > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | shuf | head -n "$scripting_video_count" | trim_id > "$selected_id_file"
 			;;
 	esac
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
@@ -693,16 +749,16 @@ interface_thumbnails () {
 
 # Player {{{
 print_requested_info () {
-    set -f
-    IFS=,
-    for request in $info_to_print; do
+	set -f
+	IFS=,
+	for request in $info_to_print; do
 	case "$request" in
 	    [Ll]|link) printf '%s\n' "$@" ;;
 	    VJ|vj|video-json) while read -r line; do jq '.[]|select(.ID=="'"$line"'")' < "$video_json_file"; done < "$id_file" ;;
 	    [Jj]|json) jq < "$video_json_file" ;;
 	    [Rr]|raw) while read -r line; do jq -r '.[]|select(.ID=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file"; done < "$id_file" ;;
 	esac
-    done
+	done
 }
 
 open_player () {
@@ -768,13 +824,13 @@ parse_opt () {
 	#this checks the unmodified optarg, which will only be equal if there is no = sign
 	[ "$opt" = "$OPTARG" ] && optarg=""
 	case $opt in
-		h|help) usage; exit ;;
+		h|help) usage; exit 0 ;;
 		D|external-menu) is_ext_menu=${optarg:-1}; [ $is_ext_menu -eq 1 ] && show_thumbnails=0 ;;
 		m|audio-only) is_audio_only=${optarg:-1} ;;
 		d|download) is_download=${optarg:-1} ;;
 		f|formats) : ;; # TODO
-		H|history) : ;; # TODO
-		x|history-clear) : ;; # TODO
+		H|history) scrape="history" ;;
+		x|history-clear) clear_hist; exit 0 ;;
 		q|search-history) : ;; # TODO
 		a|auto-select) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1} ;;
 		A|select-all) is_interface_scripting=${optarg:-1}; is_auto_select=${optarg:-1}; scripting_video_count=100 ;;
@@ -782,7 +838,7 @@ parse_opt () {
 		n|link-count) scripting_video_count=$optarg;; 
 		l|loop) is_loop=${optarg:-1} ;;
 		t|show-thumbnails) show_thumbnails=${optarg:-1}; [ $show_thumbnails -eq 1 ] && is_ext_menu=0 ;;
-		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit;;
+		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
@@ -798,7 +854,7 @@ parse_opt () {
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
 
-while getopts "hlan:dmfc:tI:LTD${long_opt_char}:U" OPT; do
+while getopts "ac:dfhmn:rtxADHI:LTU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
@@ -810,7 +866,7 @@ while getopts "hlan:dmfc:tI:LTD${long_opt_char}:U" OPT; do
 					preview_img "$@"
 					;;
 			esac
-			exit
+			exit 0
 			;;
 		"$long_opt_char")
 			parse_opt "${OPTARG%%=*}" "${OPTARG#*=}" ;;
@@ -839,7 +895,8 @@ if [ -z "$YTFZF_PID" ]; then
 	YTFZF_PID=$$
 	SEARCH_PREFIX=$(printf "%s" "$search" | tr '/' '_')
 	export YTFZF_PID
-	export SEARCH_PREFIX
+	#if no search is provided, use a fallback value of SCRAPE-$scrape
+	export SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	session_temp_dir="${session_cache_dir}/tmp"
 	thumb_dir="${session_cache_dir}/thumbnails"
@@ -857,16 +914,20 @@ fi
 : > "$ytfzf_video_json_file"
 : > "$ytfzf_selected_ids"
 
+handle_scrape_error () {
+	case "$1" in
+		1) print_info "$curr_scrape failed to load website\n" ;;
+	esac
+}
+
 scrape_website () {
 	scrape_type="$1"	
 	case $scrape_type in
+		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
 		youtube|Y) search_is_empty && get_search; scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
 		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
-		    if ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ]; then
-			    print_info "subcription file doesn't exist\n"
-			    exit 1
-		    fi
+		    ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
 
 		    #if _tmp_subfile does not have a unique name, weird things happen
 		    i=0
@@ -879,17 +940,16 @@ scrape_website () {
 			    } &
 			    sleep 0.01
 		    done <<- EOF
-		    $(sed \
-		    -e "s/#.*//" \
-		    -e "/^[[:space:]]*$/d" \
-		    -e "s/[[:space:]]*//g" \
-		    "$YTFZF_SUBSCRIPTIONS_FILE" )
-		EOF
+			$(sed \
+				-e "s/#.*//" \
+				-e "/^[[:space:]]*$/d" \
+				-e "s/[[:space:]]*//g" \
+				"$YTFZF_SUBSCRIPTIONS_FILE" )
+			EOF
 		    wait
 		    ;;#}}}
 		peertube|P) search_is_empty && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
 		odysee|lbry|O) search_is_empty && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
-		'') return 1;; #stops the while loop
                 *)
                         #custom scrapers {{{
 			#this sets each variable's value (even with spaces) to it's own field
@@ -898,18 +958,20 @@ scrape_website () {
 			"${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" "$search" "$ytfzf_video_json_file" "$@" 2>/dev/null
 			case "$?" in
 				126) die $? "$scrape_type does not have execute permissions\n";;
-				127) die 1 "invalid scraper: $scrape_type\n" ;;
+				127) die 2 "invalid scraper: $scrape_type\n" ;;
 			esac
                         #}}}
 	esac
+	rv="$?"
 	unset scrape_type
-	return 0
+	return $rv
 }
 
-#the while loop will be infinite without this
-scrape="$scrape,"
-while scrape_website "${scrape%%,*}"; do
-	scrape="${scrape#*,}"
+IFS=","
+set -f
+for curr_scrape in $scrape; do
+	scrape_website "$curr_scrape"
+	handle_scrape_error "$?"
 done
 
 while :; do
@@ -919,6 +981,7 @@ while :; do
 		    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 				 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
 	esac
+	[ $enable_hist -eq 1 ] && add_to_hist < "$ytfzf_selected_ids"
 
 	player "$ytfzf_video_json_file" "$ytfzf_selected_ids"
 	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_ids" ] && break
