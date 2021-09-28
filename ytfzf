@@ -35,8 +35,7 @@ function_exists () {
 
 #capitalizes the first letter of a string
 title_str () {
-	first_letter="$(printf "%s" "$1" | sed 's/\(.\).*/\1/')"
-	first_letter="$(printf "%s" "$first_letter" | tr '[:lower:]' '[:upper:]')"
+	first_letter="$(printf "%s" "$1" | sed 's/\(.\).*/\1/' | tr '[:lower:]' '[:upper]')"
 	printf "%s" "$1" | sed 's/.\(.*\)/'"$first_letter"'\1/'
 }
 
