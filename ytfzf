@@ -167,6 +167,7 @@ function_exists "downloader" || downloader () {
 : "${yt_thumbnail_quality=high}"
 : ${sub_link_count:=10}
 : "${invidious_instance:=ytprivate.com}"
+: ${pages_to_scrape:=1}
 
 # debugging
 : ${log_level:=2}
@@ -322,13 +323,13 @@ scrape_invidious_search () {
 	page_query=$1
 	output_json_file=$2
 	pagetype=$3
+	page_num=$4
 
-	_tmp_html="${session_temp_dir}/yt.html"
-	_tmp_json="${session_temp_dir}/yt.json"
+	_tmp_json="${session_temp_dir}/yt-search-$page_num.json"
 
-	print_info "Scraping YouTube ($page_query)\n"
+	print_info "Scraping YouTube ($page_query, pg: $page_num)\n"
 
-	_youtube_get_request "https://$invidious_instance/api/v1/search?q=$(printf "%s" "$page_query" | sed 's/ /%20/g')&type=all" > "$_tmp_json"
+	_youtube_get_request "https://$invidious_instance/api/v1/search?q=$(printf "%s" "$page_query" | sed 's/ /%20/g')&type=all&page=$page_num" > "$_tmp_json"
 
 	{
 		_youtube_search_json_live < "$_tmp_json"
@@ -338,11 +339,13 @@ scrape_invidious_search () {
 }
 
 scrape_invidious_trending () {
-	print_info "Scraping YouTube trending\n"
 	trending_tab=$page_query
+	print_info "Scraping YouTube trending (${trending_tab:-normal})\n"
+
+	_tmp_json="${session_temp_dir}/yt-trending"
 
 	url="https://$invidious_instance/api/v1/trending"
-	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}"
+	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}" && _tmp_json="${_tmp_json}-$trending_tab"
 
 	_youtube_get_request "$url" > "$_tmp_json"
 	{
@@ -776,6 +779,7 @@ parse_opt () {
 		t|show-thumbnails) show_thumbnails=${optarg:-1}; [ $show_thumbnails -eq 1 ] && is_ext_menu=0 ;;
 		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
+		pages) pages_to_scrape="$optarg" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
@@ -861,7 +865,15 @@ scrape_website () {
 	scrape_type="$1"	
 	case $scrape_type in
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
-		youtube|Y) search_is_empty && get_search; scrape_invidious_search  "$search" "$ytfzf_video_json_file" "search";;
+		youtube|Y) 
+			# youtube scrape {{{
+			search_is_empty && get_search; 
+			i=0
+			while [ $i -lt $pages_to_scrape ]; do
+				i=$((i+1))
+				scrape_invidious_search  "$search" "$ytfzf_video_json_file" "search" "$i"
+			done ;;
+			# }}}
 		youtube-trending|T) scrape_invidious_trending  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
 		    ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
