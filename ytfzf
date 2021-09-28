@@ -385,12 +385,11 @@ scrape_invidious_trending () {
 scrape_youtube_channel () {
 	channel_url=$1
 	output_json_file=$2
+	tmp_file_name=$3
 	print_info "Scraping Youtube channel: $channel_url\n"
 	#if these 2 vars aren't unique, weird things happen,
-	# i is defined in at the while loop for scraping channels
-	# it may be better to instead make this channel part it's own function, and pass a var for the tmp files
-	_tmp_html="${session_temp_dir}/channel-$i.html"
-	_tmp_json="${session_temp_dir}/channel-$i.json"
+	_tmp_html="${session_temp_dir}/${tmp_file_name}.html"
+	_tmp_json="${session_temp_dir}/${tmp_file_name}.json"
 
 	# Converting channel title page url to channel video url
 	case $channel_url in
@@ -919,7 +918,7 @@ scrape_website () {
 			    i=$((i+1))
 			    {
 				    _tmp_subfile="${session_temp_dir}/channel-$i"
-				    scrape_youtube_channel "$channel_url" "$_tmp_subfile" "channel" < /dev/null
+				    scrape_youtube_channel "$channel_url" "$_tmp_subfile" "channel-$i" < /dev/null
 				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 			    } &
 			    sleep 0.01
