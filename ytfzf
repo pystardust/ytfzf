@@ -346,7 +346,8 @@ scrape_invidious_search () {
 }
 
 scrape_invidious_trending () {
-	trending_tab=$page_query
+	trending_tab=$1
+	output_json_file=$2
 	print_info "Scraping YouTube trending (${trending_tab:-normal})\n"
 
 	_tmp_json="${session_temp_dir}/yt-trending"
