@@ -254,6 +254,22 @@ _youtube_get_json () {
 		sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
 }
 
+_youtube_thumb_quality_index () {
+	_quality="$1"
+	case "$_quality" in
+		maxres) printf 0 ;;
+		maxresdefault) printf 1 ;;
+		sddefault) printf 2 ;;
+		high) printf 3 ;;
+		medium) printf 4 ;;
+		default) printf 5 ;;
+		start) printf 6 ;;
+		middle) printf 7 ;;
+		end) printf 8 ;;
+	esac
+	unset _quality
+}
+
 # Search Related functions {{{
 _youtube_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
@@ -274,7 +290,7 @@ _youtube_search_json_live () {
 			url: "https://www.youtube.com/watch?v=\(.videoId)",
 			title: "[live] \(.title)",
 			channel: .author,
-			thumbs: .videoThumbnails | .[] | select(.quality == "'"$yt_thumbnail_quality"'").url ,
+			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
 		}
 	]'
 }
@@ -285,7 +301,7 @@ _youtube_search_json_videos () {
 			url: "https://www.youtube.com/watch?v=\(.videoId)",
 			title: .title,
 			channel: .author,
-			thumbs: .videoThumbnails | .[] | select(.quality == "'"$yt_thumbnail_quality"'").url ,
+			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
 			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
 			views: "\(.viewCount)",
 			date: .publishedText,
@@ -333,6 +349,8 @@ scrape_invidious_search () {
 	page_num=$4
 
 	_tmp_json="${session_temp_dir}/yt-search-$page_num.json"
+
+	_yt_thumbnail_quality_index="$(_youtube_thumb_quality_index "$yt_thumbnail_quality")"
 
 	print_info "Scraping YouTube ($page_query, pg: $page_num)\n"
 
@@ -884,8 +902,7 @@ scrape_website () {
 			# youtube scrape {{{
 			search_is_empty && get_search; 
 			#$i is so multiple pages can be scraped
-			i=0
-			while [ $i -lt $pages_to_scrape ]; do
+			while [ ${i:=0} -lt $pages_to_scrape ]; do
 				i=$((i+1))
 				scrape_invidious_search  "$search" "$ytfzf_video_json_file" "search" "$i"
 			done ;;
