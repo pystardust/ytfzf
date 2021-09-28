@@ -370,6 +370,8 @@ scrape_invidious_trending () {
 
 	_tmp_json="${session_temp_dir}/yt-trending"
 
+	_yt_thumbnail_quality_index="$(_youtube_thumb_quality_index "$yt_thumbnail_quality")"
+
 	url="https://$invidious_instance/api/v1/trending"
 	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}" && _tmp_json="${_tmp_json}-$trending_tab"
 
