@@ -231,8 +231,9 @@ usage () {
 # * a scraper function takes a search query as $1 and returns video json to file $2
 # * argument 3 and above are undefined and can be used for filters
 # * return codes:
-#            1 : no response from site
 #            5 : scrape is disabled
+#            6 : no response from site (matches curl)
+#            22: error scraping site (matches curl)
 
 # Json keys:
 #	Needed:
@@ -245,7 +246,7 @@ usage () {
 _youtube_get_request () {
 	_base_url=$1
 	# Get search query from youtube
-	curl "$_base_url" -s -L \
+	curl -f "$_base_url" -s -L \
 	  -H "User-Agent: $useragent" \
 	  -H 'Accept-Language: en-US,en;q=0.9' \
 	  --compressed
@@ -280,7 +281,7 @@ _youtube_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
 		{
 			ID: .playlistId,
-			url: "https://www.youtube.com/playlist?list=\(.playlistId)",
+			url: "https://'"${invidious_instance}"'/playlist?list=\(.playlistId)",
 			title: "[playlist] \(.title)",
 			channel: .author,
 			thumbs: .playlistThumbnail,
@@ -292,7 +293,7 @@ _youtube_search_json_live () {
 	jq '[ .[] | select(.type=="video") | select(.liveNow==true) |
 		{
 			ID: .videoId,
-			url: "https://www.youtube.com/watch?v=\(.videoId)",
+			url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
 			title: "[live] \(.title)",
 			channel: .author,
 			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
@@ -303,7 +304,7 @@ _youtube_search_json_videos () {
 	jq '[ .[] | select(.type=="video") | select(.liveNow==false) |
 		{
 			ID: .videoId,
-			url: "https://www.youtube.com/watch?v=\(.videoId)",
+			url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
 			title: .title,
 			channel: .author,
 			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
@@ -335,7 +336,7 @@ _youtube_channel_json () {
 	jq '[ .contents | ..|.gridVideoRenderer? | select(. !=null) |
 	    {
 	    	ID: .videoId,
-			url: "https://www.youtube.com/watch?v=\(.videoId)",
+			url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
 	    	title: .title.runs[0].text,
 	    	channel: "'"$channel_name"'",
 	    	thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
@@ -360,6 +361,8 @@ scrape_invidious_search () {
 	print_info "Scraping YouTube ($page_query, pg: $page_num)\n"
 
 	_youtube_get_request "https://$invidious_instance/api/v1/search?q=$(printf "%s" "$page_query" | sed 's/ /%20/g')&type=${search_result_type}&sort_by=${search_sort_by}&date=${search_upload_date}&duration=${search_video_duration}&features=${search_result_features}&region=${search_region}&page=${page_num}" > "$_tmp_json"
+	rv="$?"
+	[ "$rv" -gt 0 ] && return $rv
 
 	{
 		_youtube_search_json_live < "$_tmp_json"
@@ -381,6 +384,8 @@ scrape_invidious_trending () {
 	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}" && _tmp_json="${_tmp_json}-$trending_tab"
 
 	_youtube_get_request "$url" > "$_tmp_json"
+	rv="$?"
+	[ "$rv" -gt 0 ] && return $rv
 
 	_youtube_search_json_videos < "$_tmp_json" >> "$output_json_file"
 }
@@ -402,6 +407,8 @@ scrape_youtube_channel () {
 	esac
 
 	_youtube_get_request "${channel_url##* }" "" "" > "$_tmp_html"
+	rv="$?"
+	[ "$rv" -gt 0 ] && return $rv
 	_youtube_get_json < "$_tmp_html" > "$_tmp_json"
 
 	channel_name=$(_youtube_channel_name < "$_tmp_html" )
@@ -418,8 +425,10 @@ scrape_peertube () {
 	_tmp_json="${session_temp_dir}/peertube.json"
 
 	#gets a list of videos
-	curl -s "https://sepiasearch.org/api/v1/search/videos" \
+	curl -f -s "https://sepiasearch.org/api/v1/search/videos" \
 	  -G --data-urlencode "search=$1" > "$_tmp_json"
+	rv="$?"
+	[ "$rv" -gt 0 ] && return $rv
 
 	jq '[ .data | .[] |
 			{
@@ -447,11 +456,14 @@ scrape_odysee () {
 
 	# TODO: filters
 	curl \
-	    -s "https://lighthouse.lbry.com/search" \
+	    -f -s "https://lighthouse.lbry.com/search" \
 	    -G --data-urlencode "s=$page_query" \
 	    --data-urlencode "mediaType=video,audio" \
 	    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
 	    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json"
+
+	rv="$?"
+	[ "$rv" -gt 0 ] && return $rv
 
 	jq '[ .[] |
 	    {
@@ -894,7 +906,13 @@ fi
 
 handle_scrape_error () {
 	case "$1" in
-		1) print_info "$curr_scrape failed to load website\n" ;;
+		6) die 4 "Website unresponsive (do you have internet?)\n" ;;
+	 	22) 
+			case "$curr_scrape" in
+				youtube|Y|youtube-trending|T)
+					die 4 "There was an error scraping $curr_scrape ($invidious_instance)\nTry changing invidious instances\n" ;;
+				*) die 4 "There was an error scraping $curr_scrape" ;;
+			esac
 	esac
 }
 
