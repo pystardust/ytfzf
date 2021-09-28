@@ -33,6 +33,12 @@ function_exists () {
 	type "$1" > /dev/null 2>&1
 }
 
+#capitalizes the first letter of a string
+title_str () {
+	first_letter="$(printf "%s" "$1" | sed 's/\(.\).*/\1/')"
+	first_letter="$(printf "%s" "$first_letter" | tr '[:lower:]' '[:upper:]')"
+	printf "%s" "$1" | sed 's/.\(.*\)/'"$first_letter"'\1/'
+}
 
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
@@ -364,9 +370,9 @@ scrape_invidious_search () {
 }
 
 scrape_invidious_trending () {
-	trending_tab=$1
+	trending_tab=$(title_str $1)
 	output_json_file=$2
-	print_info "Scraping YouTube trending (${trending_tab:-normal})\n"
+	print_info "Scraping YouTube trending (${trending_tab:-Normal})\n"
 
 	_tmp_json="${session_temp_dir}/yt-trending"
 
