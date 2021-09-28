@@ -169,12 +169,12 @@ function_exists "downloader" || downloader () {
 : "${invidious_instance:=ytprivate.com}"
 : ${pages_to_scrape:=1}
 
-: "${yt_sort_by:=relevance}"
-: "${yt_upload_date=}"
-: "${yt_video_duration=}"
-: "${yt_result_type:=all}"
-: "${yt_result_features=}"
-: "${region:=US}"
+: "${search_sort_by:=relevance}"
+: "${search_upload_date=}"
+: "${search_video_duration=}"
+: "${search_result_type:=all}"
+: "${search_result_features=}"
+: "${search_region:=US}"
 
 # debugging
 : ${log_level:=2}
@@ -336,7 +336,7 @@ scrape_invidious_search () {
 
 	print_info "Scraping YouTube ($page_query, pg: $page_num)\n"
 
-	_youtube_get_request "https://$invidious_instance/api/v1/search?q=$(printf "%s" "$page_query" | sed 's/ /%20/g')&type=${yt_result_type}&sort_by=${yt_sort_by}&date=${yt_upload_date}&duration=${yt_video_duration}&type=${yt_result_type}&features=${yt_result_features}&region=${region}&page=${page_num}" > "$_tmp_json"
+	_youtube_get_request "https://$invidious_instance/api/v1/search?q=$(printf "%s" "$page_query" | sed 's/ /%20/g')&type=${search_result_type}&sort_by=${search_sort_by}&date=${search_upload_date}&duration=${search_video_duration}&type=${search_result_type}&features=${search_result_features}&region=${region}&page=${page_num}" > "$_tmp_json"
 
 	{
 		_youtube_search_json_live < "$_tmp_json"
