@@ -336,7 +336,7 @@ scrape_invidious_search () {
 
 	print_info "Scraping YouTube ($page_query, pg: $page_num)\n"
 
-	_youtube_get_request "https://$invidious_instance/api/v1/search?q=$(printf "%s" "$page_query" | sed 's/ /%20/g')&type=${search_result_type}&sort_by=${search_sort_by}&date=${search_upload_date}&duration=${search_video_duration}&type=${search_result_type}&features=${search_result_features}&region=${region}&page=${page_num}" > "$_tmp_json"
+	_youtube_get_request "https://$invidious_instance/api/v1/search?q=$(printf "%s" "$page_query" | sed 's/ /%20/g')&type=${search_result_type}&sort_by=${search_sort_by}&date=${search_upload_date}&duration=${search_video_duration}&features=${search_result_features}&region=${search_region}&page=${page_num}" > "$_tmp_json"
 
 	{
 		_youtube_search_json_live < "$_tmp_json"
