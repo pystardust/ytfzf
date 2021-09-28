@@ -376,10 +376,8 @@ scrape_invidious_trending () {
 	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}" && _tmp_json="${_tmp_json}-$trending_tab"
 
 	_youtube_get_request "$url" > "$_tmp_json"
-	{
-		_youtube_search_json_videos < "$_tmp_json"
-		_youtube_search_json_playlist < "$_tmp_json"
-	} >> "$output_json_file"
+
+	_youtube_search_json_videos < "$_tmp_json" >> "$output_json_file"
 }
 
 scrape_youtube_channel () {
