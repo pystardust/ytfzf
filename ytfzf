@@ -169,6 +169,13 @@ function_exists "downloader" || downloader () {
 : "${invidious_instance:=ytprivate.com}"
 : ${pages_to_scrape:=1}
 
+: "${yt_sort_by:=relevance}"
+: "${yt_upload_date=}"
+: "${yt_video_duration=}"
+: "${yt_result_type:=all}"
+: "${yt_result_features=}"
+: "${region:=US}"
+
 # debugging
 : ${log_level:=2}
 
@@ -329,7 +336,7 @@ scrape_invidious_search () {
 
 	print_info "Scraping YouTube ($page_query, pg: $page_num)\n"
 
-	_youtube_get_request "https://$invidious_instance/api/v1/search?q=$(printf "%s" "$page_query" | sed 's/ /%20/g')&type=all&page=$page_num" > "$_tmp_json"
+	_youtube_get_request "https://$invidious_instance/api/v1/search?q=$(printf "%s" "$page_query" | sed 's/ /%20/g')&type=${yt_result_type}&sort_by=${yt_sort_by}&date=${yt_upload_date}&duration=${yt_video_duration}&type=${yt_result_type}&features=${yt_result_features}&region=${region}&page=${page_num}" > "$_tmp_json"
 
 	{
 		_youtube_search_json_live < "$_tmp_json"
@@ -380,9 +387,9 @@ scrape_youtube_channel () {
 
 ## Peertube {{{
 scrape_peertube () {
-	print_info "Scraping Peertube\n"
 	page_query=$1
 	output_json_file=$2
+	print_info "Scraping Peertube ($page_query)\n"
 
 	_tmp_json="${session_temp_dir}/peertube.json"
 
@@ -408,9 +415,9 @@ scrape_peertube () {
 
 ## Odysee {{{
 scrape_odysee () {
-	print_info "Scraping Odysee\n"
 	page_query=$1
 	output_json_file=$2
+	print_info "Scraping Odysee ($page_query)\n"
 
 	_tmp_json="${session_temp_dir}/odysee.json"
 
@@ -791,6 +798,12 @@ parse_opt () {
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
 		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
+		sort-by) search_sort_by="$optarg" ;;
+		upload-date) search_upload_date="$optarg" ;;
+		video-duration) search_video_duration=$optarg ;;
+		type) search_result_type=$optarg ;;
+		features) search_result_features=$optarg ;;
+		region) search_region=$optarg ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
