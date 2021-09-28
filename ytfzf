@@ -586,7 +586,7 @@ interface_scripting () {
 	data_string_template='.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"'
 	case 1 in
 		"$is_auto_select")
-		jq -r "$data_string_template"  < "$video_json_file"  | head -n "$scripting_video_count" |  trim_id  | > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | head -n "$scripting_video_count" |  trim_id   > "$selected_id_file"
 			;;
 		"$is_random_select")
 		jq -r "$data_string_template"  < "$video_json_file"  | shuf | head -n "$scripting_video_count" | trim_id > "$selected_id_file"
