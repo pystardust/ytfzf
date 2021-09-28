@@ -155,15 +155,18 @@ function_exists "downloader" || downloader () {
 
 : ${is_interface_scripting:=0}
 : ${scripting_video_count:=1}
-: ${is_auto_select:=0}
 : ${is_random_select:=0}
+: ${is_auto_select:=0}
 
 # option parsing
 : "${long_opt_char:=-}"
 
 # scrape
 : "${scrape=youtube}"
+#this comes from invidious' api
+: "${yt_thumbnail_quality=high}"
 : ${sub_link_count:=10}
+: "${invidious_instance:=ytprivate.com}"
 
 # debugging
 : ${log_level:=2}
@@ -228,13 +231,8 @@ usage () {
 ## Youtube {{{
 _youtube_get_request () {
 	_base_url=$1
-	_query=$2
-	_sp=$3
 	# Get search query from youtube
 	curl "$_base_url" -s -L \
-	  -G --data-urlencode "search_query=$_query" \
-	  --data-urlencode "sp=$_sp" \
-	  -H 'Authority: www.youtube.com' \
 	  -H "User-Agent: $useragent" \
 	  -H 'Accept-Language: en-US,en;q=0.9' \
 	  --compressed
@@ -250,91 +248,42 @@ _youtube_get_json () {
 
 # Search Related functions {{{
 _youtube_search_json_playlist () {
-	jq '[ .contents|
-	..|.playlistRenderer? |
-	select(. !=null) |
+	jq '[ .[] | select(.type=="playlist") |
 		{
 			ID: .playlistId,
 			url: "https://www.youtube.com/playlist?list=\(.playlistId)",
-			title: "[Playlist] \(.title.simpleText)",
-			thumbs: .thumbnails[0].thumbnails[0].url|sub("\\?.*";""),
-			channel: .longBylineText.runs[0].text,
+			title: "[playlist] \(.title)",
+			channel: .author,
+			thumbs: .playlistThumbnail,
 			duration: "\(.videoCount) videos",
-			views: "playlist",
-			date: "playlist"
+		}
+	]'
+}
+_youtube_search_json_live () {
+	jq '[ .[] | select(.type=="video") | select(.liveNow==true) |
+		{
+			ID: .videoId,
+			url: "https://www.youtube.com/watch?v=\(.videoId)",
+			title: "[live] \(.title)",
+			channel: .author,
+			thumbs: .videoThumbnails | .[] | select(.quality == "'"$yt_thumbnail_quality"'").url ,
 		}
 	]'
 }
 _youtube_search_json_videos () {
-	jq '[ .contents| ..|.videoRenderer? | select(. !=null) |
+	jq '[ .[] | select(.type=="video") | select(.liveNow==false) |
 		{
 			ID: .videoId,
 			url: "https://www.youtube.com/watch?v=\(.videoId)",
-			title: .title.runs[0].text,
-			channel: .longBylineText.runs[0].text,
-			thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
-			duration:.lengthText.simpleText,
-			views: .shortViewCountText.simpleText,
-			date: .publishedTimeText.simpleText,
-			description: .detailedMetadataSnippets[0].snippetText.runs[0].text
+			title: .title,
+			channel: .author,
+			thumbs: .videoThumbnails | .[] | select(.quality == "'"$yt_thumbnail_quality"'").url ,
+			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
+			views: "\(.viewCount)",
+			date: .publishedText,
+			description: .description
 		}
 	]'
-}
-_youtube_get_sp_filter () {
-	if [ -n "$sp" ]; then
-		#youtube puts in %253d one ore more times in the filter id, it doesn't seem useful, so we are removing it if it's in the filter
-		sp=${sp%%%*}
-		return
-	fi
-
-	sort_by_filter=$1
-	upload_date_filter=$2
-
-	#filter_id is a variable that keeps changing throught this function
-	filter_id=
-
-	#sp is the final filter id that is used in the search query
-	sp=
-
-	#the way youtube uses these has a pattern, for example
-	    #in the sort_by_filter the only difference is the 3rd character, I just don't know how to use this information efficiently
-	case $sort_by_filter in
-		upload-date) filter_id="CAISBAgAEAE" ;;
-		view-count) filter_id="CAMSBAgAEAE" ;;
-		rating) filter_id="CAESBAgAEAE" ;;
-	esac
-
-	#another example is sort by filter + upload date filter only changes one character as well
-	if [ -n "$filter_id" ]; then
-		#gets the character in the filter_id that needs to be replaced if upload_date_filter is also given
-		upload_date_character=$(printf "%s" "$filter_id" | awk '{print substr($1, 8, 1)}')
-	fi
-
-	#For each of these, if upload_date_character is unset, the filter_id should be the normal filter
-	#Otherwise set the upload_date_character to the right upload_date_character
-	case $upload_date_filter in
-		last-hour)
-			[ -z "$upload_date_character" ] && filter_id="EgQIARAB" || upload_date_character="B" ;;
-		today)
-			[ -z "$upload_date_character" ] && filter_id="EgQIAhAB" || upload_date_character="C" ;;
-		this-week)
-			[ -z "$upload_date_character" ] && filter_id="EgQIAxAB" || upload_date_character="D" ;;
-		this-month)
-			[ -z "$upload_date_character" ] && filter_id="EgQIBBAB" || upload_date_character="E" ;;
-		this-year)
-			[ -z "$upload_date_character" ] && filter_id="EgQIBRAB" || upload_date_character="F" ;;
-	esac
-
-	#if upload_date_character isn't empty, set sp to upload_date filter + sort_by filter
-	if [ -n "$upload_date_character" ]; then
-		#replaces the 8th character in the filter_id with the appropriate character
-		#the 8th character specifies the upload_date_filter
-		sp=$(printf "%s" "$filter_id" | sed 's/\(.\{7\}\)./\1'"$upload_date_character"'/')
-	#otherwise set it to the filter_id
-	else
-		sp=$filter_id
-	fi
-	unset upload_date_character filter_id
 }
 #}}}
 
@@ -369,7 +318,7 @@ _youtube_channel_json () {
 }
 #}}}
 
-scrape_youtube () {
+scrape_invidious_search () {
 	page_query=$1
 	output_json_file=$2
 	pagetype=$3
@@ -377,61 +326,52 @@ scrape_youtube () {
 	_tmp_html="${session_temp_dir}/yt.html"
 	_tmp_json="${session_temp_dir}/yt.json"
 
-	case $pagetype in
-		''|search)
-			print_info "Scraping YouTube\n"
-			# TODO: sp
-			_youtube_get_request "https://www.youtube.com/results" "$page_query" > "$_tmp_html"
+	print_info "Scraping YouTube ($page_query)\n"
 
-			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
+	_youtube_get_request "https://$invidious_instance/api/v1/search?q=$(printf "%s" "$page_query" | sed 's/ /%20/g')&type=all" > "$_tmp_json"
 
-			{
-				_youtube_search_json_playlist < "$_tmp_json"
-				_youtube_search_json_videos < "$_tmp_json"
-			} >> "$output_json_file"
-			;;
-		trending)
-			print_info "Scraping YouTube trending\n"
-			trending_tab=$page_query
+	{
+		_youtube_search_json_live < "$_tmp_json"
+		_youtube_search_json_videos < "$_tmp_json"
+		_youtube_search_json_playlist < "$_tmp_json"
+	} >> "$output_json_file"
+}
 
-			case $trending_tab in
-				 music) tab_data="4gINGgt5dG1hX2NoYXJ0cw%3D%3D" ;;
-				gaming) tab_data="4gIcGhpnYW1pbmdfY29ycHVzX21vc3RfcG9wdWxhcg%3D%3D" ;;
-				movies) tab_data="4gIKGgh0cmFpbGVycw%3D%3D" ;;
-			esac
+scrape_invidious_trending () {
+	print_info "Scraping YouTube trending\n"
+	trending_tab=$page_query
 
-			_youtube_get_request "https://www.youtube.com/feed/trending?bp=$tab_data" "" "" > "$_tmp_html"
+	url="https://$invidious_instance/api/v1/trending"
+	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}"
 
-			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
-			{
-				_youtube_search_json_videos < "$_tmp_json"
-				_youtube_search_json_playlist < "$_tmp_json"
-			} >> "$output_json_file"
-			;;
-		channel)
-			channel_url=$page_query
-			print_info "Scraping Youtube channel: $channel_url\n"
-			#if these 2 vars aren't unique, weird things happen,
-			# i is defined in at the while loop for scraping channels
-			# it may be better to instead make this channel part it's own function, and pass a var for the tmp files
-			_tmp_html="${session_temp_dir}/channel-$i.html"
-			_tmp_json="${session_temp_dir}/channel-$i.json"
+	_youtube_get_request "$url" > "$_tmp_json"
+	{
+		_youtube_search_json_videos < "$_tmp_json"
+		_youtube_search_json_playlist < "$_tmp_json"
+	} >> "$output_json_file"
+}
 
-			# Converting channel title page url to channel video url
-			case $channel_url in
-				*featured)
-				channel_url=${channel_url%featured}videos
-					;;
-			esac
+scrape_youtube_channel () {
+	channel_url=$page_query
+	print_info "Scraping Youtube channel: $channel_url\n"
+	#if these 2 vars aren't unique, weird things happen,
+	# i is defined in at the while loop for scraping channels
+	# it may be better to instead make this channel part it's own function, and pass a var for the tmp files
+	_tmp_html="${session_temp_dir}/channel-$i.html"
+	_tmp_json="${session_temp_dir}/channel-$i.json"
 
-			_youtube_get_request "${channel_url##* }" "" "" > "$_tmp_html"
-			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
-
-			channel_name=$(_youtube_channel_name < "$_tmp_html" )
-			_youtube_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
+	# Converting channel title page url to channel video url
+	case $channel_url in
+		*featured)
+		channel_url=${channel_url%featured}videos
 			;;
 	esac
 
+	_youtube_get_request "${channel_url##* }" "" "" > "$_tmp_html"
+	_youtube_get_json < "$_tmp_html" > "$_tmp_json"
+
+	channel_name=$(_youtube_channel_name < "$_tmp_html" )
+	_youtube_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
 }
 ## }}}
 
@@ -571,12 +511,12 @@ video_info_text () {
 }
 
 thumbnail_video_info_text () {
-	printf "\n ${c_cyan}%s" "$title"
-	printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
-	printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
-	printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
-	printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
-	printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
+	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
+	[ -n "$channel" ] && printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
+	[ -n "$duration" ] && printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
+	[ -n "$views" ] && printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
+	[ -n "$date" ] && printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
+	[ -n "$description" ] && printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
 }
 
 # Scripting interfaces {{{
@@ -921,8 +861,8 @@ scrape_website () {
 	scrape_type="$1"	
 	case $scrape_type in
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
-		youtube|Y) search_is_empty && get_search; scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
-		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
+		youtube|Y) search_is_empty && get_search; scrape_invidious_search  "$search" "$ytfzf_video_json_file" "search";;
+		youtube-trending|T) scrape_invidious_trending  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
 		    ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
 
@@ -932,7 +872,7 @@ scrape_website () {
 			    i=$((i+1))
 			    {
 				    _tmp_subfile="${session_temp_dir}/channel-$i"
-				    scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
+				    scrape_youtube_channel "$channel_url" "$_tmp_subfile" "channel" < /dev/null
 				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 			    } &
 			    sleep 0.01
