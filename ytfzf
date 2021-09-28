@@ -290,7 +290,7 @@ _youtube_search_json_playlist () {
 	]'
 }
 _youtube_search_json_live () {
-	jq '[ .[] | select(.type=="video") | select(.liveNow==true) |
+	jq '[ .[] | select(.type=="video" and .liveNow==true) |
 		{
 			ID: .videoId,
 			url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
@@ -301,7 +301,7 @@ _youtube_search_json_live () {
 	]'
 }
 _youtube_search_json_videos () {
-	jq '[ .[] | select(.type=="video") | select(.liveNow==false) |
+	jq '[ .[] | select(.type=="video" and .liveNow==false) |
 		{
 			ID: .videoId,
 			url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
@@ -906,12 +906,12 @@ fi
 
 handle_scrape_error () {
 	case "$1" in
-		6) die 4 "Website unresponsive (do you have internet?)\n" ;;
+		6) print_error "Website unresponsive (do you have internet?)\n" ;;
 	 	22) 
 			case "$curr_scrape" in
 				youtube|Y|youtube-trending|T)
-					die 4 "There was an error scraping $curr_scrape ($invidious_instance)\nTry changing invidious instances\n" ;;
-				*) die 4 "There was an error scraping $curr_scrape" ;;
+					print_error "There was an error scraping $curr_scrape ($invidious_instance)\nTry changing invidious instances\n" ;;
+				*) print_error "There was an error scraping $curr_scrape" ;;
 			esac
 	esac
 }
