@@ -362,7 +362,8 @@ scrape_invidious_trending () {
 }
 
 scrape_youtube_channel () {
-	channel_url=$page_query
+	channel_url=$1
+	output_json_file=$2
 	print_info "Scraping Youtube channel: $channel_url\n"
 	#if these 2 vars aren't unique, weird things happen,
 	# i is defined in at the while loop for scraping channels
@@ -881,6 +882,7 @@ scrape_website () {
 		youtube|Y) 
 			# youtube scrape {{{
 			search_is_empty && get_search; 
+			#$i is so multiple pages can be scraped
 			i=0
 			while [ $i -lt $pages_to_scrape ]; do
 				i=$((i+1))
