@@ -29,6 +29,13 @@ clean_up () {
 	fi
 }
 
+is_relative_dir () {
+	case "$1" in
+		../*|./*|~/*|/*) return 0 ;;
+	esac
+	return 1
+}
+
 die () {
 	_return_status=$1
 	printf "$2" >&2
@@ -61,12 +68,14 @@ search_is_empty () {
 : "${YTFZF_CONFIG_DIR:=$HOME/.config/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
 : "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
+: "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
 
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 #}}}
 
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 : ${cache_dir=$HOME/.cache/ytfzf}
+
 
 # menu options
 #the menu to use instead of fzf when -D is specified
@@ -604,6 +613,8 @@ preview_start () {
 			ueberzug layer --parser simple < "$UEBERZUG_FIFO" 2>/dev/null &
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
+		*)
+			"$thumbnail_viewer" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
 }
 preview_stop () {
@@ -612,6 +623,8 @@ preview_stop () {
 		ueberzug)
 			exec 3>&- # close file descriptor 3, closing ueberzug
 			;;
+		*)
+			"$thumbnail_viewer" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
 }
 preview_display_image () {
@@ -655,12 +668,9 @@ preview_display_image () {
 			killall display
 			dep_check "display" || die 1 "\nimagemagick is not installed"
 			display "$thumb_dir/${id}.jpg" ;;
-		custom) 
-			if function_exists "img_display_function"; then
-				img_display_function "$thumb_dir/${id}.jpg" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" ;;
-			else
-				die 1 "img_display_function is not defined"
-			fi
+		*) 
+			"$thumbnail_viewer" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null || die 1 "$thumbnail_viewer doesn't exist" ;;
+
 	esac
 }
 #}}}
@@ -820,7 +830,8 @@ parse_opt () {
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
-		thumb-viewer) thumbnail_viewer="$optarg" ;;
+		thumb-viewer) 
+			is_relative_dir "$optarg" && thumbnail_viewer="$optarg" || thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}" ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
