@@ -21,12 +21,21 @@ from Youtube, Peertube or Odysee
 and opens/downloads them using mpv/youtube\-dl.
 
 .SH OPTIONS
+
+.PP
+Information
+.RS
 .TP
 .BR \-h ", " \-\-help
 Show help text.
 .TP
 .BR \-v
 Show ytfzf's version.
+.RE
+
+.PP
+How to play the selected videos.
+.RS
 .TP
 .BR \-d ", " \-\-download
 Download the selected videos.
@@ -38,28 +47,70 @@ Play audio only.
 This can also be set in the config file with
 .BR is_audio_only .
 .TP
+.BR \-f ", " \-\-formats
+Show available formats before proceeding.
+.TP
+.BR \-\-detach
+Detach the video player from the terminal.
+This can also be set in the config file with
+.BR is_detach .
+.TP
+.BI \-I " option"
+Instead of playing the selected videos,
+get information about them in the selected format.
+The available options are:
+.RS
+.TP
+.IR L | l | link
+Print the URL of the selected videos.
+.TP
+.IR VJ | vj | video\-json
+Prints the json of the selected videos.
+.TP
+.IR J | j | json
+Prints the json of all the videos in the search results.
+.TP
+.IR R | r | raw
+Prints the data of the selected videos, as appears in the menu.
+.RE
+.TP
+.B \-L
+Alias for \-I L
+.TP
+.BR \-\-info\-print\-exit=\fInumber
+Whether or not to exit after printing info requested with \-I or \-L.
+This can also be set in the config file with
+.BR exit_on_info_to_print .
+.RE
+
+.PP
+Menu options
+.RS
+.TP
 .BR \-l ", " \-\-loop
 Reopen the menu when the video stops playing.
 This can also be set in the config file with
 .BR is_loop .
 .TP
+.BR \-t ", " \-\-show\-thumbnails
+Show thumbnails.
+Doesn't work with \fB\-D\fR or \fB\-H\fR.
+This can also be set in the config file with
+.BR show_thumbnails .
+.TP
+.BR \-D ", " \-\-external\-menu
+Use an external menu instead of fzf.
+The default is \fIdmenu\fR.
+This can also be set in the config file with
+.BR is_ext_menu .
+.TP
 .BR \-\-sort
-Sorts videos by upload date.
-.TP
-.BR \-\-detach
-Detach the video player from the terminal.
-.TP
-.BR \-f ", " \-\-formats
-Show available formats before proceeding.
-.TP
-.BR \-H ", " \-\-history
-Choose video from history.
-.TP
-.BR \-x ", " \-\-history\-clear
-Clear history.
-.TP
-.BR \-q ", " \-\-search\-history
-Open a menu to choose a query from search history.
+Sorts videos (after scraping) by upload date.
+.RE
+
+.PP
+Auto selecting
+.RS
 .TP
 .BR \-a ", " \-\-auto\-select
 Auto\-play the first result,
@@ -70,17 +121,14 @@ Select all results.
 .BR \-r ", " \-\-random\-select
 Auto\-play a random result,
 .TP
-.B \-L
-Print the URL of the selected videos.
-.TP
-.BI \-\-ytdl\-opts= option
-Pass command\-line options to youtube\-dl when downloading.
-.EX
-.RB "example: " \-\-ytdl\-opts= "\fI\'\-o ~/Videos/%(title)s.%(ext)s\'"
-.EE
-.TP
-.BI \-\-ytdl\-path= path
-Specify the path to youtube\-dl or a fork of youtube\-dl for downloading.
+.BR \-n ", " \-\-link\-count=\fInumber
+The \fInumber\fR of videos to select with \fB\-a\fR or \fB\-r\fR.
+.RE
+
+
+.PP
+Scrapers
+.RS
 .TP
 .BI \-c " scrapers" ", " "\-\-scrape=scrapers"
 Set which scraper to use.
@@ -102,50 +150,37 @@ The currently supported builtin scrapers are:
 (Only if $enable_hist is enabled)
 .RE
 .TP
+.BR \-H ", " \-\-history
+Alias for \-c H.
+.br
+Scrapes history file.
+.TP
 .BI "\-\-scrape+=scrapers"
 Same as \-c, but keeps the default scrape as well.
 .TP
 .BI \-\-scraper-=scrapers
 Removes scraper from list of scrapers to use
-.TP
-.BR \-t ", " \-\-show\-thumbnails
-Show thumbnails.
-Doesn't work with \fB\-D\fR or \fB\-H\fR.
-This can also be set in the config file with
-.BR show_thumbnails .
-.TP
-.BR \-D ", " \-\-external\-menu
-Use an external menu instead of fzf.
-The default is \fIdmenu\fR.
-This can also be set in the config file with
-.BR is_ext_menu .
-.TP
-.BR \-n ", " \-\-link\-count=\fInumber
-The \fInumber\fR of videos to select with \fB\-a\fR or \fB\-r\fR.
-.TP
-.BI \-I " option"
-Instead of playing the selected videos,
-get information about them in the selected format.
-The available options are:
+.RE
+
+.PP
+Miscelanious
 .RS
 .TP
-.IR L | l | link
-Print the URL of the selected videos.
+.BR \-x ", " \-\-history\-clear
+Clear history.
 .TP
-.IR VJ | vj | video\-json
-Prints the json of the selected videos.
+.BR \-q ", " \-\-search\-history
+Open a menu to choose a query from search history.
 .TP
-.IR J | j | json
-Prints the json of all the videos in the search results.
+.BI \-\-ytdl\-opts= option
+Pass command\-line options to youtube\-dl when downloading.
+.EX
+.RB "example: " \-\-ytdl\-opts= "\fI\'\-o ~/Videos/%(title)s.%(ext)s\'"
+.EE
 .TP
-.IR R | r | raw
-Prints the data of the selected videos, as appears in the menu.
+.BI \-\-ytdl\-path= path
+Specify the path to youtube\-dl or a fork of youtube\-dl for downloading.
 .RE
-.TP
-.BR \-\-info\-print\-exit=\fInumber
-Whether or not to exit after printing info requested with \-I or \-L.
-This can also be set in the config file with
-.BR exit_on_info_to_print .
 
 .SH CONFIGURATION
 The default behaviour of \fBytfzf\fR can be changed by modifying the config file.

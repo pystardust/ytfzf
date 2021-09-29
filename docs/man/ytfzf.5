@@ -49,11 +49,9 @@ For example:
 conf.sh is used mainly for setting variables for \fBytfzf\fR.
 If a variable has no default, that means it is set to an empty string.
 
-.TP
-.RB $ useragent
-The useragent to use when scraping websites.
-.br
-.RI default: " \(dqMozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36\(dq"
+.PP
+Files and directories
+.RS
 
 .TP
 .RB $ cache_dir
@@ -74,12 +72,6 @@ The file to write watch history to if $enable_hist is 1
 .RI default: " $cache_dir/watch_hist"
 
 .TP
-.RB $ enable_hist
-Whether or not to keep track of history
-.br
-.RI default: " 0"
-
-.TP
 .RB $ ytfzf_selected_ids
 The file to store the ids of selected video(s) in.
 .br
@@ -91,28 +83,12 @@ The file to store the json data of scraped videos.
 .br
 .RI default: " $cache_dir/videos_json"
 
-.TP
-.RB $ log_level
-How much debug information to log.
-.RS
-.TP
-.IR 0
-Log everything
-.TP 
-.IR 1
-Log only warnings and errors
-.TP
-.IR 2
-Log only errors
-.TP
-.RI default: " 2"
 .RE
 
-.TP
-.RB $ search_prompt
-The text to display when no search is given.
-.br
-.RI default: " Search: "
+.PP
+How to play the selected videos.
+
+.RS
 
 .TP
 .RB $ is_detach
@@ -162,7 +138,14 @@ Whether or not to exit after printing info requested in $info_to_print.
 The video preference to use for youtube-dl in mpv.
 .br
 .RI default: " best"
-    
+
+.RE
+
+.PP
+Menu options
+
+.RS
+
 .TP
 .RB $ is_sort
 Whether or not to sort scraped videos by date in the menu
@@ -188,6 +171,56 @@ Whether or not to show the menu after the selected videos have stopped playing.
 .RI default: " 0"
 
 .TP
+.RB $ search_prompt
+The text to display when no search is given.
+.br
+.RI default: " Search: "
+
+.RE
+
+.PP
+Auto selecting
+
+.RS
+
+.TP
+.RB $ is_interface_scripting
+Whether or not to use an auto selector.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ is_auto_select
+Whether or not to auto select the first \-n videos. (only works if $is_interface_scripting=1)
+.br
+.RI default: " 0"
+
+.TP
+.RB $ is_random_select
+Whether or not to randomly select \-n videos. (only works if $is_interface_scripting=1)
+.br
+.RI default: " 0"
+
+.TP
+.RB $ scripting_video_count
+The amount of videos to get with \-a or \-r.
+.br
+.RI default: " 1"
+
+.TP
+.RB $ useragent
+The useragent to use when scraping websites.
+.br
+.RI default: " \(dqMozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36\(dq"
+
+.RE
+
+.PP
+Scrapers
+
+.RS
+
+.TP
 .RB $ scrape
 The website to scrape by default.
 The currently supported options are
@@ -205,6 +238,36 @@ The amount of videos to scrape per channel when getting subscriptions.
 .br
 .RI default: " 10"
 
+.RE
+
+.PP
+Misc
+
+.RS
+
+.TP
+.RB $ enable_hist
+Whether or not to keep track of history
+.br
+.RI default: " 0"
+
+.TP
+.RB $ log_level
+How much debug information to log.
+.RS
+.TP
+.IR 0
+Log everything
+.TP 
+.IR 1
+Log only warnings and errors
+.TP
+.IR 2
+Log only errors
+.TP
+.RI default: " 2"
+.RE
+
 .TP
 .RB $ ytdl_opts
 The command\-line options to pass to youtube\-dl when downloading.
@@ -214,6 +277,8 @@ The command\-line options to pass to youtube\-dl when downloading.
 Path to youtube\-dl or a fork of youtube\-dl for downloading.
 .br
 .RI default: " youtube\-dl"
+
+.RE
 
 .SS FUNCTIONS
 .PP
