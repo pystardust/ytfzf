@@ -182,6 +182,7 @@ usage () {
 				    peertube/P, odysee/lbry/O
 				you can use multiple scrapers by separating each with a , eg: youtube,odysee
 	-t			Show thumbnails
+	--thumb-viewer=viewer   The program to use for displaying thumbnails.
 	-D			Use an external menu
 	-I <info>               Instead of playing the selected video(s), get information about them.
 				Options can be separated with a comma, eg: L,R

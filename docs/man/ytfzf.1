@@ -104,6 +104,25 @@ Doesn't work with \fB\-D\fR or \fB\-H\fR.
 This can also be set in the config file with
 .BR show_thumbnails .
 .TP
+.BR \-\-thumb\-viewer=program
+Use program for displaying thumbnails.
+.br
+Bulitin programs:
+.RS
+.TP
+.IR chafa, chafa-16, chafa-tty
+chafa, chafa with 16 colors, chafa with 4 colors.
+.TP
+.IR catimg, catimg-256
+catimg, catimg with 256 colors.
+.TP
+.IR display
+Imagemagick's display module.
+.TP
+.IR <custom>
+Additional viewers can be put into $YTFZF_THUMBNAIL_VIEWERS_DIR.
+.RE
+.TP
 .BR \-D ", " \-\-external\-menu
 Use an external menu instead of fzf.
 The default is \fIdmenu\fR.
@@ -152,6 +171,9 @@ The defualt is
 The subscriptions file to use.
 The deafult is
 .I $YTFZF_CONFIG_DIR/subscriptions
+.TP
+.B $YTFZF_THUMBNAIL_VIEWERS_DIR
+The directory to keep additional thumbnail viewers
 
 .SH FILES
 .TP
