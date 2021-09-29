@@ -653,7 +653,7 @@ preview_start () {
 	case $thumbnail_viewer in
 		ueberzug)
 			# starts uberzug to this fifo
-			export UEBERZUG_FIFO="/tmp/ytfzf-ueberzug-fifo"
+			export UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
 			ueberzug layer --parser simple < "$UEBERZUG_FIFO" 2>/dev/null &
