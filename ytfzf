@@ -953,7 +953,13 @@ scrape_website () {
                 *)
                         #custom scrapers {{{
 			#this sets each variable's value (even with spaces) to it's own field
-			set -- $(eval printf '"%s"' $custom_scraper_variables)
+			IFS=' '
+			set --
+			for var in $(printf "%s " $custom_scraper_variables); do
+				set -- "$@" "$(IFS= eval printf $var)"
+			done
+			unset var
+
 			#if the file doesn't exist, it will exit with code 127
 			"${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" "$search" "$ytfzf_video_json_file" "$@" 2>/dev/null
 			case "$?" in
