@@ -294,6 +294,8 @@ This function takes 4 arguments:
 .SH CUSTOM SCRAPERS
 .PP
 Custom scrapers are programs located in $YTFZF_CUSTOM_SCRAPERS_DIR.
+.br
+To customize some behavior of the scraper see CUSTOM SCRAPER CONFIG
 .RE
 .PP
 A custom scraper will take the search query as the first argument to the program
@@ -346,4 +348,33 @@ Example JSON:
 .EE
 .PP
 A custom scraper can be written in any programming language so long as the file can be run as a normal command
+.RE
+
+.SH CUSTOM SCRAPER CONFIG
+.PP
+To customize some behavior of a scraper create a file nameed <scraper-name>.conf. (replace <scraper-name> with the name of the scraper)
+.br
+This file would also be located in $YTFZF_CUSTOM_SCRAPER_DIR.
+.PP
+The syntax of this file is as such:
+.RS
+.EX
+key: value
+key2: value2
+.EE
+.RE
+There are no quotations around anything.
+
+.SH CUSTOM SCRAPER CONFIG OPTIONS
+.PP
+Options to use as keys in <scraper-name>.conf
+.TP
+.RB vars
+The variables to pass into the scraper after the search and json file path.
+.br
+Example:
+.RS
+.EX
+vars: $is_download $is_sort
+.EE
 .RE

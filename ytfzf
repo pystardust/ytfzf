@@ -94,7 +94,6 @@ search_is_empty () {
 
 # Custom Scrapers {{{
 : "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
-: "${custom_scraper_variables=}"
 #}}}
 
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
@@ -917,6 +916,8 @@ fi
 handle_scrape_error () {
 	case "$1" in
 		1) print_info "$curr_scrape failed to load website\n" ;;
+		9) print_info "$curr_scrape does not have a configuration file\n" ;;
+		126) print_info "$curr_scrape does not have execute permissions\n" ;;
 	esac
 }
 
@@ -952,20 +953,22 @@ scrape_website () {
 		odysee|lbry|O) search_is_empty && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
                 *)
                         #custom scrapers {{{
-			#this sets each variable's value (even with spaces) to it's own field
-			IFS=' '
+			[ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" ] || die 2 "invalid scraper: $scrape_type\n"
 			set --
-			for var in $(printf "%s " $custom_scraper_variables); do
-				set -- "$@" "$(IFS= eval printf $var)"
-			done
-			unset var
+			# Config parsing {{{
+			[ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" ] && {
+				custom_scraper_variables="$(sed '/^vars:/s/^vars: //' "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}.conf")" 2> /dev/null
+				#this sets each variable's value (even with spaces) to it's own field
+				IFS=' '
+				for var in $(printf "%s " $custom_scraper_variables); do
+					set -- "$@" "$(IFS= eval printf $var)"
+				done
+				unset var
+			}
+			#}}}
 
 			#if the file doesn't exist, it will exit with code 127
 			"${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" "$search" "$ytfzf_video_json_file" "$@" 2>/dev/null
-			case "$?" in
-				126) die $? "$scrape_type does not have execute permissions\n";;
-				127) die 2 "invalid scraper: $scrape_type\n" ;;
-			esac
                         #}}}
 	esac
 	rv="$?"
