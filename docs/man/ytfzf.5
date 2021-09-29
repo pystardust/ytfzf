@@ -97,6 +97,18 @@ The directory to store thumbnails in.
 .RI default: " $cache_dir/thumb"
 
 .TP
+.RB $ hist_file
+The file to write watch history to if $enable_hist is 1
+.br
+.RI default: " $cache_dir/watch_hist"
+
+.TP
+.RB $ enable_hist
+Whether or not to keep track of history
+.br
+.RI default: " 0"
+
+.TP
 .RB $ ytfzf_selected_ids
 The file to store the ids of selected video(s) in.
 .br
@@ -107,6 +119,23 @@ The file to store the ids of selected video(s) in.
 The file to store the json data of scraped videos.
 .br
 .RI default: " $cache_dir/videos_json"
+
+.TP
+.RB $ log_level
+How much debug information to log.
+.RS
+.TP
+.IR 0
+Log everything
+.TP 
+.IR 1
+Log only warnings and errors
+.TP
+.IR 2
+Log only errors
+.TP
+.RI default: " 2"
+.RE
 
 .TP
 .RB $ search_prompt
@@ -150,6 +179,12 @@ Prints the json of all the videos in the search results.
 .IR R " | " r " | " raw
 Prints the data of the selected videos, as appears in the menu.
 .RE
+
+.TP
+.RB $ exit_on_info_to_print
+Whether or not to exit after printing info requested in $info_to_print.
+.br
+.RI default: " 1"
 
 .TP
 .RB $ video_pref
