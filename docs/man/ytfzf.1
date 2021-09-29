@@ -179,6 +179,60 @@ The subscriptions file.
 .I ~/.cache/ytfzf/watch_hist
 Watch history (if $enable_hist is 1)
 
+.SH CACHE
+.PP
+Each instance of ytfzf has it's own directory in $cache_dir.
+.br
+The structure of $cache_dir looks like this
+.RS
+.EX
+$cache_dir
+| \-\- watch_hist
+| \-\- <search>\-<pid>
+|  | \-\- thumbnails
+|  | \-\- tmp
+|  |  | \-\- curl_config
+|  |  | \-\- <scrape>.html
+|  |  | \-\- <scrape>.json
+|  | \-\- ids
+|  | \-\- videos_json
+.EE
+.RE
+.PP
+An explanation of each directory/file:
+.RS
+.TP
+.IR watch_hist
+The watch history file.
+.TP
+.IR <search>\-<pid>
+An instance's parent folder.
+.br
+If no search was given, it instead uses the name "SCRAPE\-<scrape>\-<pid>"
+.TP
+.IR thumbnails
+Stores the thumbnails for the instance (only with \-t).
+.TP
+.IR tmp
+Stores less importatnt temporarily used files.
+.TP 
+.IR curl_config
+The configuration file for curl for downloading thumbnails (only with \-t).
+.TP
+.IR <scrape>.html
+For scrapers that need to scrape websites, this is the output of curl.
+.TP
+.IR <scrape>.json
+The json scraped from a website.
+.TP
+.IR ids
+The file that stores the id of each selected video.
+.TP
+.IR videos_json
+The file that stores a json of all videos displayed in fzf.
+.br
+This file is very helpful for making playlists as it is in the same format.
+
 .SH AUTHOR
 Originally written by pystardust.
 .RI < https://github.com/pystardust >
