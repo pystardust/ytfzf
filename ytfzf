@@ -177,7 +177,7 @@ esac
 #}}}
 
 tab_space=$(printf '\t')
-gap_space="                                                                   "
+: "${gap_space:=                                                                                                                   }"
 
 # }}}
 
