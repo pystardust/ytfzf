@@ -393,15 +393,16 @@ scrape_invidious_channel () {
 	print_info "Scraping Youtube channel: $channel_url\n"
 	output_json_file=$2
 	tmp_file_name=$3
-	#if these 2 vars aren't unique, weird things happen,
-	_tmp_json="${session_temp_dir}/${tmp_file_name}.json"
 
 	# Converting channel title page url to channel video url
+	printf "%s" "$channel_url" | grep -Eqv '/videos$' && channel_url="${channel_url}/videos"
 	channel_id="$(_get_channel_id "$channel_url")"
 	[ "$channel_id/videos" = "$channel_url" ] &&\
 		print_warning "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
 		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
 
+	#if this var isn't unique, weird things happen,
+	_tmp_json="${session_temp_dir}/channel-${channel_id}.json"
 	channel_url="https://$invidious_instance/api/v1/channels/$channel_id"
 	_youtube_get_request "${channel_url##* }" > "$_tmp_json"
 	rv="$?"
