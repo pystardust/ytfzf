@@ -291,7 +291,7 @@ _youtube_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
 		{
 			ID: .playlistId,
-			url: "https://'"${invidious_instance}"'/playlist?list=\(.playlistId)",
+			url: "https://www.youtube.com/playlist?list=\(.playlistId)",
 			title: "[playlist] \(.title)",
 			channel: .author,
 			thumbs: .playlistThumbnail,
