@@ -924,8 +924,8 @@ scrape_website () {
 			while [ ${i:=0} -lt $pages_to_scrape ]; do
 				i=$((i+1))
 				scrape_invidious_search  "$search" "$ytfzf_video_json_file" "search" "$i"
-			done ;;
-			unset i
+			done 
+			unset i ;;
 			# }}}
 		youtube-trending|T) scrape_invidious_trending  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
