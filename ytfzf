@@ -836,7 +836,7 @@ parse_opt () {
 		type) search_result_type=$optarg ;;
 		features) search_result_features=$optarg ;;
 		region) search_region=$optarg ;;
-		channel-link) _get_real_channel_link "$i"; exit 0 ;;
+		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
