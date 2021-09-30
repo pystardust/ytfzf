@@ -247,7 +247,7 @@ _get_real_channel_link () {
 	domain=${1#https://}
 	domain=${domain%%/*}
 	url=$(printf "%s" "$1" | sed "s/www.youtube.com/$invidious_instance/")
-	real_path="$(curl -is "$url" | grep "[lL]"ocation | sed 's/[Ll]ocation: //')"
+	real_path="$(curl -is "$url" | grep "^[lL]"ocation | sed 's/[Ll]ocation: //')"
 	#prints the origional url because it was correct
 	[ -z "$real_path" ] && printf "%s\n" "$1" && return 0
 	#printf is not used because weird flushing? issues.
