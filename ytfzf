@@ -925,6 +925,7 @@ scrape_website () {
 				i=$((i+1))
 				scrape_invidious_search  "$search" "$ytfzf_video_json_file" "search" "$i"
 			done ;;
+			unset i
 			# }}}
 		youtube-trending|T) scrape_invidious_trending  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
@@ -948,6 +949,7 @@ scrape_website () {
 				"$YTFZF_SUBSCRIPTIONS_FILE" )
 			EOF
 		    wait
+		    unset i
 		    ;;#}}}
 		peertube|P) search_is_empty && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
 		odysee|lbry|O) search_is_empty && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
