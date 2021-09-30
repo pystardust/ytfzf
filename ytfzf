@@ -918,6 +918,7 @@ handle_scrape_error () {
 		1) print_info "$curr_scrape failed to load website\n" ;;
 		9) print_info "$curr_scrape does not have a configuration file\n" ;;
 		126) print_info "$curr_scrape does not have execute permissions\n" ;;
+		127) die 2 "invalid scraper: $curr_scrape\n" ;;
 	esac
 }
 
@@ -953,11 +954,10 @@ scrape_website () {
 		odysee|lbry|O) search_is_empty && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
                 *)
                         #custom scrapers {{{
-			[ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" ] || die 2 "invalid scraper: $scrape_type\n"
-			set --
+
 			# Config parsing {{{
-			[ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type" ] && {
-				custom_scraper_variables="$(sed '/^vars:/s/^vars: //' "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}.conf")" 2> /dev/null
+			[ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type.conf" ] && {
+				custom_scraper_variables="$(sed '/^vars:/s/^vars: //' "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}.conf")"
 				#this sets each variable's value (even with spaces) to it's own field
 				IFS=' '
 				for var in $(printf "%s " $custom_scraper_variables); do
