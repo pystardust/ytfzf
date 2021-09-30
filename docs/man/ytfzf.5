@@ -26,9 +26,15 @@ A shell script that gets sourced into ytfzf when ytfzf is run.
 A file that is a list of links to youtube channel's video page, such as:
 .RS
 .EX
-.I https://www.youtube.com/c/SomeOrdinaryGamers
+.I https://www.youtube.com/channel/UCtMVHI3AJD4Qk4hcbZnI9ZQ
 .EE
 .RE
+.PP
+If a channel appears similar to "https://www.youtube.com/c/SomeOrdinaryGamers", run
+.br
+ytfzf --channel-link="https://www.youtube.com/c/SomeOrdinaryGamers"
+.br
+Before adding it to your subscriptions file
 .PP
 A comment can be created by having '#comment' on it's own line or after a link.
 For example:
@@ -189,11 +195,11 @@ Available options:
 .TP
 .IR sddefault
 .TP
-.IR high " (default)"
+.IR high
 .TP
 .IR medium
 .TP
-.IR default
+.IR default " (default)"
 .TP
 .IR start
 The first frame of the video (low quality)
