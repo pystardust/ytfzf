@@ -846,7 +846,10 @@ shift $((OPTIND-1))
 #}}}
 
 # Get search{{{
+set -f
+set -- $*
 search="$*"
+set +f
 [ -z "$search" ] || [ "$search" = '-' ] && search_prompt_menu
 #}}}
 
