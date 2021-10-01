@@ -65,13 +65,6 @@ trim_url () {
 	done
 }
 
-search_is_empty () {
-	case "$search" in
-		-|'') return 0 ;;
-	esac
-	return 1
-}
-
 # Traps {{{
 [ -z "$UEBERZUG_FIFO" ] && trap 'clean_up' EXIT
 [ -z "$UEBERZUG_FIFO" ] && trap 'exit' INT TERM HUP
@@ -104,8 +97,9 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 	if [ $is_ext_menu -eq 1 ]; then
 		search="$(printf '' | external_menu)"
 	else
-		printf "Search: "
+		printf "Search\n> "
 		read -r search
+		printf '\e[1A\e[K\r%s\n' "> $search"
 	fi
 }
 
@@ -184,7 +178,7 @@ tab_space=$(printf '\t')
 usage () {
 	printf "%s" \
 "Usage: ytfzf [OPTIONS...] <search-query>
-    If search-query is -, stdin will be read as the search query
+    The search-query can also be read from stdin
     OPTIONS:
 	-h			Show this help text
 	-d			Download the selected video(s)
@@ -853,12 +847,7 @@ shift $((OPTIND-1))
 
 # Get search{{{
 search="$*"
-get_search () {
-	case "$search" in
-		-) print_info "Reading stdin\n"; read -r search ;;
-		'') search_prompt_menu ;;
-	esac
-}
+[ -z "$search" ] || [ "$search" = '-' ] && search_prompt_menu
 #}}}
 
 # Sessions {{{
@@ -898,7 +887,7 @@ scrape_website () {
 	scrape_type="$1"	
 	case $scrape_type in
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
-		youtube|Y) search_is_empty && get_search; scrape_youtube  "$search" "$ytfzf_video_json_file" "search";;
+		youtube|Y) scrape_youtube "$search" "$ytfzf_video_json_file" "search";;
 		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S)#{{{
 		    ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
@@ -922,8 +911,8 @@ scrape_website () {
 			EOF
 		    wait
 		    ;;#}}}
-		peertube|P) search_is_empty && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
-		odysee|lbry|O) search_is_empty && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
+		peertube|P) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
+		odysee|lbry|O) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
 		*) die 2 "invalid scraper: $scrape_type\n" ;;
 	esac
 	rv="$?"
