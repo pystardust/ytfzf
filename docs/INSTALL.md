@@ -101,8 +101,9 @@ cd ytfzf
 + **Install with the Makefile**
 
 ```sh
-sudo make install
+sudo make install man
 ```
+* If you do not have man installed on your system leave out 'man'
 
 + **Uninstall with the Makefile**
 
