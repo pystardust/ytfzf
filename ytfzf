@@ -959,6 +959,7 @@ scrape_website () {
 			[ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type.conf" ] && {
 				custom_scraper_variables="$(sed '/^vars:/s/^vars: //' "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}.conf")"
 				#this sets each variable's value (even with spaces) to it's own field
+				set --
 				IFS=' '
 				for var in $(printf "%s " $custom_scraper_variables); do
 					set -- "$@" "$(IFS= eval printf $var)"
