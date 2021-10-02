@@ -89,8 +89,11 @@ The currently supported builtin scrapers are:
 .RS
 .TP
 .IR youtube | Y
+Scrapes invidious' api with a search query
 .TP
 .IR youtube\-trending | T
+Scrapes invidious' api to get youtube trending.
+.br
 When this scrape is active the search query is the tab of trending to scrape.
 .br
 Tabs:
@@ -103,7 +106,9 @@ Tabs:
 .IR movies
 .RE
 .TP
-.IR youtube\-subscriptions | S
+.IR youtube\-subscriptions | S | SI
+.I SI
+scrapes invidious for channels instead of youtube
 .TP
 .IR peertube | P
 .TP
