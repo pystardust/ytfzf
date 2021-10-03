@@ -26,9 +26,15 @@ A shell script that gets sourced into ytfzf when ytfzf is run.
 A file that is a list of links to youtube channel's video page, such as:
 .RS
 .EX
-.I https://www.youtube.com/c/SomeOrdinaryGamers
+.I https://www.youtube.com/channel/UCtMVHI3AJD4Qk4hcbZnI9ZQ
 .EE
 .RE
+.PP
+If a channel appears similar to "https://www.youtube.com/c/SomeOrdinaryGamers", run
+.br
+ytfzf --channel-link="https://www.youtube.com/c/SomeOrdinaryGamers"
+.br
+Before adding it to your subscriptions file
 .PP
 A comment can be created by having '#comment' on it's own line or after a link.
 For example:
@@ -40,6 +46,12 @@ For example:
 .EE
 .RE
 
+.SS scrapers
+.PP
+A folder that contains executable files that scrape websites
+See CUSTOM SCRAPERS for more information
+.RE
+
 
 .SH CONFIGURATION OPTIONS
 
@@ -49,11 +61,9 @@ For example:
 conf.sh is used mainly for setting variables for \fBytfzf\fR.
 If a variable has no default, that means it is set to an empty string.
 
-.TP
-.RB $ useragent
-The useragent to use when scraping websites.
-.br
-.RI default: " \(dqMozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36\(dq"
+.PP
+Files and directories
+.RS
 
 .TP
 .RB $ cache_dir
@@ -74,16 +84,10 @@ The file to write watch history to if $enable_hist is 1
 .RI default: " $cache_dir/watch_hist"
 
 .TP
-.RB $ enable_hist
-Whether or not to keep track of history
-.br
-.RI default: " 0"
-
-.TP
-.RB $ ytfzf_selected_ids
+.RB $ ytfzf_selected_urls
 The file to store the ids of selected video(s) in.
 .br
-.RI default: " $cache_dir/ids"
+.RI default: " $cache_dir/urls"
 
 .TP
 .RB $ ytfzf_video_json_file
@@ -91,28 +95,12 @@ The file to store the json data of scraped videos.
 .br
 .RI default: " $cache_dir/videos_json"
 
-.TP
-.RB $ log_level
-How much debug information to log.
-.RS
-.TP
-.IR 0
-Log everything
-.TP 
-.IR 1
-Log only warnings and errors
-.TP
-.IR 2
-Log only errors
-.TP
-.RI default: " 2"
 .RE
 
-.TP
-.RB $ search_prompt
-The text to display when no search is given.
-.br
-.RI default: " Search: "
+.PP
+How to play the selected videos.
+
+.RS
 
 .TP
 .RB $ is_detach
@@ -155,10 +143,23 @@ Prints the data of the selected videos, as appears in the menu.
 .RE
 
 .TP
+.RB $ exit_on_info_to_print
+Whether or not to exit after printing info requested in $info_to_print.
+.br
+.RI default: " 1"
+
+.TP
 .RB $ video_pref
 The video preference to use for youtube-dl in mpv.
 .br
 .RI default: " best"
+
+.RE
+
+.PP
+Menu options
+
+.RS
 
 .TP
 .RB $ show_formats
@@ -169,7 +170,6 @@ Whether or not to bring up the format selection menu.
 .TP
 .RB $ is_sort
 Whether or not to sort scraped videos by date in the menu
-.br
 .RI default: " 0"
 
 .TP
@@ -177,6 +177,40 @@ Whether or not to sort scraped videos by date in the menu
 Whether or not to show thumbnails in fzf.
 .br
 .RI default: " 0"
+
+.TP
+.RB $ yt_thumbnail_quality
+The quality of the thumbnails for youtube (uses invidious api).
+.br
+This does not work for the -cS scraper as it scrapes youtube not invidious (use SI instead).
+.br
+For lower internet speeds it is recommended to use default.
+.br
+Available options:
+.RS
+.TP
+.IR maxres
+.TP
+.IR maxresdefault
+.TP
+.IR sddefault
+.TP
+.IR high
+.TP
+.IR medium
+.TP
+.IR default " (default)"
+.TP
+.IR start
+The first frame of the video (low quality)
+.TP
+.IR middle
+The middle frame of the video (low quality)
+.TP
+.IR end
+The end frame of the video (low quality)
+.RE
+.br
 
 .TP
 .RB $ is_ext_menu
@@ -191,6 +225,56 @@ Whether or not to show the menu after the selected videos have stopped playing.
 .RI default: " 0"
 
 .TP
+.RB $ search_prompt
+The text to display when no search is given.
+.br
+.RI default: " Search: "
+
+.RE
+
+.PP
+Auto selecting
+
+.RS
+
+.TP
+.RB $ is_interface_scripting
+Whether or not to use an auto selector.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ is_auto_select
+Whether or not to auto select the first \-n videos. (only works if $is_interface_scripting=1)
+.br
+.RI default: " 0"
+
+.TP
+.RB $ is_random_select
+Whether or not to randomly select \-n videos. (only works if $is_interface_scripting=1)
+.br
+.RI default: " 0"
+
+.TP
+.RB $ scripting_video_count
+The amount of videos to get with \-a or \-r.
+.br
+.RI default: " 1"
+
+.TP
+.RB $ useragent
+The useragent to use when scraping websites.
+.br
+.RI default: " \(dqMozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36\(dq"
+
+.RE
+
+.PP
+Scrapers
+
+.RS
+
+.TP
 .RB $ scrape
 The website to scrape by default.
 The currently supported options are
@@ -203,10 +287,142 @@ The currently supported options are
 .RI default: " youtube"
 
 .TP
+.RB $ search_sort_by
+The attribute to sort by when searching.
+.RS
+.TP
+.IR relevance " (default)"
+.TP
+.IR rating
+.TP
+.IR upload_date
+.TP
+.IR view_count
+.RE
+
+.TP
+.RB $ search_upload_date
+Search for videos within the last:
+.RS
+.TP
+.IR hour
+.TP
+.IR today
+.TP
+.IR week
+.TP
+.IR month
+.TP
+.IR year
+.RE
+
+.TP
+.RB $ search_video_duration
+Whether or not to search for long or short videos.
+Possible options:
+.RS
+.TP
+.IR short
+.TP
+.IR long
+.RE
+
+.TP
+.RB $ search_result_type
+The type of results to get.
+.RS
+.TP
+.IR video
+.TP
+.IR playlist
+.TP
+.IR channel
+.TP
+.IR all " (default)"
+.RE
+
+.TP
+.RB $ search_result_features
+The features to have on a video (comma seperated).
+.RS
+.TP
+.IR hd
+.TP
+.IR subtitles
+.TP
+.IR creative_commons
+.TP
+.IR 3d
+.TP
+.IR live
+.TP
+.IR 4k
+.TP
+.IR 360
+.TP
+.IR location
+.TP
+.IR hdr
+.RE
+
+.TP
+.RB $ search_region
+The region (country code) to search.
+.RI default: " US"
+
+.TP
+.RB $ invidious_instance
+The instance of invidious to use.
+.br
+.RI default: " ytprivate.com"
+
+.TP
+.RB $ pages_to_scrape
+The amount of pages to scrape on youtube/invidious.
+.br
+.RI default: " 1"
+
+.TP
 .RB $ sub_link_count
 The amount of videos to scrape per channel when getting subscriptions.
 .br
 .RI default: " 10"
+
+.RE
+
+.PP
+Misc
+
+.RS
+
+.TP
+.RB $ gap_space
+A number of spaces equal to half the width of your terminal
+.br
+.RI default: " 115 spaces"
+
+.TP
+.RB $ enable_hist
+Whether or not to keep track of history
+.br
+.RI default: " 0"
+
+.TP
+.RB $ log_level
+How much debug information to log.
+.RS
+.TP
+.IR 0
+Log everything
+.TP 
+.IR 1
+Log only warnings and errors
+.TP
+.IR 2
+Log only errors
+.TP
+.RI default: " 2"
+.RE
 
 .TP
 .RB $ ytdl_opts
@@ -217,6 +433,8 @@ The command\-line options to pass to youtube\-dl when downloading.
 Path to youtube\-dl or a fork of youtube\-dl for downloading.
 .br
 .RI default: " youtube\-dl"
+
+.RE
 
 .SS FUNCTIONS
 .PP
@@ -293,3 +511,84 @@ This function takes 4 arguments:
     For an option such as \-c S, this value will be the same as $2.
 .ti +4
     However, for every \-\-long\-option=value, this value will be \-long\-option=value.
+
+.SH CUSTOM SCRAPERS
+.PP
+Custom scrapers are programs located in $YTFZF_CUSTOM_SCRAPERS_DIR.
+.br
+To customize some behavior of the scraper see CUSTOM SCRAPER CONFIG
+.RE
+.PP
+A custom scraper will take the search query as the first argument to the program
+.br
+The second argument will be a path to the file to store the final JSON of the scraped content.
+.PP
+The JSON should be structured as a list of objects, where each object represents a video.
+.br
+The final JSON shall be
+.B APPENDED
+to the file given as an argument.
+.PP
+Required object keys:
+.RS
+.EX
+ID (string): a unique id to the video
+url (string): the url to the video
+title (string): the title of the video
+.EE
+.RE
+.PP
+Optional object keys:
+.RS
+.EX
+thumbs (string): a url to a thumbnail/image
+channel (string): the channel name
+duration (string): length of the video (standard: [HH:]MM:SS)
+views (string): amount of views a video has
+date (string): upload date (standard: date is relative to current day, eg: 3 days ago)
+.EE
+.RE
+.PP
+Example JSON:
+.EX
+[
+    {
+	"ID": "dQw4w9WgXcQ",
+	"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+	"title": "definitely not never gonna give you up"
+    }
+]
+.EE
+.PP
+A custom scraper can be written in any programming language so long as the file can be run as a normal command
+.RE
+
+.SH CUSTOM SCRAPER CONFIG
+.PP
+To customize some behavior of a scraper create a file named <scraper-name>.conf. (replace <scraper-name> with the name of the scraper)
+.br
+This file would also be located in $YTFZF_CUSTOM_SCRAPER_DIR.
+.PP
+The syntax of this file is as such:
+.RS
+.EX
+key: value
+key2: value2
+.EE
+.RE
+There are no quotations around anything.
+
+.SH CUSTOM SCRAPER CONFIG OPTIONS
+.PP
+Options to use as keys in <scraper-name>.conf
+.TP
+.RB vars
+The variables to pass into the scraper after the search and json file path.
+.br
+Example:
+.RS
+.EX
+vars: $is_download $is_sort
+.EE
+This will make the 3rd argument the value of $is_download, and the 4th $is_sort
+.RE
