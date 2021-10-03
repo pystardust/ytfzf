@@ -954,7 +954,7 @@ handle_scrape_error () {
 				youtube|Y|youtube-trending|T)
 					print_error "There was an error scraping $curr_scrape ($invidious_instance)\nTry changing invidious instances\n" ;;
 				*) print_error "There was an error scraping $curr_scrape" ;;
-			esac
+			esac ;;
 		126) print_info "$curr_scrape does not have execute permissions\n" ;;
 		127) die 2 "invalid scraper: $curr_scrape\n" ;;
 	esac
