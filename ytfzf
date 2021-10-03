@@ -90,6 +90,10 @@ trim_url () {
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 #}}}
 
+# Custom Scrapers {{{
+: "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
+#}}}
+
 : ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
 
 # menu options
@@ -942,13 +946,17 @@ fi
 
 handle_scrape_error () {
 	case "$1" in
+		1) print_info "$curr_scrape failed to load website\n" ;;
 		6) print_error "Website unresponsive (do you have internet?)\n" ;;
+		9) print_info "$curr_scrape does not have a configuration file\n" ;;
 	 	22) 
 			case "$curr_scrape" in
 				youtube|Y|youtube-trending|T)
 					print_error "There was an error scraping $curr_scrape ($invidious_instance)\nTry changing invidious instances\n" ;;
 				*) print_error "There was an error scraping $curr_scrape" ;;
 			esac
+		126) print_info "$curr_scrape does not have execute permissions\n" ;;
+		127) die 2 "invalid scraper: $curr_scrape\n" ;;
 	esac
 }
 
@@ -990,9 +998,25 @@ scrape_website () {
 			EOF
 		    wait
 		    ;;#}}}
-		peertube|P) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
-		odysee|lbry|O) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
-		*) die 2 "invalid scraper: $scrape_type\n" ;;
+                *)
+                        #custom scrapers {{{
+
+			# Config parsing {{{
+			[ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type.conf" ] && {
+				custom_scraper_variables="$(sed '/^vars:/s/^vars: //' "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}.conf")"
+				#this sets each variable's value (even with spaces) to it's own field
+				set --
+				IFS=' '
+				for var in $(printf "%s " $custom_scraper_variables); do
+					set -- "$@" "$(IFS= eval printf $var)"
+				done
+				unset var
+			}
+			#}}}
+
+			#if the file doesn't exist, it will exit with code 127
+			"${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" "$search" "$ytfzf_video_json_file" "$@" 2>/dev/null
+                        #}}}
 	esac
 	rv="$?"
 	unset scrape_type

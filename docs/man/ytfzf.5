@@ -46,6 +46,12 @@ For example:
 .EE
 .RE
 
+.SS scrapers
+.PP
+A folder that contains executable files that scrape websites
+See CUSTOM SCRAPERS for more information
+.RE
+
 
 .SH CONFIGURATION OPTIONS
 
@@ -431,3 +437,84 @@ This function takes 4 arguments:
     For an option such as \-c S, this value will be the same as $2.
 .ti +4
     However, for every \-\-long\-option=value, this value will be \-long\-option=value.
+
+.SH CUSTOM SCRAPERS
+.PP
+Custom scrapers are programs located in $YTFZF_CUSTOM_SCRAPERS_DIR.
+.br
+To customize some behavior of the scraper see CUSTOM SCRAPER CONFIG
+.RE
+.PP
+A custom scraper will take the search query as the first argument to the program
+.br
+The second argument will be a path to the file to store the final JSON of the scraped content.
+.PP
+The JSON should be structured as a list of objects, where each object represents a video.
+.br
+The final JSON shall be
+.B APPENDED
+to the file given as an argument.
+.PP
+Required object keys:
+.RS
+.EX
+ID (string): a unique id to the video
+url (string): the url to the video
+title (string): the title of the video
+.EE
+.RE
+.PP
+Optional object keys:
+.RS
+.EX
+thumbs (string): a url to a thumbnail/image
+channel (string): the channel name
+duration (string): length of the video (standard: [HH:]MM:SS)
+views (string): amount of views a video has
+date (string): upload date (standard: date is relative to current day, eg: 3 days ago)
+.EE
+.RE
+.PP
+Example JSON:
+.EX
+[
+    {
+	"ID": "dQw4w9WgXcQ",
+	"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+	"title": "definitely not never gonna give you up"
+    }
+]
+.EE
+.PP
+A custom scraper can be written in any programming language so long as the file can be run as a normal command
+.RE
+
+.SH CUSTOM SCRAPER CONFIG
+.PP
+To customize some behavior of a scraper create a file named <scraper-name>.conf. (replace <scraper-name> with the name of the scraper)
+.br
+This file would also be located in $YTFZF_CUSTOM_SCRAPER_DIR.
+.PP
+The syntax of this file is as such:
+.RS
+.EX
+key: value
+key2: value2
+.EE
+.RE
+There are no quotations around anything.
+
+.SH CUSTOM SCRAPER CONFIG OPTIONS
+.PP
+Options to use as keys in <scraper-name>.conf
+.TP
+.RB vars
+The variables to pass into the scraper after the search and json file path.
+.br
+Example:
+.RS
+.EX
+vars: $is_download $is_sort
+.EE
+This will make the 3rd argument the value of $is_download, and the 4th $is_sort
+.RE
