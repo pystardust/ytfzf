@@ -213,6 +213,7 @@ usage () {
 	-h			Show this help text
 	-d			Download the selected video(s)
 	-m			Only play audio
+	-f                      Select a video format before playing
 	-l                      Reopen the menu when the video stops playing
 	-L			Show the link of selected video(s)
 	-c <scraper>       	The scraper to use,
@@ -232,6 +233,7 @@ usage () {
 				    VJ:        print the json of the video
 				    J:         print the json of all videos shown in the search
 				    R:         print the data of the selected videos, as appears in the menu
+				    F:         print the selected video format
 				
     See ytfzf(1) and ytfzf(5) for more information.
 "
