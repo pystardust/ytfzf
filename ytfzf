@@ -33,6 +33,11 @@ function_exists () {
 	type "$1" > /dev/null 2>&1
 }
 
+#capitalizes the first letter of a string
+title_str () {
+	first_letter="$(printf "%s" "$1" | sed 's/\(.\).*/\1/' | tr '[:lower:]' '[:upper:]')"
+	printf "%s" "$1" | sed 's/.\(.*\)/'"$first_letter"'\1/'
+}
 
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
@@ -149,15 +154,26 @@ function_exists "downloader" || downloader () {
 
 : ${is_interface_scripting:=0}
 : ${scripting_video_count:=1}
-: ${is_auto_select:=0}
 : ${is_random_select:=0}
+: ${is_auto_select:=0}
 
 # option parsing
 : "${long_opt_char:=-}"
 
 # scrape
 : "${scrape=youtube}"
+#this comes from invidious' api
+: "${yt_thumbnail_quality=default}"
 : ${sub_link_count:=10}
+: "${invidious_instance:=ytprivate.com}"
+: ${pages_to_scrape:=1}
+
+: "${search_sort_by:=relevance}"
+: "${search_upload_date=}"
+: "${search_video_duration=}"
+: "${search_result_type:=all}"
+: "${search_result_features=}"
+: "${search_region:=US}"
 
 # debugging
 : ${log_level:=2}
@@ -187,9 +203,11 @@ usage () {
 	-L			Show the link of selected video(s)
 	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
-				    youtube/Y, youtube-trending/T, youtube-subscriptions/S,
+				    youtube/Y, youtube-trending/T, youtube-subscriptions/S/SI,
 				    peertube/P, odysee/lbry/O,
 				    history/H
+				    * SI scrapes invidious for channels instead of youtube,
+				    * Y and T both scrape invidious
 				you can use multiple scrapers by separating each with a , eg: youtube,odysee
 	-t			Show thumbnails
 	-D			Use an external menu
@@ -201,6 +219,7 @@ usage () {
 				    J:         print the json of all videos shown in the search
 				    R:         print the data of the selected videos, as appears in the menu
 				
+    See ytfzf(1) and ytfzf(5) for more information.
 "
 }
 
@@ -209,8 +228,9 @@ usage () {
 # * a scraper function takes a search query as $1 and returns video json to file $2
 # * argument 3 and above are undefined and can be used for filters
 # * return codes:
-#            1 : no response from site
 #            5 : scrape is disabled
+#            6 : no response from site (matches curl)
+#            22: error scraping site (matches curl)
 
 # Json keys:
 #	Needed:
@@ -218,121 +238,23 @@ usage () {
 #	Optional:
 #	thumbs channel duration views date description
 
-
-## Youtube {{{
-_youtube_get_request () {
+# Scraping backends {{{
+_get_request () {
 	_base_url=$1
-	_query=$2
-	_sp=$3
+	shift 1
 	# Get search query from youtube
-	curl "$_base_url" -s -L \
-	  -G --data-urlencode "search_query=$_query" \
-	  --data-urlencode "sp=$_sp" \
-	  -H 'Authority: www.youtube.com' \
-	  -H "User-Agent: $useragent" \
-	  -H 'Accept-Language: en-US,en;q=0.9' \
-	  --compressed
-}
-_youtube_get_json () {
-	# Separates the json embedded in the youtube html page
-	# * removes the content after ytInitialData
-	# * removes all newlines and trims the json out
-	sed -n '/var *ytInitialData/,$p' |
-		tr -d '\n' |
-		sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
+	curl -f "$_base_url" -s -L \
+		"$@" \
+		-H "User-Agent: $useragent" \
+		-H 'Accept-Language: en-US,en;q=0.9' \
+		--compressed
 }
 
-# Search Related functions {{{
-_youtube_search_json_playlist () {
-	jq '[ .contents|
-	..|.playlistRenderer? |
-	select(. !=null) |
-		{
-			ID: .playlistId,
-			url: "https://www.youtube.com/playlist?list=\(.playlistId)",
-			title: "[Playlist] \(.title.simpleText)",
-			thumbs: .thumbnails[0].thumbnails[0].url|sub("\\?.*";""),
-			channel: .longBylineText.runs[0].text,
-			duration: "\(.videoCount) videos",
-			views: "playlist",
-			date: "playlist"
-		}
-	]'
-}
-_youtube_search_json_videos () {
-	jq '[ .contents| ..|.videoRenderer? | select(. !=null) |
-		{
-			ID: .videoId,
-			url: "https://www.youtube.com/watch?v=\(.videoId)",
-			title: .title.runs[0].text,
-			channel: .longBylineText.runs[0].text,
-			thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
-			duration:.lengthText.simpleText,
-			views: .shortViewCountText.simpleText,
-			date: .publishedTimeText.simpleText,
-			description: .detailedMetadataSnippets[0].snippetText.runs[0].text
-		}
-	]'
-}
-_youtube_get_sp_filter () {
-	if [ -n "$sp" ]; then
-		#youtube puts in %253d one ore more times in the filter id, it doesn't seem useful, so we are removing it if it's in the filter
-		sp=${sp%%%*}
-		return
-	fi
-
-	sort_by_filter=$1
-	upload_date_filter=$2
-
-	#filter_id is a variable that keeps changing throught this function
-	filter_id=
-
-	#sp is the final filter id that is used in the search query
-	sp=
-
-	#the way youtube uses these has a pattern, for example
-	    #in the sort_by_filter the only difference is the 3rd character, I just don't know how to use this information efficiently
-	case $sort_by_filter in
-		upload-date) filter_id="CAISBAgAEAE" ;;
-		view-count) filter_id="CAMSBAgAEAE" ;;
-		rating) filter_id="CAESBAgAEAE" ;;
-	esac
-
-	#another example is sort by filter + upload date filter only changes one character as well
-	if [ -n "$filter_id" ]; then
-		#gets the character in the filter_id that needs to be replaced if upload_date_filter is also given
-		upload_date_character=$(printf "%s" "$filter_id" | awk '{print substr($1, 8, 1)}')
-	fi
-
-	#For each of these, if upload_date_character is unset, the filter_id should be the normal filter
-	#Otherwise set the upload_date_character to the right upload_date_character
-	case $upload_date_filter in
-		last-hour)
-			[ -z "$upload_date_character" ] && filter_id="EgQIARAB" || upload_date_character="B" ;;
-		today)
-			[ -z "$upload_date_character" ] && filter_id="EgQIAhAB" || upload_date_character="C" ;;
-		this-week)
-			[ -z "$upload_date_character" ] && filter_id="EgQIAxAB" || upload_date_character="D" ;;
-		this-month)
-			[ -z "$upload_date_character" ] && filter_id="EgQIBBAB" || upload_date_character="E" ;;
-		this-year)
-			[ -z "$upload_date_character" ] && filter_id="EgQIBRAB" || upload_date_character="F" ;;
-	esac
-
-	#if upload_date_character isn't empty, set sp to upload_date filter + sort_by filter
-	if [ -n "$upload_date_character" ]; then
-		#replaces the 8th character in the filter_id with the appropriate character
-		#the 8th character specifies the upload_date_filter
-		sp=$(printf "%s" "$filter_id" | sed 's/\(.\{7\}\)./\1'"$upload_date_character"'/')
-	#otherwise set it to the filter_id
-	else
-		sp=$filter_id
-	fi
-	unset upload_date_character filter_id
-}
 #}}}
 
-# Channel Related functions {{{
+## Youtube  {{{
+# Youtube backend functions {{{
+
 _youtube_channel_name () {
 	# takes channel page html (stdin) and returns the channel name
 	grep -o '<title>.*</title>' |
@@ -346,6 +268,16 @@ _youtube_channel_name () {
 		-e "s/&amp;/\&/g" \
 		-e "s/&#38;/\&/g"
 }
+
+_youtube_get_json (){ 
+       # Separates the json embedded in the youtube html page
+       # * removes the content after ytInitialData
+       # * removes all newlines and trims the json out
+       sed -n '/var *ytInitialData/,$p' |
+               tr -d '\n' |
+               sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;'
+}
+
 _youtube_channel_json () {
 	channel_name=$1
 	jq '[ .contents | ..|.gridVideoRenderer? | select(. !=null) |
@@ -363,83 +295,199 @@ _youtube_channel_json () {
 }
 #}}}
 
-scrape_youtube () {
+scrape_youtube_channel () {
+	channel_url="$1"
+	output_json_file="$2"
+	tmp_filename="$3"
+	print_info "Scraping Youtube channel: $channel_url\n"
+	_tmp_html="${session_temp_dir}/channel-$tmp_filename.html"
+	_tmp_json="${session_temp_dir}/channel-$tmp_filename.json"
+
+	# Converting channel title page url to channel video url
+	case $channel_url in
+		*featured) channel_url=${channel_url%featured}videos ;;
+	esac
+
+	_get_request "${channel_url##* }" > "$_tmp_html"
+	_youtube_get_json < "$_tmp_html" > "$_tmp_json"
+
+	channel_name=$(_youtube_channel_name < "$_tmp_html" )
+	_youtube_channel_json < "$_tmp_json"  >> "$output_json_file"
+}
+# }}} 
+
+## Invidious {{{
+# invidious backend functions {{{
+_get_real_channel_link () {
+	domain=${1#https://}
+	domain=${domain%%/*}
+	url=$(printf "%s" "$1" | sed "s/www.youtube.com/$invidious_instance/")
+	real_path="$(curl -is "$url" | grep "^[lL]"ocation | sed 's/[Ll]ocation: //')"
+	#prints the origional url because it was correct
+	[ -z "$real_path" ] && printf "%s\n" "$1" && return 0
+	#printf is not used because weird flushing? issues.
+	echo "https://${domain}${real_path}"
+}
+
+_get_channel_id () {
+	link="$1"
+	link="${link##*channel/}"
+	link="${link%/*}"
+	printf "%s" "$link"
+}
+
+
+_invidious_thumb_quality_index () {
+	_quality="$1"
+	case "$_quality" in
+		maxres) printf 0 ;;
+		maxresdefault) printf 1 ;;
+		sddefault) printf 2 ;;
+		high) printf 3 ;;
+		medium) printf 4 ;;
+		default) printf 5 ;;
+		start) printf 6 ;;
+		middle) printf 7 ;;
+		end) printf 8 ;;
+	esac
+	unset _quality
+}
+
+_invidious_search_json_playlist () {
+	jq '[ .[] | select(.type=="playlist") |
+		{
+			ID: .playlistId,
+			url: "https://www.youtube.com/playlist?list=\(.playlistId)",
+			title: "[playlist] \(.title)",
+			channel: .author,
+			thumbs: .playlistThumbnail,
+			duration: "\(.videoCount) videos",
+		}
+	]'
+}
+_invidious_search_json_live () {
+	jq '[ .[] | select(.type=="video" and .liveNow==true) |
+		{
+			ID: .videoId,
+			url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
+			title: "[live] \(.title)",
+			channel: .author,
+			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
+		}
+	]'
+}
+_invidious_search_json_videos () {
+	jq '[ .[] | select(.type=="video" and .liveNow==false) |
+		{
+			ID: .videoId,
+			url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
+			title: .title,
+			channel: .author,
+			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
+			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
+			views: "\(.viewCount)",
+			date: .publishedText,
+			description: .description
+		}
+	]'
+}
+_invidious_channel_json () {
+	channel_name=$1
+	jq '[ .latestVideos |.[] |
+	    {
+	    	ID: .videoId,
+		url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
+	    	title: .title,
+	    	channel: "'"$channel_name"'",
+		thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
+		duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
+		views: "\(.viewCount)",
+		date: .publishedText,
+		description: .description
+	    }
+	]'
+}
+#}}}
+
+scrape_invidious_search () {
 	page_query=$1
 	output_json_file=$2
 	pagetype=$3
+	page_num=$4
 
-	_tmp_html="${session_temp_dir}/yt.html"
-	_tmp_json="${session_temp_dir}/yt.json"
+	_tmp_json="${session_temp_dir}/yt-search-$page_num.json"
 
-	case $pagetype in
-		''|search)
-			print_info "Scraping YouTube\n"
-			# TODO: sp
-			_youtube_get_request "https://www.youtube.com/results" "$page_query" > "$_tmp_html"
+	_yt_thumbnail_quality_index="$(_invidious_thumb_quality_index "$yt_thumbnail_quality")"
 
-			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
+	print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $page_num)\n"
 
-			{
-				_youtube_search_json_playlist < "$_tmp_json"
-				_youtube_search_json_videos < "$_tmp_json"
-			} >> "$output_json_file"
-			;;
-		trending)
-			print_info "Scraping YouTube trending\n"
-			trending_tab=$page_query
+	_get_request "https://$invidious_instance/api/v1/search" \
+		-G --data-urlencode "q=$page_query" \
+		--data-urlencode "type=${search_result_type}" \
+		--data-urlencode "sort_by=${search_sort_by}" \
+		--data-urlencode "date=${search_upload_date}" \
+		--data-urlencode "duration=${serach_video_duration}" \
+		--data-urlencode "features=${search_result_features}" \
+		--data-urlencode "region=${search_region}" \
+		--data-urlencode "page=${page_num}" > "$_tmp_json" || return "$?"
 
-			case $trending_tab in
-				 music) tab_data="4gINGgt5dG1hX2NoYXJ0cw%3D%3D" ;;
-				gaming) tab_data="4gIcGhpnYW1pbmdfY29ycHVzX21vc3RfcG9wdWxhcg%3D%3D" ;;
-				movies) tab_data="4gIKGgh0cmFpbGVycw%3D%3D" ;;
-			esac
+	{
+		_invidious_search_json_live < "$_tmp_json"
+		_invidious_search_json_videos < "$_tmp_json"
+		_invidious_search_json_playlist < "$_tmp_json"
+	} >> "$output_json_file"
+}
 
-			_youtube_get_request "https://www.youtube.com/feed/trending?bp=$tab_data" "" "" > "$_tmp_html"
+scrape_invidious_trending () {
+	trending_tab=$(title_str $1)
+	output_json_file=$2
+	print_info "Scraping YouTube (with $invidious_instance) trending (${trending_tab:-Normal})\n"
 
-			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
-			{
-				_youtube_search_json_videos < "$_tmp_json"
-				_youtube_search_json_playlist < "$_tmp_json"
-			} >> "$output_json_file"
-			;;
-		channel)
-			channel_url=$page_query
-			print_info "Scraping Youtube channel: $channel_url\n"
-			#if these 2 vars aren't unique, weird things happen,
-			# i is defined in at the while loop for scraping channels
-			# it may be better to instead make this channel part it's own function, and pass a var for the tmp files
-			_tmp_html="${session_temp_dir}/channel-$i.html"
-			_tmp_json="${session_temp_dir}/channel-$i.json"
+	_tmp_json="${session_temp_dir}/yt-trending"
 
-			# Converting channel title page url to channel video url
-			case $channel_url in
-				*featured)
-				channel_url=${channel_url%featured}videos
-					;;
-			esac
+	_yt_thumbnail_quality_index="$(_invidious_thumb_quality_index "$yt_thumbnail_quality")"
 
-			_youtube_get_request "${channel_url##* }" "" "" > "$_tmp_html"
-			_youtube_get_json < "$_tmp_html" > "$_tmp_json"
+	url="https://$invidious_instance/api/v1/trending"
+	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}" && _tmp_json="${_tmp_json}-$trending_tab"
 
-			channel_name=$(_youtube_channel_name < "$_tmp_html" )
-			_youtube_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
-			;;
-	esac
+	_get_request "$url" > "$_tmp_json" || return "$?"
 
+	_invidious_search_json_videos < "$_tmp_json" >> "$output_json_file"
+}
+
+scrape_invidious_channel () {
+	channel_url=$1
+	print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url\n"
+	output_json_file=$2
+	tmp_file_name=$3
+
+	# Converting channel title page url to channel video url
+	printf "%s" "$channel_url" | grep -Eqv '/videos$' && channel_url="${channel_url}/videos"
+	channel_id="$(_get_channel_id "$channel_url")"
+	[ "$channel_id/videos" = "$channel_url" ] &&\
+		print_warning "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
+		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
+
+	#if this var isn't unique, weird things happen,
+	_tmp_json="${session_temp_dir}/$tmp_file_name.json"
+	channel_url="https://$invidious_instance/api/v1/channels/$channel_id"
+	_get_request "${channel_url##* }" > "$_tmp_json" || return "$?"
+	channel_name="$(jq '.author' < "$_tmp_json" | tr -d '"')"
+
+	_invidious_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
 }
 ## }}}
 
 ## Peertube {{{
 scrape_peertube () {
-	print_info "Scraping Peertube\n"
 	page_query=$1
 	output_json_file=$2
+	print_info "Scraping Peertube ($page_query)\n"
 
 	_tmp_json="${session_temp_dir}/peertube.json"
 
 	#gets a list of videos
-	curl -s "https://sepiasearch.org/api/v1/search/videos" \
-	  -G --data-urlencode "search=$1" > "$_tmp_json"
+	_get_request "https://sepiasearch.org/api/v1/search/videos" -G --data-urlencode "search=$1" > "$_tmp_json" || return "$?"
 
 	jq '[ .data | .[] |
 			{
@@ -459,19 +507,18 @@ scrape_peertube () {
 
 ## Odysee {{{
 scrape_odysee () {
-	print_info "Scraping Odysee\n"
 	page_query=$1
 	output_json_file=$2
+	print_info "Scraping Odysee ($page_query)\n"
 
 	_tmp_json="${session_temp_dir}/odysee.json"
 
 	# TODO: filters
-	curl \
-	    -s "https://lighthouse.lbry.com/search" \
-	    -G --data-urlencode "s=$page_query" \
+	_get_request "https://lighthouse.lbry.com/search" -G \
+	    --data-urlencode "s=$page_query" \
 	    --data-urlencode "mediaType=video,audio" \
 	    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
-	    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json"
+	    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json" || return "$?"
 
 	jq '[ .[] |
 	    {
@@ -563,12 +610,12 @@ video_info_text () {
 }
 
 thumbnail_video_info_text () {
-	printf "\n ${c_cyan}%s" "$title"
-	printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
-	printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
-	printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
-	printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
-	printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
+	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
+	[ -n "$channel" ] && printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
+	[ -n "$duration" ] && printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
+	[ -n "$views" ] && printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
+	[ -n "$date" ] && printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
+	[ -n "$description" ] && printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
 }
 
 # Scripting interfaces {{{
@@ -807,6 +854,7 @@ parse_opt () {
 		t|show-thumbnails) show_thumbnails=${optarg:-1}; [ $show_thumbnails -eq 1 ] && is_ext_menu=0 ;;
 		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
+		pages) pages_to_scrape="$optarg" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
@@ -818,6 +866,13 @@ parse_opt () {
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
 		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
+		sort-by) search_sort_by="$optarg" ;;
+		upload-date) search_upload_date="$optarg" ;;
+		video-duration) search_video_duration=$optarg ;;
+		type) search_result_type=$optarg ;;
+		features) search_result_features=$optarg ;;
+		region) search_region=$optarg ;;
+		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
@@ -887,7 +942,13 @@ fi
 
 handle_scrape_error () {
 	case "$1" in
-		1) print_info "$curr_scrape failed to load website\n" ;;
+		6) print_error "Website unresponsive (do you have internet?)\n" ;;
+	 	22) 
+			case "$curr_scrape" in
+				youtube|Y|youtube-trending|T)
+					print_error "There was an error scraping $curr_scrape ($invidious_instance)\nTry changing invidious instances\n" ;;
+				*) print_error "There was an error scraping $curr_scrape" ;;
+			esac
 	esac
 }
 
@@ -895,10 +956,20 @@ scrape_website () {
 	scrape_type="$1"	
 	case $scrape_type in
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
-		youtube|Y) scrape_youtube "$search" "$ytfzf_video_json_file" "search";;
-		youtube-trending|T) scrape_youtube  "$search" "$ytfzf_video_json_file" "trending";;
-		youtube-subscriptions|S)#{{{
+		youtube|Y) 
+			# youtube scrape {{{
+			#$i is so multiple pages can be scraped
+			while [ ${i:=0} -lt $pages_to_scrape ]; do
+				i=$((i+1))
+				scrape_invidious_search  "$search" "$ytfzf_video_json_file" "search" "$i" || return "$?"
+			done 
+			unset i ;;
+			# }}}
+		youtube-trending|T) scrape_invidious_trending  "$search" "$ytfzf_video_json_file" "trending";;
+		youtube-subscriptions|S|SI)#{{{
 		    ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
+
+		    [ "$scrape_type" = "SI" ] && channel_scraper="scrape_invidious_channel" || channel_scraper="scrape_youtube_channel"
 
 		    #if _tmp_subfile does not have a unique name, weird things happen
 		    i=0
@@ -906,7 +977,7 @@ scrape_website () {
 			    i=$((i+1))
 			    {
 				    _tmp_subfile="${session_temp_dir}/channel-$i"
-				    scrape_youtube "$channel_url" "$_tmp_subfile" "channel" < /dev/null
+				    $channel_scraper "$channel_url" "$_tmp_subfile" "channel-$i" < /dev/null || return "$?"
 				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 			    } &
 			    sleep 0.01
@@ -934,6 +1005,8 @@ for curr_scrape in $scrape; do
 	scrape_website "$curr_scrape"
 	handle_scrape_error "$?"
 done
+
+[ ! -s "$ytfzf_video_json_file" ] && die 4 "Nothing was scraped\n"
 
 while :; do
 	case 1 in

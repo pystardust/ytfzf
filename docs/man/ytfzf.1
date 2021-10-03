@@ -89,10 +89,26 @@ The currently supported builtin scrapers are:
 .RS
 .TP
 .IR youtube | Y
+Scrapes invidious' api with a search query
 .TP
 .IR youtube\-trending | T
+Scrapes invidious' api to get youtube trending.
+.br
+When this scrape is active the search query is the tab of trending to scrape.
+.br
+Tabs:
+.RS
 .TP
-.IR youtube\-subscriptions | S
+.IR gaming
+.TP
+.IR music
+.TP
+.IR movies
+.RE
+.TP
+.IR youtube\-subscriptions | S | SI
+.I SI
+scrapes invidious for channels instead of youtube
 .TP
 .IR peertube | P
 .TP
@@ -102,11 +118,97 @@ The currently supported builtin scrapers are:
 (Only if $enable_hist is enabled)
 .RE
 .TP
+.BI "\-\-pages=amount"
+Amount of pages to scrape on youtube/invidious.
+.PP
+Currently, \-\-sort\-by, \-\-upload\-date, \-\-video\-duration, \-\-type, \-\-features, and \-\-region only applies to the scrape: youtube/Y
+.TP
+.BI "\-\-sort\-by=sort"
+As apposed to \-\-sort, this happens during the serach, not after.
+Results should sort by:
+.RS
+.TP
+.IR relevance
+.TP
+.IR rating
+.TP
+.IR upload_date
+.TP
+.IR view_count
+.RE
+.TP
+.BI "\-\-upload\-date=time\-frame"
+Search for videos within the last:
+.RS
+.TP
+.IR hour
+.TP
+.IR today
+.TP
+.IR week
+.TP
+.IR month
+.TP
+.IR year
+.RE
+.TP
+.BI "\-\-video\-duration=duration"
+Whether or not to search for long or short videos.
+Possible options:
+.RS
+.TP
+.IR short
+.TP
+.IR long
+.RE
+.TP
+.BI "\-\-type=type"
+The type of results to get.
+.RS
+.TP
+.IR video
+.TP
+.IR playlist
+.TP
+.IR channel
+.TP
+.IR all
+.RE
+.TP
+.BI "\-\-features=features"
+The features to have on a video (comma seperated).
+.RS
+.TP
+.IR hd
+.TP
+.IR subtitles
+.TP
+.IR creative_commons
+.TP
+.IR 3d
+.TP
+.IR live
+.TP
+.IR 4k
+.TP
+.IR 360
+.TP
+.IR location
+.TP
+.IR hdr
+.RE
+.TP
+.BI "\-\-region"
+The region (country code) to search.
+.TP
 .BI "\-\-scrape+=scrapers"
 Same as \-c, but keeps the default scrape as well.
 .TP
 .BI \-\-scraper-=scrapers
 Removes scraper from list of scrapers to use
+.TP
+.BI "\-\-channel\-link=link"
+Converts channel links from 'https://youtube.com/c/name' to 'https://youtube.com/channel/id'
 .TP
 .BR \-t ", " \-\-show\-thumbnails
 Show thumbnails.
