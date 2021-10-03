@@ -1067,6 +1067,13 @@ open_player () {
 		else
 			youtube-dl -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
 		fi
+
+    if [ $? -eq 0 ]; then
+        dl_status="Successful"
+    else
+        dl_status="Failed"
+    fi
+    notify-send "[ytfzf] Download $dl_status!" "$*"
 	fi
 }
 
