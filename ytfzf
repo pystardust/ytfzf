@@ -988,6 +988,8 @@ scrape_website () {
 			while [ ${i:=0} -lt $pages_to_scrape ]; do
 				i=$((i+1))
 				scrape_invidious_search  "$search" "$ytfzf_video_json_file" "search" "$i"
+				rv="$?"
+				[ $rv -gt 0 ] && return "$?"
 			done 
 			unset i ;;
 			# }}}
@@ -1004,6 +1006,8 @@ scrape_website () {
 			    {
 				    _tmp_subfile="${session_temp_dir}/channel-$i"
 				    $channel_scraper "$channel_url" "$_tmp_subfile" "channel-$i" < /dev/null
+				    rv="$?"
+				    [ $rv -gt 0 ] && return "$rv"
 				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 			    } &
 			    sleep 0.01
@@ -1031,6 +1035,8 @@ for curr_scrape in $scrape; do
 	scrape_website "$curr_scrape"
 	handle_scrape_error "$?"
 done
+
+[ ! -s "$ytfzf_video_json_file" ] && die 4 "Nothing was scraped\n"
 
 while :; do
 	case 1 in
