@@ -189,6 +189,8 @@ function_exists "downloader" || downloader () {
 : "${search_result_features=}"
 : "${search_region:=US}"
 
+: "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history }"
+
 # debugging
 : ${log_level:=2}
 
@@ -929,16 +931,7 @@ shift $((OPTIND-1))
 #}}}
 
 # Get search{{{
-trim_space () {
-	set -f
-	set -- $*
-	search="$*"
-	set +f
-}
-
 search="$*"
-[ -z "$search" ] || [ "$search" = '-' ] && search_prompt_menu
-trim_space "$search"
 #}}}
 
 # Sessions {{{
@@ -1022,6 +1015,8 @@ scrape_website () {
 			EOF
 		    wait
 		    ;;#}}}
+		odysee|O) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
+		peertube|P) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
                 *)
                         #custom scrapers {{{
 
@@ -1050,6 +1045,8 @@ scrape_website () {
 IFS=","
 set -f
 for curr_scrape in $scrape; do
+	#only ask for search if it's empty and scrape isn't something like S or T
+	printf "%s" "$scrape_search_exclude" | grep -Fqv " $curr_scrape " && { [ "$search" = "-" -o -z "$search" ]; } && search_prompt_menu
 	scrape_website "$curr_scrape"
 	handle_scrape_error "$?"
 done
