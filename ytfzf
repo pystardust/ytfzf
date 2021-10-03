@@ -35,7 +35,7 @@ function_exists () {
 
 #capitalizes the first letter of a string
 title_str () {
-	first_letter="$(printf "%s" "$1" | sed 's/\(.\).*/\1/' | tr '[:lower:]' '[:upper]')"
+	first_letter="$(printf "%s" "$1" | sed 's/\(.\).*/\1/' | tr '[:lower:]' '[:upper:]')"
 	printf "%s" "$1" | sed 's/.\(.*\)/'"$first_letter"'\1/'
 }
 
@@ -244,7 +244,7 @@ usage () {
 #	thumbs channel duration views date description
 
 
-## Youtube {{{
+## Youtube 
 # Youtube backend functions {{{
 _get_request () {
 	_base_url=$1
@@ -315,7 +315,7 @@ scrape_youtube_channel () {
 	channel_name=$(_youtube_channel_name < "$_tmp_html" )
 	_youtube_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
 }
-# }}}
+# }}} 
 
 ## Invidious {{{
 # invidious backend functions {{{
