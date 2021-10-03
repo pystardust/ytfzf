@@ -99,7 +99,7 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 	else
 		printf "Search\n> "
 		read -r search
-		printf '\e[1A\e[K\r%s\n' "> $search"
+		printf '\033[1A\033[K\r%s\n' "> $search"
 	fi
 }
 
