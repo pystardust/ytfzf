@@ -26,9 +26,15 @@ A shell script that gets sourced into ytfzf when ytfzf is run.
 A file that is a list of links to youtube channel's video page, such as:
 .RS
 .EX
-.I https://www.youtube.com/c/SomeOrdinaryGamers
+.I https://www.youtube.com/channel/UCtMVHI3AJD4Qk4hcbZnI9ZQ
 .EE
 .RE
+.PP
+If a channel appears similar to "https://www.youtube.com/c/SomeOrdinaryGamers", run
+.br
+ytfzf --channel-link="https://www.youtube.com/c/SomeOrdinaryGamers"
+.br
+Before adding it to your subscriptions file
 .PP
 A comment can be created by having '#comment' on it's own line or after a link.
 For example:
@@ -62,6 +68,12 @@ The useragent to use when scraping websites.
 .RI default: " \(dqMozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36\(dq"
 
 .TP
+.RB $ gap_space
+A number of spaces equal to half the width of your terminal
+.br
+.RI default: " 115 spaces"
+
+.TP
 .RB $ cache_dir
 The directory to store cache files in.
 .br
@@ -86,10 +98,10 @@ Whether or not to keep track of history
 .RI default: " 0"
 
 .TP
-.RB $ ytfzf_selected_ids
+.RB $ ytfzf_selected_urls
 The file to store the ids of selected video(s) in.
 .br
-.RI default: " $cache_dir/ids"
+.RI default: " $cache_dir/urls"
 
 .TP
 .RB $ ytfzf_video_json_file
@@ -158,6 +170,12 @@ Prints the data of the selected videos, as appears in the menu.
 .RE
 
 .TP
+.RB $ exit_on_info_to_print
+Whether or not to exit after printing info requested in $info_to_print.
+.br
+.RI default: " 1"
+
+.TP
 .RB $ video_pref
 The video preference to use for youtube-dl in mpv.
 .br
@@ -166,7 +184,6 @@ The video preference to use for youtube-dl in mpv.
 .TP
 .RB $ is_sort
 Whether or not to sort scraped videos by date in the menu
-.br
 .RI default: " 0"
 
 .TP
@@ -174,6 +191,40 @@ Whether or not to sort scraped videos by date in the menu
 Whether or not to show thumbnails in fzf.
 .br
 .RI default: " 0"
+
+.TP
+.RB $ yt_thumbnail_quality
+The quality of the thumbnails for youtube (uses invidious api).
+.br
+This does not work for the -cS scraper as it scrapes youtube not invidious (use SI instead).
+.br
+For lower internet speeds it is recommended to use default.
+.br
+Available options:
+.RS
+.TP
+.IR maxres
+.TP
+.IR maxresdefault
+.TP
+.IR sddefault
+.TP
+.IR high
+.TP
+.IR medium
+.TP
+.IR default " (default)"
+.TP
+.IR start
+The first frame of the video (low quality)
+.TP
+.IR middle
+The middle frame of the video (low quality)
+.TP
+.IR end
+The end frame of the video (low quality)
+.RE
+.br
 
 .TP
 .RB $ is_ext_menu
@@ -198,6 +249,102 @@ The currently supported options are
 .IR odysee / lbry .
 .br
 .RI default: " youtube"
+
+.TP
+.RB $ search_sort_by
+The attribute to sort by when searching.
+.RS
+.TP
+.IR relevance " (default)"
+.TP
+.IR rating
+.TP
+.IR upload_date
+.TP
+.IR view_count
+.RE
+
+.TP
+.RB $ search_upload_date
+Search for videos within the last:
+.RS
+.TP
+.IR hour
+.TP
+.IR today
+.TP
+.IR week
+.TP
+.IR month
+.TP
+.IR year
+.RE
+
+.TP
+.RB $ search_video_duration
+Whether or not to search for long or short videos.
+Possible options:
+.RS
+.TP
+.IR short
+.TP
+.IR long
+.RE
+
+.TP
+.RB $ search_result_type
+The type of results to get.
+.RS
+.TP
+.IR video
+.TP
+.IR playlist
+.TP
+.IR channel
+.TP
+.IR all " (default)"
+.RE
+
+.TP
+.RB $ search_result_features
+The features to have on a video (comma seperated).
+.RS
+.TP
+.IR hd
+.TP
+.IR subtitles
+.TP
+.IR creative_commons
+.TP
+.IR 3d
+.TP
+.IR live
+.TP
+.IR 4k
+.TP
+.IR 360
+.TP
+.IR location
+.TP
+.IR hdr
+.RE
+
+.TP
+.RB $ search_region
+The region (country code) to search.
+.RI default: " US"
+
+.TP
+.RB $ invidious_instance
+The instance of invidious to use.
+.br
+.RI default: " ytprivate.com"
+
+.TP
+.RB $ pages_to_scrape
+The amount of pages to scrape on youtube/invidious.
+.br
+.RI default: " 1"
 
 .TP
 .RB $ sub_link_count
