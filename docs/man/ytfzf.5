@@ -62,6 +62,12 @@ The useragent to use when scraping websites.
 .RI default: " \(dqMozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36\(dq"
 
 .TP
+.RB $ gap_space
+A number of spaces equal to half the width of your terminal
+.br
+.RI default: " 115 spaces"
+
+.TP
 .RB $ cache_dir
 The directory to store cache files in.
 .br
@@ -86,10 +92,10 @@ Whether or not to keep track of history
 .RI default: " 0"
 
 .TP
-.RB $ ytfzf_selected_ids
+.RB $ ytfzf_selected_urls
 The file to store the ids of selected video(s) in.
 .br
-.RI default: " $cache_dir/ids"
+.RI default: " $cache_dir/urls"
 
 .TP
 .RB $ ytfzf_video_json_file

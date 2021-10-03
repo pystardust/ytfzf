@@ -64,17 +64,10 @@ die () {
 	exit "$_return_status"
 }
 
-trim_id () {
+trim_url () {
 	while IFS= read _line;do
 		printf '%s\n' "${_line##*|}"
 	done
-}
-
-search_is_empty () {
-	case "$search" in
-		-|'') return 0 ;;
-	esac
-	return 1
 }
 
 # Traps {{{
@@ -109,8 +102,9 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 	if [ $is_ext_menu -eq 1 ]; then
 		search="$(printf '' | external_menu)"
 	else
-		printf "Search: "
+		printf "Search\n> "
 		read -r search
+		printf '\033[1A\033[K\r%s\n' "> $search"
 	fi
 }
 
@@ -152,7 +146,7 @@ function_exists "downloader" || downloader () {
 : ${is_download:=0}
 : ${info_to_print=}
 : ${exit_on_info_to_print:=1}
-: ${video_pref=best}
+: ${video_pref:=best}
 
 : ${is_sort:=0}
 : ${show_thumbnails:=0}
@@ -193,14 +187,14 @@ esac
 #}}}
 
 tab_space=$(printf '\t')
-gap_space="                                                                   "
+: "${gap_space:=                                                                                                                   }"
 
 # }}}
 
 usage () {
 	printf "%s" \
 "Usage: ytfzf [OPTIONS...] <search-query>
-    If search-query is -, stdin will be read as the search query
+    The search-query can also be read from stdin
     OPTIONS:
 	-h			Show this help text
 	-d			Download the selected video(s)
@@ -590,13 +584,11 @@ sort_video_data_fn () {
 add_to_hist () {
 	#id of the video to add to hist will be passed through stdin
 	#if multiple videos are selected, multiple ids will be present on multiple lines
-	while read -r id; do
-		[ -n "$id" ] && {
-			json_to_add="$(jq '.[]|select(.ID=="'"$id"'")' < "$video_json_file")"
-			[ -n "$json_to_add" ] && printf '[\n%s\n]' "$json_to_add" >> "$hist_file"
-		}
+	json_file="$1"
+	while read -r url; do
+		jq -r --arg url "${url% }" '[ .[]|select(.url==$url) ]'< "$json_file" | sed 's/\[\]//g'>> "$hist_file"
 	done
-	unset json_to_add hist_data id
+	unset url urls json_file
 }
 
 clear_hist () {
@@ -631,13 +623,13 @@ thumbnail_video_info_text () {
 interface_scripting () {
 	video_json_file=$1
 	selected_id_file=$2
-	data_string_template='.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"'
+	data_string_template='.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"'
 	case 1 in
 		"$is_auto_select")
-		jq -r "$data_string_template"  < "$video_json_file"  | head -n "$scripting_video_count" |  trim_id   > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | head -n "$scripting_video_count" |  trim_url   > "$selected_id_file"
 			;;
 		"$is_random_select")
-		jq -r "$data_string_template"  < "$video_json_file"  | shuf | head -n "$scripting_video_count" | trim_id > "$selected_id_file"
+		jq -r "$data_string_template"  < "$video_json_file"  | shuf | head -n "$scripting_video_count" | trim_url > "$selected_id_file"
 			;;
 	esac
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
@@ -657,7 +649,7 @@ interface_text () {
 	view_len=10
 	date_len=100
 
-	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
+	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
 		sort_video_data_fn |
 		while IFS=$tab_space read title channel duration views date shorturl
 		do
@@ -665,7 +657,7 @@ interface_text () {
 		done |
 		column -t -s "$tab_space" |
 		fzf -m --tabstop=1 --layout=reverse |
-		trim_id > "$selected_id_file"
+		trim_url > "$selected_id_file"
 }
 #}}}
 
@@ -682,14 +674,14 @@ interface_external () {
 	view_len=10
 	date_len=100
 
-	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file" |
+	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
 		sort_video_data_fn |
 		while IFS=$tab_space read title channel duration views date shorturl
 		do
 			video_info_text
 		done | tr -d "$tab_space" |
 		external_menu |
-		trim_id > "$selected_id_file"
+		trim_url > "$selected_id_file"
 }
 #}}}
 
@@ -701,7 +693,7 @@ preview_start () {
 	case $thumbnail_viewer in
 		ueberzug)
 			# starts uberzug to this fifo
-			export UEBERZUG_FIFO="/tmp/ytfzf-ueberzug-fifo"
+			export UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
 			ueberzug layer --parser simple < "$UEBERZUG_FIFO" 2>/dev/null &
@@ -742,17 +734,17 @@ preview_img () {
 	thumbnail_viewer=$1
 	line=$2
 	video_json_file=$3
-	id=${line##*|}
+	url=${line##*|}
 
-	IFS=$tab_space read -r title channel duration views date description <<-EOF
+	IFS=$tab_space read -r id title channel duration views date description <<-EOF
 	$(
-		jq -r --arg id "$id" '.[]|select( .ID == $id )|
-			[.title,.channel,.duration,.views,.date,.description]|
+		jq -r --arg url "$url" '.[]|select( .url == $url )|
+			[.ID,.title,.channel,.duration,.views,.date,.description]|
 			@tsv' < "$video_json_file"
 	)
 	EOF
 
-	thumbnail_video_info_text "$id"
+	thumbnail_video_info_text
 	preview_display_image "$thumbnail_viewer" "$id"
 }
 
@@ -765,7 +757,7 @@ interface_thumbnails () {
 	find "$thumb_dir" -type d -empty | grep -q "$thumb_dir" && {
 		print_info 'Fetching thumbnails...\n'
 		curl_config_file="${session_temp_dir}/curl_config"
-		jq -r '.[]|"
+		jq -r '.[]|select(.thumbs!=null)|"
 			url = \"\(.thumbs)\"
 			output = \"'"$thumb_dir"'/\(.ID).jpg\""' \
 				< "$video_json_file" > "$curl_config_file"
@@ -778,12 +770,12 @@ interface_thumbnails () {
 	preview_start "$thumbnail_viewer"
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
-	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.ID]|@tsv' < "$video_json_file" |
+	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|@tsv' < "$video_json_file" |
 	sort_video_data_fn |
 	fzf -m \
 	--preview "sh $0 -U preview_img '""$thumbnail_viewer""' {} '""$video_json_file""'" \
 	--preview-window "left:50%:wrap" --layout=reverse |
-	trim_id > "$selected_id_file"
+	trim_url > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
 }
@@ -796,67 +788,46 @@ print_requested_info () {
 	set -f
 	IFS=,
 	for request in $info_to_print; do
-	case "$request" in
-	    [Ll]|link) printf '%s\n' "$@" ;;
-	    VJ|vj|video-json) while read -r line; do jq '.[]|select(.ID=="'"$line"'")' < "$video_json_file"; done < "$id_file" ;;
-	    [Jj]|json) jq < "$video_json_file" ;;
-	    [Rr]|raw) while read -r line; do jq -r '.[]|select(.ID=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.ID)"' < "$video_json_file"; done < "$id_file" ;;
-	esac
+		case "$request" in
+		    [Ll]|link) unset IFS; printf '%s\n' $* ;;
+		    VJ|vj|video-json) while read -r line; do jq '.[]|select(.url=="'"$line"'")' < "$video_json_file"; done < "$ytfzf_selected_urls" ;;
+		    [Jj]|json) jq < "$video_json_file" ;;
+		    [Rr]|raw) while read -r line; do jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file"; done < "$ytfzf_selected_urls" ;;
+		esac
 	done
 }
 
 open_player () {
 	# isaudio, isdownload, video_pref
+	#urls can either be passed as argument, or through pipe
+	[ -z "$@" ] && { 
+		read -r urls
+		set -f
+		unset IFS
+		set -- $urls
+	}
+	[ -z "$*" ] && return 0
 
 	if [ -n "$info_to_print"  ]; then
 		print_requested_info "$@"
 		[ $exit_on_info_to_print -eq 1 ] && exit 0
 	fi
 
-	: ${video_pref:=best}
-
-
-	if [ $is_download -eq 1 ]; then
-		print_info "Downloading $# video(s)\n"
-		downloader "$@"
-		return
-	fi
-
-	print_info "Playing $# video(s)\n"
-
-	if [ $is_audio_only -eq 1 ]; then
-		audio_player "$@"
-		return
-	fi
-
-	if [ $is_detach -eq 1 ]; then
-		video_detach_player "$@"
-		return
-	fi
-
-	video_player "$@"
+	case 1 in
+		$is_download) message="Downloading $# video(s)"; player=downloader ;;
+		$is_audio_only) message="Listening to $# video(s)"; player=audio_player ;;
+		$is_detach) message="Playing $# video(s)"; player=video_detach_player ;;
+		1) message="Playing $# video(s)"; player=video_player ;;
+	esac
+	print_info "$message\n"
+	$player "$@"
 }
 
-player () {
-	# takes the json data file as $1 and the selected id file as $2
-	video_json_file=$1
-	id_file=$2
-	options=$3
-
-	{
-		# get urls from the ids
-		urls=
-		while IFS= read id || [ -n "$id" ] ; do
-			# head is used so that only url is selected (a search query may have dublicates)
-			urls=${urls}' '$(jq -r --arg id "$id" '.[]|select(.ID == $id).url' < "$video_json_file" | head -n 1 )
-		done < "$id_file"
-		[ -z "$urls" ] && return
-	}
-
-	unset IFS
-	set -f
-	set -- $urls
-	open_player "$@"
+format_urls () {
+	#url file will have new lines as seperaters, make it a space
+	while read -r url; do
+		[ -n "$url" ] && printf "%s " "$url"
+	done
 }
 #}}}
 
@@ -931,13 +902,16 @@ shift $((OPTIND-1))
 #}}}
 
 # Get search{{{
-search="$*"
-get_search () {
-	case "$search" in
-		-) print_info "Reading stdin\n"; read -r search ;;
-		'') search_prompt_menu ;;
-	esac
+trim_space () {
+	set -f
+	set -- $*
+	search="$*"
+	set +f
 }
+
+search="$*"
+[ -z "$search" ] || [ "$search" = '-' ] && search_prompt_menu
+trim_space "$search"
 #}}}
 
 # Sessions {{{
@@ -957,7 +931,7 @@ if [ -z "$YTFZF_PID" ]; then
 fi
 
 # files
-: ${ytfzf_selected_ids=$session_cache_dir/ids}
+: ${ytfzf_selected_urls=$session_cache_dir/ids}
 : ${ytfzf_video_json_file=$session_cache_dir/videos_json}
 
 # }}}
@@ -965,7 +939,7 @@ fi
 # Main {{{
 
 : > "$ytfzf_video_json_file"
-: > "$ytfzf_selected_ids"
+: > "$ytfzf_selected_urls"
 
 handle_scrape_error () {
 	case "$1" in
@@ -985,7 +959,6 @@ scrape_website () {
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
 		youtube|Y) 
 			# youtube scrape {{{
-			search_is_empty && get_search; 
 			#$i is so multiple pages can be scraped
 			while [ ${i:=0} -lt $pages_to_scrape ]; do
 				i=$((i+1))
@@ -1022,8 +995,8 @@ scrape_website () {
 			EOF
 		    wait
 		    ;;#}}}
-		peertube|P) search_is_empty && get_search; scrape_peertube "$search" "$ytfzf_video_json_file" ;;
-		odysee|lbry|O) search_is_empty && get_search; scrape_odysee "$search" "$ytfzf_video_json_file" ;;
+		peertube|P) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
+		odysee|lbry|O) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
 		*) die 2 "invalid scraper: $scrape_type\n" ;;
 	esac
 	rv="$?"
@@ -1042,15 +1015,16 @@ done
 
 while :; do
 	case 1 in
-		 "$is_interface_scripting") interface_scripting "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
-		"$show_thumbnails") interface_thumbnails "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
-		    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
-				 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_ids" ;;
+		 "$is_interface_scripting") interface_scripting "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
+		"$show_thumbnails") interface_thumbnails "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
+		    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
+				 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 	esac
-	[ $enable_hist -eq 1 ] && add_to_hist < "$ytfzf_selected_ids"
 
-	player "$ytfzf_video_json_file" "$ytfzf_selected_ids"
-	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_ids" ] && break
+	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
+
+	format_urls < "$ytfzf_selected_urls" | open_player
+	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
 done
 #}}}
 
