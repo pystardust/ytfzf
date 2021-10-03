@@ -895,6 +895,7 @@ parse_opt () {
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
+		force-youtube) force_yt=${optarg:-1} ;;
 		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
 		sort-by) search_sort_by="$optarg" ;;
 		upload-date) search_upload_date="$optarg" ;;
@@ -1063,7 +1064,11 @@ while :; do
 
 	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
-	format_urls < "$ytfzf_selected_urls" | open_player
+	if [ $force_yt -eq 1 ]; then
+		format_urls < "$ytfzf_selected_urls" | sed "s/${invidious_instance}/www.youtube.com/g" | open_player
+	else
+		format_urls < "$ytfzf_selected_urls" | open_player
+	fi
 	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
 done
 #}}}
