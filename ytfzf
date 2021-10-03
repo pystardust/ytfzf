@@ -212,7 +212,8 @@ usage () {
 				    youtube/Y, youtube-trending/T, youtube-subscriptions/S/SI,
 				    peertube/P, odysee/lbry/O,
 				    history/H
-				    * SI scrapes invidious for channels instead of youtube
+				    * SI scrapes invidious for channels instead of youtube,
+				    * Y and T both scrape invidious
 				you can use multiple scrapers by separating each with a , eg: youtube,odysee
 	-t			Show thumbnails
 	-D			Use an external menu
