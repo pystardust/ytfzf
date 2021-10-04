@@ -180,6 +180,7 @@ function_exists "downloader" || downloader () {
 : "${yt_thumbnail_quality=default}"
 : ${sub_link_count:=10}
 : "${invidious_instance:=ytprivate.com}"
+: "${yt_video_link_domain:=$invidious_instance}"
 : ${pages_to_scrape:=1}
 
 : "${search_sort_by:=relevance}"
@@ -301,7 +302,7 @@ _youtube_channel_json () {
 	jq '[ .contents | ..|.gridVideoRenderer? | select(. !=null) |
 	    {
 	    	ID: .videoId,
-			url: "https://www.youtube.com/watch?v=\(.videoId)",
+			url: "https://'"$yt_video_link_domain"'/watch?v=\(.videoId)",
 	    	title: .title.runs[0].text,
 	    	channel: "'"$channel_name"'",
 	    	thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
@@ -387,7 +388,7 @@ _invidious_search_json_live () {
 	jq '[ .[] | select(.type=="video" and .liveNow==true) |
 		{
 			ID: .videoId,
-			url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
+			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: "[live] \(.title)",
 			channel: .author,
 			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
@@ -398,7 +399,7 @@ _invidious_search_json_videos () {
 	jq '[ .[] | select(.type=="video" and .liveNow==false) |
 		{
 			ID: .videoId,
-			url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
+			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
 			channel: .author,
 			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
@@ -414,7 +415,7 @@ _invidious_channel_json () {
 	jq '[ .latestVideos |.[] |
 	    {
 	    	ID: .videoId,
-		url: "https://'"${invidious_instance}"'/watch?v=\(.videoId)",
+		url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 	    	title: .title,
 	    	channel: "'"$channel_name"'",
 		thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
@@ -895,6 +896,7 @@ parse_opt () {
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
+		force-youtube) yt_video_link_domain="www.youtube.com" ;;
 		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
 		sort-by) search_sort_by="$optarg" ;;
 		upload-date) search_upload_date="$optarg" ;;
@@ -1064,6 +1066,7 @@ while :; do
 	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
 	format_urls < "$ytfzf_selected_urls" | open_player
+
 	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
 done
 #}}}
