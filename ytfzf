@@ -276,7 +276,7 @@ _get_request () {
 
 _youtube_channel_name () {
 	# takes channel page html (stdin) and returns the channel name
-	grep -o '<title>.*</title>' |
+	grep -o '[<]title[>].*[<]/title[>]' |
 		sed \
 		-e 's/ - YouTube//' \
 		-e 's/<\/\?title>//g' \
@@ -319,8 +319,8 @@ scrape_youtube_channel () {
 	output_json_file="$2"
 	tmp_filename="$3"
 	print_info "Scraping Youtube channel: $channel_url\n"
-	_tmp_html="${session_temp_dir}/channel-$tmp_filename.html"
-	_tmp_json="${session_temp_dir}/channel-$tmp_filename.json"
+	_tmp_html="${session_temp_dir}/${tmp_filename}.html"
+	_tmp_json="${session_temp_dir}/${tmp_filename}.json"
 
 	# Converting channel title page url to channel video url
 	case $channel_url in
@@ -331,7 +331,7 @@ scrape_youtube_channel () {
 	_youtube_get_json < "$_tmp_html" > "$_tmp_json"
 
 	channel_name=$(_youtube_channel_name < "$_tmp_html" )
-	_youtube_channel_json < "$_tmp_json"  >> "$output_json_file"
+	_youtube_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
 }
 # }}} 
 
