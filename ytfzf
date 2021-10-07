@@ -66,7 +66,6 @@ die () {
 
 trim_url () {
 	while IFS= read _line;do
-		[ -z "$_line" ] && continue
 		printf '%s\n' "${_line##*|}"
 	done
 }
@@ -642,8 +641,8 @@ set_keypress () {
 	if printf "%s" "$keypress" | grep -E '^[[:alnum:]-]+$' > "$keypress_file"; then
 		echo "$input" | sed -n '2,$p'
 	else
-		#there was no key press
-		echo "${keypress}${new_line}${input}"
+		#there was no key press, remove all blank lines
+		echo "${keypress}${new_line}${input}" | grep -Ev '^[[:space:]]*$'
 	fi
 	unset keypress
 }
