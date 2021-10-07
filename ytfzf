@@ -66,6 +66,7 @@ die () {
 
 trim_url () {
 	while IFS= read _line;do
+		[ -z "$_line" ] && continue
 		printf '%s\n' "${_line##*|}"
 	done
 }
