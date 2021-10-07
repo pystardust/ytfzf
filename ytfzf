@@ -480,6 +480,8 @@ scrape_invidious_channel () {
 	output_json_file=$2
 	tmp_file_name=$3
 
+	_yt_thumbnail_quality_index="$(_invidious_thumb_quality_index "$yt_thumbnail_quality")"
+
 	# Converting channel title page url to channel video url
 	printf "%s" "$channel_url" | grep -Eqv '/videos$' && channel_url="${channel_url}/videos"
 	channel_id="$(_get_channel_id "$channel_url")"
