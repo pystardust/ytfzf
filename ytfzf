@@ -382,6 +382,7 @@ _get_thumb_quality_index () {
 		start) _thumb_quality_index=6 ;;
 		middle) _thumb_quality_index=7 ;;
 		end) _thumb_quality_index=8 ;;
+		*) _thumb_quality_index=5 ;;
 	esac
 	unset _quality
 }
@@ -961,6 +962,7 @@ parse_opt () {
 		features) search_result_features=$optarg ;;
 		region) search_region=$optarg ;;
 		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
+		thumbnail-quality) thumbnail_quality="$optarg" ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
