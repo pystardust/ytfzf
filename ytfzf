@@ -189,7 +189,7 @@ function_exists "downloader" || downloader () {
 # scrape
 : "${scrape=youtube}"
 #this comes from invidious' api
-: "${yt_thumbnail_quality=default}"
+: "${thumbnail_quality=default}"
 : ${sub_link_count:=10}
 : "${invidious_instance:=ytprivate.com}"
 : "${yt_video_link_domain:=$invidious_instance}"
@@ -370,18 +370,19 @@ _get_channel_id () {
 }
 
 
-_invidious_thumb_quality_index () {
+_get_thumb_quality_index () {
 	_quality="$1"
 	case "$_quality" in
-		maxres) printf 0 ;;
-		maxresdefault) printf 1 ;;
-		sddefault) printf 2 ;;
-		high) printf 3 ;;
-		medium) printf 4 ;;
-		default) printf 5 ;;
-		start) printf 6 ;;
-		middle) printf 7 ;;
-		end) printf 8 ;;
+		maxres) _thumb_quality_index=0 ;;
+		maxresdefault) _thumb_quality_index=1 ;;
+		sddefault) _thumb_quality_index=2 ;;
+		high) _thumb_quality_index=3 ;;
+		medium) _thumb_quality_index=4 ;;
+		default) _thumb_quality_index=5 ;;
+		start) _thumb_quality_index=6 ;;
+		middle) _thumb_quality_index=7 ;;
+		end) _thumb_quality_index=8 ;;
+		*) _thumb_quality_index=5 ;;
 	esac
 	unset _quality
 }
@@ -405,7 +406,7 @@ _invidious_search_json_live () {
 			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: "[live] \(.title)",
 			channel: .author,
-			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
+			thumbs: .videoThumbnails['"$_thumb_quality_index"'].url ,
 		}
 	]'
 }
@@ -416,7 +417,7 @@ _invidious_search_json_videos () {
 			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
 			channel: .author,
-			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
+			thumbs: .videoThumbnails['"$_thumb_quality_index"'].url ,
 			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
 			views: "\(.viewCount)",
 			date: .publishedText,
@@ -432,7 +433,7 @@ _invidious_channel_json () {
 		url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 	    	title: .title,
 	    	channel: "'"$channel_name"'",
-		thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
+		thumbs: .videoThumbnails['"$_thumb_quality_index"'].url ,
 		duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
 		views: "\(.viewCount)",
 		date: .publishedText,
@@ -450,7 +451,7 @@ scrape_invidious_search () {
 
 	_tmp_json="${session_temp_dir}/yt-search-$page_num.json"
 
-	_yt_thumbnail_quality_index="$(_invidious_thumb_quality_index "$yt_thumbnail_quality")"
+	_get_thumb_quality_index "$thumbnail_quality"
 
 	print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $page_num)\n"
 
@@ -478,7 +479,7 @@ scrape_invidious_trending () {
 
 	_tmp_json="${session_temp_dir}/yt-trending"
 
-	_yt_thumbnail_quality_index="$(_invidious_thumb_quality_index "$yt_thumbnail_quality")"
+	_get_thumb_quality_index "$thumbnail_quality"
 
 	url="https://$invidious_instance/api/v1/trending"
 	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}" && _tmp_json="${_tmp_json}-$trending_tab"
@@ -494,7 +495,7 @@ scrape_invidious_channel () {
 	output_json_file=$2
 	tmp_file_name=$3
 
-	_yt_thumbnail_quality_index="$(_invidious_thumb_quality_index "$yt_thumbnail_quality")"
+	_get_thumb_quality_index "$thumbnail_quality"
 
 	# Converting channel title page url to channel video url
 	printf "%s" "$channel_url" | grep -Eqv '/videos$' && channel_url="${channel_url}/videos"
@@ -958,6 +959,7 @@ parse_opt () {
 		features) search_result_features=$optarg ;;
 		region) search_region=$optarg ;;
 		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
+		thumbnail-quality) thumbnail_quality="$optarg" ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
