@@ -123,10 +123,10 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 }
 
 # shortcuts
-: "${download_shortcut:=ctrl-d}"
-: "${video_shortcut:=ctrl-v}"
-: "${detach_shortcut:=ctrl-e}"
-: "${print_link_shortcut:=ctrl-l}"
+: "${download_shortcut:=alt-d}"
+: "${video_shortcut:=alt-v}"
+: "${detach_shortcut:=alt-e}"
+: "${print_link_shortcut:=alt-l}"
 
 : ${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${detach_shortcut},${print_link_shortcut}}
 
