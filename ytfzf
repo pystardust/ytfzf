@@ -1,6 +1,7 @@
 #!/bin/sh
 
-YTFZF_VERSION="2.0_alpha"
+#for now, try to have this versioning scheme, 2.0_alpha_<feature-you-added>
+YTFZF_VERSION="2.0_alpha_shortcuts"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
