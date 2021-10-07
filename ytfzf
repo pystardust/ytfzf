@@ -911,7 +911,7 @@ parse_opt () {
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
 
-while getopts "ac:dfhlmn:rtxADHI:LTU${long_opt_char}:" OPT; do
+while getopts "ac:dfhlmn:rtvxADHI:LTU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
