@@ -262,9 +262,15 @@ The shortcut to use to print the link.
 
 .TP
 .RB $ shortcut_binds
-The keys to listen for in fzf, be sure to add custom keybinds to this list.
+The keys to listen for in fzf.
 .br
-.RI default: " Enter,double-click,$download_shortcut,$video_shortcut,$detach_shortcut,$print_link_shortcut"
+.RI default: " Enter,double-click,$download_shortcut,$video_shortcut,$detach_shortcut,$print_link_shortcut,$custom_shortcut_binds"
+
+.TP
+.RB $ custom_shortcut_binds
+The custom shortcut keys. Automatically appended to $shortcut_binds
+.br
+If $shortcut_binds is set manually, this must also manually be appended.
 
 .RE
 

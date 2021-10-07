@@ -128,7 +128,8 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 : "${detach_shortcut:=alt-e}"
 : "${print_link_shortcut:=alt-l}"
 
-: ${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${detach_shortcut},${print_link_shortcut}}
+: "${custom_shortcut_binds=}"
+: "${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${detach_shortcut},${print_link_shortcut},${custom_shortcut_binds}}"
 
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len:=210}
