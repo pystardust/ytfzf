@@ -236,6 +236,36 @@ The text to display when no search is given.
 .br
 .RI default: " Search: "
 
+.TP
+.RB $ download_shortcut
+The shortcut to download the selected videos.
+.br
+.RI default: " ctrl-d"
+
+.TP
+.RB $ video_shortcut
+The shortcut to watch the selected videos.
+.br
+.RI default: " ctrl-v"
+
+.TP
+.RB $ detach_shortcut
+The shortcut to use the detach player.
+.br
+.RI default: " ctrl-e"
+
+.TP
+.RB $ print_link_shortcut
+The shortcut to use to print the link.
+.br
+.RI default: " ctrl-l"
+
+.TP
+.RB $ shortcut_binds
+The keys to listen for in fzf, be sure to add custom keybinds to this list.
+.br
+.RI default: " Enter,double-click,$download_shortcut,$video_shortcut,$detach_shortcut,$print_link_shortcut"
+
 .RE
 
 .PP
@@ -525,6 +555,19 @@ This function takes 4 arguments:
     For an option such as \-c S, this value will be the same as $2.
 .ti +4
     However, for every \-\-long\-option=value, this value will be \-long\-option=value.
+.EE
+
+.TP
+.BR handle_custom_keypresses ()
+This function gets called in the internal handle_keypress() function, This function should return 0 to not override the default handle_keypress() function.
+.br
+This function takes 1 argument:
+.EX
+.I 1
+.ti +4
+    The key pressed.
+.EE
+
 
 .SH CUSTOM SCRAPERS
 .PP

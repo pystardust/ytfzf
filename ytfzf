@@ -121,6 +121,14 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 	fi
 }
 
+# shortcuts
+: "${download_shortcut:=ctrl-d}"
+: "${video_shortcut:=ctrl-v}"
+: "${detach_shortcut:=ctrl-e}"
+: "${print_link_shortcut:=ctrl-l}"
+
+: ${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${detach_shortcut},${print_link_shortcut}}
+
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len:=210}
 
@@ -203,6 +211,8 @@ case "$long_opt_char" in
 esac
 #}}}
 
+new_line='
+'
 tab_space=$(printf '\t')
 : "${gap_space:=                                                                                                                   }"
 
@@ -617,6 +627,39 @@ clear_hist () {
 #}}}
 
 # User Interface {{{
+
+# Keypresses {{{
+set_keypress () {
+	#this function uses echo to keep new lines
+	read -r keypress
+	while read -r line; do
+		input="${input}${new_line}${line}"
+	done
+	#this if statement checks if there is a keypress, if so, print the input, otherwise print everything
+	# $keypress could also be a standalone variable, but it's nice to be able to interact with it externally
+	if printf "%s" "$keypress" | grep -E '^[[:alnum:]-]+$' > "$keypress_file"; then
+		echo "$input" | sed -n '2,$p'
+	else
+		#there was no key press
+		echo "${keypress}${new_line}${input}"
+	fi
+	unset keypress
+}
+
+handle_keypress () {
+	read -r keypress
+	function_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
+	case "$keypress" in
+		$download_shortcut) is_download=1 ;;
+		$video_shortcut) is_download=0; is_audio_only=0; ;;
+		$detach_shortcut) is_detach=1 ;;
+		$print_link_shortcut) info_to_print="L"; exit_on_info_to_print=1 ;;
+	esac
+	unset keypress
+}
+
+#}}}
+
 # Takes video json file as $1 and returns the selected video IDs to file $2
 video_info_text () {
 	printf "%-${title_len}.${title_len}s\t" "$title"
@@ -674,8 +717,9 @@ interface_text () {
 			video_info_text
 		done |
 		column -t -s "$tab_space" |
-		fzf -m --tabstop=1 --layout=reverse |
+		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress | 
 		trim_url > "$selected_id_file"
+	handle_keypress < "$keypress_file"
 }
 #}}}
 
@@ -792,10 +836,12 @@ interface_thumbnails () {
 	sort_video_data_fn |
 	fzf -m \
 	--preview "sh $0 -U preview_img '""$thumbnail_viewer""' {} '""$video_json_file""'" \
-	--preview-window "left:50%:wrap" --layout=reverse |
+	--preview-window "left:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
 	trim_url > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
+
+	handle_keypress < "$keypress_file"
 }
 #}}}
 
@@ -955,7 +1001,7 @@ fi
 # files
 : ${ytfzf_selected_urls=$session_cache_dir/ids}
 : ${ytfzf_video_json_file=$session_cache_dir/videos_json}
-
+keypress_file="${session_temp_dir}/menu_keypress"
 # }}}
 
 # Main {{{
