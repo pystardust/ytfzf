@@ -406,7 +406,7 @@ _invidious_search_json_live () {
 			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: "[live] \(.title)",
 			channel: .author,
-			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
+			thumbs: .videoThumbnails['"$_thumb_quality_index"'].url ,
 		}
 	]'
 }
@@ -417,7 +417,7 @@ _invidious_search_json_videos () {
 			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
 			channel: .author,
-			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
+			thumbs: .videoThumbnails['"$_thumb_quality_index"'].url ,
 			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
 			views: "\(.viewCount)",
 			date: .publishedText,
@@ -433,7 +433,7 @@ _invidious_channel_json () {
 		url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 	    	title: .title,
 	    	channel: "'"$channel_name"'",
-		thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
+		thumbs: .videoThumbnails['"$_thumb_quality_index"'].url ,
 		duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
 		views: "\(.viewCount)",
 		date: .publishedText,
@@ -452,7 +452,6 @@ scrape_invidious_search () {
 	_tmp_json="${session_temp_dir}/yt-search-$page_num.json"
 
 	_get_thumb_quality_index "$thumbnail_quality"
-	_yt_thumbnail_quality_index="$_thumb_quality_index"
 
 	print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $page_num)\n"
 
@@ -481,7 +480,6 @@ scrape_invidious_trending () {
 	_tmp_json="${session_temp_dir}/yt-trending"
 
 	_get_thumb_quality_index "$thumbnail_quality"
-	_yt_thumbnail_quality_index="$_thumb_quality_index"
 
 	url="https://$invidious_instance/api/v1/trending"
 	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}" && _tmp_json="${_tmp_json}-$trending_tab"
@@ -498,7 +496,6 @@ scrape_invidious_channel () {
 	tmp_file_name=$3
 
 	_get_thumb_quality_index "$thumbnail_quality"
-	_yt_thumbnail_quality_index="$_thumb_quality_index"
 
 	# Converting channel title page url to channel video url
 	printf "%s" "$channel_url" | grep -Eqv '/videos$' && channel_url="${channel_url}/videos"
