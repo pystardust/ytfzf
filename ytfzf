@@ -38,8 +38,8 @@ function_exists () {
 get_url_key_value() {
 	url="$1"
 	key="$2"
-	value="${url#*$key=}"
-	value="${value%&*}"
+	value="${url#*[?&]$key=}"
+	value="${value%%&*}"
 	printf "%s" "$value"
 }
 
