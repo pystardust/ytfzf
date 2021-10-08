@@ -1044,10 +1044,10 @@ open_player () {
 
 	if [ $detach_player -eq 1 ]; then
 		if [ -z "$video_pref" ] || [ $is_audio_only -eq 1 ]; then
-			printf "Opening Player: %s\n" "$video_player $*"
+			printf "Opening Player: %s\n" "$video_player \"$*\""
 			setsid -f $video_player "$@"  $YTFZF_SUBT_NAME >/dev/null 2>&1
 		else
-			printf "Opening Player: %s\n" "$video_player_format$video_pref $*"
+			printf "Opening Player: %s\n" "$video_player_format$video_pref \"$*\""
 			setsid -f $video_player_format"$video_pref"  "$@"  $YTFZF_SUBT_NAME >/dev/null 2>&1
 		fi
 		return
@@ -1055,10 +1055,10 @@ open_player () {
 
 	if [ $is_download -eq 0 ]; then
 		if [ -z "$video_pref" ] || [ $is_audio_only -eq 1 ]; then
-			printf "Opening Player: %s\n" "$video_player $*"
+			printf "Opening Player: %s\n" "$video_player \"$*\""
 			$video_player "$@"  $YTFZF_SUBT_NAME
 		else
-			printf "Opening Player: %s\n" "$video_player_format$video_pref $*"
+			printf "Opening Player: %s\n" "$video_player_format$video_pref \"$*\""
 			$video_player_format"$video_pref"  "$@"  $YTFZF_SUBT_NAME || [ $? -eq 4 ] || video_pref= open_player "$@"
 		fi
 	elif [ $is_download -eq 1 ]; then
