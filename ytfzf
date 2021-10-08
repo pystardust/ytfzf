@@ -35,11 +35,11 @@ function_exists () {
 	type "$1" > /dev/null 2>&1
 }
 
-get_url_key_value() {
-	url="$1"
+get_key_value() {
+	string="$1"
 	key="$2"
-	value="${url#*[?&]$key=}"
-	value="${value%%&*}"
+	value="${string##* $key=}"
+	value="${value%% *}"
 	printf "%s" "$value"
 }
 
@@ -384,6 +384,12 @@ _get_channel_id () {
 	printf "%s" "$link"
 }
 
+_get_playlist_id () {
+	link="$1"
+	link="${link##*[?]list=}"
+	printf "%s" "${link}"
+}
+
 _get_thumb_quality_index () {
 	_quality="$1"
 	case "$_quality" in
@@ -405,11 +411,12 @@ _invidious_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
 		{
 			ID: .playlistId,
-			url: "ytfzf-action://scrape?type=invidious-playlist&url=https://www.youtube.com/playlist?list=\(.playlistId)",
+			url: "https://www.youtube.com/playlist?list=\(.playlistId)",
 			title: "[playlist] \(.title)",
 			channel: .author,
 			thumbs: .playlistThumbnail,
-			duration: "\(.videoCount) videos"
+			duration: "\(.videoCount) videos",
+			action: "scrape type=invidious-playlist search=https://www.youtube.com/playlist?list=\(.playlistId)"
 		}
 	]'
 }
@@ -488,17 +495,22 @@ scrape_invidious_playlist () {
 	playlist_url=$1
 	output_json_file=$2
 
-	playlist_id="$(get_url_key_value "$playlist_url" "list")"
-
-	_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id.json"
+	playlist_id="$(_get_playlist_id "$playlist_url")"
 
 	_get_thumb_quality_index "$thumbnail_quality"
 
 	print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url)\n"
 
-	_get_request "https://$invidious_instance/api/v1/playlists/$playlist_id" > "$_tmp_json" || return "$?"
+	i=1
+	while :; do
+		_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id-$i.json"
+		_get_request "https://$invidious_instance/api/v1/playlists/$playlist_id" \
+		-G --data-urlencode "page=$i" > "$_tmp_json" || return "$?"
+		jq -e '.videos==[]' < "$_tmp_json" > /dev/null 2>&1 && break
+		i=$((i+1))
+		_invidious_playlist_json < "$_tmp_json" >> "$output_json_file"
+	done
 
-	_invidious_playlist_json < "$_tmp_json" >> "$output_json_file"
 }
 
 scrape_invidious_search () {
@@ -1095,7 +1107,7 @@ init_submenu () {
 	export thumb_dir="${submenu_dir}/thumbnails"
 	mkdir -p "$thumb_dir"
 	#when the back button is given with -A/-a/-r it causes an infinite loop lmao
-	[ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "ytfzf-action://back"}]' >> "$ytfzf_video_json_file"
+	[ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "ytfzf-action://back", "action": "back"}]' >> "$ytfzf_video_json_file"
 	function_exists "on_init_submenu" on_init_submenu
 }
 
@@ -1107,25 +1119,35 @@ _in_submenu=0
 : > "$ytfzf_video_json_file"
 : > "$ytfzf_selected_urls"
 
-handle_special_urls () {
-	#action urls follow this scheme: ytfzf-action://<action>[?key=value][&key2=value2...]
-	unset _rv
-	while read -r url; do
-		case "$url" in
-			ytfzf-action://back) init_main_menu; return 1 ;;
-			ytfzf-action://scrape*) 
-				if [ $enable_submenus -eq 1 ]; then
-					[ $_in_submenu -eq 0 ] && init_submenu
-					_url="$(get_url_key_value "$url" "url")"
-					scrape_website "$(get_url_key_value "$url" "type")" "$_url"
-					#don't immediately return in case more than 1 submenu needs to be scraped
-					_rv="1"
-				fi
+#actions {{{
+#actions are attached to videos/items in the menu
+handle_action () {
+	_action="$1"
+	case "$_action" in
+		back*) init_main_menu; return 1 ;;
+		scrape*)
+			_type="$(get_key_value "$_action" "type")"
+			_search="$(get_key_value "$_action" "search")"
+			[ $_in_submenu -eq 0 ] && init_submenu
+			scrape_website "$_type" "$_search"
+			return 1 ;;
+	esac
+	return 0
 
-		esac
-	done
-	return ${_rv:-0}
 }
+
+#checks each link to see if there is an action
+_check_actions () {
+	unset _rv
+	_main_json_file="$ytfzf_video_json_file"
+	while read -r url; do
+		action="$(jq --arg url "$url" '.[]|select(.url==$url).action' < "$_main_json_file" | tr -d '"')"
+		# the second check may be moved into handle_action cases if actions become more generic
+		[ "$action" != "null" ] && [ $enable_submenus -eq 1 ] && { handle_action "$action" || _rv=1; }
+	done
+	return "${_rv:-0}"
+}
+#}}}
 
 # scraping {{{
 handle_scrape_error () {
@@ -1231,7 +1253,7 @@ while :; do
 		    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 				 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 	esac
-	handle_special_urls < "$ytfzf_selected_urls" || continue
+	_check_actions < "$ytfzf_selected_urls" || continue
 
 	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
