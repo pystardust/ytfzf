@@ -1123,7 +1123,6 @@ handle_special_urls () {
 				fi
 
 		esac
-		function_exists "handle_special_url" && handle_special_url "$url"
 	done
 	return ${_rv:-0}
 }
