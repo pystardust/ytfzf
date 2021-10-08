@@ -460,7 +460,7 @@ scrape_invidious_search () {
 		--data-urlencode "type=${search_result_type}" \
 		--data-urlencode "sort_by=${search_sort_by}" \
 		--data-urlencode "date=${search_upload_date}" \
-		--data-urlencode "duration=${serach_video_duration}" \
+		--data-urlencode "duration=${search_video_duration}" \
 		--data-urlencode "features=${search_result_features}" \
 		--data-urlencode "region=${search_region}" \
 		--data-urlencode "page=${page_num}" > "$_tmp_json" || return "$?"
@@ -1103,7 +1103,7 @@ IFS=","
 set -f
 for curr_scrape in $scrape; do
 	#only ask for search if it's empty and scrape isn't something like S or T
-	printf "%s" "$scrape_search_exclude" | grep -Fqv " $curr_scrape " && { [ "$search" = "-" -o -z "$search" ]; } && search_prompt_menu
+	printf "%s" "$scrape_search_exclude" | grep -Fqv " $curr_scrape " && { [ "$search" = "-" ] || [ -z "$search" ]; } && search_prompt_menu
 	scrape_website "$curr_scrape"
 	handle_scrape_error "$?"
 done
