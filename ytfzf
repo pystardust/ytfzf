@@ -247,7 +247,11 @@ usage () {
 				Builtin scrapers:
 				    youtube/Y, youtube-trending/T, youtube-subscriptions/S/SI,
 				    peertube/P, odysee/lbry/O,
-				    history/H
+				    history/H,
+				    youtube-playlist
+				    	instead of giving a search, give a link to a playlist
+				    youtube-channel
+				    	instead of giving a search, give a link to a channel
 				    * SI scrapes invidious for channels instead of youtube,
 				    * Y and T both scrape invidious
 				you can use multiple scrapers by separating each with a , eg: youtube,odysee
@@ -380,13 +384,6 @@ _get_channel_id () {
 	printf "%s" "$link"
 }
 
-_get_playlist_id () {
-	link="$1"
-	link="${link##*playlist\?list=}"
-	printf "%s" "$link"
-}
-
-
 _get_thumb_quality_index () {
 	_quality="$1"
 	case "$_quality" in
@@ -478,7 +475,7 @@ _invidious_playlist_json () {
 			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
 			channel: .author,
-			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url,
+			thumbs: .videoThumbnails['"$_thumb_quality_index"'].url,
 			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
 			date: .publishedText,
 			description: .description
@@ -491,9 +488,11 @@ scrape_invidious_playlist () {
 	playlist_url=$1
 	output_json_file=$2
 
-	playlist_id="$(_get_playlist_id "$playlist_url")"
+	playlist_id="$(get_url_key_value "$playlist_url" "list")"
 
 	_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id.json"
+
+	_get_thumb_quality_index "$thumbnail_quality"
 
 	print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url)\n"
 
@@ -970,7 +969,11 @@ get_video_format(){
 format_urls () {
 	#url file will have new lines as seperaters, make it a space
 	while read -r url; do
-		[ -n "$url" ] && printf "%s " "$url"
+		case "$url" in
+			ytfzf-action://*) printf "%s " "$(get_url_key_value "$url" "url")" ;;
+			'') : ;;
+			*) printf "%s " "$url" ;;
+		esac
 	done
 }
 #}}}
@@ -1091,7 +1094,8 @@ init_submenu () {
 	ytfzf_selected_urls="$submenu_dir/ids"
 	export thumb_dir="${submenu_dir}/thumbnails"
 	mkdir -p "$thumb_dir"
-	printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "ytfzf-action://back"}]' >> "$ytfzf_video_json_file"
+	#when the back button is given with -A/-a/-r it causes an infinite loop lmao
+	[ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "ytfzf-action://back"}]' >> "$ytfzf_video_json_file"
 	function_exists "on_init_submenu" on_init_submenu
 }
 
@@ -1112,7 +1116,8 @@ handle_special_urls () {
 			ytfzf-action://scrape*) 
 				if [ $enable_submenus -eq 1 ]; then
 					[ $_in_submenu -eq 0 ] && init_submenu
-					scrape_website "$(get_url_key_value "$url" "type")" "$(get_url_key_value "$url" "url")"
+					_url="$(get_url_key_value "$url" "url")"
+					scrape_website "$(get_url_key_value "$url" "type")" "$_url"
 					#don't immediately return in case more than 1 submenu needs to be scraped
 					_rv="1"
 				fi
