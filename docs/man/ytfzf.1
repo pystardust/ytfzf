@@ -110,6 +110,14 @@ This can also be set in the config file with
 .BR \-\-sort
 Sorts videos (after scraping) by upload date.
 .RE
+.TP
+.BR \-\-disable\-submenus
+Whether or not to disable submenus.
+.br
+Submenus are the menus that happen after a playlist or channel (currently only supported by youtube/invidious) is selected
+.br
+This can also be set in the config file with
+.BR enable_submenus .
 
 .PP
 Auto selecting
@@ -337,13 +345,17 @@ Watch history (if $enable_hist is 1)
 .PP
 Each instance of ytfzf has it's own directory in $cache_dir.
 .br
-The structure of $cache_dir looks like this
+The structure of $cache_dir looks like this: (<> represents a template, ? means optional)
 .RS
 .EX
 $cache_dir
 | \-\- watch_hist
 | \-\- <search>\-<pid>
-|  | \-\- thumbnails
+|  | \-\- submenu?
+|  |  | videos_json
+|  |  | ids
+|  |  | thumbnails?
+|  | \-\- thumbnails?
 |  | \-\- tmp
 |  |  | \-\- curl_config
 |  |  | \-\- <scrape>.html
@@ -364,6 +376,9 @@ The watch history file.
 An instance's parent folder.
 .br
 If no search was given, it instead uses the name "SCRAPE\-<scrape>\-<pid>"
+.TP
+.IR submenu
+The folder to hold information about the submenu, all subitems are the same as the parent equivelent.
 .TP
 .IR thumbnails
 Stores the thumbnails for the instance (only with \-t).

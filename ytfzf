@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.1_alpha"
+YTFZF_VERSION="2.0_alpha.2"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -33,6 +33,14 @@ dep_check() {
 
 function_exists () {
 	type "$1" > /dev/null 2>&1
+}
+
+get_url_key_value() {
+	url="$1"
+	key="$2"
+	value="${url#*$key=}"
+	value="${value%&*}"
+	printf "%s" "$value"
 }
 
 #capitalizes the first letter of a string
@@ -122,6 +130,8 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 		printf '\033[1A\033[K\r%s\n' "> $search"
 	fi
 }
+
+: ${enable_submenus:=1}
 
 # shortcuts
 : "${download_shortcut:=alt-d}"
@@ -251,6 +261,7 @@ usage () {
 				    J:         print the json of all videos shown in the search
 				    R:         print the data of the selected videos, as appears in the menu
 				    F:         print the selected video format
+	--disable-submenus       Whether or not to disable submenus, which are menus for things like playlists and channels
 				
     See ytfzf(1) and ytfzf(5) for more information.
 "
@@ -316,7 +327,7 @@ _youtube_channel_json () {
 	jq '[ .contents | ..|.gridVideoRenderer? | select(. !=null) |
 	    {
 	    	ID: .videoId,
-			url: "https://'"$yt_video_link_domain"'/watch?v=\(.videoId)",
+		url: "https://'"$yt_video_link_domain"'/watch?v=\(.videoId)",
 	    	title: .title.runs[0].text,
 	    	channel: "'"$channel_name"'",
 	    	thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
@@ -369,6 +380,12 @@ _get_channel_id () {
 	printf "%s" "$link"
 }
 
+_get_playlist_id () {
+	link="$1"
+	link="${link##*playlist\?list=}"
+	printf "%s" "$link"
+}
+
 
 _invidious_thumb_quality_index () {
 	_quality="$1"
@@ -390,11 +407,22 @@ _invidious_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
 		{
 			ID: .playlistId,
-			url: "https://www.youtube.com/playlist?list=\(.playlistId)",
+			url: "ytfzf-action://scrape?type=invidious-playlist&url=https://www.youtube.com/playlist?list=\(.playlistId)",
 			title: "[playlist] \(.title)",
 			channel: .author,
 			thumbs: .playlistThumbnail,
-			duration: "\(.videoCount) videos",
+			duration: "\(.videoCount) videos"
+		}
+	]'
+}
+_invidious_search_json_channel () {
+	jq '[ .[] | select(.type=="channel") |
+		{
+			ID: .authorId,
+			url: "ytfzf-action://scrape?type=invidious-channel&url=https://'"${invidious_instance}"'/channel/\(.authorId)",
+			title: "[channel] \(.author)",
+			thumbs: "https:\(.authorThumbnails[4].url)",
+			duration: "\(.videoCount) uploaded videos"
 		}
 	]'
 }
@@ -428,10 +456,10 @@ _invidious_channel_json () {
 	channel_name=$1
 	jq '[ .latestVideos |.[] |
 	    {
-	    	ID: .videoId,
+		ID: .videoId,
 		url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
-	    	title: .title,
-	    	channel: "'"$channel_name"'",
+		title: .title,
+		channel: "'"$channel_name"'",
 		thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url ,
 		duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
 		views: "\(.viewCount)",
@@ -439,8 +467,39 @@ _invidious_channel_json () {
 		description: .description
 	    }
 	]'
+
+}
+
+_invidious_playlist_json () {
+	jq '[ .videos | .[] |
+		{
+			ID: .videoId,
+			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
+			title: .title,
+			channel: .author,
+			thumbs: .videoThumbnails['"$_yt_thumbnail_quality_index"'].url,
+			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
+			date: .publishedText,
+			description: .description
+		}
+	]'
 }
 #}}}
+
+scrape_invidious_playlist () {
+	playlist_url=$1
+	output_json_file=$2
+
+	playlist_id="$(_get_playlist_id "$playlist_url")"
+
+	_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id.json"
+
+	print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url)\n"
+
+	_get_request "https://$invidious_instance/api/v1/playlists/$playlist_id" > "$_tmp_json" || return "$?"
+
+	_invidious_playlist_json < "$_tmp_json" >> "$output_json_file"
+}
 
 scrape_invidious_search () {
 	page_query=$1
@@ -467,6 +526,7 @@ scrape_invidious_search () {
 	{
 		_invidious_search_json_live < "$_tmp_json"
 		_invidious_search_json_videos < "$_tmp_json"
+		_invidious_search_json_channel < "$_tmp_json"
 		_invidious_search_json_playlist < "$_tmp_json"
 	} >> "$output_json_file"
 }
@@ -958,6 +1018,7 @@ parse_opt () {
 		features) search_result_features=$optarg ;;
 		region) search_region=$optarg ;;
 		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
+		disable-submenus) enable_submenus="${optarg:-0}" ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
@@ -969,7 +1030,6 @@ while getopts "ac:dfhlmn:rtvxADHI:LTU${long_opt_char}:" OPT; do
 			case $1 in
 				preview_img)
 					session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
-					thumb_dir=$session_cache_dir/thumbnails
 					shift
 					preview_img "$@"
 					;;
@@ -1001,7 +1061,7 @@ if [ -z "$YTFZF_PID" ]; then
 	export SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	session_temp_dir="${session_cache_dir}/tmp"
-	thumb_dir="${session_cache_dir}/thumbnails"
+	export thumb_dir="${session_cache_dir}/thumbnails"
 	mkdir -p "$session_temp_dir" "$thumb_dir"
 fi
 
@@ -1011,11 +1071,57 @@ fi
 keypress_file="${session_temp_dir}/menu_keypress"
 # }}}
 
+# Submenu management {{{
+#only gets called after init_submenu, and when the user wants to go back to the main page
+init_main_menu () {
+	_in_submenu=0
+	rm -rf "$submenu_dir"
+	ytfzf_video_json_file="$session_cache_dir/videos_json"
+	ytfzf_selected_urls="$session_cache_dir/ids"
+	export thumb_dir="${session_cache_dir}/thumbnails"
+	function_exists "on_back_to_main_menu" && on_back_to_main_menu
+}
+
+init_submenu () {
+	_in_submenu=1
+	submenu_dir="$session_cache_dir/submenu"
+	ytfzf_video_json_file="$submenu_dir/videos_json"
+	ytfzf_selected_urls="$submenu_dir/ids"
+	export thumb_dir="${submenu_dir}/thumbnails"
+	mkdir -p "$thumb_dir"
+	printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "ytfzf-action://back"}]' >> "$ytfzf_video_json_file"
+	function_exists "on_init_submenu" on_init_submenu
+}
+
+_in_submenu=0
+#}}}
+
 # Main {{{
 
 : > "$ytfzf_video_json_file"
 : > "$ytfzf_selected_urls"
 
+handle_special_urls () {
+	#action urls follow this scheme: ytfzf-action://<action>[?key=value][&key2=value2...]
+	unset _rv
+	while read -r url; do
+		case "$url" in
+			ytfzf-action://back) init_main_menu; return 1 ;;
+			ytfzf-action://scrape*) 
+				if [ $enable_submenus -eq 1 ]; then
+					[ $_in_submenu -eq 0 ] && init_submenu
+					scrape_website "$(get_url_key_value "$url" "type")" "$(get_url_key_value "$url" "url")"
+					#don't immediately return in case more than 1 submenu needs to be scraped
+					_rv="1"
+				fi
+
+		esac
+		function_exists "handle_special_url" && handle_special_url "$url"
+	done
+	return ${_rv:-0}
+}
+
+# scraping {{{
 handle_scrape_error () {
 	case "$1" in
 		1) print_info "$curr_scrape failed to load website\n" ;;
@@ -1034,18 +1140,21 @@ handle_scrape_error () {
 
 scrape_website () {
 	scrape_type="$1"	
+	_search="$2"
 	case $scrape_type in
+		invidious-playlist|youtube-playlist) scrape_invidious_playlist "$_search" "$ytfzf_video_json_file" ;;
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
+		invidious-channel|youtube-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "channel-1";;
 		youtube|Y) 
 			# youtube scrape {{{
 			#$i is so multiple pages can be scraped
 			while [ ${i:=0} -lt $pages_to_scrape ]; do
 				i=$((i+1))
-				scrape_invidious_search  "$search" "$ytfzf_video_json_file" "search" "$i" || return "$?"
+				scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$i" || return "$?"
 			done 
 			unset i ;;
 			# }}}
-		youtube-trending|T) scrape_invidious_trending  "$search" "$ytfzf_video_json_file" "trending";;
+		youtube-trending|T) scrape_invidious_trending  "$_search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S|SI)#{{{
 		    ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
 
@@ -1070,8 +1179,8 @@ scrape_website () {
 			EOF
 		    wait
 		    ;;#}}}
-		odysee|O) scrape_odysee "$search" "$ytfzf_video_json_file" ;;
-		peertube|P) scrape_peertube "$search" "$ytfzf_video_json_file" ;;
+		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
+		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
                 *)
                         #custom scrapers {{{
 
@@ -1102,11 +1211,12 @@ set -f
 for curr_scrape in $scrape; do
 	#only ask for search if it's empty and scrape isn't something like S or T
 	printf "%s" "$scrape_search_exclude" | grep -Fqv " $curr_scrape " && { [ "$search" = "-" -o -z "$search" ]; } && search_prompt_menu
-	scrape_website "$curr_scrape"
+	scrape_website "$curr_scrape" "$search"
 	handle_scrape_error "$?"
 done
 
 [ ! -s "$ytfzf_video_json_file" ] && die 4 "Nothing was scraped\n"
+#}}}
 
 while :; do
 	case 1 in
@@ -1115,11 +1225,12 @@ while :; do
 		    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 				 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 	esac
+	handle_special_urls < "$ytfzf_selected_urls" || continue
 
 	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
 	format_urls < "$ytfzf_selected_urls" | open_player
-
+	
 	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
 done
 #}}}
