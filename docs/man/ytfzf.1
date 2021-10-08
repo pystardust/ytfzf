@@ -197,7 +197,7 @@ convert the invidious links to youtube links before playing/downloading.
 Scraper Options
 .RS
 .PP
-Currently, \-\-sort\-by, \-\-upload\-date, \-\-video\-duration, \-\-type, \-\-features, and \-\-region only applies to the scrape: youtube/Y
+Currently, \-\-sort\-by, \-\-upload\-date, \-\-video\-duration, \-\-type, \-\-thumbnail\-quality, \-\-features and \-\-region only applies to the scrape: youtube/Y
 .TP
 .BI "\-\-pages=amount"
 Amount of pages to scrape on youtube/invidious.
@@ -252,6 +252,33 @@ The type of results to get.
 .IR channel
 .TP
 .IR all
+.RE
+.TP
+.BI \-\-thumbnail\-quality= quality
+Select the quality of the thumbnails.
+Available options:
+.RS
+.TP
+.IR maxres
+.TP
+.IR maxresdefault
+.TP
+.IR sddefault
+.TP
+.IR high
+.TP
+.IR medium
+.TP
+.IR default " (default)"
+.TP
+.IR start
+The first frame of the video (low quality)
+.TP
+.IR middle
+The middle frame of the video (low quality)
+.TP
+.IR end
+The end frame of the video (low quality)
 .RE
 .TP
 .BI "\-\-features=features"
