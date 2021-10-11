@@ -384,12 +384,6 @@ _get_channel_id () {
 	printf "%s" "$link"
 }
 
-_get_playlist_id () {
-	link="$1"
-	link="${link##*[?]list=}"
-	printf "%s" "${link}"
-}
-
 _get_thumb_quality_index () {
 	_quality="$1"
 	case "$_quality" in
@@ -496,7 +490,7 @@ scrape_invidious_playlist () {
 	playlist_url=$1
 	output_json_file=$2
 
-	playlist_id="$(_get_playlist_id "$playlist_url")"
+	playlist_id="${playlist_url##*[?]list=}"
 
 	_get_thumb_quality_index "$thumbnail_quality"
 
