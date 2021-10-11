@@ -424,10 +424,11 @@ _invidious_search_json_channel () {
 	jq '[ .[] | select(.type=="channel") |
 		{
 			ID: .authorId,
-			url: "ytfzf-action://scrape?type=invidious-channel&url=https://'"${invidious_instance}"'/channel/\(.authorId)",
+			url: "https://'"${invidious_instance}"'/channel/\(.authorId)",
 			title: "[channel] \(.author)",
 			thumbs: "https:\(.authorThumbnails[4].url)",
-			duration: "\(.videoCount) uploaded videos"
+			duration: "\(.videoCount) uploaded videos",
+			action: "scrape type=invidious-channel search=https://'"${invidious_instance}"'/channel/\(.authorId)"
 		}
 	]'
 }
@@ -981,11 +982,7 @@ get_video_format(){
 format_urls () {
 	#url file will have new lines as seperaters, make it a space
 	while read -r url; do
-		case "$url" in
-			ytfzf-action://*) printf "%s " "$(get_url_key_value "$url" "url")" ;;
-			'') : ;;
-			*) printf "%s " "$url" ;;
-		esac
+		[ -n "$url" ] && printf "%s " "$url"
 	done
 }
 #}}}
@@ -1107,7 +1104,7 @@ init_submenu () {
 	export thumb_dir="${submenu_dir}/thumbnails"
 	mkdir -p "$thumb_dir"
 	#when the back button is given with -A/-a/-r it causes an infinite loop lmao
-	[ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "ytfzf-action://back", "action": "back"}]' >> "$ytfzf_video_json_file"
+	[ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$ytfzf_video_json_file"
 	function_exists "on_init_submenu" on_init_submenu
 }
 
