@@ -545,6 +545,45 @@ This function sorts the data that is being piped into it.
 This function takes no arguments, all data is piped into it.
 
 .TP
+.BR video_info_text ()
+This function prints the text for the selection menu.
+.br
+Must end with a new line,
+.br
+The url must be the last thing printed.
+.br
+This function takes no arguments, the relevant variables are listed here:
+.RS
+.EX
+.I title
+.I channel
+.I duration
+.I views
+.I date
+.I url
+.EE
+It is recommended to check the script to see how each thing is printed.
+.RE
+
+.TP
+.BR thumbnail_video_info_text ()
+This function prints text in the preview area of fzf when thumbnails are enabled.
+.br
+Everything can be printed however you like.
+.br
+This function takes no arguments, the relevant variables are listed here:
+.RS
+.EX
+.I title
+.I channel
+.I duration
+.I views
+.I date
+.I url
+.EE
+.RE
+
+.TP
 .BR on_opt_parse ()
 This function gets called after an option is parsed, and sets variables based the options passed into it.
 .br
