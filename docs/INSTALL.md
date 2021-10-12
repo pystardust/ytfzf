@@ -59,6 +59,18 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
 	_At the moment thumbnail previews aren't working on MacOS_
 
++ #### Fedora
+
+	  sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+	  sudo dnf install jq mpv youtube-dl fzf
+
+	> For thumbnails
+
+	  sudo dnf install libX{11,ext,res}-devel
+	  pip install ueberzug
+
+	_The above commands install mpv from [RPM Fusion](https://rpmfusion.org/Configuration) and Überzug from [PyPI](https://pypi.org/project/ueberzug/)_
+
 
 ## Installation-Options
 
@@ -101,6 +113,14 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 	```
 	git clone https://mpr.hunterwittenborn.com/ytfzf.git
 	makedeb -i
+	```
+
+6. #### Fedora users can install ytfzf from [COPR](https://copr.fedorainfracloud.org/coprs/bhoman/ytfzf/) with mpv from [RPM Fusion](https://rpmfusion.org/Configuration)
+
+	```
+	sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+	sudo dnf copr enable bhoman/ytfzf
+	sudo dnf install ytfzf
 	```
 	
 ### Installation by cloning the repository
