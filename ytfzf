@@ -1131,6 +1131,7 @@ handle_action () {
 #checks each link to see if there is an action
 _check_actions () {
 	unset _rv
+	#after handle_action is called ytfzf_video_json_file changes
 	_main_json_file="$ytfzf_video_json_file"
 	while read -r url; do
 		action="$(jq --arg url "$url" '.[]|select(.url==$url).action' < "$_main_json_file" | tr -d '"')"
