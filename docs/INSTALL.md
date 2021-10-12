@@ -66,8 +66,8 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
 	> For thumbnails
 
-	  sudo dnf copr enable frostyx/ueberzug
-	  sudo dnf install ueberzug
+	  sudo dnf install libX{11,ext,res}-devel
+	  pip install ueberzug
 
 	_The above commands install mpv from [RPM Fusion](https://rpmfusion.org/Configuration) and Überzug from [COPR](https://copr.fedorainfracloud.org/coprs/frostyx/ueberzug/)_
 
