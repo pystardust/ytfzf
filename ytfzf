@@ -36,11 +36,9 @@ function_exists () {
 }
 
 get_key_value() {
-	string="$1"
-	key="$2"
-	value="${string##* $key=}"
-	value="${value%% *}"
-	printf "%s" "$value"
+	value="${1##* ${2}=}"
+	printf "%s" "${value%% *}"
+	unset value
 }
 
 #capitalizes the first letter of a string
@@ -1095,11 +1093,11 @@ handle_action () {
 	case "$_action" in
 		back*) init_main_menu; return 1 ;;
 		scrape*)
-			_type="$(get_key_value "$_action" "type")"
-			_search="$(get_key_value "$_action" "search")"
-			[ $_in_submenu -eq 0 ] && init_submenu
-			scrape_website "$_type" "$_search"
-			return 1 ;;
+			[ $enable_submenus -eq 1 ] && {
+				[ $_in_submenu -eq 0 ] && init_submenu
+				scrape_website "$(get_key_value "$_action" "type")" "$(get_key_value "$_action" "search")"
+				return 1
+			} ;;
 	esac
 	return 0
 
@@ -1111,9 +1109,9 @@ _check_actions () {
 	#after handle_action is called ytfzf_video_json_file changes
 	_main_json_file="$ytfzf_video_json_file"
 	while read -r url; do
-		action="$(jq --arg url "$url" '.[]|select(.url==$url).action' < "$_main_json_file" | tr -d '"')"
+		action="$(jq -r --arg url "$url" '.[]|select(.url==$url).action' < "$_main_json_file")"
 		# the second check may be moved into handle_action cases if actions become more generic
-		[ "$action" != "null" ] && [ $enable_submenus -eq 1 ] && { handle_action "$action" || _rv=1; }
+		[ "$action" != "null" ] && { handle_action "$action" || _rv=1; }
 	done
 	return "${_rv:-0}"
 }
