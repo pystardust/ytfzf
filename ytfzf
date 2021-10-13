@@ -171,6 +171,8 @@ function_exists "downloader" || downloader () {
 # files
 : ${hist_file:=$cache_dir/watch_hist}
 
+: ${keep_submenu_cache:=1}
+
 # history
 : ${enable_hist=1}
 
@@ -1084,23 +1086,31 @@ keypress_file="${session_temp_dir}/menu_keypress"
 #only gets called after init_submenu, and when the user wants to go back to the main page
 init_main_menu () {
 	_in_submenu=0
-	rm -rf "$submenu_dir"
+	[ $keep_submenu_cache -eq 0 ] && rm -rf "$submenu_dir"
 	ytfzf_video_json_file="$session_cache_dir/videos_json"
 	ytfzf_selected_urls="$session_cache_dir/ids"
 	export thumb_dir="${session_cache_dir}/thumbnails"
 	function_exists "on_back_to_main_menu" && on_back_to_main_menu
 }
 
+#returns 0 if the folder exists, meaning this menu has already been scraped
 init_submenu () {
+	folder_suffix="$1"
 	_in_submenu=1
-	submenu_dir="$session_cache_dir/submenu"
+	submenu_dir="$session_cache_dir/submenu-$folder_suffix"
 	ytfzf_video_json_file="$submenu_dir/videos_json"
 	ytfzf_selected_urls="$submenu_dir/ids"
 	export thumb_dir="${submenu_dir}/thumbnails"
-	mkdir -p "$thumb_dir"
-	#when the back button is given with -A/-a/-r it causes an infinite loop lmao
-	[ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$ytfzf_video_json_file"
+	_dir_existed=1
+	[ ! -d "$submenu_dir" ] && {
+		_dir_existed=0
+		mkdir -p "$thumb_dir"
+		#when the back button is given with -A/-a/-r it causes an infinite loop lmao
+		[ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$ytfzf_video_json_file"
+	}
 	function_exists "on_init_submenu" on_init_submenu
+	unset folder_suffix
+	[ "${_dir_existed}" -eq 1 ] && return 1 || return 0
 }
 
 _in_submenu=0
@@ -1120,8 +1130,8 @@ handle_action () {
 		scrape*)
 			_type="$(get_key_value "$_action" "type")"
 			_search="$(get_key_value "$_action" "search")"
-			[ $_in_submenu -eq 0 ] && init_submenu
-			scrape_website "$_type" "$_search"
+			#only scrape website if it wasn't already scraped (init submenu will see this)
+			[ $_in_submenu -eq 0 ] && init_submenu "${_search##*/}" && scrape_website "$_type" "$_search"
 			return 1 ;;
 	esac
 	return 0
