@@ -901,9 +901,9 @@ open_player () {
 get_video_format(){
 	#the sed gets rid of random information
 	case 1 in
-		$is_audio_only) youtube-dl -F "$1" | sed -n '4,$p' | grep 'audio only' | quick_menu "Audio format: " | awk '{print $1}' ;;
+		$is_audio_only) ${ytdl_path:-youtube-dl} -F "$1" | sed -n '4,$p' | grep 'audio only' | quick_menu "Audio format: " | awk '{print $1}' ;;
 		1)
-			printf "%s+bestaudio/best" "$(youtube-dl -F "$1" | sed -n '4,$p' | grep -v 'audio only' | quick_menu "Video Format: "| awk '{print $1}')" ;;
+			printf "%s+bestaudio/best" "$(${ytdl_path:-youtube-dl} -F "$1" | sed -n '4,$p' | grep -v 'audio only' | quick_menu "Video Format: "| awk '{print $1}')" ;;
 	esac
 }
 
