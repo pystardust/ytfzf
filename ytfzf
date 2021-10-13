@@ -206,7 +206,7 @@ function_exists "downloader" || downloader () {
 : "${search_sort_by:=relevance}"
 : "${search_upload_date=}"
 : "${search_video_duration=}"
-: "${search_result_type:=video,playlist,channel}"
+: "${search_result_type:=video}"
 : "${search_result_features=}"
 : "${search_region:=US}"
 
