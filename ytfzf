@@ -412,7 +412,7 @@ _invidious_search_json_channel () {
 			url: "'"${yt_video_link_domain}"'/channel/\(.authorId)",
 			title: "[channel] \(.author)",
 			channel: .author,
-			thumbs: .authorThumbnails[4].url,
+			thumbs: "https:\(.authorThumbnails[4].url)",
 			duration: "\(.videoCount) uploaded videos",
 			action: "scrape type=invidious-channel search='"${invidious_instance}"'/channel/\(.authorId)"
 		}
