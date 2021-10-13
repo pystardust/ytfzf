@@ -171,8 +171,6 @@ function_exists "downloader" || downloader () {
 # files
 : ${hist_file:=$cache_dir/watch_hist}
 
-: ${keep_submenu_cache:=1}
-
 # history
 : ${enable_hist=1}
 
@@ -1070,23 +1068,16 @@ init_main_menu () {
 
 #returns 0 if the folder exists, meaning this menu has already been scraped
 init_submenu () {
-	folder_suffix="$1"
 	_in_submenu=1
-	submenu_dir="$session_cache_dir/submenu-$folder_suffix"
+	submenu_dir="$session_cache_dir/submenu"
 	ytfzf_video_json_file="$submenu_dir/videos_json"
 	ytfzf_selected_urls="$submenu_dir/ids"
 	export thumb_dir="${submenu_dir}/thumbnails"
-	_dir_existed=1
+	mkdir -p "$thumb_dir"
 	#called here in case the menu type is changed (affects whether or not back button is present)
-	function_exists "on_init_submenu" && on_init_submenu
-	[ ! -d "$submenu_dir" ] && {
-		_dir_existed=0
-		mkdir -p "$thumb_dir"
-		#when the back button is given with -A/-a/-r it causes an infinite loop lmao
-		[ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$ytfzf_video_json_file"
-	}
-	unset folder_suffix
-	return "$_dir_existed"
+        function_exists "on_init_submenu" && on_init_submenu
+	#when the back button is given with -A/-a/-r it causes an infinite loop lmao
+        [ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$ytfzf_video_json_file"
 }
 
 _in_submenu=0
@@ -1106,8 +1097,8 @@ handle_action () {
 		scrape*)
 			_type="$(get_key_value "$_action" "type")"
 			_search="$(get_key_value "$_action" "search")"
-			#only scrape website if it wasn't already scraped (init submenu will see this)
-			[ $_in_submenu -eq 0 ] && init_submenu "${_search##*/}" && scrape_website "$_type" "$_search"
+			[ $_in_submenu -eq 0 ] && init_submenu
+			scrape_website "$_type" "$_search"
 			return 1 ;;
 	esac
 	return 0
