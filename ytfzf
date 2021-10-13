@@ -371,7 +371,7 @@ scrape_youtube_channel () {
 _get_real_channel_link () {
 	domain=${1#https://}
 	domain=${domain%%/*}
-	url=$(printf "%s" "$1" | sed "s/www.youtube.com/$invidious_instance/")
+	url=$(printf "%s" "$1" | sed -E "s/(https://)?www.youtube.com/$invidious_instance/")
 	real_path="$(curl -is "$url" | grep "^[lL]"ocation | sed 's/[Ll]ocation: //')"
 	#prints the origional url because it was correct
 	[ -z "$real_path" ] && printf "%s\n" "$1" && return 0
@@ -390,12 +390,12 @@ _invidious_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
 		{
 			ID: .playlistId,
-			url: "https://www.youtube.com/playlist?list=\(.playlistId)",
+			url: "'"${yt_video_link_domain}"'/playlist?list=\(.playlistId)",
 			title: "[playlist] \(.title)",
 			channel: .author,
 			thumbs: .playlistThumbnail,
 			duration: "\(.videoCount) videos",
-			action: "scrape type=invidious-playlist search=https://www.youtube.com/playlist?list=\(.playlistId)"
+			action: "scrape type=invidious-playlist search='"${yt_video_link_domain}"'/playlist?list=\(.playlistId)"
 		}
 	]'
 }
@@ -403,7 +403,7 @@ _invidious_search_json_channel () {
 	jq '[ .[] | select(.type=="channel") |
 		{
 			ID: .authorId,
-			url: "'"${invidious_instance}"'/channel/\(.authorId)",
+			url: "'"${yt_video_link_domain}"'/channel/\(.authorId)",
 			title: "[channel] \(.author)",
 			channel: .author,
 			thumbs: "https:\(.authorThumbnails[4].url)",
@@ -994,7 +994,7 @@ parse_opt () {
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
-		force-youtube) yt_video_link_domain="www.youtube.com" ;;
+		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
 		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
 		sort-by) search_sort_by="$optarg" ;;
 		upload-date) search_upload_date="$optarg" ;;
@@ -1077,15 +1077,16 @@ init_submenu () {
 	ytfzf_selected_urls="$submenu_dir/ids"
 	export thumb_dir="${submenu_dir}/thumbnails"
 	_dir_existed=1
+	#called here in case the menu type is changed (affects whether or not back button is present)
+	function_exists "on_init_submenu" && on_init_submenu
 	[ ! -d "$submenu_dir" ] && {
 		_dir_existed=0
 		mkdir -p "$thumb_dir"
 		#when the back button is given with -A/-a/-r it causes an infinite loop lmao
 		[ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$ytfzf_video_json_file"
 	}
-	function_exists "on_init_submenu" on_init_submenu
 	unset folder_suffix
-	[ "${_dir_existed}" -eq 1 ] && return 1 || return 0
+	return "$_dir_existed"
 }
 
 _in_submenu=0
