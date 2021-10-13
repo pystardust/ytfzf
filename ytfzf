@@ -203,7 +203,7 @@ function_exists "downloader" || downloader () {
 #this comes from invidious' api
 : "${thumbnail_quality=default}"
 : ${sub_link_count:=10}
-: "${invidious_instance:=ytprivate.com}"
+: "${invidious_instance:=https://ytprivate.com}"
 : "${yt_video_link_domain:=$invidious_instance}"
 : ${pages_to_scrape:=1}
 
@@ -333,7 +333,7 @@ _youtube_channel_json () {
 	jq '[ .contents | ..|.gridVideoRenderer? | select(. !=null) |
 	    {
 	    	ID: .videoId,
-		url: "https://'"$yt_video_link_domain"'/watch?v=\(.videoId)",
+		url: "'"$yt_video_link_domain"'/watch?v=\(.videoId)",
 	    	title: .title.runs[0].text,
 	    	channel: "'"$channel_name"'",
 	    	thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
@@ -386,23 +386,6 @@ _get_channel_id () {
 	printf "%s" "$link"
 }
 
-_get_thumb_quality_index () {
-	_quality="$1"
-	case "$_quality" in
-		maxres) _thumb_quality_index=0 ;;
-		maxresdefault) _thumb_quality_index=1 ;;
-		sddefault) _thumb_quality_index=2 ;;
-		high) _thumb_quality_index=3 ;;
-		medium) _thumb_quality_index=4 ;;
-		default) _thumb_quality_index=5 ;;
-		start) _thumb_quality_index=6 ;;
-		middle) _thumb_quality_index=7 ;;
-		end) _thumb_quality_index=8 ;;
-		*) _thumb_quality_index=5 ;;
-	esac
-	unset _quality
-}
-
 _invidious_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
 		{
@@ -420,12 +403,12 @@ _invidious_search_json_channel () {
 	jq '[ .[] | select(.type=="channel") |
 		{
 			ID: .authorId,
-			url: "https://'"${invidious_instance}"'/channel/\(.authorId)",
+			url: "'"${invidious_instance}"'/channel/\(.authorId)",
 			title: "[channel] \(.author)",
 			channel: .author,
 			thumbs: "https:\(.authorThumbnails[4].url)",
 			duration: "\(.videoCount) uploaded videos",
-			action: "scrape type=invidious-channel search=https://'"${invidious_instance}"'/channel/\(.authorId)"
+			action: "scrape type=invidious-channel search='"${invidious_instance}"'/channel/\(.authorId)"
 		}
 	]'
 }
@@ -433,10 +416,10 @@ _invidious_search_json_live () {
 	jq '[ .[] | select(.type=="video" and .liveNow==true) |
 		{
 			ID: .videoId,
-			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
+			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: "[live] \(.title)",
 			channel: .author,
-			thumbs: .videoThumbnails['"$_thumb_quality_index"'].url ,
+			thumbs: "'"${invidious_instance}"'\(.videoThumbnails|select(.[].quality=="'"$thumbnail_quality"'")[0].url)"
 		}
 	]'
 }
@@ -444,10 +427,10 @@ _invidious_search_json_videos () {
 	jq '[ .[] | select(.type=="video" and .liveNow==false) |
 		{
 			ID: .videoId,
-			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
+			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
 			channel: .author,
-			thumbs: .videoThumbnails['"$_thumb_quality_index"'].url ,
+			thumbs: "'"${invidious_instance}"'\(.videoThumbnails|select(.[].quality=="'"$thumbnail_quality"'")[0].url)",
 			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
 			views: "\(.viewCount)",
 			date: .publishedText,
@@ -460,10 +443,10 @@ _invidious_channel_json () {
 	jq '[ .latestVideos |.[] |
 	    {
 		ID: .videoId,
-		url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
+		url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 	    	title: .title,
 	    	channel: "'"$channel_name"'",
-		thumbs: .videoThumbnails['"$_thumb_quality_index"'].url ,
+		thumbs: "'"${invidious_instance}"'\(.videoThumbnails|select(.[].quality=="'"$thumbnail_quality"'")[0].url)",
 		duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
 		views: "\(.viewCount)",
 		date: .publishedText,
@@ -477,10 +460,10 @@ _invidious_playlist_json () {
 	jq '[ .videos | .[] |
 		{
 			ID: .videoId,
-			url: "https://'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
+			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
 			channel: .author,
-			thumbs: .videoThumbnails['"$_thumb_quality_index"'].url,
+			thumbs: "'"${invidious_instance}"'\(.videoThumbnails|select(.[].quality=="'"$thumbnail_quality"'")[0].url)",
 			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
 			date: .publishedText,
 			description: .description
@@ -495,14 +478,12 @@ scrape_invidious_playlist () {
 
 	playlist_id="${playlist_url##*[?]list=}"
 
-	_get_thumb_quality_index "$thumbnail_quality"
-
 	print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url)\n"
 
 	i=1
 	while :; do
 		_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id-$i.json"
-		_get_request "https://$invidious_instance/api/v1/playlists/$playlist_id" \
+		_get_request "$invidious_instance/api/v1/playlists/$playlist_id" \
 		-G --data-urlencode "page=$i" > "$_tmp_json" || return "$?"
 		jq -e '.videos==[]' < "$_tmp_json" > /dev/null 2>&1 && break
 		i=$((i+1))
@@ -519,11 +500,9 @@ scrape_invidious_search () {
 
 	_tmp_json="${session_temp_dir}/yt-search-$page_num.json"
 
-	_get_thumb_quality_index "$thumbnail_quality"
-
 	print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $page_num)\n"
 
-	_get_request "https://$invidious_instance/api/v1/search" \
+	_get_request "$invidious_instance/api/v1/search" \
 		-G --data-urlencode "q=$page_query" \
 		--data-urlencode "type=${search_result_type}" \
 		--data-urlencode "sort_by=${search_sort_by}" \
@@ -548,9 +527,7 @@ scrape_invidious_trending () {
 
 	_tmp_json="${session_temp_dir}/yt-trending"
 
-	_get_thumb_quality_index "$thumbnail_quality"
-
-	url="https://$invidious_instance/api/v1/trending"
+	url="$invidious_instance/api/v1/trending"
 	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}" && _tmp_json="${_tmp_json}-$trending_tab"
 
 	_get_request "$url" > "$_tmp_json" || return "$?"
@@ -564,8 +541,6 @@ scrape_invidious_channel () {
 	output_json_file=$2
 	tmp_file_name=$3
 
-	_get_thumb_quality_index "$thumbnail_quality"
-
 	# Converting channel title page url to channel video url
 	printf "%s" "$channel_url" | grep -Eqv '/videos$' && channel_url="${channel_url}/videos"
 	channel_id="$(_get_channel_id "$channel_url")"
@@ -575,7 +550,7 @@ scrape_invidious_channel () {
 
 	#if this var isn't unique, weird things happen,
 	_tmp_json="${session_temp_dir}/$tmp_file_name.json"
-	channel_url="https://$invidious_instance/api/v1/channels/$channel_id"
+	channel_url="$invidious_instance/api/v1/channels/$channel_id"
 	_get_request "${channel_url##* }" > "$_tmp_json" || return "$?"
 	channel_name="$(jq '.author' < "$_tmp_json" | tr -d '"')"
 
