@@ -1165,7 +1165,8 @@ scrape_website () {
 	case $scrape_type in
 		invidious-playlist|youtube-playlist) scrape_invidious_playlist "$_search" "$ytfzf_video_json_file" ;;
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
-		invidious-channel|youtube-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "channel-1";;
+		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "channel-1";;
+		youtube-channel) scrape_youtube_channel "$_search" "$ytfzf_video_json_file" "channel-1" ;;
 		youtube|Y) 
 			# youtube scrape {{{
 			#$i is so multiple pages can be scraped
@@ -1179,7 +1180,7 @@ scrape_website () {
 		youtube-subscriptions|S|SI)#{{{
 		    ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
 
-		    [ "$scrape_type" = "SI" ] && channel_scraper="scrape_invidious_channel" || channel_scraper="scrape_youtube_channel"
+		    [ "$scrape_type" = "SI" ] && { channel_scraper="scrape_invidious_channel"; sleep_time=0.03; } || { channel_scraper="scrape_youtube_channel"; sleep_time=0.01; }
 
 		    #if _tmp_subfile does not have a unique name, weird things happen
 		    i=0
@@ -1190,7 +1191,7 @@ scrape_website () {
 				    $channel_scraper "$channel_url" "$_tmp_subfile" "channel-$i" < /dev/null || return "$?"
 				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 			    } &
-			    sleep 0.01
+			    sleep $sleep_time
 		    done <<- EOF
 			$(sed \
 				-e "s/#.*//" \
