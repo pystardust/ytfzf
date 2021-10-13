@@ -45,8 +45,8 @@ get_key_value() {
 
 #capitalizes the first letter of a string
 title_str () {
-	first_letter="$(printf "%s" "$1" | sed 's/\(.\).*/\1/' | tr '[:lower:]' '[:upper:]')"
-	printf "%s" "$1" | sed 's/.\(.*\)/'"$first_letter"'\1/'
+	printf "%s" "$1" | dd bs=1 count=1 conv=ucase
+	printf "%s\n" "${1#?}"
 }
 
 print_info () {
@@ -711,17 +711,17 @@ handle_keypress () {
 #}}}
 
 # Takes video json file as $1 and returns the selected video IDs to file $2
-video_info_text () {
+function_exists "video_info_text" || video_info_text () {
 	printf "%-${title_len}.${title_len}s\t" "$title"
 	printf "%-${channel_len}.${channel_len}s\t" "$channel"
 	printf "%-${dur_len}.${dur_len}s\t" "$duration"
 	printf "%-${view_len}.${view_len}s\t" "$views"
 	printf "%-${date_len}.${date_len}s\t" "$date"
-	printf "%s" "$shorturl"
+	printf "%s" "$url"
 	printf "\n"
 }
 
-thumbnail_video_info_text () {
+function_exists "thumbnail_video_info_text" || thumbnail_video_info_text () {
 	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
 	[ -n "$channel" ] && printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
 	[ -n "$duration" ] && printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
@@ -762,7 +762,7 @@ interface_text () {
 
 	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
 		sort_video_data_fn |
-		while IFS=$tab_space read title channel duration views date shorturl
+		while IFS=$tab_space read title channel duration views date url
 		do
 			video_info_text
 		done |
@@ -788,7 +788,7 @@ interface_external () {
 
 	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
 		sort_video_data_fn |
-		while IFS=$tab_space read title channel duration views date shorturl
+		while IFS=$tab_space read title channel duration views date url
 		do
 			video_info_text
 		done | tr -d "$tab_space" |
@@ -943,9 +943,9 @@ open_player () {
 get_video_format(){
 	#the sed gets rid of random information
 	case 1 in
-		$is_audio_only) youtube-dl -F "$1" | sed -n '4,$p' | grep 'audio only' | quick_menu "Audio format: " | awk '{print $1}' ;;
+		$is_audio_only) ${ytdl_path:-youtube-dl} -F "$1" | sed -n '4,$p' | grep 'audio only' | quick_menu "Audio format: " | awk '{print $1}' ;;
 		1)
-			printf "%s+bestaudio/best" "$(youtube-dl -F "$1" | sed -n '4,$p' | grep -v 'audio only' | quick_menu "Video Format: "| awk '{print $1}')" ;;
+			printf "%s+bestaudio/best" "$(${ytdl_path:-youtube-dl} -F "$1" | sed -n '4,$p' | grep -v 'audio only' | quick_menu "Video Format: "| awk '{print $1}')" ;;
 	esac
 }
 
