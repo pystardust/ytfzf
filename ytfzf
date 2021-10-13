@@ -1083,7 +1083,7 @@ handle_action () {
 		scrape*)
 			[ $enable_submenus -eq 1 ] && {
 				[ $_in_submenu -eq 0 ] && init_submenu
-				scrape_website "$(get_key_value "$_action" "type")" "$(get_key_value "$_action" "search")"
+				scrape_website "$(get_key_value "$_action" "type")" "$(get_key_value "$_action" "search")" || handle_scrape_error "$?"
 				return 1
 			} ;;
 	esac
