@@ -69,17 +69,15 @@ Files and directories
 .RB $ cache_dir
 The directory to store cache files in.
 .br
-.RI default: " $HOME/.cache/ytfzf"
-
-.TP
-.RB $ thumb_dir
-The directory to store thumbnails in.
+It is highly recommended to only change this if $__is_submenu is 0, or funky things could happen
 .br
-.RI default: " $cache_dir/thumb"
+.RI default: " $HOME/.cache/ytfzf"
 
 .TP
 .RB $ hist_file
 The file to write watch history to if $enable_hist is 1
+.br
+It is highly recommended to only change this if $__is_submenu is 0, or funky things could happen
 .br
 .RI default: " $cache_dir/watch_hist"
 

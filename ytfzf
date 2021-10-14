@@ -193,7 +193,7 @@ function_exists "downloader" || downloader () {
 : "${keep_cache:=0}"
 
 # files
-[ $__is_submenu -eq 0 ] && : ${hist_file:=$cache_dir/watch_hist}
+: "${hist_file:=$cache_dir/watch_hist}"
 
 # history
 : ${enable_hist=1}
