@@ -55,6 +55,11 @@ Detach the video player from the terminal.
 This can also be set in the config file with
 .BR is_detach .
 .TP
+.BR \-\-url\-handler=handler
+The function/program to use as a url handler.
+This can also be set in the config file with
+.BR url_handler .
+.TP
 .BI \-I " option"
 Instead of playing the selected videos,
 get information about them in the selected format.
@@ -117,6 +122,12 @@ Submenus are the menus that happen after a playlist or channel (currently only s
 .br
 This can also be set in the config file with
 .BR enable_submenus .
+.TP
+.BR \-\-submenu\-opts=opts
+The opts to use in the submenu.
+.br
+This can also be set in the config file with
+.BR submenu_opts .
 .RE
 
 .PP
@@ -334,6 +345,13 @@ Clear history.
 .BR \-q ", " \-\-search\-history
 Open a menu to choose a query from search history.
 .TP
+.BR \-\-keep\-cache
+Whether or not to keep cache after
+.I ytfzf
+exists.
+This can also be set in the config file with
+.BR keep_cache .
+.TP
 .BI \-\-ytdl\-opts= option
 Pass command\-line options to youtube\-dl when downloading.
 .EX
@@ -360,6 +378,15 @@ The configuration file to use.
 The defualt is
 .I $YTFZF_CONFIG_DIR/conf.sh
 .TP
+.B $YTFZF_SUBMENU_CONFIG_FILE
+The configuration file to use for submenus.
+This file will be used instead of $YTFZF_CONFIG_FILE when there is a submenu.
+.EX
+cp ~/.config/ytfzf/conf.sh ~/.config/ytfzf/submenu-conf.sh
+.EE
+The default is
+.I $YTFZF_CONFIG_DIR/submenu-conf.sh
+.TP
 .B $YTFZF_SUBSCRIPTIONS_FILE
 The subscriptions file to use.
 The deafult is
@@ -375,6 +402,9 @@ The default is
 .I ~/.config/ytfzf/conf.sh
 The configuration file
 .TP
+.I ~/.config/ytfzf/submenu-conf.sh
+The submenu configuration file
+.TP
 .I ~/.config/ytfzf/subscriptions
 The subscriptions file.
 .TP
@@ -385,22 +415,20 @@ Watch history (if $enable_hist is 1)
 .PP
 Each instance of ytfzf has it's own directory in $cache_dir.
 .br
-The structure of $cache_dir looks like this: (<> represents a template, ? means optional)
+The structure of $cache_dir looks like this: (<> represents a placeholder, ? means optional)
 .RS
 .EX
 $cache_dir
 | \-\- watch_hist
 | \-\- <search>\-<pid>
-|  | \-\- submenu?
-|  |  | videos_json
-|  |  | ids
-|  |  | thumbnails?
+|  | \-\- <submenu-search>-<submenu-pid>?
 |  | \-\- thumbnails?
 |  | \-\- tmp
 |  |  | \-\- curl_config
 |  |  | \-\- <scrape>.html
 |  |  | \-\- <scrape>.json
 |  |  | \-\- menu_keypress
+|  |  | \-\- submenu.json?
 |  | \-\- ids
 |  | \-\- videos_json
 .EE
@@ -416,6 +444,9 @@ The watch history file.
 An instance's parent folder.
 .br
 If no search was given, it instead uses the name "SCRAPE\-<scrape>\-<pid>"
+.TP
+.IR <submenu\-search>\-<submenu\-pid>
+Created when a submenu is opened (eg: when a channel/playlist is selected)
 .TP
 .IR submenu
 The folder to hold information about the submenu, all subitems are the same as the parent equivelent.
@@ -437,6 +468,9 @@ The json scraped from a website.
 .TP
 .IR menu_keypress
 The key pressed in fzf
+.TP
+.IR submenu.json
+A temp json file used to store the video_json of links to be put into the submenu.
 .TP
 .IR ids
 The file that stores the id of each selected video.

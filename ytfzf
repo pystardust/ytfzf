@@ -47,6 +47,10 @@ title_str () {
 	printf "%s\n" "${1#?}"
 }
 
+notify_info () {
+	function_exists "notify-send" && [ $is_ext_menu -eq 0 ] && notify-send "Ytfzf Info" "$@" || print_info "%s\n" "$@"
+}
+
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
 	[ $log_level -ge 0 ] && printf "$1" >&2
@@ -62,7 +66,7 @@ clean_up () {
 	# print_info "cleaning up\n"
 	# clean up only as parent process
 	if [ "$YTFZF_PID" = "$$" ]; then
-		[ -d "$session_cache_dir" ] && rm -r "$session_cache_dir"
+		[ -d "$session_cache_dir" ] && [ $keep_cache -eq 0 ] && rm -r "$session_cache_dir" 
 	fi
 }
 
@@ -88,8 +92,8 @@ quick_menu () {
 }
 
 # Traps {{{
-[ -z "$UEBERZUG_FIFO" ] && trap 'clean_up' EXIT
-[ -z "$UEBERZUG_FIFO" ] && trap 'exit' INT TERM HUP
+[ -z "$YTFZF_PID" ] && trap 'clean_up' EXIT 
+[ -z "$YTFZF_PID" ] && trap 'exit' INT TERM HUP
 #}}}
 
 # }}}
@@ -102,9 +106,11 @@ quick_menu () {
 #configuration handling {{{
 : "${YTFZF_CONFIG_DIR:=$HOME/.config/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
+: "${YTFZF_SUBMENU_CONFIG_FILE:=$YTFZF_CONFIG_DIR/submenu-conf.sh}"
 : "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
 
-[ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
+[ -f "$YTFZF_CONFIG_FILE" ] && [ ${__is_submenu:-0} -eq 0 ] && . "$YTFZF_CONFIG_FILE"
+[ -f "$YTFZF_SUBMENU_CONFIG_FILE" ] && [ ${__is_submenu:-0} -eq 1 ] &&. "$YTFZF_SUBMENU_CONFIG_FILE"
 #}}}
 
 # Custom Scrapers {{{
@@ -131,6 +137,8 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 
 : ${enable_submenus:=1}
 
+: ${submenu_opts=}
+
 # shortcuts
 : "${download_shortcut:=alt-d}"
 : "${video_shortcut:=alt-v}"
@@ -146,17 +154,32 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 
 : ${is_loop:=0}
 
-# Players
-function_exists "video_detach_player" || video_detach_player () {
-	setsid -f mpv --ytdl-format="$video_pref" "$@" 1>/dev/null 2>&1
-}
+# urlhandlers
+#job of url handlers is:
+# handle the given urls, and take into account some requested attributes, eg: video_pref, and --detach
+# print what the handler is doing
 function_exists "video_player" || video_player () {
-	mpv --ytdl-format="$video_pref" "$@"
+	#this function should not be set as the url_handler as it is part of multimedia_player
+	notify_info "Playing $# video(s)"
+	case "$is_detach" in
+		0) mpv --ytdl-format="$video_pref" "$@" ;;
+		1) setsid -f mpv --ytdl-format="$video_pref" "$@" > /dev/null 2>&1 ;;
+	esac
 }
 function_exists "audio_player" || audio_player () {
+	#this function should not be set as the url_handler as it is part of multimedia_player
+	notify_info "Playing $# video(s)"
 	mpv --no-video "$@"
 }
+function_exists "multimedia_player" || multimedia_player () {
+	#this function differentiates whether or not audio_only was requested
+	case "$is_audio_only" in
+		0) video_player "$@" ;;
+		1) audio_player "$@" ;;
+	esac
+}
 function_exists "downloader" || downloader () {
+	notify_info "Playing $# video(s)"
 	case $is_audio_only in
 	    0) ${ytdl_path:-youtube-dl} -f "${video_pref}" $ytdl_opts "$@"	;;
 	    1) ${ytdl_path:-youtube-dl} -x $ytdl_opts "$@" ;;
@@ -166,8 +189,10 @@ function_exists "downloader" || downloader () {
 # directories
 : "${cache_dir:=$HOME/.cache/ytfzf}"
 
+: "${keep_cache:=0}"
+
 # files
-: ${hist_file:=$cache_dir/watch_hist}
+[ ${__is_submenu:-0} -eq 0 ] && : ${hist_file:=$cache_dir/watch_hist}
 
 # history
 : ${enable_hist=1}
@@ -176,7 +201,7 @@ function_exists "downloader" || downloader () {
 #variable for switching on sort (date)
 : ${is_detach:=0}
 : ${is_audio_only:=0}
-: ${is_download:=0}
+: "${url_handler:=multimedia_player}"
 : ${info_to_print=}
 : ${exit_on_info_to_print:=1}
 : ${video_pref:=best}
@@ -548,7 +573,7 @@ scrape_invidious_channel () {
 	esac
 	channel_id="$(_get_channel_id "$channel_url")"
 	[ "$channel_id/videos" = "$channel_url" ] &&\
-		print_error "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
+		print_warning "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
 		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
 
 	#if this var isn't unique, weird things happen,
@@ -630,6 +655,12 @@ scrape_history () {
 	output_json_file="$2"
 	enable_hist=0 #enabling history while scrape is history causes issues
 	cp "$hist_file" "$output_json_file" 2>/dev/null
+}
+
+scrape_json_file () {
+	search="$1"
+	output_json_file="$2"
+	cp "$search" "$output_json_file" 2>/dev/null
 }
 #}}}
 
@@ -921,7 +952,28 @@ print_requested_info () {
 	done
 }
 
-open_player () {
+submenu_handler () {
+	final_submenu_json_file="${session_temp_dir}/submenu.json"
+	#reset for future submenus
+	: > "$final_submenu_json_file"
+
+        printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$final_submenu_json_file"
+
+	while read -r line; do
+		#calls ytfzf to reduce code complexity
+		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" YTFZF_PID='' $0 \
+			-ac "$(get_key_value "$line" "type")" -IJ "$(get_key_value "$line" "search")" \
+			>> "$final_submenu_json_file"
+	done <<-EOF
+	$(printf "%s" "$_submenu_actions" | sed 1d)
+	EOF
+
+	#the hist_file thing is to prevent watch_hist from being put in $session_cache_dir
+	set -f
+	__is_submenu=1 YTFZF_PID='' hist_file="$hist_file" cache_dir="${session_cache_dir}" $0 $submenu_opts --keep-cache -cp "$final_submenu_json_file"
+}
+
+open_url_handler () {
 	# isaudio, isdownload, video_pref
 	#urls can either be passed as argument, or through pipe
 	[ -z "$@" ] && { 
@@ -939,14 +991,7 @@ open_player () {
 		[ $exit_on_info_to_print -eq 1 ] && exit 0
 	fi
 
-	case 1 in
-		$is_download) message="Downloading $# video(s)"; player=downloader ;;
-		$is_audio_only) message="Listening to $# video(s)"; player=audio_player ;;
-		$is_detach) message="Playing $# video(s)"; player=video_detach_player ;;
-		1) message="Playing $# video(s)"; player=video_player ;;
-	esac
-	print_info "$message\n"
-	$player "$@"
+	$url_handler "$@"
 }
 
 get_video_format(){
@@ -976,8 +1021,8 @@ parse_opt () {
 	case $opt in
 		h|help) usage; exit 0 ;;
 		D|external-menu) is_ext_menu=${optarg:-1}; [ $is_ext_menu -eq 1 ] && show_thumbnails=0 ;;
-		m|audio-only) is_audio_only=${optarg:-1} ;;
-		d|download) is_download=${optarg:-1} ;;
+		m|audio-only) is_audio_only=${optarg:-1};;
+		d|download) url_handler=downloader ;;
 		f|formats) show_formats=${optarg:-1} ;; # TODO
 		H|history) scrape="history" ;;
 		x|history-clear) clear_hist; exit 0 ;;
@@ -1012,6 +1057,9 @@ parse_opt () {
 		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
 		disable-submenus) enable_submenus="${optarg:-0}" ;;
 		thumbnail-quality) thumbnail_quality="$optarg" ;;
+		url-handler) url_handler="${optarg:-multimedia_player}" ;;
+		keep-cache) keep_cache="${optarg:-1}" ;;
+		submenu-opts) submenu_opts="${optarg:-1}" ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
@@ -1064,34 +1112,6 @@ fi
 keypress_file="${session_temp_dir}/menu_keypress"
 # }}}
 
-# Submenu management {{{
-#only gets called after init_submenu, and when the user wants to go back to the main page
-init_main_menu () {
-	_in_submenu=0
-	rm -rf "$submenu_dir"
-	ytfzf_video_json_file="$session_cache_dir/videos_json"
-	ytfzf_selected_urls="$session_cache_dir/ids"
-	export thumb_dir="${session_cache_dir}/thumbnails"
-	function_exists "on_back_to_main_menu" && on_back_to_main_menu
-}
-
-#returns 0 if the folder exists, meaning this menu has already been scraped
-init_submenu () {
-	_in_submenu=1
-	submenu_dir="$session_cache_dir/submenu"
-	ytfzf_video_json_file="$submenu_dir/videos_json"
-	ytfzf_selected_urls="$submenu_dir/ids"
-	export thumb_dir="${submenu_dir}/thumbnails"
-	mkdir -p "$thumb_dir"
-	#called here in case the menu type is changed (affects whether or not back button is present)
-        function_exists "on_init_submenu" && on_init_submenu
-	#when the back button is given with -A/-a/-r it causes an infinite loop lmao
-        [ $is_interface_scripting -eq 0 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$ytfzf_video_json_file"
-}
-
-_in_submenu=0
-#}}}
-
 # Main {{{
 
 : > "$ytfzf_video_json_file"
@@ -1099,33 +1119,21 @@ _in_submenu=0
 
 #actions {{{
 #actions are attached to videos/items in the menu
-handle_action () {
-	_action="$1"
-	case "$_action" in
-		back*) init_main_menu; return 1 ;;
-		scrape*)
-			[ $enable_submenus -eq 1 ] && {
-				[ $_in_submenu -eq 0 ] && init_submenu
-				scrape_website "$(get_key_value "$_action" "type")" "$(get_key_value "$_action" "search")" || handle_scrape_error "$?"
-				return 1
-			} ;;
-	esac
-	return 0
-
-}
-
-#checks each link to see if there is an action
-_check_actions () {
-	unset _rv
-	#after handle_action is called ytfzf_video_json_file changes
-	_main_json_file="$ytfzf_video_json_file"
+handle_actions () {
+	unset _submenu_actions
 	while read -r url; do
-		action="$(jq -r --arg url "$url" '.[]|select(.url==$url).action' < "$_main_json_file")"
-		# the second check may be moved into handle_action cases if actions become more generic
-		[ "$action" != "null" ] && { handle_action "$action" || _rv=1; }
+		_action=$(jq -r --arg url "$url" '.[]|select(.url==$url).action' < "$ytfzf_video_json_file")
+		case "$_action" in
+			back*) [ ${__is_submenu:-0} -eq 1 ] exit ;;
+			scrape*) 
+
+				url_handler=submenu_handler
+				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
+			*) function_exists "handle_custom_action" && handle_custom_action "$_action" ;;
+		esac
 	done
-	return "${_rv:-0}"
 }
+
 #}}}
 
 # scraping {{{
@@ -1151,6 +1159,7 @@ scrape_website () {
 	case $scrape_type in
 		invidious-playlist|youtube-playlist) scrape_invidious_playlist "$_search" "$ytfzf_video_json_file" ;;
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
+		playlist|p|json-file) scrape_json_file "$_search" "$ytfzf_video_json_file" ;;
 		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "channel-1";;
 		youtube-channel) scrape_youtube_channel "$_search" "$ytfzf_video_json_file" "channel-1" ;;
 		youtube|Y) 
@@ -1233,11 +1242,11 @@ while :; do
 		    "$is_ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 				 1) interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 	esac
-	_check_actions < "$ytfzf_selected_urls" || continue
+	handle_actions < "$ytfzf_selected_urls"
 
 	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
-	format_urls < "$ytfzf_selected_urls" | open_player
+	format_urls < "$ytfzf_selected_urls" | open_url_handler
 	
 	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
 done
