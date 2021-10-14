@@ -526,6 +526,22 @@ Path to youtube\-dl or a fork of youtube\-dl for downloading.
 
 .RE
 
+.PP
+State
+.br
+.\fBState values are NOT meant to be modified by the user\fR
+.RS
+
+.TP
+.RB $ __is_submenu
+Whether or not the script is in a submenu.
+.br
+This is rather useless as there is a seperate configuration file for submenus.
+
+.TP
+.RB $ __is_scrape_for_submenu
+Whether or not the script is scraping for a submenu.
+
 .SS FUNCTIONS
 .PP
 Sometimes a variable is not good enough, instead functions should be defined.
