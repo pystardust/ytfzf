@@ -109,11 +109,9 @@ quick_menu () {
 #configuration handling {{{
 : "${YTFZF_CONFIG_DIR:=$HOME/.config/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
-: "${YTFZF_SUBMENU_CONFIG_FILE:=$YTFZF_CONFIG_DIR/submenu-conf.sh}"
 : "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
 
-[ -f "$YTFZF_CONFIG_FILE" ] && [ $__is_submenu -eq 0 ] && . "$YTFZF_CONFIG_FILE"
-[ -f "$YTFZF_SUBMENU_CONFIG_FILE" ] && [ $__is_submenu -eq 1 ] &&. "$YTFZF_SUBMENU_CONFIG_FILE"
+[ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 #}}}
 
 # Custom Scrapers {{{
