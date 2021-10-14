@@ -991,7 +991,8 @@ open_url_handler () {
 		[ $exit_on_info_to_print -eq 1 ] && exit 0
 	fi
 
-	$url_handler "$@"
+	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
+	printf "%s" "$video_pref" "$is_audio_only" "$is_detach" | "$url_handler" "$@"
 }
 
 get_video_format(){

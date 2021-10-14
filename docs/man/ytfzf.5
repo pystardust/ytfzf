@@ -603,11 +603,15 @@ URL handlers
 .PP
 A URL handler is a function that handles the urls given,
 .br
-URLs should be handled differently depending on, 
+URL handlers should take into account these modifier values, 
 .B $video_pref ", "
 .B $is_audio_only ", "
 and
 .B $is_detach
+.PP
+Modifier variables will be piped into a URL handler to allow for URL handlers to be written in any language.
+.br
+They will be piped in the order shown above seperated by spaces.
 
 .TP
 .BR multimedia_player ()
