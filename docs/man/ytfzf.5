@@ -115,10 +115,11 @@ Whether or not to only play audio.
 .RI default: " 0"
 
 .TP
-.RB $ is_download
-Whether or not to download selected video(s) instead of playing them.
+.RB $ url_handler
+The function/programs to handle the selected videos
 .br
-.RI default: " 0"
+See URL handlers for a list of builtin url handlers
+.RI default: " multimedia_player"
 
 .TP
 .RB $ yt_video_link_domain
@@ -179,6 +180,11 @@ Whether or not to enable submenus,
 .br
 A submenu is a menu that appears after a playlist or channel is selected.
 (Currently only supported with youtube/invidious scraper)
+.RI default: " 1"
+
+.TP
+.RB $ submenu_opts
+Options to use in submenus.
 .RI default: " 1"
     
 .TP
@@ -336,17 +342,31 @@ Scrapers
 .TP
 .RB $ scrape
 The website to scrape by default.
-The currently supported options are
+The currently supported options are:
+.RS
+.TP
 .IR youtube ,
+.TP
 .IR youtube\-trending ,
+.TP
 .IR youtube\-subscriptions ,
+.TP
 .IR peertube ,
+.TP
 .IR odysee / lbry .
+.TP
 .IR youtube-playlist,
-.IR youtube-channel
-.IR invidious-channel
+.TP
+.IR youtube-channel,
+.TP
+.IR invidious-channel,
+.TP
+.IR playlist/json-file
+.PP
+The search will be a path to a json file layed out as described in VIDEO JSON FORMAT
 .br
 .RI default: " youtube"
+.RE
 
 .TP
 .RB $ search_sort_by
@@ -512,35 +532,15 @@ Sometimes a variable is not good enough, instead functions should be defined.
 To find the default value of these, check the source code by searching for
 .IR "function_exists \(dq<function_you_are_looking_for>\(dq" .
 
+.PP 
+Menu related functions
+.RS
+
 .TP
 .BR external_menu ()
 When $\fBis_ext_menu\fR is \fI1\fR, call this function instead of fzf.
 .br
 This function takes 1 argument, a prompt string.
-
-.TP
-.BR video_detach_player ()
-When $\fBis_detach\fR is \fI1\fR, call this function instead of the normal \fBvideo_player\fR() function.
-.br
-This function takes in an unlimited amount of arguments, each of which is a link to a video.
-
-.TP
-.BR video_player ()
-The player that is called by default.
-.br
-This function takes in an unlimited amount of arguments, each of which is a link to a video.
-
-.TP
-.BR audio_player ()
-The player that is called when $\fBis_audio_only\fR is \fI1\fR.
-.br
-This function takes in an unlimited amount of arguments, each of which is a link to a video.
-
-.TP
-.BR downloader ()
-The function that is called when $\fBis_download\fR is \fI1\fR.
-.br
-This function takes in an unlimited amount of arguments, each of which is a link to a video.
 
 .TP
 .BR get_sort_by ()
@@ -555,17 +555,7 @@ This function sorts the data that is being piped into it.
 .br
 This function takes no arguments, all data is piped into it.
 
-.TP
-.BR on_init_submenu ()
-This function gets called when the submenu is initialized, before it opens, and before the new data is scraped.
-.br
-This function takes no arguments.
-
-.TP
-.BR on_back_to_main_menu ()
-This function gets called when the submenu is exited.
-.br
-This function takes no arguments.
+.RE
 
 .BR video_info_text ()
 This function prints the text for the selection menu.
@@ -604,6 +594,55 @@ This function takes no arguments, the relevant variables are listed here:
 .I url
 .EE
 .RE
+
+.RE
+
+.PP 
+URL handlers
+.RS
+.PP
+A URL handler is a function that handles the urls given,
+.br
+URLs should be handled differently depending on, 
+.B $video_pref ", "
+.B $is_audio_only ", "
+and
+.B $is_detach
+
+.TP
+.BR multimedia_player ()
+The handler that is called by default.
+.br
+This function opens either video_player() or audio_player() depending on whether or not
+.br
+$is_audio_only (\-m) is enabled.
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+.BR video_player ()
+Plays the urls with a video player
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+.BR audio_player ()
+Plays the urls with an audio player
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+.BR downloader ()
+Downloads the urls
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.RE
+
+.PP
+Misc
+
+.RS
 
 .TP
 .BR on_opt_parse ()
@@ -644,34 +683,34 @@ This function takes 1 argument:
     The key pressed.
 .EE
 
+.TP
+.BR handle_custom_action ()
+This function is called when an unknown action (as described in VIDEO JSON FORMAT) is given.
+.br
+This function takes 1 argument:
+.EX
+.I
+.ti +4
+    The action.
+.EE
 
-.SH CUSTOM SCRAPERS
-.PP
-Custom scrapers are programs located in $YTFZF_CUSTOM_SCRAPERS_DIR.
-.br
-To customize some behavior of the scraper see CUSTOM SCRAPER CONFIG
 .RE
+
+.SH VIDEO JSON FORMAT
 .PP
-A custom scraper will take the search query as the first argument to the program
+This is the format used for playlists, and custom scrapers.
 .br
-The second argument will be a path to the file to store the final JSON of the scraped content.
-.PP
-The JSON should be structured as a list of objects, where each object represents a video.
-.br
-The final JSON shall be
-.B APPENDED
-to the file given as an argument.
+Videos should be objects in a list.
 .PP
 Required object keys:
-.RS
 .EX
+.RE
 ID (string): a unique id to the video
 url (string): the url to the video
 title (string): the title of the video
 .EE
 .RE
 .PP
-Optional object keys:
 .RS
 .EX
 thumbs (string): a url to a thumbnail/image
@@ -679,6 +718,7 @@ channel (string): the channel name
 duration (string): length of the video (standard: [HH:]MM:SS)
 views (string): amount of views a video has
 date (string): upload date (standard: date is relative to current day, eg: 3 days ago)
+action (string): an action in the format of "action [key=value key2=value2...]"
 .EE
 .RE
 .PP
@@ -692,6 +732,25 @@ Example JSON:
     }
 ]
 .EE
+
+
+
+.SH CUSTOM SCRAPERS
+.PP
+Custom scrapers are programs located in $YTFZF_CUSTOM_SCRAPERS_DIR.
+.br
+To customize some behavior of the scraper see CUSTOM SCRAPER CONFIG
+.RE
+.PP
+A custom scraper will take the search query as the first argument to the program
+.br
+The second argument will be a path to the file to store the final JSON of the scraped content.
+.PP
+The JSON should be structured as described in VIDEO JSON FORMAT
+.br
+The final JSON shall be
+.B APPENDED
+to the file given as an argument.
 .PP
 A custom scraper can be written in any programming language so long as the file can be run as a normal command
 .RE
@@ -711,7 +770,7 @@ key2: value2
 .RE
 There are no quotations around anything.
 
-.SH CUSTOM SCRAPER CONFIG OPTIONS
+.SS CUSTOM SCRAPER CONFIG OPTIONS
 .PP
 Options to use as keys in <scraper-name>.conf
 .TP
@@ -721,7 +780,7 @@ The variables to pass into the scraper after the search and json file path.
 Example:
 .RS
 .EX
-vars: $is_download $is_sort
+vars: $is_auto_select $is_sort
 .EE
-This will make the 3rd argument the value of $is_download, and the 4th $is_sort
+This will make the 3rd argument the value of $is_auto_select, and the 4th $is_sort
 .RE
