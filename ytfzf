@@ -1130,7 +1130,7 @@ handle_actions () {
 		case "$_action" in
 			back*) [ $__is_submenu -eq 1 ] && exit ;;
 			scrape*) 
-
+				[ $enable_submenus -eq 0 ] && continue
 				url_handler=submenu_handler
 				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
 			*) function_exists "handle_custom_action" && handle_custom_action "$_action" ;;
