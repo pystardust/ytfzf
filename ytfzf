@@ -26,6 +26,11 @@ c_cyan="\033[1;36m"
 c_reset="\033[0m"
 #}}}
 
+#state variables
+: "${__is_submenu:=0}"
+: "${__is_scrape_for_submenu:=0}"
+: "${__is_fzf_preview:=0}"
+
 # Utility functions {{{
 dep_check() {
 	command -v "$1" > /dev/null 2>&1
@@ -65,7 +70,7 @@ print_error () {
 clean_up () {
 	# print_info "cleaning up\n"
 	# clean up only as parent process
-	if [ "$YTFZF_PID" = "$$" ]; then
+	if [ $__is_fzf_preview -eq 0 ]; then
 		[ -d "$session_cache_dir" ] && [ $keep_cache -eq 0 ] && rm -r "$session_cache_dir" 
 	fi
 }
@@ -92,8 +97,8 @@ quick_menu () {
 }
 
 # Traps {{{
-[ -z "$YTFZF_PID" ] && trap 'clean_up' EXIT 
-[ -z "$YTFZF_PID" ] && trap 'exit' INT TERM HUP
+[ $__is_fzf_preview -eq 0 ] && trap 'clean_up' EXIT 
+[ $__is_fzf_preview -eq 0 ] && trap 'exit' INT TERM HUP
 #}}}
 
 # }}}
@@ -103,8 +108,6 @@ quick_menu () {
 # expansions where the variable is a string and globbing shouldn't happen should be surrounded by quotes
 # variables that cannot be empty should use := instead of just =
 
-: "${__is_submenu:=0}"
-: "${__is_scrape_for_submenu:=0}"
 
 #configuration handling {{{
 : "${YTFZF_CONFIG_DIR:=$HOME/.config/ytfzf}"
@@ -846,7 +849,7 @@ preview_start () {
 	case $thumbnail_viewer in
 		ueberzug)
 			# starts uberzug to this fifo
-			export UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
+			UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
 			ueberzug layer --parser simple < "$UEBERZUG_FIFO" 2>/dev/null &
@@ -926,7 +929,7 @@ interface_thumbnails () {
 	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|@tsv' < "$video_json_file" |
 	sort_video_data_fn |
 	fzf -m \
-	--preview "sh $0 -U preview_img '""$thumbnail_viewer""' {} '""$video_json_file""'" \
+	--preview "__is_fzf_preview=1 thumb_dir=\""$thumb_dir"\" YTFZF_PID=\""$YTFZF_PID"\" UEBERZUG_FIFO=\""$UEBERZUG_FIFO"\" $0 -U preview_img \""$thumbnail_viewer"\" {} \""$video_json_file"\"" \
 	--preview-window "left:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
 	trim_url > "$selected_id_file"
 
@@ -962,7 +965,7 @@ submenu_handler () {
 
 	while read -r line; do
 		#calls ytfzf to reduce code complexity
-		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" YTFZF_PID='' $0 \
+		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 \
 			-ac "$(get_key_value "$line" "type")" -IJ "$(get_key_value "$line" "search")" \
 			>> "$final_submenu_json_file"
 	done <<-EOF
@@ -971,7 +974,7 @@ submenu_handler () {
 
 	#the hist_file thing is to prevent watch_hist from being put in $session_cache_dir
 	set -f
-	__is_submenu=1 YTFZF_PID='' hist_file="$hist_file" cache_dir="${session_cache_dir}" $0 $submenu_opts --keep-cache -cp "$final_submenu_json_file"
+	__is_submenu=1 hist_file="$hist_file" cache_dir="${session_cache_dir}" $0 $submenu_opts --keep-cache -cp "$final_submenu_json_file"
 }
 
 open_url_handler () {
@@ -1096,15 +1099,14 @@ search="$*"
 
 # each session has its own cache dir in cache_dir
 # YTFZF_PID: the pid of parent
-if [ -z "$YTFZF_PID" ]; then
+if [ $__is_fzf_preview -eq 0 ]; then
 	YTFZF_PID=$$
 	SEARCH_PREFIX=$(printf "%s" "$search" | tr '/' '_')
-	export YTFZF_PID
 	#if no search is provided, use a fallback value of SCRAPE-$scrape
-	export SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
+	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	session_temp_dir="${session_cache_dir}/tmp"
-	export thumb_dir="${session_cache_dir}/thumbnails"
+	thumb_dir="${session_cache_dir}/thumbnails"
 	mkdir -p "$session_temp_dir" "$thumb_dir"
 fi
 
