@@ -189,11 +189,21 @@ Uses catimg with 256 colors
 .IR display
 Uses imagemagick's preview image
 .TP
+.IR w3m
+Uses a workaround to get w3m to work in fzf, may take up a lot of cpu,
+make sure $w3mimgdisplay_path is set to the path to w3mimgdisplay
+.TP
 .IR custom
 Calls the user defined img_display_function()
 .TP
 .RI default: " ueberzug"
 .RE
+
+.TP
+.RB $ w3mimgdisplay_path
+Path to w3mimgdisplay
+.br
+.RI defaut: " /usr/lib/w3m/w3mimgdisplay"
 
 .TP
 .RB $ show_formats

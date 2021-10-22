@@ -152,6 +152,10 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 
 : ${submenu_opts=}
 
+: "${thumbnail_viewer:=ueberzug}"
+
+: "${w3mimgdisplay_path:=/usr/lib/w3m/w3mimgdisplay}"
+
 # shortcuts
 : "${download_shortcut:=alt-d}"
 : "${video_shortcut:=alt-v}"
@@ -252,8 +256,6 @@ function_exists "downloader" || downloader () {
 
 # debugging
 : ${log_level:=2}
-
-: "${thumbnail_viewer:=ueberzug}"
 
 # Option Checks {{{
 case "$long_opt_char" in
@@ -867,8 +869,9 @@ preview_start () {
 			ueberzug layer --parser simple < "$UEBERZUG_FIFO" 2>/dev/null &
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m) : ;;
 		*)
-			"$thumbnail_viewer" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
+			"$thumbnail_viewer" "start" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
 }
 preview_stop () {
@@ -877,8 +880,9 @@ preview_stop () {
 		ueberzug)
 			exec 3>&- # close file descriptor 3, closing ueberzug
 			;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m) : ;;
 		*)
-			"$thumbnail_viewer" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
+			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
 }
 preview_display_image () {
@@ -922,8 +926,12 @@ preview_display_image () {
 			killall display
 			dep_check "display" || die 1 "\nimagemagick is not installed"
 			display "$thumb_dir/${id}.jpg" ;;
+		w3m)
+			while true; do
+				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_dir/${id}.jpg" 3 | $w3mimgdisplay_path
+			done ;;	
 		*) 
-			"$thumbnail_viewer" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null || die 1 "$thumbnail_viewer doesn't exist" ;;
+			"$thumbnail_viewer" "view" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null || die 1 "$thumbnail_viewer doesn't exist" ;;
 
 	esac
 }
