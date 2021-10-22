@@ -359,7 +359,7 @@ _youtube_channel_json () {
 	    {
 	    	ID: .videoId,
 		url: "'"$yt_video_link_domain"'/watch?v=\(.videoId)",
-	    	title: .title.runs[0].text,
+		title: "\(if .title.simpleText then .title.simpleText else .title.runs[0].text end)",
 	    	channel: "'"$channel_name"'",
 	    	thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
 	    	duration:.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,
