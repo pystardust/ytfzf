@@ -55,6 +55,11 @@ Detach the video player from the terminal.
 This can also be set in the config file with
 .BR is_detach .
 .TP
+.BR \-\-url\-handler=handler
+The function/program to use as a url handler.
+This can also be set in the config file with
+.BR url_handler .
+.TP
 .BI \-I " option"
 Instead of playing the selected videos,
 get information about them in the selected format.
@@ -109,6 +114,20 @@ This can also be set in the config file with
 .TP
 .BR \-\-sort
 Sorts videos (after scraping) by upload date.
+.TP
+.BR \-\-disable\-submenus
+Whether or not to disable submenus.
+.br
+Submenus are the menus that happen after a playlist or channel (currently only supported by youtube/invidious) is selected
+.br
+This can also be set in the config file with
+.BR enable_submenus .
+.TP
+.BR \-\-submenu\-opts=opts
+The opts to use in the submenu.
+.br
+This can also be set in the config file with
+.BR submenu_opts .
 .RE
 
 .PP
@@ -141,6 +160,19 @@ The currently supported builtin scrapers are:
 .TP
 .IR youtube | Y
 Scrapes invidious' api with a search query
+.TP
+.IR youtube-channel
+Scrapes a youtube channel with youtube
+.TP
+.IR invidious-channel
+Scrapes a youtube channel with $invidious_instance
+.br
+When this scrape is active the search query is the link to a channel.
+.TP
+.IR youtube-playlist | invidious-playlist
+Scrapes a youtube playlist
+.br
+When this scrape is active the search query is the link to a playlist.
 .TP
 .IR youtube\-trending | T
 Scrapes invidious' api to get youtube trending.
@@ -313,6 +345,13 @@ Clear history.
 .BR \-q ", " \-\-search\-history
 Open a menu to choose a query from search history.
 .TP
+.BR \-\-keep\-cache
+Whether or not to keep cache after
+.I ytfzf
+exists.
+This can also be set in the config file with
+.BR keep_cache .
+.TP
 .BI \-\-ytdl\-opts= option
 Pass command\-line options to youtube\-dl when downloading.
 .EX
@@ -354,6 +393,9 @@ The default is
 .I ~/.config/ytfzf/conf.sh
 The configuration file
 .TP
+.I ~/.config/ytfzf/submenu-conf.sh
+The submenu configuration file
+.TP
 .I ~/.config/ytfzf/subscriptions
 The subscriptions file.
 .TP
@@ -364,18 +406,20 @@ Watch history (if $enable_hist is 1)
 .PP
 Each instance of ytfzf has it's own directory in $cache_dir.
 .br
-The structure of $cache_dir looks like this
+The structure of $cache_dir looks like this: (<> represents a placeholder, ? means optional)
 .RS
 .EX
 $cache_dir
 | \-\- watch_hist
 | \-\- <search>\-<pid>
-|  | \-\- thumbnails
+|  | \-\- <submenu-search>-<submenu-pid>?
+|  | \-\- thumbnails?
 |  | \-\- tmp
 |  |  | \-\- curl_config
 |  |  | \-\- <scrape>.html
 |  |  | \-\- <scrape>.json
 |  |  | \-\- menu_keypress
+|  |  | \-\- submenu.json?
 |  | \-\- ids
 |  | \-\- videos_json
 .EE
@@ -391,6 +435,12 @@ The watch history file.
 An instance's parent folder.
 .br
 If no search was given, it instead uses the name "SCRAPE\-<scrape>\-<pid>"
+.TP
+.IR <submenu\-search>\-<submenu\-pid>
+Created when a submenu is opened (eg: when a channel/playlist is selected)
+.TP
+.IR submenu
+The folder to hold information about the submenu, all subitems are the same as the parent equivelent.
 .TP
 .IR thumbnails
 Stores the thumbnails for the instance (only with \-t).
@@ -409,6 +459,9 @@ The json scraped from a website.
 .TP
 .IR menu_keypress
 The key pressed in fzf
+.TP
+.IR submenu.json
+A temp json file used to store the video_json of links to be put into the submenu.
 .TP
 .IR ids
 The file that stores the id of each selected video.
