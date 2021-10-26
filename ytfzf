@@ -410,7 +410,7 @@ scrape_youtube_channel () {
 _get_real_channel_link () {
 	domain=${1#https://}
 	domain=${domain%%/*}
-	url=$(printf "%s" "$1" | sed -E "s/(https://)?www.youtube.com/$invidious_instance/")
+	url=$(printf "%s" "$1" | sed -E "s_(https://)?www.youtube.com_${invidious_instance}_")
 	real_path="$(curl -is "$url" | grep "^[lL]"ocation | sed 's/[Ll]ocation: //')"
 	#prints the origional url because it was correct
 	[ -z "$real_path" ] && printf "%s\n" "$1" && return 0
