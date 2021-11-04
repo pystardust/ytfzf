@@ -243,7 +243,7 @@ function_exists "downloader" || downloader () {
 #this comes from invidious' api
 : "${thumbnail_quality=default}"
 : ${sub_link_count:=10}
-: "${invidious_instance:=https://ytprivate.com}"
+: "${invidious_instance:=https://vid.puffyan.us}"
 : "${yt_video_link_domain:=$invidious_instance}"
 : ${pages_to_scrape:=1}
 
