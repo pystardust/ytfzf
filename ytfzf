@@ -198,10 +198,12 @@ function_exists "multimedia_player" || multimedia_player () {
 function_exists "downloader" || downloader () {
 	notify_info "Playing $# video(s)"
 	case $is_audio_only in
-	    0) ${ytdl_path:-youtube-dl} -f "${video_pref}" $ytdl_opts "$@"	;;
-	    1) ${ytdl_path:-youtube-dl} -x $ytdl_opts "$@" ;;
+	    0) ${ytdl_path} -f "${video_pref}" $ytdl_opts "$@"	;;
+	    1) ${ytdl_path} -x $ytdl_opts "$@" ;;
 	esac
 }
+
+[ -z "$ytdl_path" ] && { dep_check "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
 
 # directories
 : "${cache_dir:=$HOME/.cache/ytfzf}"
@@ -1057,9 +1059,9 @@ open_url_handler () {
 get_video_format(){
 	#the sed gets rid of random information
 	case 1 in
-		$is_audio_only) ${ytdl_path:-youtube-dl} -F "$1" | sed -n '4,$p' | grep 'audio only' | quick_menu "Audio format: " | awk '{print $1}' ;;
+		$is_audio_only) ${ytdl_path} -F "$1" | sed -n '4,$p' | grep 'audio only' | quick_menu "Audio format: " | awk '{print $1}' ;;
 		1)
-			printf "%s+bestaudio/best" "$(${ytdl_path:-youtube-dl} -F "$1" | sed -n '4,$p' | grep -v 'audio only' | quick_menu "Video Format: "| awk '{print $1}')" ;;
+			printf "%s+bestaudio/best" "$(${ytdl_path} -F "$1" | sed -n '4,$p' | grep -v 'audio only' | quick_menu "Video Format: "| awk '{print $1}')" ;;
 	esac
 }
 
