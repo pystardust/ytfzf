@@ -33,7 +33,7 @@ tmp_video_json_file="/tmp/ytfzf-subjson"
 
 
 #country location to be used for searching
-location=${YTFZF_CON-${country-US}}
+country=${YTFZF_CON-${country-US}}
 #enable/disable history
 enable_hist=${YTFZF_HIST-${enable_hist-1}}
 #enable/disable search history
