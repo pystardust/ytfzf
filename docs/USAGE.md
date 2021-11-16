@@ -60,6 +60,16 @@ this has been deprecated, instead use this line
 
 	> History is enabled by default. To turn it off you can export `YTFZF_HIST=0` or set it in the config file.
 
++ ### Geographic Location
+
+	- Show results using county XX:
+
+		```sh
+		ytfzf --country=XX
+		```
+
+    > Country can be set to a default by exporting `YTFZF_CON=XX` or setting it in the config file.
+
 + ### External menu
 
 	Use the `-D` flag: To use external menu
