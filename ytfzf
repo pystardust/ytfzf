@@ -227,8 +227,9 @@ Usage: ytfzf [OPTIONS...] <search-query>;
      -Y, --youtube                          Search youtube (default)
      -P, --peertube                         Search peertube
      --preview-side=<left/right/top/bottom> The side of the screen to show thumbnails
-     --subt                                 Select auto-generated subtitles
+     --subs-file                            File containing subscriptions
      --country                              Set country location for search or trending
+     --subt                                 Select auto-generated subtitles
      --sort                                 Sorts videos by latest upload date
      --sort-name=         <function>        The function must contain the values of
                                             data_sort_key, data_sort_fn,
@@ -706,7 +707,7 @@ scrape_channel () {
 	yt_html=$(get_yt_html "$channel_url")
 
 	if [ -z "$yt_html" ]; then
-	        print_error "ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"
+	        print_error "${channel_url} ERROR[#01]: Couldn't curl website. Please check your network and try again.\n"
 	        exit 1
 	fi
 
@@ -1379,16 +1380,6 @@ verify_thumb_disp_method () {
     esac
 }
 
-verify_country () {
-    #make sure the thumb_disp_method is a valid method
-    case "$country" in
-	AD|AE|AF|AG|AI|AL|AM|AO|AQ|AR|AS|AT|AU|AW|AX|AZ|BA|BB|BD|BE|BF|BG|BH|BI|BJ|BL|BM|BN|BO|BQ|BR|BS|BT|BV|BW|BY|BZ|CA|CC|CD|CF|CG|CH|CI|CK|CL|CM|CN|CO|CR|CU|CV|CW|CX|CY|CZ|DE|DJ|DK|DM|DO|DZ|EC|EE|EG|EH|ER|ES|ET|FI|FJ|FK|FM|FO|FR|GA|GB|GD|GE|GF|GG|GH|GI|GL|GM|GN|GP|GQ|GR|GS|GT|GU|GW|GY|HK|HM|HN|HR|HT|HU|ID|IE|IL|IM|IN|IO|IQ|IR|IS|IT|JE|JM|JO|JP|KE|KG|KH|KI|KM|KN|KP|KR|KW|KY|KZ|LA|LB|LC|LI|LK|LR|LS|LT|LU|LV|LY|MA|MC|MD|ME|MF|MG|MH|MK|ML|MM|MN|MO|MP|MQ|MR|MS|MT|MU|MV|MW|MX|MY|MZ|NA|NC|NE|NF|NG|NI|NL|NO|NP|NR|NU|NZ|OM|PA|PE|PF|PG|PH|PK|PL|PM|PN|PR|PS|PT|PW|PY|QA|RE|RO|RS|RU|RW|SA|SB|SC|SD|SE|SG|SH|SI|SJ|SK|SL|SM|SN|SO|SR|SS|ST|SV|SX|SY|SZ|TC|TD|TF|TG|TH|TJ|TK|TL|TM|TN|TO|TR|TT|TV|TW|TZ|UA|UG|UM|US|UY|UZ|VA|VC|VE|VG|VI|VN|VU|WF|WS|YE|YT|ZA|ZM|ZW) ;;
-	*)
-	    print_error "ERROR[#06]: $country is not a valid country\nlook for your counrty code online"
-	    exit 3 ;;
-    esac
-}
-
 #sort -R is not posix
 posix_shuf () {
     awk -F '\n' '
@@ -1487,7 +1478,9 @@ parse_opt () {
 			
     country)	
 			country=${optarg}
-      verify_country ;;
+
+    subs_file)
+      subscriptions_file=${optarg};;
 
 		T|trending)	
 			trending_tab=${optarg:-}
