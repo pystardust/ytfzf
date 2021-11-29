@@ -1479,7 +1479,7 @@ parse_opt () {
     country)	
 			country=${optarg}
 
-    subs_file)
+    subs-file)
       subscriptions_file=${optarg};;
 
 		T|trending)	
