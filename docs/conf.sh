@@ -56,11 +56,13 @@ enable_noti=0
 #uses the youtube-dl preference system
 #must be a number eg: 22 is 720p
 #(YTFZF_PREF)
-video_pref=""
+video_pref="22"
 
 #when -D is given it will use this external menu instead of fzf
 #(YTFZF_EXTMENU)
-external_menu="dmenu -i -l 30 -p Search:"
+#external_menu="dmenu -i -l 30 -p Search:"
+#YTFZF_EXTMENU_LEN=500
+YTFZF_EXTMENU=' rofi -dmenu -fuzzy -width 1500'
 
 #the method to use for displaying thumbnails
 #valid options:
@@ -80,7 +82,7 @@ thumb_disp_method="ueberzug"
 #the amount of characters that can fit on a line in the external menu
 #tweek this for better formatting if the external menu looks weird
 #(YTFZF_EXTMENU_LEN)
-external_menu_len=220
+external_menu_len=100
 
 #the player to use for playing the video, must be able to stream from youtube-dl
 #vlc also works
@@ -131,7 +133,7 @@ show_thumbnails=0
 #1: better thumbnails (slower)
 #0: low resolution (faster)
 #same as --thumbnail-quality
-thumbnail_quailty=1
+thumbnail_quailty=0
 
 #audio only
 #same as -m
@@ -154,7 +156,7 @@ select_all=0
 random_select=0
 
 #the amount of links to select with -a or -r
-#same as -n{number}
+#same s -n{number}
 link_count=1
 
 #enable/disable searching again after the video ends
@@ -181,7 +183,7 @@ preview_side="left"
 
 #the amount of links to get from each subscription
 #same as --subs=
-sub_link_count=10
+sub_link_count=2
 
 #whether or not to show --------------channel---------------- when viewing subscriptions
 #same as --fancy-subs=
@@ -318,7 +320,7 @@ current_file="$cache_dir/ytfzf_cur"
 thumb_dir="$cache_dir/thumb"
 
 #the file where subscriptions are stored
-subscriptions_file=$YTFZF_CONFIG_DIR/subscriptions
+subscriptions_file=subscriptions
 
 #the text template string to use for the fancy subscriptions divider,
 #the spaces are for centering
@@ -422,7 +424,7 @@ thumbnail_video_info_text () {
          printf "\n ${c_blue}Duration     ${c_yellow}%s" "$duration"
          printf "\n ${c_blue}Views        ${c_magenta}%s" "$views"
          printf "\n ${c_blue}Date         ${c_cyan}%s" "$date"
-         printf "\n ${c_blue}Description  ${c_reset}: %s" "$description"
+         #printf "\n ${c_blue}Description  ${c_reset}: %s" "$description"
 }
 
 
@@ -544,4 +546,4 @@ alphabetical () {
     }
 }
 
-#to use this run, "ytfzf --sort-name=alphabetical <search>"
+#to use this run, "ytfzf --sort-name=alphabetical <search>"a

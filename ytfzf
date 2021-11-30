@@ -83,7 +83,7 @@ search_history_file=${search_history_file-$cache_dir/ytfzf_search_hst}
 current_file=${current_file-$cache_dir/ytfzf_cur}
 thumb_dir=${thumb_dir-$cache_dir/thumb}
 #> Stores urls of the video page of channels
-subscriptions_file=${subscriptions_file-$config_dir/subscriptions}
+subscriptions_file=${subscriptions_file-${subscriptions_file-subscriptions}}
 
 #> stores the pid of running ytfzf sessions
 pid_file="$cache_dir/.pid"
@@ -251,6 +251,7 @@ all_help_info () {
   Subscriptions: to add a channel to subscptions, copy the channel's video page url
                  and add it to ~/.config/ytfzf/subscriptions. Each url must be on a new line
      -S,  --subs                          Get the latest 10 videos from subscriptions
+     --subs-file=<filename>               File to get subscriptions info from, file should be in $HOME/.config/ytfzf
      --subs=<number>                      Get the latest <number> of videos from subscriptions
      --fancy-subs=                        whether or not to show ------channel------ in subscriptions (must be 1 or 0)
      --add-subs				  generate a subscriptions file with subscriptions.json that you can get from google
@@ -1335,7 +1336,7 @@ scrape_subscriptions () {
 	-e "s/#.*//" \
 	-e "/^[[:space:]]*$/d" \
 	-e "s/[[:space:]]*//g" \
-	"$subscriptions_file")
+	"${config_dir}/${subscriptions_file}")
 	EOF
 	wait
 	if [ $sort_videos_data -eq 1 ]; then 
@@ -1358,14 +1359,14 @@ create_subs () {
     fi
 
     # start fresh
-    : > "$config_dir/subscriptions"
+    : > "$config_dir/${subscriptions_file}"
 
     # check how many subscriptions there are in the file
     sublength=$( jq '. | length' < "$yt_sub_import_file" )
 
     for i in $(seq $((sublength - 1))); do
         channelInfo=$(jq --argjson index ${i} '[ "https://www.youtube.com/channel/" + .[$index].snippet.resourceId.channelId + "/videos", "#" + .[$index].snippet.title ]' < "$yt_sub_import_file")
-	printf "%s\n" "$(printf "%s" "$channelInfo" | tr -d '[]"\n,')" >> "$subscriptions_file"
+	printf "%s\n" "$(printf "%s" "$channelInfo" | tr -d '[]"\n,')" >> "${config_dir}/${subscriptions_file}"
     done
     exit
 }
@@ -1477,7 +1478,7 @@ parse_opt () {
 			is_non_number "$fancy_subscriptions_menu" && bad_opt_arg ;;
 			
     country)	
-			country=${optarg}
+			country=${optarg};;
 
     subs-file)
       subscriptions_file=${optarg};;
