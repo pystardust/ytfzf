@@ -5,7 +5,7 @@
 _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option (no thumbnail support)._
 
 * [`mpv`](https://github.com/mpv-player/mpv)
-* [`youtube-dl`](https://github.com/ytdl-org/youtube-dl)
+* [`yt-dlp`](https://github.com/yt-dlp/yt-dlpl)
 * [`jq`](https://github.com/stedolan/jq) - _to parse json_
 * [`fzf`](https://github.com/junegunn/fzf) (Optional if using: `dmenu, rofi`) - _for menu_
 * [`notify-send`](https://gitlab.gnome.org/GNOME/libnotify) (Optional) - _for desktop notifications_
@@ -21,7 +21,7 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
 + #### Arch based
 
-	  sudo pacman -S jq mpv youtube-dl fzf
+	  sudo pacman -S jq mpv yt-dlp fzf
 
 	> For thumbnails
 

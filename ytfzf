@@ -53,7 +53,7 @@ external_menu=${YTFZF_EXTMENU-${external_menu-dmenu -i -l 30 -p Search:}}
 #number of columns (characters on a line) the external menu can have
 #necessary for formatting text for external menus
 external_menu_len=${YTFZF_EXTMENU_LEN-${external_menu_len-220}}
-#player settings (players need to support streaming with youtube-dl)
+#player settings (players need to support streaming with yt-dlp)
 #player to use for watching the video
 video_player=${YTFZF_PLAYER-${video_player-mpv}}
 #if YTFZF_PREF is specified, use this player instead
@@ -177,7 +177,7 @@ dep_ck () {
 	done
 	unset Dep
 }
-dep_ck "jq" "youtube-dl" "curl"
+dep_ck "jq" "yt-dlp" "curl"
 
 
 #only check for mpv if $YTFZF_PLAYER is set to it
@@ -1013,7 +1013,7 @@ print_data () {
 get_video_format () {
 	# select format if flag given
 	[ $show_format -eq 0 ] && return
-        formats=$(youtube-dl -F "$(printf "$selected_urls")") 
+        formats=$(yt-dlp -F "$(printf "$selected_urls")") 
         line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
         quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | eval "$menu_command" | sed "s/p//g")
 		[ -z "$quality"  ] && exit;
@@ -1025,9 +1025,9 @@ get_video_format () {
 get_sub_lang () {
     if [ $auto_caption -eq 1 ]; then
         #Gets the auto generated subs and stores them in a file
-        sub_list=$(youtube-dl --list-subs  --write-auto-sub "$selected_urls" | sed '/Available subtitles/,$d' | awk '{print $1}' | sed '1d;2d;3d')
+        sub_list=$(yt-dlp --list-subs  --write-auto-sub "$selected_urls" | sed '/Available subtitles/,$d' | awk '{print $1}' | sed '1d;2d;3d')
         if [ -n "$sub_list" ]; then
-            [ -n "$selected_sub" ] ||  selected_sub=$(printf "$sub_list" | eval "$menu_command") &&  youtube-dl  --sub-lang $selected_sub  --write-auto-sub --skip-download "$selected_urls" -o /tmp/ytfzf && YTFZF_SUBT_NAME="--sub-file=/tmp/ytfzf.$selected_sub.vtt" || printf "Auto generated subs not available."
+            [ -n "$selected_sub" ] ||  selected_sub=$(printf "$sub_list" | eval "$menu_command") &&  yt-dlp  --sub-lang $selected_sub  --write-auto-sub --skip-download "$selected_urls" -o /tmp/ytfzf && YTFZF_SUBT_NAME="--sub-file=/tmp/ytfzf.$selected_sub.vtt" || printf "Auto generated subs not available."
         fi
 	unset sub_list
     fi
@@ -1063,10 +1063,10 @@ open_player () {
 		fi
 	elif [ $is_download -eq 1 ]; then
 		if [ -z "$video_pref" ]; then
-			youtube-dl "$@"  "$YTFZF_SUBT_NAME"
+			yt-dlp "$@"  "$YTFZF_SUBT_NAME"
       dl_status=`[ $? -eq 0 ] && echo Successful || echo Failed`
 		else
-			youtube-dl -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
+			yt-dlp -f "$video_pref"  "$@"  $YTFZF_SUBT_NAME || video_pref= open_player "$@"
       dl_status=`[ $? -eq 0 ] && echo Successful || echo Failed`
 		fi
 
@@ -1494,7 +1494,7 @@ parse_opt () {
 			exit ;;
 		version)
 			printf "\033[1mytfzf:\033[0m %s\n" "$YTFZF_VERSION"
-			printf "\033[1myoutube-dl:\033[0m %s\n" "$(youtube-dl --version)"
+			printf "\033[1myt-dlp:\033[0m %s\n" "$(yt-dlp --version)"
 			command -v "fzf" 1>/dev/null && printf "\033[1mfzf:\033[0m %s\n" "$(fzf --version)"
 			exit ;;
 
