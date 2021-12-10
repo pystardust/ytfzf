@@ -27,49 +27,13 @@ _Fzf is optional, you can use an external menu (like dmenu) with the `-D` option
 
 	  sudo pacman -S ueberzug
 
-+ #### Debian based
++ #### Other Distros
 
-	  sudo apt install jq mpv youtube-dl fzf
+	  Dependencies: jq mpv fzf [yt-dlp]("https://github.com/yt-dlp-yt-dlp")
 
 	> For thumbnails
 
 	  pip install ueberzug
-
-	_Note youtube-dl is usually outdated in debian repos, I suggest getting it from pip or [youtube-dl github](https://github.com/ytdl-org/youtube-dl)_
-
-+ #### FreeBSD
-
-	  pkg install jq mpv youtube_dl fzf libnotify shuf
-
-	> For thumbnails
-
-	  pkg install --glob "py3*-ueberzug"
-
-+ #### Guix
-
-	Ytfzf can be deployed on any GNU/Linux Systems, using [Guix](https://guix.gnu.org).
-
-	To install in the user's default-profile, do `guix package --install ytfzf`
-
-	To test without installation, do `guix environment --pure --ad-hoc ytfzf curl nss-certs`
-
-+ #### MacOS
-
-	  brew install jq mpv youtube-dl fzf
-
-	_At the moment thumbnail previews aren't working on MacOS_
-
-+ #### Fedora
-
-	  sudo dnf install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
-	  sudo dnf install jq mpv youtube-dl fzf
-
-	> For thumbnails
-
-	  sudo dnf install libX{11,ext,res}-devel
-	  pip install ueberzug
-
-	_The above commands install mpv from [RPM Fusion](https://rpmfusion.org/Configuration) and Überzug from [PyPI](https://pypi.org/project/ueberzug/)_
 
 
 ## Installation-Options
