@@ -136,6 +136,11 @@ The default is \fIdmenu\fR.
 This can also be set in the config file with
 .BR is_ext_menu .
 .TP
+.BR \-\-interface=interface
+Use a custom interface script, which would be in $YTFZF_CUSTOM_INTERFACES_DIR.
+This can also be set in the config file with
+.BR interface .
+.TP
 .BR \-\-sort
 Sorts videos (after scraping) by upload date.
 .TP
@@ -424,6 +429,11 @@ The default is
 The directory to store custom scraper scripts in
 The default is
 .I $YTFZF_CONFIG_DIR/scrapers
+.TP
+.B $YTFZF_CUSTOM_INTERFACES_DIR
+The directory to store custom interface scripts in
+the default is
+.I $YTFZF_CONFIG_DIR/interfaces
 
 .SH FILES
 .TP
