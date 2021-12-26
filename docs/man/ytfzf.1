@@ -416,7 +416,7 @@ See \fBytfzf\fR(5) for more information.
 .B $YTFZF_CONFIG_DIR
 The directory to store config files.
 The default is
-.I ~/.config/ytfzf
+.I "$XDG_CONFIG_HOME/ytfzf (or ~/.config/ytfzf)"
 .TP
 .B $YTFZF_CONFIG_FILE
 The configuration file to use.
@@ -442,6 +442,11 @@ The default is
 The directory to store custom interface scripts in
 the default is
 .I $YTFZF_CONFIG_DIR/interfaces
+.TP
+.B $cache_dir
+The directory to store cache
+the default is
+.I "$XDG_CACHE_HOME/ytfzf (or $HOME/.cache/ytfzf)"
 
 .SH FILES
 .TP
