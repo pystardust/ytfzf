@@ -20,73 +20,94 @@
 <img src=.assets/ytfzf.gif width="100%">
 </p>
 
-## Fast installation
+---
 
-_This one-line installation does not support every OS, detail information for different OS can be found in the [here](docs/INSTALL.md)_
+# Table Of Contents
+
+* [`Dependencies`](#Dependencies)
+* [`Install`](#Install)
+* [`Features`](#Features)
+* [`Examples`](#Examples)
+* [`Todo`](#Todo)
+* [`Bugs`](#Bugs)
+
+---
+
+# Dependencies
+
+There is only 1 required dependency, however the rest may require some configuration before you can replace them.
+
+## Requried dependencies
+
+* [`jq`](https://github.com/stedolan/jq)
+
+## Recommended dependencies
+
+* [`mpv`](https://github.com/mpv-player/mpv) (the default video and audio player)
+* [`fzf`](https://github.com/junegunn/fzf) (the default menu selection screen)
+
+## Optional dependencies
+
+* [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (for downloading)
+* [`dmenu`](https://tools.suckless.org/dmenu/) (only if using the -D option)
+* [`ueberzug`](https://github.com/seebye/ueberzug) (if using thumbnails (-t) on x11)
+    * [`chafa`](https://github.com/hpjansson/chafa) (if using thumbnails (-t) on wayland, sadly it's not as good as ueberzug)
+
+
+# Install
+
+1. Install the dependancies listed [above](#Dependencies)
+2. Run the following commands
+```sh
+git clone https://github.com/pystardust/ytfzf
+cd ytfzf
+sudo make
+```
+
+* ytfzf may be in some repositories, such as the AUR, however the above way is the recommended way to install.
+
+# Features
+
+* Subscriptions
+* Thumbnails
+* Watch history
+* Downloading
+* Queueing multiple videos
+
+# Examples
+
+> Search with thumbnails
 
 ```sh
-curl -sL "https://raw.githubusercontent.com/pystardust/ytfzf/master/ytfzf" | sudo tee /usr/bin/ytfzf >/dev/null && sudo chmod 755 /usr/bin/ytfzf
+ytfzf -t <search>
 ```
-<sup>*requires cURL</sup>
 
-## Table of Contents
+> Use `dmenu` as the menu instead of `fzf`
 
-- [`Dependencies`](docs/INSTALL.md/#Dependencies)
-- [`Installation`](docs/INSTALL.md/#Installation-Options)
-- [`Usage Instruction`](docs/USAGE.md/#Usage-Instructions)
-- [`Configurations`](docs/USAGE.md/#Configurations)
-- [`Subscriptions`](docs/USAGE.md/#Subscriptions)
-- [`Update Log`](https://github.com/pystardust/ytfzf/releases)
-- [`Examples`](#Examples)
-- [`Todo`](#Todo)
-- [`Bugs`](#Bugs)
+```sh
+ytfzf -D <search>
+```
 
-## Features
-- Subscriptions
-- Thumbnails
-- History
-- Download
-- Format selection
-- Queue multiple videos
+> Print the link of the selected video instead of playing it
 
-## Examples
-+  Search with Thumbnails
+```sh
+ytfzf -L <search>
+```
 
-	> Find and watch videos with thumbnail previews
+> Search Odysee instead of youtube
 
-       ytfzf -t <query>
+```sh
+ytfzf -cO <search>
+```
 
-	> Show all subscriptions with thumbnails (latest 10)
-
-       ytfzf -St
-
-+  You can use multiple options together, here are some examples
-
-	- Stream audio (music), and prompt as the music finishes
-
-		  ytfzf -ml <query>
-
-	- Download a video from your history
-
-	      ytfzf -dH
-
-	- Open using external menu in a certain format
-
-	 	  ytfzf -fD
-
-+ _If you started watching a video and you wish to change format then
-first hit Q to save position and quit mpv, then choose your format using_
-
-	  ytfzf -faH
-
-## Todo
+# Todo
 
 * [ ] Playlists
 * [ ] More sites
 * [x] Subscriptions
 * [x] Thumbnails
 
-## Bugs
+# Bugs
 
-* _dwm with swallow patch: Images don't render when looped (ie, option `-l`)_
-- _If thumbnails are not working `.Xauthority` might be causing it. Try deleting `.Xauthority` and relogging._
+* *dwm with swallow patch: Images don't render with ueberzug when looped (ie, option `-l`)
+* *if thumbnails are not working `.Xauthority` might be causing it. Try deleting it and relogging into your computer.
