@@ -555,28 +555,31 @@ scrape_invidious_search () {
 	pagetype=$3
 	page_num=$4
 
-	_tmp_json="${session_temp_dir}/yt-search-$page_num.json"
+	while [ ${i:=1} -le $page_num ]; do
+		_tmp_json="${session_temp_dir}/yt-search-$i.json"
 
-	print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $page_num)\n"
+		print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $i)\n"
 
-	_get_request "$invidious_instance/api/v1/search" \
-		-G --data-urlencode "q=$page_query" \
-		--data-urlencode "type=${search_result_type}" \
-		--data-urlencode "sort_by=${search_sort_by}" \
-		--data-urlencode "date=${search_upload_date}" \
-		--data-urlencode "duration=${search_video_duration}" \
-		--data-urlencode "features=${search_result_features}" \
-		--data-urlencode "region=${search_region}" \
-		--data-urlencode "page=${page_num}" > "$_tmp_json" || return "$?"
+		_get_request "$invidious_instance/api/v1/search" \
+			-G --data-urlencode "q=$page_query" \
+			--data-urlencode "type=${search_result_type}" \
+			--data-urlencode "sort_by=${search_sort_by}" \
+			--data-urlencode "date=${search_upload_date}" \
+			--data-urlencode "duration=${search_video_duration}" \
+			--data-urlencode "features=${search_result_features}" \
+			--data-urlencode "region=${search_region}" \
+			--data-urlencode "page=${i}" > "$_tmp_json" || return "$?"
 
-	_get_invidious_thumb_quality_name
+		_get_invidious_thumb_quality_name
 
-	{
-		_invidious_search_json_live < "$_tmp_json"
-		_invidious_search_json_videos < "$_tmp_json"
-		_invidious_search_json_channel < "$_tmp_json"
-		_invidious_search_json_playlist < "$_tmp_json"
-	} >> "$output_json_file"
+		{
+			_invidious_search_json_live < "$_tmp_json"
+			_invidious_search_json_videos < "$_tmp_json"
+			_invidious_search_json_channel < "$_tmp_json"
+			_invidious_search_json_playlist < "$_tmp_json"
+		} >> "$output_json_file"
+		i=$((i+1))
+	done
 }
 
 scrape_invidious_trending () {
@@ -598,9 +601,10 @@ scrape_invidious_trending () {
 
 scrape_invidious_channel () {
 	channel_url=$1
-	print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url\n"
 	output_json_file=$2
 	tmp_file_name=$3
+	#default to one, because -cSI does not give a page count
+	page_num=${4:-1}
 
 	# Converting channel title page url to channel video url
 	case "$channel_url" in
@@ -612,17 +616,24 @@ scrape_invidious_channel () {
 		print_warning "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
 		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
 
-	#if this var isn't unique, weird things happen,
-	_tmp_json="${session_temp_dir}/$tmp_file_name.json"
-	channel_url="$invidious_instance/api/v1/channels/$channel_id/videos"
-	_get_request "${channel_url##* }" > "$_tmp_json" || return "$?"
 
-	_get_invidious_thumb_quality_name
+	while [ ${i:=1} -le $page_num ]; do
+		#if this var isn't unique, weird things happen,
+		print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url (pg: $i)\n"
+		_tmp_json="${session_temp_dir}/$tmp_file_name.json"
+		channel_url="$invidious_instance/api/v1/channels/$channel_id/videos"
+		_get_request "${channel_url##* }" \
+			-G --data-urlencode "page=$i" \
+			> "$_tmp_json" || return "$?"
 
-	{
-		_invidious_search_json_videos < "$_tmp_json"  
-		_invidious_search_json_live < "$_tmp_json"
-	} >> "$output_json_file"
+		_get_invidious_thumb_quality_name
+
+		{
+			_invidious_search_json_videos < "$_tmp_json"  
+			_invidious_search_json_live < "$_tmp_json"
+		} >> "$output_json_file"
+		i=$((i+1))
+	done
 }
 ## }}}
 
@@ -1242,16 +1253,12 @@ scrape_website () {
 		invidious-playlist|youtube-playlist) scrape_invidious_playlist "$_search" "$ytfzf_video_json_file" ;;
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
 		playlist|p|json-file) scrape_json_file "$_search" "$ytfzf_video_json_file" ;;
-		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "channel-1";;
+		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "channel-1" "$pages_to_scrape" ;;
 		youtube-channel) scrape_youtube_channel "$_search" "$ytfzf_video_json_file" "channel-1" ;;
 		youtube|Y) 
 			# youtube scrape {{{
 			#$i is so multiple pages can be scraped
-			while [ ${i:=0} -lt $pages_to_scrape ]; do
-				i=$((i+1))
-				scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$i" || return "$?"
-			done 
-			unset i ;;
+			scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$pages_to_scrape" || return "$?" ;;
 			# }}}
 		youtube-trending|T) scrape_invidious_trending  "$_search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S|SI)#{{{
