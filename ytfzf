@@ -26,6 +26,9 @@ c_cyan="\033[1;36m"
 c_reset="\033[0m"
 #}}}
 
+# debugging
+: ${log_level:=2}
+
 #state variables
 : "${__is_submenu:=0}"
 : "${__is_scrape_for_submenu:=0}"
@@ -115,6 +118,10 @@ quick_menu () {
 # expansions where the variable is a string and globbing shouldn't happen should be surrounded by quotes
 # variables that cannot be empty should use := instead of just =
 
+# hard dependancy checks{{{
+dep_check "jq" || die 3 "jq is a required dependancy, please install it\n"
+#}}}
+
 
 #configuration handling {{{
 : "${YTFZF_CONFIG_DIR:=$HOME/.config/ytfzf}"
@@ -179,6 +186,7 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 # print what the handler is doing
 function_exists "video_player" || video_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
+	dep_check "mpv" || die 3 "mpv is not installed\n"
 	notify_info "Playing $# video(s)"
 	case "$is_detach" in
 		0) mpv --ytdl-format="$video_pref" "$@" ;;
@@ -187,6 +195,7 @@ function_exists "video_player" || video_player () {
 }
 function_exists "audio_player" || audio_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
+	dep_check "mpv" || die 3 "mpv is not installed\n"
 	notify_info "Playing $# video(s)"
 	mpv --no-video "$@"
 }
@@ -199,6 +208,7 @@ function_exists "multimedia_player" || multimedia_player () {
 }
 function_exists "downloader" || downloader () {
 	notify_info "Playing $# video(s)"
+	dep_check "${ytdl_path}" || die 3 "${ytdl_path} is not installed\n"
 	case $is_audio_only in
 	    0) ${ytdl_path} -f "${video_pref}" $ytdl_opts "$@"	;;
 	    1) ${ytdl_path} -x $ytdl_opts "$@" ;;
@@ -259,14 +269,12 @@ function_exists "downloader" || downloader () {
 
 : "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history }"
 
-# debugging
-: ${log_level:=2}
 
 # Option Checks {{{
 case "$long_opt_char" in
-        [a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric" ;;
+        [a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric\n" ;;
 	#? = 1 char, * = 1+ chars; ?* = 2+ chars
-	??*) die 2 "long_opt_char must be 1 char" ;;
+	??*) die 2 "long_opt_char must be 1 char\n" ;;
 esac
 #}}}
 
@@ -817,6 +825,7 @@ interface_scripting () {
 
 # Text interface {{{
 interface_text () {
+	dep_check "fzf" || die 3 "fzf not installed, cannot use the default menu\n"
 	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
 	video_json_file=$1
 	selected_id_file=$2
@@ -901,7 +910,7 @@ preview_display_image () {
 	id=$2
 	case $thumbnail_viewer in
 		ueberzug)
-			dep_check "ueberzug" || die 1 "ueberzug is not installed"
+			dep_check "ueberzug" || die 3 "ueberzug is not installed\n"
 			printf '%s\t' \
 				'action' 'add' \
 				'identifier' 'ytfzf' \
@@ -915,34 +924,34 @@ preview_display_image () {
 			;;
 		chafa)
 			printf '\n'
-			dep_check "chafa" || die 1 "\nchafa is not installed"
+			dep_check "chafa" || die 3 "\nchafa is not installed\n"
 			chafa -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
 		chafa-16)
 			printf '\n'
-			dep_check "chafa" || die 1 "\nchafa is not installed"
+			dep_check "chafa" || die 3 "\nchafa is not installed\n"
 			chafa -c 240 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
 		chafa-tty)
 			printf '\n'
-			dep_check "chafa" || die 1 "\nchafa is not installed"
+			dep_check "chafa" || die 3 "\nchafa is not installed\n"
 			chafa -c 16 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
 		catimg)
 			printf '\n'
-			dep_check "catimg" || die 1 "\ncatimg is not installed"
+			dep_check "catimg" || die 3 "\ncatimg is not installed\n"
 			catimg -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_dir/${id}.jpg" ;;
 		catimg-256)
 			printf '\n'
-			dep_check "catimg" || die 1 "\ncatimg is not installed"
+			dep_check "catimg" || die 3 "\ncatimg is not installed\n"
 			catimg -c -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_dir/${id}.jpg" ;;
 		display)
+			dep_check "display" || die 3 "\nimagemagick is not installed\n"
 			killall display
-			dep_check "display" || die 1 "\nimagemagick is not installed"
 			display "$thumb_dir/${id}.jpg" ;;
 		w3m)
 			while true; do
 				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_dir/${id}.jpg" 3 | $w3mimgdisplay_path
 			done ;;	
 		*) 
-			"$thumbnail_viewer" "view" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null || die 1 "$thumbnail_viewer doesn't exist" ;;
+			"$thumbnail_viewer" "view" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null || die 1 "$thumbnail_viewer doesn't exist\n" ;;
 
 	esac
 }
