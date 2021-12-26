@@ -248,6 +248,7 @@ function_exists "downloader" || downloader () {
 : "${invidious_instance:=https://vid.puffyan.us}"
 : "${yt_video_link_domain:=$invidious_instance}"
 : ${pages_to_scrape:=1}
+: ${odysee_video_search_count:=30}
 
 : "${search_sort_by:=relevance}"
 : "${search_upload_date=}"
@@ -1101,6 +1102,7 @@ parse_opt () {
 		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
 		pages) pages_to_scrape="$optarg" ;;
+		odysee-video-count) odysee_video_search_count="$optarg" ;;
 		interface) interface="$optarg" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
