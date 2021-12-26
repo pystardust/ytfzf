@@ -15,7 +15,7 @@ The options should be set as environment variables and functions.
 .SH CONFIGURATION FILES
 .PP
 Configuration files are stored in
-.IR $HOME/.config/ytfzf/ .
+.IR "$XDG_CONFIG_HOME/ytfzf (or $HOME/.config/ytfzf)" .
 
 .SS conf.sh
 .PP
@@ -71,7 +71,7 @@ The directory to store cache files in.
 .br
 It is highly recommended to only change this if $__is_submenu is 0, or funky things could happen
 .br
-.RI default: " $HOME/.cache/ytfzf"
+.RI default: " $XDG_CACHE_HOME/ytfzf (or $HOME/.cache/ytfzf)"
 
 .TP
 .RB $ hist_file
