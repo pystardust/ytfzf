@@ -618,9 +618,9 @@ scrape_invidious_channel () {
 
 
 	while [ ${i:=1} -le $page_num ]; do
-		#if this var isn't unique, weird things happen,
 		print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url (pg: $i)\n"
-		_tmp_json="${session_temp_dir}/$tmp_file_name.json"
+		#if this var isn't unique, weird things happen,
+		_tmp_json="${session_temp_dir}/$tmp_file_name-$i.json"
 		channel_url="$invidious_instance/api/v1/channels/$channel_id/videos"
 		_get_request "${channel_url##* }" \
 			-G --data-urlencode "page=$i" \
