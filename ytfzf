@@ -1109,10 +1109,9 @@ parse_opt () {
 		D|external-menu) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface='ext_menu' ;;
 		m|audio-only) is_audio_only=${optarg:-1};;
 		d|download) url_handler=downloader ;;
-		f|formats) show_formats=${optarg:-1} ;; # TODO
+		f|formats) show_formats=${optarg:-1} ;;
 		H|history) scrape="history" ;;
 		x|history-clear) clear_hist; exit 0 ;;
-		q|search-history) : ;; # TODO
 		a|auto-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
 		A|select-all) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_auto_select=${optarg:-1} && scripting_video_count=100 ;;
 		r|random-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_random_select=${optarg:-1} ;; 
