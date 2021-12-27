@@ -273,12 +273,6 @@ The end frame of the video (low quality)
 .br
 
 .TP
-.RB $ is_ext_menu
-Whether or not to use a menu other than fzf.
-.br
-.RI default: " 0"
-
-.TP
 .RB $ is_loop
 Whether or not to show the menu after the selected videos have stopped playing.
 .br
@@ -338,12 +332,6 @@ If $shortcut_binds is set manually, this must also manually be appended.
 Auto selecting
 
 .RS
-
-.TP
-.RB $ is_interface_scripting
-Whether or not to use an auto selector.
-.br
-.RI default: " 0"
 
 .TP
 .RB $ is_auto_select
@@ -608,7 +596,7 @@ Menu related functions
 
 .TP
 .BR external_menu ()
-When $\fBis_ext_menu\fR is \fI1\fR, call this function instead of fzf.
+When $\fBinterface\fR is \fIext_menu\fR, call this function instead of fzf.
 .br
 This function takes 1 argument, a prompt string.
 

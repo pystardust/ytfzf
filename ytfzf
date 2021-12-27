@@ -35,6 +35,13 @@ c_reset="\033[0m"
 : "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
+is_ext_menu () {
+	case "$interface" in
+		"scripting"|"") printf "0" ;;
+		*) printf "1" ;;
+	esac
+}
+
 dep_check() {
 	command -v "$1" > /dev/null 2>&1
 }
@@ -56,7 +63,7 @@ title_str () {
 }
 
 notify_info () {
-	function_exists "notify-send" && [ $is_ext_menu -eq 0 ] && notify-send "Ytfzf Info" "$@" || print_info "%s\n" "$@"
+	function_exists "notify-send" && [ $(is_ext_menu) -eq 0 ] && notify-send "Ytfzf Info" "$@" || print_info "%s\n" "$@"
 }
 
 print_info () {
@@ -99,7 +106,7 @@ trim_url () {
 
 quick_menu () {
 	prompt="$1"
-	if [ $is_ext_menu -eq 0 ]; then
+	if [ $(is_ext_menu) -eq 0 ]; then
 		fzf --reverse --prompt="$prompt"
 	else
 		external_menu "$prompt"
@@ -146,7 +153,7 @@ function_exists "external_menu" || external_menu () {
 }
 
 function_exists "search_prompt_menu" || search_prompt_menu () {
-	if [ $is_ext_menu -eq 1 ]; then
+	if [ $(is_ext_menu) -eq 1 ]; then
 		search="$(printf '' | external_menu "Search: ")"
 	else
 		printf "Search\n> "
@@ -240,9 +247,7 @@ function_exists "downloader" || downloader () {
 
 : ${is_sort:=0}
 : ${show_thumbnails:=0}
-: ${is_ext_menu:=0}
 
-: ${is_interface_scripting:=0}
 : ${scripting_video_count:=1}
 : ${is_random_select:=0}
 : ${is_auto_select:=0}
