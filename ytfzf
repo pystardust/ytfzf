@@ -301,6 +301,7 @@ usage () {
 				    youtube/Y, youtube-trending/T, youtube-subscriptions/S/SI,
 				    peertube/P, odysee/lbry/O,
 				    history/H,
+				    url/U,
 				    youtube-playlist
 				    	instead of giving a search, give a link to a playlist
 				    youtube-channel
@@ -1310,6 +1311,11 @@ scrape_website () {
 		    ;;#}}}
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
+		url|U) format_urls <<-EOF | open_url_handler 
+			$_search
+			EOF
+			exit 0
+			;;
                 *)
                         #custom scrapers {{{
 
