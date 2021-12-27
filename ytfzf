@@ -205,7 +205,7 @@ function_exists "audio_player" || audio_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	dep_check "mpv" || die 3 "mpv is not installed\n"
 	notify_info "Playing $# video(s)"
-	mpv --no-video "$@"
+	mpv --no-video --ytdl-format="$video_pref" "$@"
 }
 function_exists "multimedia_player" || multimedia_player () {
 	#this function differentiates whether or not audio_only was requested
