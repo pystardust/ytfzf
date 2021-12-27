@@ -1148,7 +1148,7 @@ parse_opt () {
 		n|link-count) scripting_video_count=$optarg;; 
 		l|loop) is_loop=${optarg:-1} ;;
 		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
-		v) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
+		v|version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
 		pages) pages_to_scrape="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
