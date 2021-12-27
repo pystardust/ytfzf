@@ -1183,6 +1183,7 @@ parse_opt () {
 		url-handler) url_handler="${optarg:-multimedia_player}" ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts) submenu_opts="${optarg:-1}" ;;
+		*) [ "$OPT" = "-" ] && print_info "$0: illegal long option -- $opt\n" ;;
 	esac
 	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
