@@ -59,7 +59,7 @@ get_key_value() {
 
 #capitalizes the first letter of a string
 title_str () {
-	printf "%s" "$1" | dd bs=1 count=1 conv=ucase
+	printf "%s" "$1" | dd bs=1 count=1 conv=ucase 2>/dev/null
 	printf "%s\n" "${1#?}"
 }
 
@@ -956,36 +956,24 @@ function_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left
 	width=$1
 	height=$(($2-10))
 	x=2
-	#adds 1 for each new line in the description
-	y=$((8 + $(printf "%s" "$description" | sed '/^[[:space:]]*$/d' | grep -o '\n' | wc -l)))
-	#this prevents it from going below the screen
-	[ $y -gt $(($2-$height)) ] && y=$(($2-$height))
+	y=15
 }
 function_exists "get_ueberzug_positioning_right" || get_ueberzug_positioning_right (){
 	width=$1
 	height=$(($2-10))
 	x=$(($1+6))
-	#adds 1 for each new line in the description
-	y=$((8 + $(printf "%s" "$description" |  sed '/^[[:space:]]*$/d' | grep -o '\n' | wc -l)))
-	#this prevents it from going below the screen
-	[ $y -gt $(($2-$height)) ] && y=$(($2-$height))
+	y=15
 }
 function_exists "get_ueberzug_positioning_up" || get_ueberzug_positioning_up (){
 	width=$1
 	height=$(($2-10))
 	x=2
-	#adds 1 for each new line in the description
-	y=$((8 + $(printf "%s" "$description" |  sed '/^[[:space:]]*$/d' | grep -o '\n' | wc -l)))
-	#this prevents it from going below the screen
-	[ $y -gt $(($2-$height)) ] && y=$(($2-$height))
+	y=11
 }
 function_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down (){
 	width=$1
 	height=$(($2-10))
-	#adds 1 for each new line in the description
-	y=$(($2 + $(printf "%s" "$description" |  sed '/^[[:space:]]*$/d' | grep -o '\n' | wc -l)))
-	#this prevents it from going below the screen
-	[ $y -gt $(($2-$height)) ] && y=$(($2-$height))
+	y=12
 	x=2
 }
 get_ueberzug_positioning () {
