@@ -628,6 +628,8 @@ scrape_invidious_channel () {
 		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
 
 
+	#here because if scrape_invidious_channel is called more than once, i needs to be reset
+	i=1
 	while [ ${i:=1} -le $page_num ]; do
 		print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url (pg: $i)\n"
 		#if this var isn't unique, weird things happen,
@@ -1287,12 +1289,13 @@ scrape_website () {
 		    [ "$scrape_type" = "SI" ] && { channel_scraper="scrape_invidious_channel"; sleep_time=0.03; } || { channel_scraper="scrape_youtube_channel"; sleep_time=0.01; }
 
 		    #if _tmp_subfile does not have a unique name, weird things happen
-		    i=0
+		    #must be _i because scrape_invidious_channel uses $i
+		    _i=0
 		    while IFS= read channel_url || [ -n "$channel_url" ] ; do
-			    i=$((i+1))
+			    _i=$((_i+1))
 			    {
-				    _tmp_subfile="${session_temp_dir}/channel-$i"
-				    $channel_scraper "$channel_url" "$_tmp_subfile" "channel-$i" < /dev/null || return "$?"
+				    _tmp_subfile="${session_temp_dir}/channel-$_i"
+				    $channel_scraper "$channel_url" "$_tmp_subfile" "channel-$_i" < /dev/null || return "$?"
 				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 			    } &
 			    sleep $sleep_time
