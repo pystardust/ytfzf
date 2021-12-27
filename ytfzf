@@ -849,7 +849,7 @@ function_exists "thumbnail_video_info_text" || thumbnail_video_info_text () {
 	[ -n "$duration" ] && printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
 	[ -n "$views" ] && printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
 	[ -n "$date" ] && printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
-	[ -n "$description" ] && printf "\n ${c_blue}Description ${c_reset}: %s" "$description"
+	[ -n "$description" ] && printf "\n ${c_blue}Description ${c_reset}: %s" "$(printf "%s" "$description" | sed 's/\\n/\n/g')"
 }
 
 # Scripting interfaces {{{
@@ -956,24 +956,36 @@ function_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left
 	width=$1
 	height=$(($2-10))
 	x=2
-	y=10
+	#adds 1 for each new line in the description
+	y=$((8 + $(printf "%s" "$description" | sed '/^[[:space:]]*$/d' | grep -o '\n' | wc -l)))
+	#this prevents it from going below the screen
+	[ $y -gt $(($2-$height)) ] && y=$(($2-$height))
 }
 function_exists "get_ueberzug_positioning_right" || get_ueberzug_positioning_right (){
 	width=$1
 	height=$(($2-10))
 	x=$(($1+6))
-	y=10
+	#adds 1 for each new line in the description
+	y=$((8 + $(printf "%s" "$description" |  sed '/^[[:space:]]*$/d' | grep -o '\n' | wc -l)))
+	#this prevents it from going below the screen
+	[ $y -gt $(($2-$height)) ] && y=$(($2-$height))
 }
 function_exists "get_ueberzug_positioning_up" || get_ueberzug_positioning_up (){
 	width=$1
 	height=$(($2-10))
 	x=2
-	y=10
+	#adds 1 for each new line in the description
+	y=$((8 + $(printf "%s" "$description" |  sed '/^[[:space:]]*$/d' | grep -o '\n' | wc -l)))
+	#this prevents it from going below the screen
+	[ $y -gt $(($2-$height)) ] && y=$(($2-$height))
 }
 function_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down (){
 	width=$1
 	height=$(($2-10))
-	y=$(($2+12))
+	#adds 1 for each new line in the description
+	y=$(($2 + $(printf "%s" "$description" |  sed '/^[[:space:]]*$/d' | grep -o '\n' | wc -l)))
+	#this prevents it from going below the screen
+	[ $y -gt $(($2-$height)) ] && y=$(($2-$height))
 	x=2
 }
 get_ueberzug_positioning () {
@@ -1080,10 +1092,11 @@ interface_thumbnails () {
 	preview_start "$thumbnail_viewer"
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
+	#fzf_preview_side will get reset if we don't pass it in
 	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|@tsv' < "$video_json_file" |
 	sort_video_data_fn |
 	fzf -m \
-	--preview "__is_fzf_preview=1 thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
+	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
 	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
 	trim_url > "$selected_id_file"
 
