@@ -467,7 +467,8 @@ _invidious_search_json_playlist () {
 	]'
 }
 _invidious_search_json_channel () {
-	jq '[ .[] | select(.type=="channel") |
+	jq '
+	[ .[] | select(.type=="channel") |
 		{
 			ID: .authorId,
 			url: "'"${yt_video_link_domain}"'/channel/\(.authorId)",
@@ -491,14 +492,19 @@ _invidious_search_json_live () {
 	]'
 }
 _invidious_search_json_videos () {
-	jq '[ .[] | select(.type=="video" and .liveNow==false) |
+	jq '
+	def pad_left(n; num):
+		num | tostring |
+			if (n > length) then ((n - length) * "0") + (.) else . end
+		;
+	[ .[] | select(.type=="video" and .liveNow==false) |
 		{
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
 			channel: .author,
 			thumbs: "'"${invidious_instance}"'/vi/\(.videoId)/'"$thumbnail_quality"'.jpg",
-			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
+			duration: "\(.lengthSeconds / 60 | floor):\(pad_left(2; .lengthSeconds % 60))",
 			views: "\(.viewCount)",
 			date: .publishedText,
 			description: .description
@@ -507,14 +513,19 @@ _invidious_search_json_videos () {
 }
 
 _invidious_playlist_json () {
-	jq '[ .videos | .[] |
+	jq '
+	def pad_left(n; num):
+		num | tostring |
+			if (n > length) then ((n - length) * "0") + (.) else . end
+		;
+	[ .videos | .[] |
 		{
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
 			channel: .author,
 			thumbs: "'"${invidious_instance}"'/vi/\(.videoId)/'"$thumbnail_quality"'.jpg",
-			duration: "\(.lengthSeconds / 60 | floor):\(.lengthSeconds % 60)",
+			duration: "\(.lengthSeconds / 60 | floor):\(pad_left(2; .lengthSeconds % 60))",
 			date: .publishedText,
 			description: .description
 		}
@@ -648,14 +659,19 @@ scrape_peertube () {
 	#gets a list of videos
 	_get_request "https://sepiasearch.org/api/v1/search/videos" -G --data-urlencode "search=$1" > "$_tmp_json" || return "$?"
 
-	jq '[ .data | .[] |
+	jq '
+	def pad_left(n; num):
+		num | tostring |
+			if (n > length) then ((n - length) * "0") + (.) else . end
+		;
+	[ .data | .[] |
 			{
 				ID: .uuid,
 				url: .url,
 				title: .name,
 				channel: .channel.displayName,
 				thumbs: .thumbnailUrl,
-				duration: "\(.duration / 60 | floor):\(.duration % 60)",
+				duration: "\(.duration / 60 | floor):\(pad_left(2; .duration % 60))",
 				views: "\(.views)",
 				date: .publishedAt
 			}
@@ -679,14 +695,19 @@ scrape_odysee () {
 	    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
 	    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json" || return "$?"
 
-	jq '[ .[] |
+	jq '
+	def pad_left(n; num):
+		num | tostring |
+			if (n > length) then ((n - length) * "0") + (.) else . end
+		;
+	[ .[] |
 	    {
 			ID: .claimId,
 			title: .title,
 			url: "https://www.odysee.com/\(.channel)/\(.name)",
 			channel: .channel,
 			thumbs: .thumbnail_url,
-			duration: "\(.duration / 60 | floor):\(.duration % 60)",
+			duration: "\(.duration / 60 | floor):\(pad_left(2; .duration % 60))",
 			views: "\(.view_cnt)",
 			date: .cq_created_at
 	    }
