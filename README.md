@@ -108,8 +108,8 @@ ytfzf -cO <search>
 
 # Todo
 
-* [ ] Playlists
 * [ ] More sites
+* [x] Playlists
 * [x] Subscriptions
 * [x] Thumbnails
 
