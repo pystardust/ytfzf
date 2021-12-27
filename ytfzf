@@ -613,6 +613,9 @@ scrape_invidious_trending () {
 	url="$invidious_instance/api/v1/trending"
 	[ -n "$trending_tab" ] && url="${url}?type=${trending_tab}" && _tmp_json="${_tmp_json}-$trending_tab"
 
+	_get_request "$url" \
+		-G --data-urlencode "region=${search_region}" > "$_tmp_json" || return "$?"
+
 	_get_invidious_thumb_quality_name
 
 	_invidious_search_json_videos < "$_tmp_json" >> "$output_json_file"
