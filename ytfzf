@@ -169,6 +169,8 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 
 : ${interface=}
 
+: "${fzf_preview_side:=left}"
+
 : "${thumbnail_viewer:=ueberzug}"
 
 : "${w3mimgdisplay_path:=/usr/lib/w3m/w3mimgdisplay}"
@@ -946,22 +948,60 @@ preview_stop () {
 			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
 }
+# ueberzug positioning{{{
+function_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left (){
+	width=$1
+	height=$(($2-10))
+	x=2
+	y=10
+}
+function_exists "get_ueberzug_positioning_right" || get_ueberzug_positioning_right (){
+	width=$1
+	height=$(($2-10))
+	x=$(($1+6))
+	y=10
+}
+function_exists "get_ueberzug_positioning_up" || get_ueberzug_positioning_up (){
+	width=$1
+	height=$(($2-10))
+	x=2
+	y=10
+}
+function_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down (){
+	width=$1
+	height=$(($2-10))
+	y=$(($2+12))
+	x=2
+}
+get_ueberzug_positioning () {
+	max_width=$1
+	max_height=$2
+	side=$3
+	case "$fzf_preview_side" in
+		left) get_ueberzug_positioning_left "$max_width" "$max_height" ;;
+		right) get_ueberzug_positioning_right "$max_width" "$max_height" ;;
+		up) get_ueberzug_positioning_up "$max_width" "$max_height" ;;
+		down) get_ueberzug_positioning_down "$max_width" "$max_height" ;;
+	esac
+}
+#}}}
 preview_display_image () {
 	thumbnail_viewer=$1
 	id=$2
 	case $thumbnail_viewer in
 		ueberzug)
+			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 			dep_check "ueberzug" || die 3 "ueberzug is not installed\n"
 			printf '%s\t' \
 				'action' 'add' \
 				'identifier' 'ytfzf' \
 				'path' "$thumb_dir/${id}.jpg" \
-				'x' '2' \
-				'y' '10' \
+				'x' "$x" \
+				'y' "$y" \
 				'scaler' 'fit_contain' \
-				'width' "$((FZF_PREVIEW_COLUMNS))" > "$UEBERZUG_FIFO"
+				'width' "$width" > "$UEBERZUG_FIFO"
 			printf '%s\t%s\n' \
-				'height' "$((FZF_PREVIEW_LINES-10))" > "$UEBERZUG_FIFO"
+				'height' "$height" > "$UEBERZUG_FIFO"
 			;;
 		chafa)
 			printf '\n'
@@ -1041,7 +1081,7 @@ interface_thumbnails () {
 	sort_video_data_fn |
 	fzf -m \
 	--preview "__is_fzf_preview=1 thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
-	--preview-window "left:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
+	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
 	trim_url > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
@@ -1163,6 +1203,7 @@ parse_opt () {
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
+		preview-side) fzf_preview_side="${optarg}"; [ -z "$fzf_preview_side" ] && die 2 "no preview side given\n" ;;
 		thumb-viewer) 
 			if is_relative_dir "$optarg" || command -v "$optarg" > /dev/null 2>&1; then
 				thumbnail_viewer="$optarg"
