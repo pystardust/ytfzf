@@ -1350,6 +1350,7 @@ set -f
 for curr_scrape in $scrape; do
 	#only ask for search if it's empty and scrape isn't something like S or T
 	printf "%s" "$scrape_search_exclude" | grep -Fqv " $curr_scrape " && { [ "$search" = "-" ] || [ -z "$search" ]; } && search_prompt_menu
+	function_exists "on_search" && on_search "$search" "$curr_scrape"
 	scrape_website "$curr_scrape" "$search"
 	handle_scrape_error "$?"
 done

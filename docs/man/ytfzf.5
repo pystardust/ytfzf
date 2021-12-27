@@ -750,6 +750,20 @@ This function takes 4 arguments:
 .EE
 
 .TP
+.BR on_search ()
+This function gets called each time a website is scraped.
+.br
+This function takes 2 arguments:
+.EX
+.I 1
+.ti +4
+    The search query
+.I 2
+.ti +4
+    The current scrape
+.EE
+
+.TP
 .BR handle_custom_keypresses ()
 This function gets called in the internal handle_keypress() function, This function should return 0 to not override the default handle_keypress() function.
 .br
