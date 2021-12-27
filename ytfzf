@@ -956,24 +956,25 @@ function_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left
 	width=$1
 	height=$(($2-10))
 	x=2
-	y=15
+	y=10
 }
 function_exists "get_ueberzug_positioning_right" || get_ueberzug_positioning_right (){
 	width=$1
 	height=$(($2-10))
 	x=$(($1+6))
-	y=15
+	y=10
 }
 function_exists "get_ueberzug_positioning_up" || get_ueberzug_positioning_up (){
 	width=$1
 	height=$(($2-10))
 	x=2
-	y=11
+	y=9
 }
 function_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down (){
 	width=$1
 	height=$(($2-10))
-	y=12
+	#$2*2 goes to the bottom subtracts height, adds padding
+	y=$(($2*2-height+2))
 	x=2
 }
 get_ueberzug_positioning () {
