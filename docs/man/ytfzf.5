@@ -167,6 +167,24 @@ Menu options
 .RS
 
 .TP
+.RB $ fzf_preview_side
+The side to show the preview in fzf.
+.br
+Valid options:
+.RS
+.TP
+.IR left
+.TP
+.IR right
+.TP
+.IR up
+.TP
+.IR down
+.TP
+.RI default: " left"
+.RE
+
+.TP
 .RB $ thumbnail_viewer
 The program to display images for thumbnail previews
 .br
@@ -655,6 +673,58 @@ This function takes no arguments, the relevant variables are listed here:
 .I date
 .I url
 .EE
+.RE
+
+.TP
+.BR get_ueberzug_positioning_left ()
+This function sets the variables, $width, $height, $x, and $y.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is left.
+.br
+This function takes 2 arguments:
+.RS
+.EX
+.I max_width
+.I max_height
+.RE
+
+.TP
+.BR get_ueberzug_positioning_right ()
+This function sets the variables, $width, $height, $x, and $y.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is right.
+.br
+This function takes 2 arguments:
+.RS
+.EX
+.I max_width
+.I max_height
+.RE
+
+.TP
+.BR get_ueberzug_positioning_up ()
+This function sets the variables, $width, $height, $x, and $y.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is up.
+.br
+This function takes 2 arguments:
+.RS
+.EX
+.I max_width
+.I max_height
+.RE
+
+.TP
+.BR get_ueberzug_positioning_down ()
+This function sets the variables, $width, $height, $x, and $y.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is down.
+.br
+This function takes 2 arguments:
+.RS
+.EX
+.I max_width
+.I max_height
 .RE
 
 .RE
