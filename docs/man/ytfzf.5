@@ -1,0 +1,998 @@
+.TH YTFZF 5 "2021 September" "ytfzf 2.0"
+
+.SH NAME
+ytfzf \- the configuration file for \fBytfzf\fR.
+
+.SH SYNOPSIS
+.I ~/.config/ytfzf/conf.sh
+
+.SH DESCRIPTION
+.PP
+The configuration file is a \fI.sh\fR file and can be used as such.
+The file can be completely empty and \fBytfzf\fR will still work with the default settings.
+The options should be set as environment variables and functions.
+
+.SH CONFIGURATION FILES
+.PP
+Configuration files are stored in
+.IR "$XDG_CONFIG_HOME/ytfzf (or $HOME/.config/ytfzf)" .
+
+.SS conf.sh
+.PP
+A shell script that gets sourced into ytfzf when ytfzf is run.
+
+.SS subscriptions
+.PP
+A file that is a list of links to youtube channel's video page, such as:
+.RS
+.EX
+.I https://www.youtube.com/channel/UCtMVHI3AJD4Qk4hcbZnI9ZQ
+.EE
+.RE
+.PP
+If a channel appears similar to "https://www.youtube.com/c/SomeOrdinaryGamers", run
+.br
+ytfzf --channel-link="https://www.youtube.com/c/SomeOrdinaryGamers"
+.br
+Before adding it to your subscriptions file
+.PP
+A comment can be created by having '#comment' on it's own line or after a link.
+For example:
+.RS
+.EX
+.I link-to-channel
+#comment
+.IR link-to-channel " #best channel"
+.EE
+.RE
+
+.SS scrapers
+.PP
+A folder that contains executable files that scrape websites
+See CUSTOM SCRAPERS for more information
+.RE
+
+
+.SH CONFIGURATION OPTIONS
+
+.SS VARIABLES
+
+.PP
+conf.sh is used mainly for setting variables for \fBytfzf\fR.
+If a variable has no default, that means it is set to an empty string.
+
+.PP
+Files and directories
+.RS
+
+.TP
+.RB $ cache_dir
+The directory to store cache files in.
+.br
+It is highly recommended to only change this if $__is_submenu is 0, or funky things could happen
+.br
+.RI default: " $XDG_CACHE_HOME/ytfzf (or $HOME/.cache/ytfzf)"
+
+.TP
+.RB $ hist_file
+The file to write watch history to if $enable_hist is 1
+.br
+It is highly recommended to only change this if $__is_submenu is 0, or funky things could happen
+.br
+.RI default: " $cache_dir/watch_hist"
+
+.TP
+.RB $ ytfzf_selected_urls
+The file to store the ids of selected video(s) in.
+.br
+.RI default: " $cache_dir/urls"
+
+.TP
+.RB $ ytfzf_video_json_file
+The file to store the json data of scraped videos.
+.br
+.RI default: " $cache_dir/videos_json"
+
+.RE
+
+.PP
+How to play the selected videos.
+
+.RS
+
+.TP
+.RB $ is_detach
+Whether or not to detach the video player from the terminal.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ is_audio_only
+Whether or not to only play audio.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ url_handler
+The function/programs to handle the selected videos
+.br
+See URL handlers for a list of builtin url handlers
+.RI default: " multimedia_player"
+
+.TP
+.RB $ yt_video_link_domain
+The domain to play youtube videos from (does not apply to odysee and peertube, or youtube playlists)
+.br
+.RI default: " $invidious_instance"
+
+.TP
+.RB $ info_to_print
+The information to print instead of playing a video.
+The available options for this variable are:
+.RS
+.TP
+.IR L " | " l " | " link
+Print the URL of the selected videos.
+.TP
+.IR VJ " | " vj " | " video\-json
+Prints the json of the selected videos.
+.TP
+.IR J " | " j " | " json
+Prints the json of all the videos in the search results.
+.TP
+.IR F " | " f " | " format
+Prints the video format being used.
+.TP
+.IR R " | " r " | " raw
+Prints the data of the selected videos, as appears in the menu.
+.RE
+
+.TP
+.RB $ exit_on_info_to_print
+Whether or not to exit after printing info requested in $info_to_print.
+.br
+.RI default: " 1"
+
+.TP
+.RB $ video_pref
+The video preference to use for youtube-dl in mpv.
+.br
+.RI default: " best"
+
+.RE
+
+.PP
+Menu options
+
+.RS
+
+.TP
+.RB $ fzf_preview_side
+The side to show the preview in fzf.
+.br
+Valid options:
+.RS
+.TP
+.IR left
+.TP
+.IR right
+.TP
+.IR up
+.TP
+.IR down
+.TP
+.RI default: " left"
+.RE
+
+.TP
+.RB $ thumbnail_viewer
+The program to display images for thumbnail previews
+.br
+Valid options:
+.RS
+.TP
+.IR chafa
+.TP
+.IR chafa-16
+Uses chafa with 16 colors
+.TP
+.IR chafa-tty
+Uses chafa with 4 colors
+.TP
+.IR catimg
+.TP
+.IR catimg-256
+Uses catimg with 256 colors
+.TP
+.IR display
+Uses imagemagick's preview image
+.TP
+.IR w3m
+Uses a workaround to get w3m to work in fzf, may take up a lot of cpu,
+make sure $w3mimgdisplay_path is set to the path to w3mimgdisplay
+.TP
+.IR custom
+Calls the user defined img_display_function()
+.TP
+.RI default: " ueberzug"
+.RE
+
+.TP
+.RB $ w3mimgdisplay_path
+Path to w3mimgdisplay
+.br
+.RI defaut: " /usr/lib/w3m/w3mimgdisplay"
+
+.TP
+.RB $ show_formats
+Whether or not to bring up the format selection menu.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ enable_submenus
+Whether or not to enable submenus,
+.br
+A submenu is a menu that appears after a playlist or channel is selected.
+(Currently only supported with youtube/invidious scraper)
+.RI default: " 1"
+
+.TP
+.RB $ submenu_opts
+Options to use in submenus.
+.RI default: " 1"
+    
+.TP
+.RB $ is_sort
+Whether or not to sort scraped videos by date in the menu
+.RI default: " 0"
+
+.TP
+.RB $ show_thumbnails
+Whether or not to show thumbnails in fzf.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ thumbnail_quality
+Select the quality of the thumbnails.
+Currently only supports youtube
+(uses invidious api).
+.br
+This does not work for the \(aq\fB-cS\fR\(aq scraper as it scrapes youtube not invidious
+(use \(aq\fBSI\fR\(aq instead).
+.br
+For lower internet speeds it is recommended to use default.
+.br
+Available options:
+.RS
+.TP
+.IR maxres
+.TP
+.IR maxresdefault
+.TP
+.IR sddefault
+.TP
+.IR high
+.TP
+.IR medium
+.TP
+.IR default " (default)"
+.TP
+.IR start
+The first frame of the video (low quality)
+.TP
+.IR middle
+The middle frame of the video (low quality)
+.TP
+.IR end
+The end frame of the video (low quality)
+.RE
+.br
+
+.TP
+.RB $ is_loop
+Whether or not to show the menu after the selected videos have stopped playing.
+.br
+.RI default: " 0"
+
+.TP
+.RB $ search_prompt
+The text to display when no search is given.
+.br
+.RI default: " Search: "
+
+.TP
+.RB $ download_shortcut
+The shortcut to download the selected videos.
+.br
+.RI default: " alt-d"
+
+.TP
+.RB $ video_shortcut
+The shortcut to watch the selected videos.
+.br
+.RI default: " alt-v"
+
+.TP
+.RB $ audio_shortcut
+The shortcut to listen to the selected videos.
+.br
+.RI default: " alt-m"
+
+.TP
+.RB $ detach_shortcut
+The shortcut to use the detach player.
+.br
+.RI default: " alt-e"
+
+.TP
+.RB $ print_link_shortcut
+The shortcut to use to print the link.
+.br
+.RI default: " alt-l"
+
+.TP
+.RB $ show_formats_shortcut
+The shortcut to show formats before playing the video.
+.br
+.RI default: " alt-f"
+
+.TP
+.RB $ shortcut_binds
+The keys to listen for in fzf.
+.br
+.RI default: " Enter,double-click,$download_shortcut,$video_shortcut,$detach_shortcut,$print_link_shortcut,$show_formats_shortcut,$custom_shortcut_binds"
+
+.TP
+.RB $ custom_shortcut_binds
+The custom shortcut keys. Automatically appended to $shortcut_binds
+.br
+If $shortcut_binds is set manually, this must also manually be appended.
+
+.RE
+
+.PP
+Auto selecting
+
+.RS
+
+.TP
+.RB $ is_auto_select
+Whether or not to auto select the first \-n videos. (only works if $is_interface_scripting=1)
+.br
+.RI default: " 0"
+
+.TP
+.RB $ is_random_select
+Whether or not to randomly select \-n videos. (only works if $is_interface_scripting=1)
+.br
+.RI default: " 0"
+
+.TP
+.RB $ scripting_video_count
+The amount of videos to get with \-a or \-r.
+.br
+.RI default: " 1"
+
+.RE
+
+.PP
+Scrapers
+
+.RS
+
+.TP
+.RB $ scrape
+The website to scrape by default.
+The currently supported options are:
+.RS
+.TP
+.IR youtube ,
+.TP
+.IR youtube\-trending ,
+.TP
+.IR youtube\-subscriptions ,
+.TP
+.IR peertube ,
+.TP
+.IR odysee / lbry .
+.TP
+.IR youtube-playlist,
+.TP
+.IR youtube-channel,
+.TP
+.IR invidious-channel,
+.TP
+.IR playlist/json-file
+.TP
+.IR history
+.TP
+.IR url
+.PP
+The search will be a path to a json file layed out as described in VIDEO JSON FORMAT
+.br
+.RI default: " youtube"
+.RE
+
+.TP
+.RB $ search_sort_by
+The attribute to sort by when searching.
+.RS
+.TP
+.IR relevance " (default)"
+.TP
+.IR rating
+.TP
+.IR upload_date
+.TP
+.IR view_count
+.RE
+
+.TP
+.RB $ search_upload_date
+Search for videos within the last:
+.RS
+.TP
+.IR hour
+.TP
+.IR today
+.TP
+.IR week
+.TP
+.IR month
+.TP
+.IR year
+.RE
+
+.TP
+.RB $ search_video_duration
+Whether or not to search for long or short videos.
+Possible options:
+.RS
+.TP
+.IR short
+.TP
+.IR long
+.RE
+
+.TP
+.RB $ search_result_type
+The type of results to get.
+.RS
+.TP
+.IR video " (default)"
+.TP
+.IR playlist
+.TP
+.IR channel
+.TP
+.IR all " (may not work on some instances)"
+.RE
+
+.TP
+.RB $ search_result_features
+The features to have on a video (comma seperated).
+.RS
+.TP
+.IR hd
+.TP
+.IR subtitles
+.TP
+.IR creative_commons
+.TP
+.IR 3d
+.TP
+.IR live
+.TP
+.IR 4k
+.TP
+.IR 360
+.TP
+.IR location
+.TP
+.IR hdr
+.RE
+
+.TP
+.RB $ search_region
+The region (country code) to search.
+.RI default: " US"
+
+.TP
+.RB $ invidious_instance
+The instance of invidious to use.
+.br
+.RI default: " https://vid.puffyan.us"
+
+.TP
+.RB $ pages_to_scrape
+The amount of pages to scrape on youtube/invidious.
+.br
+.RI default: " 1"
+
+.TP
+.RB $ odysee_video_search_count
+The amount of videos to scrape on odysee.
+.br
+.RI default: " 30"
+
+.TP
+.RB $ sub_link_count
+The amount of videos to scrape per channel when getting subscriptions.
+.br
+.RI default: " 2"
+
+.RE
+
+.PP
+Misc
+
+.RS
+
+.TP
+.RB $ scrape_search_exclude
+The scrapers to not ask for a search query.
+.br
+Be sure to have a space at the end and beginning of the string.
+.br
+.RI default: " youtube-subscriptions S SI T youtube-trending H history "
+
+.TP
+.RB $ gap_space
+A number of spaces equal to half the width of your terminal
+.br
+.RI default: " 115 spaces"
+
+.TP
+.RB $ enable_hist
+Whether or not to keep track of history
+.br
+.RI default: " 0"
+
+.TP
+.RB $ log_level
+How much debug information to log.
+.RS
+.TP
+.IR 0
+Log everything
+.TP 
+.IR 1
+Log only warnings and errors
+.TP
+.IR 2
+Log only errors
+.TP
+.RI default: " 2"
+.RE
+
+.TP
+.RB $ useragent
+The useragent to use when scraping websites.
+.br
+.RI default: " \(dqMozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36\(dq"
+
+.TP
+.RB $ ytdl_opts
+The command\-line options to pass to youtube\-dl when downloading.
+
+.TP
+.RB $ ytdl_path
+Path to youtube\-dl or a fork of youtube\-dl for downloading.
+.br
+If
+.I yt-dlp
+is installed that will be prefered over
+.I youtube-dl
+.br
+.RI default: " youtube\-dl"
+
+.RE
+
+.PP
+State
+.br
+State values are \fBNOT\fR meant to be modified by the user.
+.RS
+
+.TP
+.RB $ __is_submenu
+Whether or not the script is in a submenu.
+
+.TP
+.RB $ __is_scrape_for_submenu
+Whether or not the script is scraping for a submenu.
+
+.TP
+.RB $ __is_fzf_preview
+Whether or not the script is running to display an fzf preview
+
+.SS FUNCTIONS
+.PP
+Sometimes a variable is not good enough, instead functions should be defined.
+To find the default value of these, check the source code by searching for
+.IR "function_exists \(dq<function_you_are_looking_for>\(dq" .
+
+.PP 
+Menu related functions
+.RS
+
+.TP
+.BR external_menu ()
+When $\fBinterface\fR is \fIext_menu\fR, call this function instead of fzf.
+.br
+This function takes 1 argument, a prompt string.
+
+.TP
+.BR get_sort_by ()
+This function is called to get the value to sort by when $\fBis_sort\fR is \fI1\fR.
+.br
+This function takes in a line in the form of
+.IR "\(dqtitle    |channel    |duration    |views    |date    |id\(dq" .
+
+.TP
+.BR data_sort_fn ()
+This function sorts the data that is being piped into it.
+.br
+This function takes no arguments, all data is piped into it.
+
+.BR video_info_text ()
+This function prints the text for the selection menu.
+.br
+Must end with a new line,
+.br
+The url must be the last thing printed.
+.br
+This function takes no arguments, the relevant variables are listed here:
+.RS
+.EX
+.I title
+.I channel
+.I duration
+.I views
+.I date
+.I url
+.EE
+It is recommended to check the script to see how each thing is printed.
+.RE
+
+.TP
+.BR thumbnail_video_info_text ()
+This function prints text in the preview area of fzf when thumbnails are enabled.
+.br
+Everything can be printed however you like.
+.br
+This function takes no arguments, the relevant variables are listed here:
+.RS
+.EX
+.I title
+.I channel
+.I duration
+.I views
+.I date
+.I url
+.EE
+.RE
+
+.TP
+.BR get_ueberzug_positioning_left ()
+This function sets the variables, $width, $height, $x, and $y.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is left.
+.br
+This function takes 2 arguments:
+.RS
+.EX
+.I max_width
+.I max_height
+.RE
+
+.TP
+.BR get_ueberzug_positioning_right ()
+This function sets the variables, $width, $height, $x, and $y.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is right.
+.br
+This function takes 2 arguments:
+.RS
+.EX
+.I max_width
+.I max_height
+.RE
+
+.TP
+.BR get_ueberzug_positioning_up ()
+This function sets the variables, $width, $height, $x, and $y.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is up.
+.br
+This function takes 2 arguments:
+.RS
+.EX
+.I max_width
+.I max_height
+.RE
+
+.TP
+.BR get_ueberzug_positioning_down ()
+This function sets the variables, $width, $height, $x, and $y.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is down.
+.br
+This function takes 2 arguments:
+.RS
+.EX
+.I max_width
+.I max_height
+.RE
+
+.RE
+
+.PP 
+URL handlers
+.RS
+.PP
+A URL handler is a function that handles the urls given,
+.br
+URL handlers should take into account these modifier values, 
+.B $video_pref ", "
+.B $is_audio_only ", "
+and
+.B $is_detach
+.PP
+Modifier variables will be piped into a URL handler to allow for URL handlers to be written in any language.
+.br
+They will be piped in the order shown above seperated by spaces.
+
+.TP
+.BR multimedia_player ()
+The handler that is called by default.
+.br
+This function opens either video_player() or audio_player() depending on whether or not
+.br
+$is_audio_only (\-m) is enabled.
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+.BR video_player ()
+Plays the urls with a video player
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+.BR audio_player ()
+Plays the urls with an audio player
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.TP
+.BR downloader ()
+Downloads the urls
+.br
+This function takes in an unlimited amount of arguments, each of which is a link to a video.
+
+.RE
+
+.PP
+Misc
+
+.RS
+
+.TP
+.BR img_display_function ()
+This function displays the currently selected video's thumbnail in fzf.
+.br
+This function takes 3 arguments:
+.RS
+.TP
+.IR 1
+Path to the image to display
+.TP
+.IR 2
+Maximum width
+.TP
+.IR 3
+Maximum height
+.RE
+
+.TP
+.BR on_opt_parse ()
+This function gets called after an option is parsed, and sets variables based the options passed into it.
+.br
+This function takes 4 arguments:
+.EX
+.I 1
+.ti +4
+    The current option being parsed
+.I 2
+.ti +4
+    The current option argument being parsed
+.I 3
+.ti +4
+    The unmodified option being parsed.
+.ti +4
+    For an option such as \-a, this value will be the same as $1.
+.ti +4
+    However, for every \-\-long\-option this value will be "\-".
+.I 4
+.ti +4
+    The unmodified option argument being parsed.
+.ti +4
+    For an option such as \-c S, this value will be the same as $2.
+.ti +4
+    However, for every \-\-long\-option=value, this value will be \-long\-option=value.
+.EE
+
+.TP
+.BR on_search ()
+This function gets called each time a website is scraped.
+.br
+This function takes 2 arguments:
+.EX
+.I 1
+.ti +4
+    The search query
+.I 2
+.ti +4
+    The current scrape
+.EE
+
+.TP
+.BR handle_custom_keypresses ()
+This function gets called in the internal handle_keypress() function, This function should return 0 to not override the default handle_keypress() function.
+.br
+This function takes 1 argument:
+.EX
+.I 1
+.ti +4
+    The key pressed.
+.EE
+
+.TP
+.BR handle_custom_action ()
+This function is called when an unknown action (as described in VIDEO JSON FORMAT) is given.
+.br
+This function takes 1 argument:
+.EX
+.I
+.ti +4
+    The action.
+.EE
+
+.RE
+
+.SH VIDEO JSON FORMAT
+.PP
+This is the format used for playlists, and custom scrapers.
+.br
+Videos should be objects in a list.
+.PP
+Required object keys:
+.EX
+.RE
+ID (string): a unique id to the video
+url (string): the url to the video
+title (string): the title of the video
+.EE
+.RE
+.PP
+.RS
+.EX
+thumbs (string): a url to a thumbnail/image
+channel (string): the channel name
+duration (string): length of the video (standard: [HH:]MM:SS)
+views (string): amount of views a video has
+date (string): upload date (standard: date is relative to current day, eg: 3 days ago)
+action (string): an action in the format of "action [key=value key2=value2...]"
+.EE
+.RE
+.PP
+Example JSON:
+.EX
+[
+    {
+	"ID": "dQw4w9WgXcQ",
+	"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+	"title": "definitely not never gonna give you up"
+    }
+]
+.EE
+
+
+.SH PLAYLISTS
+.PP
+A playlist is a json file in the format of VIDEO JSON FORMAT,
+To easily get the formated json for a video, run
+.I "ytfzf -I VJ <search"
+
+
+.SH CUSTOM SCRAPERS
+.PP
+Custom scrapers are programs located in $YTFZF_CUSTOM_SCRAPERS_DIR.
+.br
+To customize some behavior of the scraper see CUSTOM SCRAPER CONFIG
+.RE
+.PP
+A custom scraper will take the search query as the first argument to the program
+.br
+The second argument will be a path to the file to store the final JSON of the scraped content.
+.PP
+The JSON should be structured as described in VIDEO JSON FORMAT
+.br
+The final JSON shall be
+.B APPENDED
+to the file given as an argument.
+.PP
+A custom scraper can be written in any programming language so long as the file can be run as a normal command
+.RE
+
+.SH CUSTOM SCRAPER CONFIG
+.PP
+To customize some behavior of a scraper create a file named <scraper-name>.conf. (replace <scraper-name> with the name of the scraper)
+.br
+This file would also be located in $YTFZF_CUSTOM_SCRAPER_DIR.
+.PP
+The syntax of this file is as such:
+.RS
+.EX
+key: value
+key2: value2
+.EE
+.RE
+There are no quotations around anything.
+
+.SS CUSTOM SCRAPER CONFIG OPTIONS
+.PP
+Options to use as keys in <scraper-name>.conf
+.TP
+.RB vars
+The variables to pass into the scraper after the search and json file path.
+.br
+Example:
+.RS
+.EX
+vars: $is_auto_select $is_sort
+.EE
+This will make the 3rd argument the value of $is_auto_select, and the 4th $is_sort
+.RE
+
+.SH CUSTOM INTERFACES
+.PP
+Custom interfaces are programs located in $YTFZF_CUSTOM_INTERFACES_DIR.
+.br
+To customize some behavior of the interface see CUSTOM INTERFACE CONFIG
+.RE
+.PP
+A custom interface will take a path to the json file holding all data about all the videos as the first argument.
+.br
+The second argument will be a path to a file to store the selected url in, separated by new lines.
+
+.SH CUSTOM INTERFACE CONFIG
+.PP
+Similar to CUSTOM SCRAPERS, some behavior of an interface can be changed in <interface-name>.conf
+.br
+This file should also be in $YTFZF_CUSTOM_INTERFACES_DIR.
+.PP
+The syntax is the same as CUSTOM SCRAPER CONFIG
+
+.SS CUSTOM INTERFACE CONFIG OPTIONS
+.TP
+.RB vars
+The variabels to pass into the interface after the 2 file paths.
+.br
+Example:
+.RS
+.EX
+vars: $show_thumbnails $is_sort
+.EE
+This will make the 3rd argument the value of $show_thumbnails, and the 4th, $is_sort
+
+.SH THUMBNAIL VIEWERS
+Custom thumbnail viewers are programs in $YTFZF_THUMBNAIL_VIEWERS_DIR.
+The first argument will be the action, there are 3 actions, start, stop, view
+.br
+The second argument will be the max width (in columns)
+.br
+The third argument will be the max height (in coumns)
