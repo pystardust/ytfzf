@@ -66,6 +66,8 @@ sudo make
 
 * ytfzf may be in some repositories, such as the AUR, however the above way is the recommended way to install.
 
+---
+
 # Features
 
 * Subscriptions
@@ -73,6 +75,8 @@ sudo make
 * Watch history
 * Downloading
 * Queueing multiple videos
+
+---
 
 # Examples
 
@@ -100,12 +104,16 @@ ytfzf -L <search>
 ytfzf -cO <search>
 ```
 
+---
+
 # Todo
 
 * [ ] Playlists
 * [ ] More sites
 * [x] Subscriptions
 * [x] Thumbnails
+
+---
 
 # Bugs
 
