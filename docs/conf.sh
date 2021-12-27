@@ -5,15 +5,45 @@
 # as everyone used the default configuration file.
 # we are now going to only have this sample config file, and the ytfzf(5) manual, which has explanation of every variable and function that can be set.
 
+#a sample config below:
 
 #Variables {{{
-video_pref="248+bestaudio/best"
-yt_thumbnail_quality=maxres
-sub_link_count=1
-#}}}
+#video_pref="248+bestaudio/best"
+##scrape 1 video link per channel instead of the default 2
+#sub_link_count=1
+#show_thumbnails=1
+##}}}
+#
+##Functions {{{
+#external_menu () {
+#    #use rofi instead of dmenu
+#    rofi -dmenu -width 1500 -p "$1"
+#}
 
-#Functions {{{
-external_menu () {
-    rofi -dmenu -width 1500 -p "$1"
-}
+#use vlc instead of mpv
+#video_player () {
+#    #this function does not take video_pref into account, as vlc has no option (that i know of) to change it
+#    notify_info "Playing $# video(s)"
+#    #check if detach is enabled
+#    case "$is_detach" in
+#	#disabled
+#	0) vlc "$@" ;;
+#	#enabled
+#	1) setsid -f vlc "$@" > /dev/null 2>&1 ;;
+#    esac
+#}
+
+#on_opt_parse () {
+#    opt="$1"
+#    arg="$2"
+#    case "$opt" in
+#	#-c
+#	c)
+#	    #when scraping subscriptions enable -l
+#	    #-cSI or -cS
+#	    case "$arg" in
+#		S|SI) is_loop=1 ;;
+#	    esac
+#    esac
+#}
 #}}}
