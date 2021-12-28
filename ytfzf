@@ -707,7 +707,11 @@ scrape_odysee () {
 		oldest_first) search_sort_by="^release_time" ;;
 		relevance) search_sort_by="" ;;
 	esac
-
+	case "$search_upload_date" in
+		week|month|year) search_upload_date="this${search_upload_date}" ;;
+		day) search_upload_date="today" ;;
+	esac
+	
 	# TODO: filters
 	if [ -n "$search_sort_by" ]; then
 		_get_request "https://lighthouse.lbry.com/search" -G \
@@ -715,12 +719,14 @@ scrape_odysee () {
 		    --data-urlencode "mediaType=video,audio" \
 		    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
 		    --data-urlencode "sort_by=$search_sort_by" \
+		    --data-urlencode "time_filter=$search_upload_date" \
 		    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json" || return "$?"
 	else
 		_get_request "https://lighthouse.lbry.com/search" -G \
 		    --data-urlencode "s=$page_query" \
 		    --data-urlencode "mediaType=video,audio" \
 		    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
+		    --data-urlencode "time_filter=$search_upload_date" \
 		    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json" || return "$?"
 
 	fi
