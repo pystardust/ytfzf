@@ -200,7 +200,7 @@ Scrapers
 .TP
 .BI \-c " scrapers" ", " "\-\-scrape=scrapers"
 Set which scraper to use.
-Multiple scrapers can be seperated by ,
+Multiple scrapers can be separated by ,
 The currently supported builtin scrapers are:
 .RS
 .TP
@@ -296,7 +296,9 @@ This can also be set in the config file with
 .BR nsfw .
 .TP
 .BI "\-\-sort\-by=sort"
-Works with youtube/Y and odysee/O
+Works with youtube/Y and odysee/O.
+.br
+To use a different sort for each scrape, use a "," to separate the sorts.
 .br
 As apposed to \-\-sort, this happens during the serach, not after.
 Results should sort by:
@@ -315,6 +317,8 @@ Results should sort by:
 .TP
 .BI "\-\-upload\-date=time\-frame"
 Works with, youtube/Y and odysee/O
+.br
+To use a different sort for each scrape, use a "," to separate the dates.
 .br
 Search for videos within the last:
 .RS
@@ -381,7 +385,7 @@ The end frame of the video (low quality)
 .RE
 .TP
 .BI "\-\-features=features"
-The features to have on a video (comma seperated).
+The features to have on a video (comma separated).
 .RS
 .TP
 .IR hd

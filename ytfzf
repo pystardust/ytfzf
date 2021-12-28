@@ -1413,11 +1413,26 @@ scrape_website () {
 	return $rv
 }
 
+total_search_sort_by="$search_sort_by"
+total_search_upload_date="$search_upload_date"
+
+manage_multi_filters () {
+	[ -n "$total_search_sort_by" ] && {
+		search_sort_by="${total_search_sort_by%%,*}"
+		total_search_sort_by="${total_search_sort_by#*,}"
+	}
+	[ -n "$total_search_upload_date" ] && {
+		search_upload_date="${total_serach_upload_date%%,*}"
+		total_search_upload_date="${total_search_upload_date#*,}"
+	}
+}
+
 IFS=","
 set -f
 for curr_scrape in $scrape; do
 	#only ask for search if it's empty and scrape isn't something like S or T
 	printf "%s" "$scrape_search_exclude" | grep -Fqv " $curr_scrape " && { [ "$search" = "-" ] || [ -z "$search" ]; } && search_prompt_menu
+	manage_multi_filters
 	function_exists "on_search" && on_search "$search" "$curr_scrape"
 	scrape_website "$curr_scrape" "$search"
 	handle_scrape_error "$?"
