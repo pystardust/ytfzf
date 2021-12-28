@@ -696,6 +696,7 @@ scrape_peertube () {
 ## Odysee {{{
 scrape_odysee () {
 	page_query=$1
+	[ "${#page_query}" -le 2 ] && die 4 "Odysee searches must be 3 or more characters\n"
 	output_json_file=$2
 	print_info "Scraping Odysee ($page_query)\n"
 
