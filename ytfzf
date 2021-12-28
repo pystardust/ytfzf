@@ -719,7 +719,7 @@ scrape_odysee () {
 		0) nsfw=false ;;
 	esac
 	
-	# TODO: filters
+	#this if is because when search_sort_by is empty, it breaks lighthouse
 	if [ -n "$search_sort_by" ]; then
 		_get_request "https://lighthouse.lbry.com/search" -G \
 		    --data-urlencode "s=$page_query" \
@@ -1417,6 +1417,7 @@ total_search_sort_by="$search_sort_by"
 total_search_upload_date="$search_upload_date"
 
 manage_multi_filters () {
+	#if this is empty search_sort_by will be set to empty which isn't what we want
 	[ -n "$total_search_sort_by" ] && {
 		search_sort_by="${total_search_sort_by%%,*}"
 		total_search_sort_by="${total_search_sort_by#*,}"
