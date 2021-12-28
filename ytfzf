@@ -1257,7 +1257,7 @@ shift $((OPTIND-1))
 #}}}
 
 # Get search{{{
-search="$*"
+: "${search:=$*}"
 #}}}
 
 # Sessions {{{
