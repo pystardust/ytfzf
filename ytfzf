@@ -702,19 +702,35 @@ scrape_odysee () {
 
 	_tmp_json="${session_temp_dir}/odysee.json"
 
-	# TODO: filters
-	_get_request "https://lighthouse.lbry.com/search" -G \
-	    --data-urlencode "s=$page_query" \
-	    --data-urlencode "mediaType=video,audio" \
-	    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
-	    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json" || return "$?"
+	case "$search_sort_by" in
+		upload_date|newest_first) search_sort_by="release_time" ;;
+		oldest_first) search_sort_by="^release_time" ;;
+		relevance) search_sort_by="" ;;
+	esac
 
+	# TODO: filters
+	if [ -n "$search_sort_by" ]; then
+		_get_request "https://lighthouse.lbry.com/search" -G \
+		    --data-urlencode "s=$page_query" \
+		    --data-urlencode "mediaType=video,audio" \
+		    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
+		    --data-urlencode "sort_by=$search_sort_by" \
+		    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json" || return "$?"
+	else
+		_get_request "https://lighthouse.lbry.com/search" -G \
+		    --data-urlencode "s=$page_query" \
+		    --data-urlencode "mediaType=video,audio" \
+		    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
+		    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json" || return "$?"
+
+	fi
+	#select(.duration != null) selects videos that aren't live, there is no .is_live key
 	jq '
 	def pad_left(n; num):
 		num | tostring |
 			if (n > length) then ((n - length) * "0") + (.) else . end
 		;
-	[ .[] |
+	[ .[] |select(.duration != null) |
 	    {
 			ID: .claimId,
 			title: .title,
@@ -726,7 +742,6 @@ scrape_odysee () {
 			date: .cq_created_at
 	    }
 	]' < "$_tmp_json" >> "$output_json_file" 
-	# TODO:  error handling 2 character
 
 }
 ## }}}
