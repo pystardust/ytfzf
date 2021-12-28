@@ -1426,6 +1426,8 @@ manage_multi_filters () {
 		search_upload_date="${total_serach_upload_date%%,*}"
 		total_search_upload_date="${total_search_upload_date#*,}"
 	}
+	#for custom scrapers
+	function_exists "manage_multi_custom_filters" && manage_multi_custom_filters
 }
 
 IFS=","
