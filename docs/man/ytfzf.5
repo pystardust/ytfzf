@@ -922,9 +922,18 @@ To easily get the formated json for a video, run
 
 .SH CUSTOM SCRAPERS
 .PP
-Custom scrapers are programs located in $YTFZF_CUSTOM_SCRAPERS_DIR.
+Custom scrapers shell scripts located in $YTFZF_CUSTOM_SCRAPERS_DIR.
 .br
-To customize some behavior of the scraper see CUSTOM SCRAPER CONFIG
+A scraper is responsible for scraping videos from a website and APPENDING them to "$ytfzf_video_json_file".
+.br
+The shell script must be the same shell as your /bin/sh.
+.br
+In addition, the script must also define the function
+.I interface_<name_of_interface>
+.br
+With _ replacing \-.
+.br
+This function could handle everything itself, or call another program written in any language to handle it.
 .RE
 .PP
 A custom scraper will take the search query as the first argument to the program
@@ -936,70 +945,27 @@ The JSON should be structured as described in VIDEO JSON FORMAT
 The final JSON shall be
 .B APPENDED
 to the file given as an argument.
-.PP
-A custom scraper can be written in any programming language so long as the file can be run as a normal command
-.RE
-
-.SH CUSTOM SCRAPER CONFIG
-.PP
-To customize some behavior of a scraper create a file named <scraper-name>.conf. (replace <scraper-name> with the name of the scraper)
-.br
-This file would also be located in $YTFZF_CUSTOM_SCRAPER_DIR.
-.PP
-The syntax of this file is as such:
-.RS
-.EX
-key: value
-key2: value2
-.EE
-.RE
-There are no quotations around anything.
-
-.SS CUSTOM SCRAPER CONFIG OPTIONS
-.PP
-Options to use as keys in <scraper-name>.conf
-.TP
-.RB vars
-The variables to pass into the scraper after the search and json file path.
-.br
-Example:
-.RS
-.EX
-vars: $is_auto_select $is_sort
-.EE
-This will make the 3rd argument the value of $is_auto_select, and the 4th $is_sort
 .RE
 
 .SH CUSTOM INTERFACES
 .PP
-Custom interfaces are programs located in $YTFZF_CUSTOM_INTERFACES_DIR.
+Custom interfaces are shell scripts located in $YTFZF_CUSTOM_INTERFACES_DIR.
 .br
-To customize some behavior of the interface see CUSTOM INTERFACE CONFIG
+An interface is responsible for letting the user pick a video from "$ytfzf_video_json_file", then writing the url(s) to "$ytfzf_selected_urls"
+.br
+The shell script must be the same shell as your /bin/sh.
+.br
+In addition, the script must also define the function
+.I interface_<name_of_interface>
+.br
+With _ replacing \-.
+.br
+This function could handle everything itself, or call another program written in any language to handle it.
 .RE
 .PP
-A custom interface will take a path to the json file holding all data about all the videos as the first argument.
+interface_<name_of_interface> will take a path to the json file holding all data about all the videos as the first argument.
 .br
 The second argument will be a path to a file to store the selected url in, separated by new lines.
-
-.SH CUSTOM INTERFACE CONFIG
-.PP
-Similar to CUSTOM SCRAPERS, some behavior of an interface can be changed in <interface-name>.conf
-.br
-This file should also be in $YTFZF_CUSTOM_INTERFACES_DIR.
-.PP
-The syntax is the same as CUSTOM SCRAPER CONFIG
-
-.SS CUSTOM INTERFACE CONFIG OPTIONS
-.TP
-.RB vars
-The variabels to pass into the interface after the 2 file paths.
-.br
-Example:
-.RS
-.EX
-vars: $show_thumbnails $is_sort
-.EE
-This will make the 3rd argument the value of $show_thumbnails, and the 4th, $is_sort
 
 .SH THUMBNAIL VIEWERS
 Custom thumbnail viewers are programs in $YTFZF_THUMBNAIL_VIEWERS_DIR.
