@@ -956,24 +956,25 @@ function_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left
 	width=$1
 	height=$(($2-10))
 	x=2
-	y=15
+	y=10
 }
 function_exists "get_ueberzug_positioning_right" || get_ueberzug_positioning_right (){
 	width=$1
 	height=$(($2-10))
 	x=$(($1+6))
-	y=15
+	y=10
 }
 function_exists "get_ueberzug_positioning_up" || get_ueberzug_positioning_up (){
 	width=$1
 	height=$(($2-10))
 	x=2
-	y=11
+	y=9
 }
 function_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down (){
 	width=$1
 	height=$(($2-10))
-	y=12
+	#$2*2 goes to the bottom subtracts height, adds padding
+	y=$(($2*2-height+2))
 	x=2
 }
 get_ueberzug_positioning () {
@@ -1178,6 +1179,7 @@ parse_opt () {
 	#for some reason optarg may equal opt intentionally,
 	#this checks the unmodified optarg, which will only be equal if there is no = sign
 	[ "$opt" = "$OPTARG" ] && optarg=""
+	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG" || return 0
 	case $opt in
 		h|help) usage; exit 0 ;;
 		D|external-menu) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface='ext_menu' ;;
@@ -1228,9 +1230,9 @@ parse_opt () {
 		url-handler) url_handler="${optarg:-multimedia_player}" ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts) submenu_opts="${optarg:-1}" ;;
-		*) [ "$OPT" = "-" ] && print_info "$0: illegal long option -- $opt\n" ;;
+		*) 
+			[ "$OPT" = "-" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
-	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
 
 while getopts "ac:dfhlmn:rtvxADHI:LTU${long_opt_char}:" OPT; do
@@ -1256,7 +1258,7 @@ shift $((OPTIND-1))
 #}}}
 
 # Get search{{{
-search="$*"
+: "${search:=$*}"
 #}}}
 
 # Sessions {{{

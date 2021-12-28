@@ -591,6 +591,17 @@ is installed that will be prefered over
 .RE
 
 .PP
+Option Parsing
+
+.RS
+
+.TP
+.RB $ long_opt_char
+The char to use for long opts.
+.br
+.RI default: " \-"
+
+.PP
 State
 .br
 State values are \fBNOT\fR meant to be modified by the user.
@@ -800,6 +811,7 @@ Maximum height
 .TP
 .BR on_opt_parse ()
 This function gets called after an option is parsed, and sets variables based the options passed into it.
+A non 0 exit code will override the default behavior of a specific option.
 .br
 This function takes 4 arguments:
 .EX
