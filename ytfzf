@@ -1372,22 +1372,9 @@ scrape_website () {
 			;;
                 *)
                         #custom scrapers {{{
-
-			# Config parsing {{{
-			set --
-			[ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type.conf" ] && {
-				custom_scraper_variables="$(sed '/^vars:/s/^vars: //' "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}.conf")"
-				#this sets each variable's value (even with spaces) to it's own field
-				IFS=' '
-				for var in $(printf "%s " $custom_scraper_variables); do
-					set -- "$@" "$(IFS= eval printf $var)"
-				done
-				unset var
-			}
-			#}}}
-
 			#if the file doesn't exist, it will exit with code 127
-			"${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" "$search" "$ytfzf_video_json_file" "$@"
+			. "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}"
+			scrape_$(printf "%s" "$scrape_type" | sed 's/-/_/g') "$search" "$ytfzf_video_json_file"
                         #}}}
 	esac
 	rv="$?"
@@ -1427,17 +1414,8 @@ while :; do
 		 "") interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 		 *) 
 			 # custom interfaces {{{
-			 #incase there are no extra variables wanted
-			 set --
-			 [ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$interface.conf" ] && {
-				custom_interface_variables="$(sed '/^vars:/s/^vars: //' "${YTFZF_CUSTOM_SCRAPERS_DIR}/${interface}.conf")"
-			 	IFS=' '
-				for var in $(printf "%s " $custom_interface_variables); do
-					set -- "$@" "$(IFS= eval printf $var)"
-				done
-				unset var
-			 }
-			 "$YTFZF_CUSTOM_INTERFACE_DIR/$interface" "$ytfzf_video_json_file" "$ytfzf_selected_urls" "$@";;
+			 . "$YTFZF_CUSTOM_INTERFACE_DIR/$interface"
+			 interface_$(printf "%s" "$interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 			 #}}}
 	esac
 	handle_actions < "$ytfzf_selected_urls"
