@@ -601,14 +601,6 @@ The char to use for long opts.
 .br
 .RI default: " \-"
 
-.TP
-.RB $ print_illegal_long_opts
-Whether or not to say when there is an illegal \-\-long\-opt
-.br
-Note that for each option that is parsed, this will be set back to 1.
-.br
-.RI default: " 1"
-
 .PP
 State
 .br
@@ -819,7 +811,7 @@ Maximum height
 .TP
 .BR on_opt_parse ()
 This function gets called after an option is parsed, and sets variables based the options passed into it.
-It is also recommended to set $print_illegal_long_opts to 0 each time this function is successful.
+A non 0 exit code will override the default behavior of a specific option.
 .br
 This function takes 4 arguments:
 .EX
