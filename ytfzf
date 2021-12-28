@@ -136,7 +136,7 @@ dep_check "jq" || die 3 "jq is a required dependancy, please install it\n"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
 : "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
 : "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
-: "${YTFZF_CUSTOM_INTERFACE_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
+: "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
 
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 #}}}
@@ -1372,9 +1372,8 @@ scrape_website () {
 			;;
                 *)
                         #custom scrapers {{{
-			#if the file doesn't exist, it will exit with code 127
-			. "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}"
-			scrape_$(printf "%s" "$scrape_type" | sed 's/-/_/g') "$search" "$ytfzf_video_json_file"
+			[ -f "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" ] && . "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" || return 127
+			scrape_$(printf "%s" "$scrape_type" | sed 's/-/_/g') "$search" "$ytfzf_video_json_file" || return "$?"
                         #}}}
 	esac
 	rv="$?"
@@ -1414,7 +1413,7 @@ while :; do
 		 "") interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 		 *) 
 			 # custom interfaces {{{
-			 . "$YTFZF_CUSTOM_INTERFACE_DIR/$interface"
+			 [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface" || die 2 "interface: \"$interface\" does not exist\n"
 			 interface_$(printf "%s" "$interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 			 #}}}
 	esac
