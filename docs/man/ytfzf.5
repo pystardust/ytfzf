@@ -422,11 +422,13 @@ The attribute to sort by when searching.
 .TP
 .IR relevance " (default)"
 .TP
-.IR rating
+.IR rating " (youtube only)"
 .TP
 .IR upload_date
 .TP
-.IR view_count
+.IR oldest_first " (odysee only)"
+.TP
+.IR view_count " (youtbe only)"
 .RE
 
 .TP
@@ -469,6 +471,12 @@ The type of results to get.
 .TP
 .IR all " (may not work on some instances)"
 .RE
+
+.TP
+.RB $ nsfw
+Whether or not to search for nsfw videos in odysee/O.
+.br
+.RI default: " false"
 
 .TP
 .RB $ search_result_features
