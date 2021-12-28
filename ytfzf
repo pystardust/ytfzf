@@ -258,6 +258,7 @@ function_exists "downloader" || downloader () {
 
 # option parsing
 : "${long_opt_char:=-}"
+: "${print_illegal_long_opts:=1}"
 
 # scrape
 : "${scrape=youtube}"
@@ -1229,9 +1230,11 @@ parse_opt () {
 		url-handler) url_handler="${optarg:-multimedia_player}" ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts) submenu_opts="${optarg:-1}" ;;
-		*) [ "$OPT" = "-" ] && print_info "$0: illegal long option -- $opt\n" ;;
+		*) 
+			function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
+			[ "$OPT" = "-" ] && [ $print_illegal_long_opts -eq 1 ] && print_info "$0: illegal long option -- $opt\n"
+			print_illegal_long_opts=1 ;;
 	esac
-	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG"
 }
 
 while getopts "ac:dfhlmn:rtvxADHI:LTU${long_opt_char}:" OPT; do

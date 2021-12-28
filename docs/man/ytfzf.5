@@ -591,6 +591,25 @@ is installed that will be prefered over
 .RE
 
 .PP
+Option Parsing
+
+.RS
+
+.TP
+.RB $ long_opt_char
+The char to use for long opts.
+.br
+.RI default: " \-"
+
+.TP
+.RB $ print_illegal_long_opts
+Whether or not to say when there is an illegal \-\-long\-opt
+.br
+Note that for each option that is parsed, this will be set back to 1.
+.br
+.RI default: " 1"
+
+.PP
 State
 .br
 State values are \fBNOT\fR meant to be modified by the user.
@@ -800,6 +819,7 @@ Maximum height
 .TP
 .BR on_opt_parse ()
 This function gets called after an option is parsed, and sets variables based the options passed into it.
+It is also recommended to set $print_illegal_long_opts to 0 each time this function is successful.
 .br
 This function takes 4 arguments:
 .EX
