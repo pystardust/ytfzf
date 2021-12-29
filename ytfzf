@@ -136,7 +136,7 @@ dep_check "jq" || die 3 "jq is a required dependancy, please install it\n"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
 : "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
 : "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
-: "${YTFZF_CUSTOM_INTERFACE_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
+: "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
 
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 #}}}
@@ -275,6 +275,8 @@ function_exists "downloader" || downloader () {
 : "${search_result_type:=video}"
 : "${search_result_features=}"
 : "${search_region:=US}"
+
+: "${nsfw:=false}"
 
 : "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history }"
 
@@ -696,24 +698,54 @@ scrape_peertube () {
 ## Odysee {{{
 scrape_odysee () {
 	page_query=$1
+	[ "${#page_query}" -le 2 ] && die 4 "Odysee searches must be 3 or more characters\n"
 	output_json_file=$2
 	print_info "Scraping Odysee ($page_query)\n"
 
 	_tmp_json="${session_temp_dir}/odysee.json"
 
-	# TODO: filters
-	_get_request "https://lighthouse.lbry.com/search" -G \
-	    --data-urlencode "s=$page_query" \
-	    --data-urlencode "mediaType=video,audio" \
-	    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
-	    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json" || return "$?"
+	case "$search_sort_by" in
+		upload_date|newest_first) search_sort_by="release_time" ;;
+		oldest_first) search_sort_by="^release_time" ;;
+		relevance) search_sort_by="" ;;
+	esac
+	case "$search_upload_date" in
+		week|month|year) search_upload_date="this${search_upload_date}" ;;
+		day) search_upload_date="today" ;;
+	esac
 
+	case "$nsfw" in
+		1) nsfw=true ;;
+		0) nsfw=false ;;
+	esac
+	
+	#this if is because when search_sort_by is empty, it breaks lighthouse
+	if [ -n "$search_sort_by" ]; then
+		_get_request "https://lighthouse.lbry.com/search" -G \
+		    --data-urlencode "s=$page_query" \
+		    --data-urlencode "mediaType=video,audio" \
+		    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
+		    --data-urlencode "sort_by=$search_sort_by" \
+		    --data-urlencode "time_filter=$search_upload_date" \
+		    --data-urlencode "nsfw=$nsfw" \
+		    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json" || return "$?"
+	else
+		_get_request "https://lighthouse.lbry.com/search" -G \
+		    --data-urlencode "s=$page_query" \
+		    --data-urlencode "mediaType=video,audio" \
+		    --data-urlencode "include=channel,title,thumbnail_url,duration,cq_created_at,description,view_cnt" \
+		    --data-urlencode "time_filter=$search_upload_date" \
+		    --data-urlencode "nsfw=$nsfw" \
+		    --data-urlencode "size=$odysee_video_search_count" > "$_tmp_json" || return "$?"
+
+	fi
+	#select(.duration != null) selects videos that aren't live, there is no .is_live key
 	jq '
 	def pad_left(n; num):
 		num | tostring |
 			if (n > length) then ((n - length) * "0") + (.) else . end
 		;
-	[ .[] |
+	[ .[] |select(.duration != null) |
 	    {
 			ID: .claimId,
 			title: .title,
@@ -725,7 +757,6 @@ scrape_odysee () {
 			date: .cq_created_at
 	    }
 	]' < "$_tmp_json" >> "$output_json_file" 
-	# TODO:  error handling 2 character
 
 }
 ## }}}
@@ -1179,7 +1210,7 @@ parse_opt () {
 	#for some reason optarg may equal opt intentionally,
 	#this checks the unmodified optarg, which will only be equal if there is no = sign
 	[ "$opt" = "$OPTARG" ] && optarg=""
-	function_exists "on_opt_parse" && on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG" || return 0
+	function_exists "on_opt_parse" && { on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG" || return 0; }
 	case $opt in
 		h|help) usage; exit 0 ;;
 		D|external-menu) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface='ext_menu' ;;
@@ -1230,6 +1261,7 @@ parse_opt () {
 		url-handler) url_handler="${optarg:-multimedia_player}" ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts) submenu_opts="${optarg:-1}" ;;
+		nsfw)  nsfw="${optarg:-true}" ;;
 		*) 
 			[ "$OPT" = "-" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
@@ -1372,22 +1404,8 @@ scrape_website () {
 			;;
                 *)
                         #custom scrapers {{{
-
-			# Config parsing {{{
-			set --
-			[ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$scrape_type.conf" ] && {
-				custom_scraper_variables="$(sed '/^vars:/s/^vars: //' "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}.conf")"
-				#this sets each variable's value (even with spaces) to it's own field
-				IFS=' '
-				for var in $(printf "%s " $custom_scraper_variables); do
-					set -- "$@" "$(IFS= eval printf $var)"
-				done
-				unset var
-			}
-			#}}}
-
-			#if the file doesn't exist, it will exit with code 127
-			"${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" "$search" "$ytfzf_video_json_file" "$@"
+			[ -f "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" ] && . "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" || return 127
+			scrape_$(printf "%s" "$scrape_type" | sed 's/-/_/g') "$search" "$ytfzf_video_json_file" || return "$?"
                         #}}}
 	esac
 	rv="$?"
@@ -1395,11 +1413,29 @@ scrape_website () {
 	return $rv
 }
 
+total_search_sort_by="$search_sort_by"
+total_search_upload_date="$search_upload_date"
+
+manage_multi_filters () {
+	#if this is empty search_sort_by will be set to empty which isn't what we want
+	[ -n "$total_search_sort_by" ] && {
+		search_sort_by="${total_search_sort_by%%,*}"
+		total_search_sort_by="${total_search_sort_by#*,}"
+	}
+	[ -n "$total_search_upload_date" ] && {
+		search_upload_date="${total_serach_upload_date%%,*}"
+		total_search_upload_date="${total_search_upload_date#*,}"
+	}
+	#for custom scrapers
+	function_exists "manage_multi_custom_filters" && manage_multi_custom_filters
+}
+
 IFS=","
 set -f
 for curr_scrape in $scrape; do
 	#only ask for search if it's empty and scrape isn't something like S or T
 	printf "%s" "$scrape_search_exclude" | grep -Fqv " $curr_scrape " && { [ "$search" = "-" ] || [ -z "$search" ]; } && search_prompt_menu
+	manage_multi_filters
 	function_exists "on_search" && on_search "$search" "$curr_scrape"
 	scrape_website "$curr_scrape" "$search"
 	handle_scrape_error "$?"
@@ -1427,17 +1463,8 @@ while :; do
 		 "") interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 		 *) 
 			 # custom interfaces {{{
-			 #incase there are no extra variables wanted
-			 set --
-			 [ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$interface.conf" ] && {
-				custom_interface_variables="$(sed '/^vars:/s/^vars: //' "${YTFZF_CUSTOM_SCRAPERS_DIR}/${interface}.conf")"
-			 	IFS=' '
-				for var in $(printf "%s " $custom_interface_variables); do
-					set -- "$@" "$(IFS= eval printf $var)"
-				done
-				unset var
-			 }
-			 "$YTFZF_CUSTOM_INTERFACE_DIR/$interface" "$ytfzf_video_json_file" "$ytfzf_selected_urls" "$@";;
+			 [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface" || die 2 "interface: \"$interface\" does not exist\n"
+			 interface_$(printf "%s" "$interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 			 #}}}
 	esac
 	handle_actions < "$ytfzf_selected_urls"

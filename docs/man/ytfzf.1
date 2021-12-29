@@ -200,7 +200,7 @@ Scrapers
 .TP
 .BI \-c " scrapers" ", " "\-\-scrape=scrapers"
 Set which scraper to use.
-Multiple scrapers can be seperated by ,
+Multiple scrapers can be separated by ,
 The currently supported builtin scrapers are:
 .RS
 .TP
@@ -270,7 +270,7 @@ convert the invidious links to youtube links before playing/downloading.
 Scraper Options
 .RS
 .PP
-Currently, \-\-sort\-by, \-\-upload\-date, \-\-video\-duration, \-\-type, \-\-thumbnail\-quality, and \-\-features only applies to the scrape: youtube/Y
+Currently, \-\-video\-duration, \-\-type, \-\-thumbnail\-quality, and \-\-features only applies to the scrape: youtube/Y
 .TP
 .BR \-D ", " \-\-external\-menu
 Use an external menu instead of fzf.
@@ -288,21 +288,38 @@ Amount of videos to scrape on odysee.
 This can also be set in the config file with
 .BR odysee_video_search_count .
 .TP
+.BR "\-\-nsfw"
+Whether or not to search for nsfw videos.
+.br
+Only works with odysee/O
+This can also be set in the config file with
+.BR nsfw .
+.TP
 .BI "\-\-sort\-by=sort"
+Works with youtube/Y and odysee/O.
+.br
+To use a different sort for each scrape, use a "," to separate the sorts.
+.br
 As apposed to \-\-sort, this happens during the serach, not after.
 Results should sort by:
 .RS
 .TP
 .IR relevance
 .TP
-.IR rating
+.IR rating " (youtube only)"
 .TP
 .IR upload_date
 .TP
-.IR view_count
+.IR oldest_first " (odysee only)"
+.TP
+.IR view_count " (youtube only)"
 .RE
 .TP
 .BI "\-\-upload\-date=time\-frame"
+Works with, youtube/Y and odysee/O
+.br
+To use a different sort for each scrape, use a "," to separate the dates.
+.br
 Search for videos within the last:
 .RS
 .TP
@@ -368,7 +385,7 @@ The end frame of the video (low quality)
 .RE
 .TP
 .BI "\-\-features=features"
-The features to have on a video (comma seperated).
+The features to have on a video (comma separated).
 .RS
 .TP
 .IR hd
