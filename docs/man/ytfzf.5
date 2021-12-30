@@ -82,6 +82,12 @@ It is highly recommended to only change this if $__is_submenu is 0, or funky thi
 .RI default: " $cache_dir/watch_hist"
 
 .TP
+.RB $ search_hist_file
+The file to write search history to if $enable_search_hist is 1
+.br
+.RI default: " $cache_dir/search_hist"
+
+.TP
 .RB $ ytfzf_selected_urls
 The file to store the ids of selected video(s) in.
 .br
@@ -556,7 +562,13 @@ A number of spaces equal to half the width of your terminal
 .RB $ enable_hist
 Whether or not to keep track of history
 .br
-.RI default: " 0"
+.RI default: " 1"
+
+.TP
+.RB $ enable_search_hist
+Whether or not to keep track of search history
+.br
+.RI default: " 1"
 
 .TP
 .RB $ log_level
