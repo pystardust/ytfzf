@@ -966,7 +966,7 @@ preview_start () {
 			ueberzug layer --parser simple < "$UEBERZUG_FIFO" 2>/dev/null &
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|kitty|w3m) : ;;
 		*)
 			"$thumbnail_viewer" "start" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
@@ -977,7 +977,7 @@ preview_stop () {
 		ueberzug)
 			exec 3>&- # close file descriptor 3, closing ueberzug
 			;;
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|kitty|w3m) : ;;
 		*)
 			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
@@ -1062,6 +1062,13 @@ preview_display_image () {
 			dep_check "display" || die 3 "\nimagemagick is not installed\n"
 			killall display
 			display "$thumb_dir/${id}.jpg" ;;
+		kitty)
+			printf '\n'
+			[ "$TERM" = "xterm-kitty" ] || die 3 "\nnot running inside kitty\n"
+			dep_check "kitty" || die 3 "\nkitty is not installed\n"
+			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
+			kitty +kitten icat --clear --transfer-mode stream
+			kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode stream "$thumb_dir/${id}.jpg" ;;
 		w3m)
 			while true; do
 				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_dir/${id}.jpg" 3 | $w3mimgdisplay_path
