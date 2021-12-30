@@ -1063,8 +1063,6 @@ preview_display_image () {
 			killall display
 			display "$thumb_dir/${id}.jpg" ;;
 		kitty)
-			printf '\n'
-			[ "$TERM" = "xterm-kitty" ] || die 3 "\nnot running inside kitty\n"
 			dep_check "kitty" || die 3 "\nkitty is not installed\n"
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 			kitty +kitten icat --clear --transfer-mode stream
