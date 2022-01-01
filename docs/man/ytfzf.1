@@ -141,6 +141,9 @@ Imagemagick's display module.
 .IR w3m
 Uses a workaround to get w3m to work in fzf, may take up a lot of cpu.
 .TP
+.IR kitty
+uses kitty's builtin icat to display an image.
+.TP
 .IR <custom>
 Additional viewers can be put into $YTFZF_THUMBNAIL_VIEWERS_DIR.
 .RE
@@ -420,8 +423,10 @@ Miscelanious
 .BI "\-\-channel\-link=link"
 Converts channel links from 'https://youtube.com/c/name' to 'https://youtube.com/channel/id'
 .TP
-.BR \-x ", " \-\-history\-clear
-Clear history.
+.BR \-x ", " \-\-history\-clear=<search|watch>
+Clear search and watch history (if \-x or \-\-history\-clear is used)
+.br
+To specify either search or watch history use \-\-history\-clear=<search|watch>
 .TP
 .BR \-\-keep\-cache
 Whether or not to keep cache after
