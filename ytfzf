@@ -235,9 +235,11 @@ function_exists "downloader" || downloader () {
 
 # files
 : "${hist_file:=$cache_dir/watch_hist}"
+: "${search_hist_file:=$cache_dir/search_hist}"
 
 # history
-: ${enable_hist=1}
+: ${enable_hist:=1}
+: ${enable_search_hist:=1}
 
 # format options
 #variable for switching on sort (date)
@@ -306,6 +308,7 @@ usage () {
 	-m			Only play audio
 	-f                      Select a video format before playing
 	-l                      Reopen the menu when the video stops playing
+	-q                      Use a search query from search history
 	-L			Show the link of selected video(s)
 	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
@@ -331,6 +334,7 @@ usage () {
 				    J:         print the json of all videos shown in the search
 				    R:         print the data of the selected videos, as appears in the menu
 				    F:         print the selected video format
+        -x                       Clear search and watch history (use --history-clear=<search|watch> to specify 1)
 	--disable-submenus       Whether or not to disable submenus, which are menus for things like playlists and channels
 				
     See ytfzf(1) and ytfzf(5) for more information.
@@ -821,8 +825,14 @@ add_to_hist () {
 }
 
 clear_hist () {
-	: > "$hist_file"
-	print_info "History cleared\n"
+	case "$1" in
+		search) : > "$search_hist_file"; print_info "Search history cleared\n" ;;
+		watch) : > "$hist_file"; print_info "Watch history cleared\n" ;;
+		*)
+			: > "$search_hist_file"
+			: > "$hist_file"
+			print_info "History cleared\n" ;;
+	esac
 }
 
 #}}}
@@ -1223,7 +1233,7 @@ parse_opt () {
 		d|download) url_handler=downloader ;;
 		f|formats) show_formats=${optarg:-1} ;;
 		H|history) scrape="history" ;;
-		x|history-clear) clear_hist; exit 0 ;;
+		x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
 		a|auto-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
 		A|select-all) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_auto_select=${optarg:-1} && scripting_video_count=100 ;;
 		r|random-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_random_select=${optarg:-1} ;; 
@@ -1232,6 +1242,9 @@ parse_opt () {
 		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
 		v|version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
+		q|search-hist) 
+			[ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"
+			search="$(cat "$search_hist_file" | quick_menu)" ;;
 		pages) pages_to_scrape="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
 		interface) interface="$optarg" ;;
@@ -1272,7 +1285,7 @@ parse_opt () {
 	esac
 }
 
-while getopts "ac:dfhlmn:rtvxADHI:LTU${long_opt_char}:" OPT; do
+while getopts "ac:dfhlmn:qrtvxADHI:LTU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
@@ -1445,6 +1458,9 @@ for curr_scrape in $scrape; do
 	scrape_website "$curr_scrape" "$search"
 	handle_scrape_error "$?"
 done
+
+#search history
+[ $enable_search_hist -eq 1 ] && [ -n "$search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && echo "$search" >> "$search_hist_file"
 
 #check if nothing was scraped{{{
 [ ! -s "$ytfzf_video_json_file" ] && die 4 "Nothing was scraped\n"
