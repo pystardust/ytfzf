@@ -187,6 +187,10 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 
 : ${is_loop:=0}
 
+# Notifications
+
+: ${notify_playing:=0}
+
 function_exists "handle_playing_notifications" || handle_playing_notifications (){
 	#if no notify-send push error to /dev/null
 	[ $# -le 1 ] && {
@@ -1201,7 +1205,7 @@ open_url_handler () {
 		[ $exit_on_info_to_print -eq 1 ] && exit 0
 	fi
 
-	handle_playing_notifications "$@"
+	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
 	printf "%s" "$video_pref" "$is_audio_only" "$is_detach" | "$url_handler" "$@"
@@ -1258,6 +1262,7 @@ parse_opt () {
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
 		I) info_to_print=$optarg ;;
+		notify-playing) notify_playing="${optarg:-1}" ;;
 		#long-opt exclusives
 		sort) is_sort=${optarg:-1} ;;
 		video-pref) video_pref=$optarg ;;
