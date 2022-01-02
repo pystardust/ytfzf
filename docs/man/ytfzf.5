@@ -312,6 +312,12 @@ Whether or not to show the menu after the selected videos have stopped playing.
 .RI default: " 0"
 
 .TP
+.RB $ search_again
+Whether or not to make another search after fzf is closed.
+.br
+.RI default: " 0"
+
+.TP
 .RB $ search_prompt
 The text to display when no search is given.
 .br
@@ -648,6 +654,12 @@ Whether or not the script is scraping for a submenu.
 .RB $ __is_fzf_preview
 Whether or not the script is running to display an fzf preview
 
+.TP
+.RB $ __scrape_count
+The current scraper that it is on.
+.br
+Eg: if there are 2 scrapers, and it's on the first, this will equal 1.
+
 .SS FUNCTIONS
 .PP
 Sometimes a variable is not good enough, instead functions should be defined.
@@ -901,6 +913,16 @@ This function takes 1 argument:
 .ti +4
     The action.
 .EE
+
+.TP
+.BR init_multi_filters ()
+This function should initialize the backup variables for multi_filter,
+.br
+To see how this is done, take a look at the init_multi_filters() function in ytfzf.
+.br
+This function is called before it starts scraping websites.
+.br
+This function takes no arguments.
 
 .TP
 .BR manage_multi_custom_filters ()
