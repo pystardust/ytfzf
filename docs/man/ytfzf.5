@@ -60,6 +60,12 @@ See CUSTOM SCRAPERS for more information
 .PP
 conf.sh is used mainly for setting variables for \fBytfzf\fR.
 If a variable has no default, that means it is set to an empty string.
+.br
+To set a variable in conf.sh be sure to use
+.br
+variable_name="value"
+.br
+leave out the $ at the start of the variable name.
 
 .PP
 Files and directories
@@ -298,6 +304,12 @@ The middle frame of the video (low quality)
 The end frame of the video (low quality)
 .RE
 .br
+
+.TP
+.RB $notify_video_playing
+Whether or not to send a notification when a video is about to be played.
+.br
+.RI default: " 0"
 
 .TP
 .RB $ is_loop
@@ -813,6 +825,13 @@ This function takes in an unlimited amount of arguments, each of which is a link
 Misc
 
 .RS
+
+.TP
+.BR handle_playing_notifications()
+This function sends a notification for the videos that are about to be played.
+.br
+This function takes an unknown amount of urls as arguments.
+.RE
 
 .TP
 .BR img_display_function ()
