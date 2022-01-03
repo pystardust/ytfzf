@@ -909,8 +909,18 @@ This function takes 1 argument:
 .EE
 
 .TP
+.BR set_save_custom_filters ()
+This function should set backup variables for multi_filter.
+.br
+To see how this is done, take a look at the set_save_custom_filters() function in ytfzf.
+.br
+This function is called once when the script starts.
+.br
+This function takes no arguments.
+
+.TP
 .BR init_multi_filters ()
-This function should initialize the backup variables for multi_filter,
+This function should initialize the backup variables for multi_filter, (this is different from set_save_custom_filters())
 .br
 To see how this is done, take a look at the init_multi_filters() function in ytfzf.
 .br
