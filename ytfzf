@@ -1467,10 +1467,8 @@ handle_scraping (){
 	_search="$1"
 	IFS=","
 	set -f
-	__scrape_count=0
 	init_multi_filters
 	for curr_scrape in $scrape; do
-		__scrape_count=$((__scrape_count+1))
 		#only ask for search if it's empty and scrape isn't something like S or T
 		printf "%s" "$scrape_search_exclude" | grep -Fqv " $curr_scrape " && { [ "$_search" = "-" ] || [ -z "$_search" ]; } && search_prompt_menu
 		manage_multi_filters
