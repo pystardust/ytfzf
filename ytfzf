@@ -1275,14 +1275,8 @@ parse_opt () {
 			fi ;;
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
 		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
-		sort-by) 
-			search_sort_by="$optarg" 
-			#enables multi-filter
-			initial_search_sort_by="$search_sort_by" ;;
-		upload-date) 
-			search_upload_date="$optarg" 
-			#enables multi-filter
-			initial_search_upload_date="$search_upload_date" ;;
+		sort-by) search_sort_by="$optarg" ;;
+		upload-date) search_upload_date="$optarg" ;;
 		video-duration) search_video_duration=$optarg ;;
 		type) search_result_type=$optarg ;;
 		features) search_result_features=$optarg ;;
@@ -1371,6 +1365,12 @@ handle_actions () {
 #there are 2 sets of backup variables because of -s, total_search* gets used up in manage_multi_filters
 #there has to be at least 1 set of backup variables because search_sort_by=${search_sort_by%%,*} will give incorrect filters when there are 3+ filters
 # multi filters {{{
+set_save_filters () {
+	initial_search_sort_by="$search_sort_by"
+	initial_search_upload_date="$search_upload_date"
+	function_exists "set_save_custom_filters" && set_save_custom_filters
+}
+set_save_filters
 init_multi_filters () {
 	search_sort_bys_left="$initial_search_sort_by"
 	search_upload_dates_left="$initial_search_upload_date"
