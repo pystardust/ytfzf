@@ -1464,14 +1464,22 @@ scrape_website () {
 	return $rv
 }
 
+is_asking_for_search_necessary () {
+	IFS=","
+	set -f
+	for _scr in $scrape; do
+		printf "%s" "$scrape_search_exclude" | grep -Fqv " $_scr " && { [ "$_search" = "-" ] || [ -z "$_search" ]; } && return 0
+	done
+	return 1
+
+}
+
 handle_scraping (){
 	_search="$1"
 	IFS=","
 	set -f
 	init_multi_filters
 	for curr_scrape in $scrape; do
-		#only ask for search if it's empty and scrape isn't something like S or T
-		printf "%s" "$scrape_search_exclude" | grep -Fqv " $curr_scrape " && { [ "$_search" = "-" ] || [ -z "$_search" ]; } && search_prompt_menu
 		manage_multi_filters
 		function_exists "on_search" && on_search "$_search" "$curr_scrape"
 		scrape_website "$curr_scrape" "$_search"
@@ -1502,7 +1510,9 @@ handle_search_history () {
 
 make_search () {
 	_search="$1"
-	[ "$_search" = "-" ] || [ -z "$_search" ] && search_prompt_menu
+	#only ask for search if it's empty and scrape isn't something like S or T
+	#this cannot be done inside handle_scraping, because otherwise init_files will get an empty search with search_again
+	is_asking_for_search_necessary && search_prompt_menu
 	init_files "$_search"
 	handle_search_history "$_search"
 	handle_scraping "$_search"
