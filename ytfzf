@@ -194,6 +194,7 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 : ${external_menu_len:=210}
 
 : ${is_loop:=0}
+: ${search_again:=0}
 
 # urlhandlers
 #job of url handlers is:
