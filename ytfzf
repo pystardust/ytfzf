@@ -985,6 +985,13 @@ preview_start () {
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|kitty|w3m) : ;;
+		imv)
+			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
+			imv "$thumb_dir/${first_img}.jpg" &
+			export imv_pid="$!"
+			#helps prevent imv seg fault
+			sleep 0.1
+			;;
 		*)
 			"$thumbnail_viewer" "start" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
@@ -996,6 +1003,7 @@ preview_stop () {
 			exec 3>&- # close file descriptor 3, closing ueberzug
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|kitty|w3m) : ;;
+		imv) kill "$imv_pid" ;;
 		*)
 			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
@@ -1089,6 +1097,9 @@ preview_display_image () {
 			while true; do
 				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_dir/${id}.jpg" 3 | $w3mimgdisplay_path
 			done ;;	
+		imv) 
+			imv-msg "$imv_pid" close all
+			imv-msg "$imv_pid" open "$thumb_dir/$id.jpg" ;;
 		*) 
 			"$thumbnail_viewer" "view" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null || die 1 "$thumbnail_viewer doesn't exist\n" ;;
 
