@@ -1,30 +1,22 @@
 PROG=ytfzf
-
-UNAME := $(shell uname)
-ifeq ($(UNAME), Darwin)
-    PREFIX = /usr/local/bin
-endif
-ifeq ($(UNAME), FreeBSD)
-    PREFIX = /usr/local/bin
-endif
-ifeq ($(UNAME), Linux)
-    PREFIX = /usr/bin
-endif
+PREFIX=/usr/local
+BINDIR=${PREFIX}/bin
+MANDIR=${PREFIX}/share/man
 
 man:
-	gzip -c docs/man/ytfzf.1 > docs/man/ytfzf.1.gz
-	gzip -c docs/man/ytfzf.5 > docs/man/ytfzf.5.gz
-	install docs/man/ytfzf.1.gz /usr/share/man/man1
-	install docs/man/ytfzf.5.gz /usr/share/man/man5
+	mkdir -p ${DESTDIR}${MANDIR}/man1
+	mkdir -p ${DESTDIR}${MANDIR}/man5
+	install docs/man/ytfzf.1 ${DESTDIR}${MANDIR}/man1
+	install docs/man/ytfzf.5 ${DESTDIR}${MANDIR}/man5
 
 install:
-	chmod 755 $(PROG)
-	mkdir -p ${DESTDIR}${PREFIX}
-	install ${PROG} ${DESTDIR}${PREFIX}/${PROG}
+	chmod 755 ${PROG}
+	mkdir -p ${DESTDIR}${BINDIR}
+	install ${PROG} ${DESTDIR}${BINDIR}/${PROG}
 
 uninstall:
-	rm -f /usr/share/man/man1/ytfzf.1.gz
-	rm -f /usr/share/man/man1/ytfzf.5.gz
-	rm -f ${DESTDIR}${PREFIX}/${PROG}
+	rm -f ${DESTDIR}${MANDIR}/man1/ytfzf.1
+	rm -f ${DESTDIR}${MANDIR}/man1/ytfzf.5
+	rm -f ${DESTDIR}${BINDIR}/${PROG}
 
 .PHONY: install uninstall man
