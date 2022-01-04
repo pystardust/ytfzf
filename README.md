@@ -51,7 +51,7 @@ There is only 1 required dependency, however the rest may require some configura
 * [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (for downloading)
 * [`dmenu`](https://tools.suckless.org/dmenu/) (only if using the -D option)
 * [`ueberzug`](https://github.com/seebye/ueberzug) (if using thumbnails (-t) on x11)
-    * If on wayland, or you do not want `ueberzug`, see the alternatives [below](#Alternative Thumbnail Viewers).
+    * If on wayland, or you do not want `ueberzug`, see the alternatives [below](#Alternative-Thumbnail-Viewers).
     * To use an alternative include `--thumb-viewer=<alternative>` in the command when running ytfzf
 
 ### Alternative Thumbnail Viewers
