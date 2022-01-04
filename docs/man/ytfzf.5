@@ -324,12 +324,6 @@ Whether or not to make another search after fzf is closed.
 .RI default: " 0"
 
 .TP
-.RB $ search_prompt
-The text to display when no search is given.
-.br
-.RI default: " Search: "
-
-.TP
 .RB $ download_shortcut
 The shortcut to download the selected videos.
 .br
@@ -779,6 +773,42 @@ This function takes 2 arguments:
 .I max_height
 .RE
 
+.TP
+.BR search_prompt_menu ()
+This function asks the user to make a search query, and sets the variable $_search to the query.
+.br
+This function is called if ytfzf is started without a search. (and is using the default interface)
+.br
+This function takes no arguments.
+
+.TP
+.BR search_prompt_ext ()
+This function asks the user to make a search query, and sets the variable $_search to the query.
+.br
+This function is called if ytfzf is started without a searhc. (and is using the \-D flag)
+.br
+This function takes no arguments.
+
+.TP
+.BR quick_menu ()
+This function should take user input and echo it back
+.br
+This function is called with -f, and -q. Or any other time a generic menu is needed. (and the default interface is being used)
+.br
+This function takes 1 argument:
+.br
+1: The prompt to use.
+
+.TP
+.BR quick_menu_ext ()
+This function should do the same thing as quick_menu()
+.br
+This function is called when quick_menu would be called, but when \-D is enabled.
+.br
+This function takes 1 argument:
+.br
+1: The prompt to use.
+
 .RE
 
 .PP 
@@ -1012,17 +1042,32 @@ In addition, the script must also define the function
 With _ replacing \-.
 .br
 This function could handle everything itself, or call another program written in any language to handle it.
-.RE
-.PP
-A custom scraper will take the search query as the first argument to the program
 .br
-The second argument will be a path to the file to store the final JSON of the scraped content.
+This function takes 2 arguments:
+.TP
+.IR 1
+Search query.
+.TP
+.IR 2
+Path to store the final JSON of scraped content.
 .PP
 The JSON should be structured as described in VIDEO JSON FORMAT
 .br
 The final JSON shall be
 .B APPENDED
 to the file given as an argument.
+.RE
+.PP
+Other functions the scraper may define:
+.TP
+.IR search_prompt_menu_<name_of_interface>
+This function should do the same thing as search_prompt_menu().
+This function takes no arguments.
+.TP
+.IR quick_menu_<name_of_interface>
+This function should do the same thing as quick_menu().
+This function takes no arguments.
+
 .RE
 
 .SH CUSTOM INTERFACES
