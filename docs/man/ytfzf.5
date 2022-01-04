@@ -1067,10 +1067,14 @@ Other functions the scraper may define:
 .IR search_prompt_menu_<name_of_interface>
 This function should do the same thing as search_prompt_menu().
 This function takes no arguments.
+.br
+If this function is not defined, search_prompt_menu_ext() will be called instead.
 .TP
 .IR quick_menu_<name_of_interface>
 This function should do the same thing as quick_menu().
 This function takes no arguments.
+.br
+If this function is not defined, quick_menu_ext() will be called instead.
 
 .RE
 
