@@ -318,6 +318,12 @@ Whether or not to show the menu after the selected videos have stopped playing.
 .RI default: " 0"
 
 .TP
+.RB $ search_again
+Whether or not to make another search after fzf is closed.
+.br
+.RI default: " 0"
+
+.TP
 .RB $ search_prompt
 The text to display when no search is given.
 .br
@@ -914,6 +920,26 @@ This function takes 1 argument:
 .ti +4
     The action.
 .EE
+
+.TP
+.BR set_save_custom_filters ()
+This function should set backup variables for multi_filter.
+.br
+To see how this is done, take a look at the set_save_custom_filters() function in ytfzf.
+.br
+This function is called once when the script starts.
+.br
+This function takes no arguments.
+
+.TP
+.BR init_multi_filters ()
+This function should initialize the backup variables for multi_filter, (this is different from set_save_custom_filters())
+.br
+To see how this is done, take a look at the init_multi_filters() function in ytfzf.
+.br
+This function is called before it starts scraping websites.
+.br
+This function takes no arguments.
 
 .TP
 .BR manage_multi_custom_filters ()
