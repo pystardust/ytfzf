@@ -51,8 +51,17 @@ There is only 1 required dependency, however the rest may require some configura
 * [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (for downloading)
 * [`dmenu`](https://tools.suckless.org/dmenu/) (only if using the -D option)
 * [`ueberzug`](https://github.com/seebye/ueberzug) (if using thumbnails (-t) on x11)
-    * [`chafa`](https://github.com/hpjansson/chafa) (if using thumbnails (-t) on wayland, sadly it's not as good as ueberzug)
+    * If on wayland, or you do not want `ueberzug`, see the alternatives [below](#Alternative Thumbnail Viewers).
+    * To use an alternative include `--thumb-viewer=<alternative>` in the command when running ytfzf
 
+### Alternative Thumbnail Viewers
+| Program                                        | Wayland Support |
+| :--                                            | :--             |
+| [`chafa`](https://github.com/hpjansson/chafa)  | &#9989;         |
+| [`catimg`](https://github.com/posva/catimg)    | &#9989;         |
+| `display` (from imagemagick)                   | Untested        |
+| [`kitty`](https://github.com/kovidgoyal/kitty) | &#9989;         |
+| [`w3m`](https://github.com/tats/w3m) (buggy)   | Untested        |
 
 # Install
 
