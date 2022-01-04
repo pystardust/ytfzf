@@ -795,9 +795,11 @@ This function should take user input and echo it back
 .br
 This function is called with -f, and -q. Or any other time a generic menu is needed. (and the default interface is being used)
 .br
-This function takes 1 argument:
+This function takes 1 argument, and takes input from stdin
 .br
 1: The prompt to use.
+.br
+stdin: the items to chose from (separated by new lines)
 
 .TP
 .BR quick_menu_ext ()
@@ -805,9 +807,11 @@ This function should do the same thing as quick_menu()
 .br
 This function is called when quick_menu would be called, but when \-D is enabled.
 .br
-This function takes 1 argument:
+This function takes 1 argument, and takes input from stdin
 .br
 1: The prompt to use.
+.br
+stdin: the items to chose from (separated by new lines)
 
 .RE
 
