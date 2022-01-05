@@ -55,13 +55,13 @@ There is only 1 required dependency, however the rest may require some configura
     * To use an alternative include `--thumb-viewer=<alternative>` in the command when running ytfzf
 
 ### Alternative Thumbnail Viewers
-| Program                                                                                     | Wayland Support |
-| :--                                                                                         | :--             |
-| [`chafa`](https://github.com/hpjansson/chafa)                                               | &#9989;         |
-| [`catimg`](https://github.com/posva/catimg)                                                 | &#9989;         |
-| [`display`](https://github.com/ImageMagick/ImageMagick) (from imagemagick)                  | Untested        |
-| [`kitty`](https://github.com/kovidgoyal/kitty) (only when using `kitty` terminal)           | &#9989;         |
-| [`w3m`](https://github.com/tats/w3m) (buggy)                                                | Untested        |
+| Program                                                                           | Wayland Support  |
+| :--                                                                               | :--              |
+| [`chafa`](https://github.com/hpjansson/chafa)                                     | &#9989;          |
+| [`catimg`](https://github.com/posva/catimg)                                       | &#9989;          |
+| [`display`](https://github.com/ImageMagick/ImageMagick) (from imagemagick)        | &#10060;         |
+| [`kitty`](https://github.com/kovidgoyal/kitty) (only when using `kitty` terminal) | &#9989;          |
+| [`w3m`](https://github.com/tats/w3m) (buggy)                                      | &#10060;         |
 
 # Install
 
