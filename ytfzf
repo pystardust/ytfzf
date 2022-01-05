@@ -891,9 +891,9 @@ handle_keypress () {
 	read -r keypress
 	function_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
 	case "$keypress" in
-		$download_shortcut) is_download=1 ;;
-		$video_shortcut) is_download=0; is_audio_only=0; ;;
-		$audio_shortcut) is_download=0; is_audio_only=1; ;;
+		$download_shortcut) url_handler=downloader ;;
+		$video_shortcut) url_handler=video_player ;;
+		$audio_shortcut) url_handler=audio_player ;;
 		$detach_shortcut) is_detach=1 ;;
 		$print_link_shortcut) info_to_print="L"; exit_on_info_to_print=1 ;;
 		$show_formats_shortcut) show_formats=1 ;;
