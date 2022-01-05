@@ -100,21 +100,19 @@ function_exists "quick_menu" || quick_menu () {
 function_exists "quick_menu_ext" || quick_menu_ext (){
 	external_menu "$1"
 }
+function_exists "quick_menu_scripting" || quick_menu_scripting () {
+	quick_menu
+}
 
 quick_menu_wrapper () {
 	prompt="$1"
-	case "$interface" in
-		""|"scripting") quick_menu "$prompt" ;;
-		"ext_menu") quick_menu_ext "$prompt" ;;
-		*) 
-			fn_name=quick_menu_$(printf "%s" "$interface" | sed 's/-/_/g')
-			if function_exists "$fn_name"; then 
-				$fn_name "$propmt"
-			else
-				quick_menu_ext "$prompt"
-			fi
-			unset fn_name ;;
-	esac
+	#the last sed is to set it to quick_menu if $interfce is "" (default)
+	fn_name=$(printf "%s" "quick_menu_$interface" | sed 's/-/_/g' | sed 's/^quick_menu_$/quick_menu/')
+	if function_exists "$fn_name"; then 
+		$fn_name "$prompt"
+	else quick_menu_ext "$prompt"
+	fi
+	unset fn_name
 }
 
 # Traps {{{
@@ -164,18 +162,20 @@ function_exists "search_prompt_menu" || search_prompt_menu () {
 function_exists "search_prompt_menu_ext" || search_prompt_menu_ext () {
 	_search="$(printf '' | external_menu "Search: ")"
 }
+function_exists "search_prompt_menu_scripting" || search_prompt_menu_scripting () {
+	search_prompt_menu
+}
 
 search_prompt_menu_wrapper () {
-	case "$interface" in
-		 "scripting"|"") search_prompt_menu ;;
-		 "ext_menu") search_prompt_menu_ext ;;
-		 *) 
-			 fn_name="search_prompt_menu_$(printf "%s" "$interface" | sed 's/-/_/g')"
-			 if function_exists "$fn_name"; then
-				 $fn_name
-			 else search_prompt_menu_ext
-			 fi ;;
-	 esac
+	#the last sed is to set it to quick_menu if $interfce is "" (default)
+	 fn_name="$(printf "%s" "search_prompt_menu_$interface" | sed 's/-/_/g' | sed 's/^search_prompt_menu_$/search_prompt_menu/')"
+	 #we could do :
+	 # $fn_name 2>/dev/null || [ "$?" -eq 127 ] && search_prompt_menu_ext
+	 #however, if we do that, the user won't get their error messages from their script
+	 if function_exists "$fn_name"; then
+		 $fn_name
+	 else search_prompt_menu_ext
+	 fi
 }
 
 : ${enable_submenus:=1}
@@ -969,7 +969,7 @@ interface_text () {
 #}}}
 
 # External interface {{{
-interface_external () {
+interface_ext () {
 	video_json_file=$1
 	selected_id_file=$2
 
@@ -1260,7 +1260,7 @@ parse_opt () {
 	function_exists "on_opt_parse" && { on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG" || return 0; }
 	case $opt in
 		h|help) usage; exit 0 ;;
-		D|external-menu) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface='ext_menu' ;;
+		D|external-menu) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface='ext' ;;
 		m|audio-only) is_audio_only=${optarg:-1};;
 		d|download) url_handler=downloader ;;
 		f|formats) show_formats=${optarg:-1} ;;
@@ -1282,11 +1282,7 @@ parse_opt () {
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
 		interface) 
 			interface="$optarg"
-			case "$interface" in
-				"scripting"|"ext_menu"|"") : ;;
-				*) [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface" || die 2 "interface: \"$interface\" does not exist\n" ;;
-			esac
-			;;
+			[ -n "$interface" ] && { [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface" || die 2 "interface: \"$interface\" does not exist\n"; } ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
@@ -1557,12 +1553,8 @@ make_search () {
 make_search "$initial_search"
 
 while :; do
-	case "$interface" in
-		 "scripting") interface_scripting "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
-		 "ext_menu") interface_external   "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
-		 "") interface_text       "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
-		 *) interface_$(printf "%s" "$interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
-	esac
+	#calls the interface
+	$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
 	handle_actions < "$ytfzf_selected_urls"
 
 	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
