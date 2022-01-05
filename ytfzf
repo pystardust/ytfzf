@@ -1282,7 +1282,11 @@ parse_opt () {
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
 		interface) 
 			interface="$optarg"
-			[ -n "$interface" ] && { [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface" || die 2 "interface: \"$interface\" does not exist\n"; } ;;
+			# if we don't check which interface, itll try to source $YTFZF_CUSTOM_INTERFACES_DIR/{ext,scripting} which won't work
+			case "$interface" in
+				"ext"|"scripting"|"") : ;;
+				*) [ -n "$interface" ] && { [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface" || die 2 "interface: \"$interface\" does not exist\n"; } ;;
+			esac ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
