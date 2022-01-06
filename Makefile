@@ -27,4 +27,4 @@ uninstall:
 	rm -rf ${DESTDIR}${LICENSEDIR}
 	rm -f ${DESTDIR}${BINDIR}/${PROG}
 
-.PHONY: install uninstall man
+.PHONY: install uninstall doc
