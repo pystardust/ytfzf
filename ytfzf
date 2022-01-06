@@ -181,6 +181,7 @@ search_prompt_menu_wrapper () {
 : ${enable_submenus:=1}
 
 : ${submenu_opts=}
+: ${submenu_scraping_opts=}
 
 : ${interface=}
 
@@ -1197,7 +1198,7 @@ submenu_handler () {
 
 	while read -r line; do
 		#calls ytfzf to reduce code complexity
-		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 \
+		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 $submenu_scraping_opts \
 			-ac "$(get_key_value "$line" "type")" -IJ "$(get_key_value "$line" "search")" \
 			>> "$final_submenu_json_file"
 	done <<-EOF
@@ -1318,7 +1319,8 @@ parse_opt () {
 		thumbnail-quality) thumbnail_quality="$optarg" ;;
 		url-handler) url_handler="${optarg:-multimedia_player}" ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
-		submenu-opts) submenu_opts="${optarg:-1}" ;;
+		submenu-opts) submenu_opts="${optarg}" ;;
+		submenu-scraping-opts) submenu_scraping_opts="${optarg}" ;;
 		nsfw)  nsfw="${optarg:-true}" ;;
 		*) 
 			[ "$OPT" = "-" ] && print_info "$0: illegal long option -- $opt\n";;
