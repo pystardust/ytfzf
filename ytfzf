@@ -940,13 +940,9 @@ interface_scripting () {
 	selected_id_file=$2
 	data_string_template='.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"'
 	case 1 in
-		"$is_auto_select")
-		jq -r "$data_string_template"  < "$video_json_file"  | head -n "$scripting_video_count" |  trim_url   > "$selected_id_file"
-			;;
-		"$is_random_select")
-		jq -r "$data_string_template"  < "$video_json_file"  | shuf | head -n "$scripting_video_count" | trim_url > "$selected_id_file"
-			;;
-	esac
+		"$is_auto_select") jq -r "$data_string_template"  < "$video_json_file"  ;;
+		"$is_random_select") jq -r "$data_string_template"  < "$video_json_file"  | shuf ;;
+	esac | head -n "$scripting_video_count" | trim_url > "$selected_id_file"
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
 }
 # }}}
