@@ -1160,8 +1160,8 @@ interface_thumbnails () {
 			output = \"'"$thumb_dir"'/\(.ID).jpg\""' \
 				< "$video_json_file" > "$curl_config_file"
 			# curl version > 7.66.0 ( else remove -Z )
-			curl -Z -K "$curl_config_file"
-			[ $? -eq 2 ] && curl -K "$curl_config_file"
+			curl -fLZ -K "$curl_config_file"
+			[ $? -eq 2 ] && curl -fLZ -K "$curl_config_file"
 	}
 
 	preview_start "$thumbnail_viewer"
