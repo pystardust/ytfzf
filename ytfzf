@@ -128,7 +128,9 @@ quick_menu_wrapper () {
 # variables that cannot be empty should use := instead of just =
 
 # hard dependancy checks{{{
-dep_check "jq" || die 3 "jq is a required dependancy, please install it\n"
+for dep in jq curl; do
+	dep_check "$dep" || die 3 "$dep is a required dependency, please install it\n"
+done
 #}}}
 
 
