@@ -1161,7 +1161,7 @@ interface_thumbnails () {
 				< "$video_json_file" > "$curl_config_file"
 			# curl version > 7.66.0 ( else remove -Z )
 			curl -fLZ -K "$curl_config_file"
-			[ $? -eq 2 ] && curl -fLZ -K "$curl_config_file"
+			[ $? -eq 2 ] && curl -fL -K "$curl_config_file"
 	}
 
 	preview_start "$thumbnail_viewer"
