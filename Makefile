@@ -8,9 +8,11 @@ doc:
 	mkdir -p ${DESTDIR}${MANDIR}/man1
 	mkdir -p ${DESTDIR}${MANDIR}/man5
 	mkdir -p ${DESTDIR}${DOCDIR}
+	mkdir -p ${DESTDIR}/share/licenses
 	install docs/man/ytfzf.1 ${DESTDIR}${MANDIR}/man1
 	install docs/man/ytfzf.5 ${DESTDIR}${MANDIR}/man5
-	install docs/conf.sh LICENSE ${DESTDIR}${DOCDIR}
+	install docs/conf.sh ${DESTDIR}${DOCDIR}
+	install docs/conf.sh ${DESTDIR}/share/licenses
 
 install:
 	chmod 755 ${PROG}
