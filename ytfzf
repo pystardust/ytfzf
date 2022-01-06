@@ -71,7 +71,7 @@ clean_up () {
 	# print_info "cleaning up\n"
 	# clean up only as parent process
 	if [ $__is_fzf_preview -eq 0 ]; then
-		[ -d "$session_cache_dir" ] && [ $keep_cache -eq 0 ] && rm -r "$session_cache_dir" 
+		[ -d "$session_cache_dir" ] && [ $keep_cache -eq 0 ] && rm -r "$session_cache_dir"
 	fi
 }
 
@@ -108,7 +108,7 @@ quick_menu_wrapper () {
 	prompt="$1"
 	#the last sed is to set it to quick_menu if $interfce is "" (default)
 	fn_name=$(printf "%s" "quick_menu_$interface" | sed 's/-/_/g' | sed 's/^quick_menu_$/quick_menu/')
-	if function_exists "$fn_name"; then 
+	if function_exists "$fn_name"; then
 		$fn_name "$prompt"
 	else quick_menu_ext "$prompt"
 	fi
@@ -116,7 +116,7 @@ quick_menu_wrapper () {
 }
 
 # Traps {{{
-[ $__is_fzf_preview -eq 0 ] && trap 'clean_up' EXIT 
+[ $__is_fzf_preview -eq 0 ] && trap 'clean_up' EXIT
 [ $__is_fzf_preview -eq 0 ] && trap 'exit' INT TERM HUP
 #}}}
 
@@ -371,7 +371,7 @@ usage () {
 				    F:         print the selected video format
         -x                       Clear search and watch history (use --history-clear=<search|watch> to specify 1)
 	--disable-submenus       Whether or not to disable submenus, which are menus for things like playlists and channels
-				
+
     See ytfzf(1) and ytfzf(5) for more information.
 "
 }
@@ -422,7 +422,7 @@ _youtube_channel_name () {
 		-e "s/&#38;/\&/g"
 }
 
-_youtube_get_json (){ 
+_youtube_get_json (){
        # Separates the json embedded in the youtube html page
        # * removes the content after ytInitialData
        # * removes all newlines and trims the json out
@@ -472,7 +472,7 @@ scrape_youtube_channel () {
 	channel_name=$(_youtube_channel_name < "$_tmp_html" )
 	_youtube_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
 }
-# }}} 
+# }}}
 
 ## Invidious {{{
 # invidious backend functions {{{
@@ -589,7 +589,7 @@ scrape_invidious_playlist () {
 	output_json_file=$2
 
 	playlist_id="${playlist_url##*[?]list=}"
-	
+
 	_get_invidious_thumb_quality_name
 
 	#used to put the full playlist in, to later remove duplicates
@@ -695,7 +695,7 @@ scrape_invidious_channel () {
 		_get_invidious_thumb_quality_name
 
 		{
-			_invidious_search_json_videos < "$_tmp_json"  
+			_invidious_search_json_videos < "$_tmp_json"
 			_invidious_search_json_live < "$_tmp_json"
 		} >> "$output_json_file"
 		_cur_page=$((_cur_page+1))
@@ -758,7 +758,7 @@ scrape_odysee () {
 		1) nsfw=true ;;
 		0) nsfw=false ;;
 	esac
-	
+
 	#this if is because when search_sort_by is empty, it breaks lighthouse
 	if [ -n "$search_sort_by" ]; then
 		_get_request "https://lighthouse.lbry.com/search" -G \
@@ -796,7 +796,7 @@ scrape_odysee () {
 			views: "\(.view_cnt)",
 			date: .cq_created_at
 	    }
-	]' < "$_tmp_json" >> "$output_json_file" 
+	]' < "$_tmp_json" >> "$output_json_file"
 
 }
 ## }}}
@@ -821,7 +821,7 @@ scrape_json_file () {
 # Sorting {{{
 
 function_exists "get_sort_by" || get_sort_by () {
-	line="$1"    
+	line="$1"
 	date="${line%|*}"
 	date=${date##*|}
 	#youtube specific
@@ -973,7 +973,7 @@ interface_text () {
 			video_info_text
 		done |
 		column -t -s "$tab_space" |
-		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress | 
+		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
 		trim_url > "$selected_id_file"
 	#we can't do handle_keypress < "$keypress_file" because it leaves fd0 open which breaks $search_again_shortcut
 	handle_keypress "$(cat "$keypress_file")"
@@ -1122,8 +1122,8 @@ preview_display_image () {
 		w3m)
 			while true; do
 				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_dir/${id}.jpg" 3 | $w3mimgdisplay_path
-			done ;;	
-		*) 
+			done ;;
+		*)
 			"$thumbnail_viewer" "view" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null || die 1 "$thumbnail_viewer doesn't exist\n" ;;
 
 	esac
@@ -1163,7 +1163,8 @@ interface_thumbnails () {
 			output = \"'"$thumb_dir"'/\(.ID).jpg\""' \
 				< "$video_json_file" > "$curl_config_file"
 			# curl version > 7.66.0 ( else remove -Z )
-			curl -Z -K "$curl_config_file" || curl -K "$curl_config_file"
+			curl -fLZ -K "$curl_config_file"
+			[ $? -eq 2 ] && curl -fL -K "$curl_config_file"
 	}
 
 	preview_start "$thumbnail_viewer"
@@ -1225,7 +1226,7 @@ submenu_handler () {
 open_url_handler () {
 	# isaudio, isdownload, video_pref
 	#urls can either be passed as argument, or through pipe
-	[ -z "$@" ] && { 
+	[ -z "$@" ] && {
 		read -r urls
 		set -f
 		unset IFS
@@ -1281,19 +1282,19 @@ parse_opt () {
 		x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
 		a|auto-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
 		A|select-all) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_auto_select=${optarg:-1} && scripting_video_count=100 ;;
-		r|random-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_random_select=${optarg:-1} ;; 
-		n|link-count) scripting_video_count=$optarg;; 
+		r|random-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_random_select=${optarg:-1} ;;
+		n|link-count) scripting_video_count=$optarg;;
 		l|loop) is_loop=${optarg:-1} ;;
 		s|search-again) search_again=${optarg:-1} ;;
 		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
 		v|version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
-		q|search-hist) 
+		q|search-hist)
 			[ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"
 			initial_search="$(cat "$search_hist_file" | quick_menu_wrapper)" ;;
 		pages) pages_to_scrape="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
-		interface) 
+		interface)
 			interface="$optarg"
 			# if we don't check which interface, itll try to source $YTFZF_CUSTOM_INTERFACES_DIR/{ext,scripting} which won't work
 			case "$interface" in
@@ -1312,7 +1313,7 @@ parse_opt () {
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
 		preview-side) fzf_preview_side="${optarg}"; [ -z "$fzf_preview_side" ] && die 2 "no preview side given\n" ;;
-		thumb-viewer) 
+		thumb-viewer)
 			if is_relative_dir "$optarg" || command -v "$optarg" > /dev/null 2>&1; then
 				thumbnail_viewer="$optarg"
 			else
@@ -1334,7 +1335,7 @@ parse_opt () {
 		submenu-opts) submenu_opts="${optarg}" ;;
 		submenu-scraping-opts) submenu_scraping_opts="${optarg}" ;;
 		nsfw)  nsfw="${optarg:-true}" ;;
-		*) 
+		*)
 			[ "$OPT" = "-" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
 }
@@ -1396,7 +1397,7 @@ handle_actions () {
 		_action=$(jq -r --arg url "$url" '.[]|select(.url==$url).action' < "$ytfzf_video_json_file")
 		case "$_action" in
 			back*) [ $__is_submenu -eq 1 ] && exit ;;
-			scrape*) 
+			scrape*)
 				[ $enable_submenus -eq 0 ] && continue
 				url_handler=submenu_handler
 				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
@@ -1441,7 +1442,7 @@ handle_scrape_error () {
 		1) print_info "$curr_scrape failed to load website\n" ;;
 		6) print_error "Website unresponsive (do you have internet?)\n" ;;
 		9) print_info "$curr_scrape does not have a configuration file\n" ;;
-	 	22) 
+	 	22)
 			case "$curr_scrape" in
 				youtube|Y|youtube-trending|T)
 					print_error "There was an error scraping $curr_scrape ($invidious_instance)\nTry changing invidious instances\n" ;;
@@ -1453,7 +1454,7 @@ handle_scrape_error () {
 }
 
 scrape_website () {
-	scrape_type="$1"	
+	scrape_type="$1"
 	_search="$2"
 	case $scrape_type in
 		invidious-playlist|youtube-playlist) scrape_invidious_playlist "$_search" "$ytfzf_video_json_file" ;;
@@ -1461,7 +1462,7 @@ scrape_website () {
 		playlist|p|json-file) scrape_json_file "$_search" "$ytfzf_video_json_file" ;;
 		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "channel-1" "$pages_to_scrape" ;;
 		youtube-channel) scrape_youtube_channel "$_search" "$ytfzf_video_json_file" "channel-1" ;;
-		youtube|Y) 
+		youtube|Y)
 			# youtube scrape {{{
 			#$i is so multiple pages can be scraped
 			scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$pages_to_scrape" || return "$?" ;;
@@ -1494,7 +1495,7 @@ scrape_website () {
 		    ;;#}}}
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
-		url|U) format_urls <<-EOF | open_url_handler 
+		url|U) format_urls <<-EOF | open_url_handler
 			$_search
 			EOF
 			exit 0
@@ -1578,7 +1579,7 @@ while :; do
 	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
 	format_urls < "$ytfzf_selected_urls" | open_url_handler
-	
+
 	#needs to be before loop or it'll just exit
 	[ $search_again -eq 1 ] && {
 		clean_up
