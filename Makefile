@@ -12,7 +12,7 @@ doc:
 	install docs/man/ytfzf.1 ${DESTDIR}${MANDIR}/man1
 	install docs/man/ytfzf.5 ${DESTDIR}${MANDIR}/man5
 	install docs/conf.sh ${DESTDIR}${DOCDIR}
-	install docs/conf.sh ${DESTDIR}/share/licenses
+	install LICENSE ${DESTDIR}/share/licenses
 
 install:
 	chmod 755 ${PROG}
