@@ -153,7 +153,8 @@ done
 # menu options
 #the menu to use instead of fzf when -D is specified
 function_exists "external_menu" || external_menu () {
-	dmenu -i -l 30 -p "$1"
+	#dmenu extremely laggy when showing tabs
+	tr -d '\t' | dmenu -i -l 30 -p "$1"
 }
 
 function_exists "search_prompt_menu" || search_prompt_menu () {
@@ -997,7 +998,7 @@ interface_ext () {
 		while IFS=$tab_space read title channel duration views date url
 		do
 			video_info_text
-		done | tr -d "$tab_space" |
+		done |
 		external_menu "Select video: " |
 		trim_url > "$selected_id_file"
 }
