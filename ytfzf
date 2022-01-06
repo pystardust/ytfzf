@@ -197,9 +197,11 @@ search_prompt_menu_wrapper () {
 : "${detach_shortcut:=alt-e}"
 : "${print_link_shortcut:=alt-l}"
 : "${show_formats_shortcut:=alt-f}"
+: "${info_shortcut:=alt-i}"
+: "${search_again_shortcut:=alt-s}"
 
 : "${custom_shortcut_binds=}"
-: "${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${custom_shortcut_binds}}"
+: "${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${custom_shortcut_binds},${info_shortcut},${search_again_shortcut}}"
 
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len:=210}
@@ -888,7 +890,7 @@ set_keypress () {
 }
 
 handle_keypress () {
-	read -r keypress
+	keypress="$1"
 	function_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
 	case "$keypress" in
 		$download_shortcut) url_handler=downloader ;;
@@ -897,6 +899,11 @@ handle_keypress () {
 		$detach_shortcut) is_detach=1 ;;
 		$print_link_shortcut) info_to_print="L"; exit_on_info_to_print=1 ;;
 		$show_formats_shortcut) show_formats=1 ;;
+		$info_shortcut) exit_on_info_to_print=1; info_to_print="VJ" ;;
+		$search_again_shortcut)
+			clean_up
+			make_search ""
+			$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 	esac
 	unset keypress
 }
@@ -964,7 +971,8 @@ interface_text () {
 		column -t -s "$tab_space" |
 		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress | 
 		trim_url > "$selected_id_file"
-	handle_keypress < "$keypress_file"
+	#we can't do handle_keypress < "$keypress_file" because it leaves fd0 open which breaks $search_again_shortcut
+	handle_keypress "$(cat "$keypress_file")"
 }
 #}}}
 
@@ -1167,7 +1175,8 @@ interface_thumbnails () {
 
 	preview_stop "$thumbnail_viewer"
 
-	handle_keypress < "$keypress_file"
+	#we can't do handle_keypress < "$keypress_file" because it leaves fd0 open which breaks $search_again_shortcut
+	handle_keypress "$(cat "$keypress_file")"
 }
 #}}}
 
