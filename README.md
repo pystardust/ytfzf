@@ -70,8 +70,10 @@ There is only 1 required dependency, however the rest may require some configura
 ```sh
 git clone https://github.com/pystardust/ytfzf
 cd ytfzf
-sudo make
+sudo make install doc
 ```
+
+* If you wish to not install documentation (highly unrecommended) run `sudo make install` instead.
 
 * ytfzf may be in some repositories, such as the AUR, however the above way is the recommended way to install.
 
