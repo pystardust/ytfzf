@@ -201,7 +201,7 @@ search_prompt_menu_wrapper () {
 : "${search_again_shortcut:=alt-s}"
 
 : "${custom_shortcut_binds=}"
-: "${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${custom_shortcut_binds},${info_shortcut},${search_again_shortcut}}"
+: "${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}}"
 
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len:=210}
