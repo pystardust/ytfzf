@@ -27,4 +27,10 @@ uninstall:
 	rm -rf ${DESTDIR}${LICENSEDIR}
 	rm -f ${DESTDIR}${BINDIR}/${PROG}
 
-.PHONY: install uninstall doc
+#legacy install locations on linux
+uninstall-old:
+	rm -f /usr/bin/ytfzf
+	rm -f /usr/share/man/man1/ytfzf.1*
+	rm -f /usr/share/man/man5/ytfzf.5*
+
+.PHONY: install uninstall doc uninstall-old
