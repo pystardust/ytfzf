@@ -63,6 +63,7 @@ There are only 2 required dependencies, however the rest require some configurat
 | [`display`](https://github.com/ImageMagick/ImageMagick) (from imagemagick)        | &#10060;         |
 | [`kitty`](https://github.com/kovidgoyal/kitty) (only when using `kitty` terminal) | &#9989;          |
 | [`w3m`](https://github.com/tats/w3m) (buggy)                                      | &#10060;         |
+| [`imv`](https://git.sr.ht/~exec64/imv)                                                      | &#9989;         |
 
 # Install
 
