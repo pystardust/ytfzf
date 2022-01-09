@@ -1128,8 +1128,9 @@ preview_display_image () {
 				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_dir/${id}.jpg" 3 | $w3mimgdisplay_path
 			done ;;
 		imv) 
-			imv-msg "$imv_pid" close all
-			imv-msg "$imv_pid" open "$thumb_dir/$id.jpg" ;;
+			imv-msg "$imv_pid" open "$thumb_dir/$id.jpg"
+			imv-msg "$imv_pid" next
+			;;
 		*) 
 			"$thumbnail_viewer" "view" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null || die 1 "$thumbnail_viewer doesn't exist\n" ;;
 
