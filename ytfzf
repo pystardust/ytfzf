@@ -101,7 +101,7 @@ function_exists "quick_menu_ext" || quick_menu_ext (){
 	external_menu "$1"
 }
 function_exists "quick_menu_scripting" || quick_menu_scripting () {
-	quick_menu
+	quick_menu "$1"
 }
 
 quick_menu_wrapper () {
