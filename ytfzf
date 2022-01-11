@@ -148,7 +148,7 @@ done
 : "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
 #}}}
 
-: ${useragent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36'}
+: "${useragent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36}"
 
 # menu options
 #the menu to use instead of fzf when -D is specified
@@ -282,7 +282,7 @@ function_exists "downloader" || downloader () {
 : "${url_handler:=multimedia_player}"
 : ${info_to_print=}
 : ${exit_on_info_to_print:=1}
-: ${video_pref:=best}
+: "${video_pref:=best}"
 : ${show_formats:=0}
 
 : ${is_sort:=0}
@@ -371,6 +371,7 @@ usage () {
 				    F:         print the selected video format
         -x                       Clear search and watch history (use --history-clear=<search|watch> to specify 1)
 	--disable-submenus       Whether or not to disable submenus, which are menus for things like playlists and channels
+	--version                Get the current version
 
     See ytfzf(1) and ytfzf(5) for more information.
 "
@@ -1295,7 +1296,7 @@ parse_opt () {
 		l|loop) is_loop=${optarg:-1} ;;
 		s|search-again) search_again=${optarg:-1} ;;
 		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
-		v|version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
+		version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
 		q|search-hist)
 			[ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"
@@ -1344,11 +1345,10 @@ parse_opt () {
 		submenu-scraping-opts) submenu_scraping_opts="${optarg}" ;;
 		nsfw)  nsfw="${optarg:-true}" ;;
 		*)
-			[ "$OPT" = "-" ] && print_info "$0: illegal long option -- $opt\n";;
+			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
 }
-
-while getopts "ac:dfhlmn:qrstvxADHI:LTU${long_opt_char}:" OPT; do
+while getopts "ac:dfhlmn:qrstxADHI:LTU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
