@@ -1323,11 +1323,15 @@ parse_opt () {
 		ytdl-path) ytdl_path="$optarg" ;;
 		preview-side) fzf_preview_side="${optarg}"; [ -z "$fzf_preview_side" ] && die 2 "no preview side given\n" ;;
 		thumb-viewer)
-			if is_relative_dir "$optarg" || command -v "$optarg" > /dev/null 2>&1; then
-				thumbnail_viewer="$optarg"
-			else
-				thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}"
-			fi ;;
+			case "$optarg" in
+				#these are special cases, where they are not themselves commands
+				chafa-16|catimg-256) thumbnail_viewer="$optarg" ;;
+				*)
+					is_relative_dir "$optarg" || command -v "$optarg" > /dev/null 2>&1 &&\
+						thumbnail_viewer="$optarg" ||\
+						thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}" ;;
+			esac ;;
+
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
 		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
 		sort-by) search_sort_by="$optarg" ;;
