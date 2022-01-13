@@ -67,7 +67,7 @@ There are only 2 required dependencies, however the rest require some configurat
 
 # Install
 
-1. Install the dependancies listed [above](#Dependencies)
+1. Install the dependencies listed [above](#Dependencies)
 2. Run the following commands
 ```sh
 git clone https://github.com/pystardust/ytfzf
