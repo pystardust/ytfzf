@@ -66,6 +66,8 @@ There are only 2 required dependencies, however the rest require some configurat
 
 # Install
 
+**if on `linux` and installed using make on version `2.0` or prior, run `sudo make uninstall-old` first**
+
 1. Install the dependencies listed [above](#Dependencies)
 2. Run the following commands
 ```sh
