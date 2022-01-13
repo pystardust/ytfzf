@@ -583,6 +583,22 @@ _invidious_playlist_json () {
 		}
 	]'
 }
+
+_concatinate_json_file () {
+	template="$1"
+	page_count=$2
+	_output_json_file="$3"
+	__cur_page=1
+	set --
+	while [ "$__cur_page" -le "$page_count" ]; do
+		set -- "$@" "${template}${__cur_page}.json.final"
+		__cur_page=$((__cur_page+1))
+	done
+	#the first arg will be empty
+	shift
+	cat "$@" >> "$_output_json_file"
+
+}
 #}}}
 
 scrape_invidious_playlist () {
@@ -598,15 +614,20 @@ scrape_invidious_playlist () {
 
 	_cur_page=1
 	while :; do
-		_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id-$_cur_page.json"
-		_get_request "$invidious_instance/api/v1/playlists/$playlist_id" \
-		-G --data-urlencode "page=$_cur_page" > "$_tmp_json" || return "$?"
-		jq -e '.videos==[]' < "$_tmp_json" > /dev/null 2>&1  && break
-		print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url, pg: $_cur_page)\n"
+		{
+			_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id-$_cur_page.json"
+			_get_request "$invidious_instance/api/v1/playlists/$playlist_id" \
+			-G --data-urlencode "page=$_cur_page" > "$_tmp_json" || return "$?"
+			jq -e '.videos==[]' < "$_tmp_json" > /dev/null 2>&1  && break
+			print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url, pg: $_cur_page)\n"
 
-		_cur_pag_cur_page=$((i+1))
-		_invidious_playlist_json < "$_tmp_json" >> "$_full_playlist_json"
+			_invidious_playlist_json < "$_tmp_json" >> "$_full_playlist_json"
+		} &
+		_cur_page=$((i+1))
 	done
+	wait
+	_concatinate_json_file "${session_temp_dir}/yt-playlist-$playlist_id-" "$_cur_page" "$_full_playlist_json"
+
 	#some instances give duplicates over multiple pages, remove the duplicates
 	jq -s '. | flatten | sort_by(.ID) | unique_by(.ID)' < "$_full_playlist_json" >> "$output_json_file"
 
@@ -620,30 +641,34 @@ scrape_invidious_search () {
 
 	_cur_page=1
 	while [ ${_cur_page} -le $page_num ]; do
-		_tmp_json="${session_temp_dir}/yt-search-$_cur_page.json"
-
-		print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $_cur_page)\n"
-
-		_get_request "$invidious_instance/api/v1/search" \
-			-G --data-urlencode "q=$page_query" \
-			--data-urlencode "type=${search_result_type}" \
-			--data-urlencode "sort_by=${search_sort_by}" \
-			--data-urlencode "date=${search_upload_date}" \
-			--data-urlencode "duration=${search_video_duration}" \
-			--data-urlencode "features=${search_result_features}" \
-			--data-urlencode "region=${search_region}" \
-			--data-urlencode "page=${_cur_page}" > "$_tmp_json" || return "$?"
-
-		_get_invidious_thumb_quality_name
-
 		{
-			_invidious_search_json_live < "$_tmp_json"
-			_invidious_search_json_videos < "$_tmp_json"
-			_invidious_search_json_channel < "$_tmp_json"
-			_invidious_search_json_playlist < "$_tmp_json"
-		} >> "$output_json_file"
+			_tmp_json="${session_temp_dir}/yt-search-$_cur_page.json"
+
+			print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $_cur_page)\n"
+
+			_get_request "$invidious_instance/api/v1/search" \
+				-G --data-urlencode "q=$page_query" \
+				--data-urlencode "type=${search_result_type}" \
+				--data-urlencode "sort_by=${search_sort_by}" \
+				--data-urlencode "date=${search_upload_date}" \
+				--data-urlencode "duration=${search_video_duration}" \
+				--data-urlencode "features=${search_result_features}" \
+				--data-urlencode "region=${search_region}" \
+				--data-urlencode "page=${_cur_page}" > "$_tmp_json" || return "$?"
+
+			_get_invidious_thumb_quality_name
+
+			{
+				_invidious_search_json_live < "$_tmp_json"
+				_invidious_search_json_videos < "$_tmp_json"
+				_invidious_search_json_channel < "$_tmp_json"
+				_invidious_search_json_playlist < "$_tmp_json"
+			} >> "$_tmp_json.final"
+		} &
 		_cur_page=$((_cur_page+1))
 	done
+	wait
+	_concatinate_json_file "${session_temp_dir}/yt-search-" "$page_num" "$output_json_file"
 }
 
 scrape_invidious_trending () {
@@ -685,22 +710,26 @@ scrape_invidious_channel () {
 	#here because if scrape_invidious_channel is called more than once, i needs to be reset
 	_cur_page=1
 	while [ ${_cur_page} -le $page_num ]; do
-		print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url (pg: $_cur_page)\n"
-		#if this var isn't unique, weird things happen,
-		_tmp_json="${session_temp_dir}/$tmp_file_name-$_cur_page.json"
-		channel_url="$invidious_instance/api/v1/channels/$channel_id/videos"
-		_get_request "${channel_url##* }" \
-			-G --data-urlencode "page=$_cur_page" \
-			> "$_tmp_json" || return "$?"
-
-		_get_invidious_thumb_quality_name
-
 		{
-			_invidious_search_json_videos < "$_tmp_json"
-			_invidious_search_json_live < "$_tmp_json"
-		} >> "$output_json_file"
+			print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url (pg: $_cur_page)\n"
+			#if this var isn't unique, weird things happen,
+			_tmp_json="${session_temp_dir}/$tmp_file_name-$_cur_page.json"
+			channel_url="$invidious_instance/api/v1/channels/$channel_id/videos"
+			_get_request "${channel_url##* }" \
+				-G --data-urlencode "page=$_cur_page" \
+				> "$_tmp_json" || return "$?"
+
+			_get_invidious_thumb_quality_name
+
+			{
+				_invidious_search_json_videos < "$_tmp_json"
+				_invidious_search_json_live < "$_tmp_json"
+			} >> "$_tmp_json.final"
+		} &
 		_cur_page=$((_cur_page+1))
 	done
+	wait
+	_concatinate_json_file "${session_temp_dir}/${tmp_file_name}-" "$page_num" "$output_json_file"
 }
 ## }}}
 
