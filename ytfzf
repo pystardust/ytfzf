@@ -918,7 +918,7 @@ handle_keypress () {
 # Takes video json file as $1 and returns the selected video IDs to file $2
 function_exists "video_info_text" || video_info_text () {
 	#we can't just change the views line to %d because it needs to display the "|", and "|$views" is NaN
-	views="$(printf "|%'d" "${views#|}")"
+	[ "${views#|}" -eq "${views#|}" ] 2>/dev/null && views="$(printf "|%'d" "${views#|}" 2>/dev/null)"
 	printf "%-${title_len}.${title_len}s\t" "$title"
 	printf "%-${channel_len}.${channel_len}s\t" "$channel"
 	printf "%-${dur_len}.${dur_len}s\t" "$duration"
@@ -929,10 +929,11 @@ function_exists "video_info_text" || video_info_text () {
 }
 
 function_exists "thumbnail_video_info_text" || thumbnail_video_info_text () {
+	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%'d" "$views")"
 	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
 	[ -n "$channel" ] && printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
 	[ -n "$duration" ] && printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
-	[ -n "$views" ] && printf "\n ${c_blue}Views    ${c_magenta}%'d" "$views"
+	[ -n "$views" ] && printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
 	[ -n "$date" ] && printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
 	[ -n "$description" ] && printf "\n ${c_blue}Description ${c_reset}: %s" "$(printf "%s" "$description" | sed 's/\\n/\n/g')"
 }
