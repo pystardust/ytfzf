@@ -344,6 +344,10 @@ usage () {
 	-s                      After closing fzf make another search
 	-q                      Use a search query from search history
 	-L			Show the link of selected video(s)
+	-a                      Automatically select the first video
+	-r                      Automatically select a random video
+	-A                      Select all videos
+	-n <video count>        The amount of videos to select with -a and -r
 	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
 				    youtube/Y, youtube-trending/T, youtube-subscriptions/S/SI,
@@ -357,6 +361,7 @@ usage () {
 				    * SI scrapes invidious for channels instead of youtube,
 				    * Y and T both scrape invidious
 				you can use multiple scrapers by separating each with a , eg: youtube,odysee
+	-H                      alias for -c H
 	-t			Show thumbnails
 	--thumb-viewer=viewer   The program to use for displaying thumbnails.
 	-D			Use an external menu
