@@ -946,11 +946,11 @@ function_exists "thumbnail_video_info_text" || thumbnail_video_info_text () {
 interface_scripting () {
 	video_json_file=$1
 	selected_id_file=$2
-	data_string_template='.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"'
+	data_string_template='.[].url'
 	case 1 in
 		"$is_auto_select") jq -r "$data_string_template"  < "$video_json_file"  ;;
 		"$is_random_select") jq -r "$data_string_template"  < "$video_json_file"  | shuf ;;
-	esac | head -n "$scripting_video_count" | trim_url > "$selected_id_file"
+	esac | head -n "$scripting_video_count" > "$selected_id_file"
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
 }
 # }}}
