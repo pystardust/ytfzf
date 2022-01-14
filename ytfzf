@@ -1580,7 +1580,7 @@ make_search () {
 
 make_search "$initial_search"
 
-while :; do
+main() while :; do
 	#calls the interface
 	$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
 	handle_actions < "$ytfzf_selected_urls"
@@ -1589,13 +1589,14 @@ while :; do
 
 	format_urls < "$ytfzf_selected_urls" | open_url_handler
 
-	#needs to be before loop or it'll just exit
-	[ $search_again -eq 1 ] && {
-		clean_up
-		make_search ""
-		continue
-	}
 	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
+done; main
+
+#doing this after the loop allows for -l and -s to coexist
+while [ $search_again -eq 1 ] ; do
+	clean_up
+	make_search ""
+	main
 done
 #}}}
 
