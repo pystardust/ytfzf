@@ -1135,7 +1135,8 @@ preview_display_image () {
 			imv-msg "$imv_pid" next
 			;;
 		*) 
-			"$thumbnail_viewer" "view" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null || die 1 "$thumbnail_viewer doesn't exist\n" ;;
+			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
+			"$thumbnail_viewer" "view" "${thumb_dir}/${id}.jpg" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side" || die 1 "$thumbnail_viewer doesn't exist\n" ;;
 
 	esac
 }
