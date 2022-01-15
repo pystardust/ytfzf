@@ -56,6 +56,11 @@ title_str () {
 	printf "%s\n" "${1#?}"
 }
 
+#backup shuf function, as shuf is not posix
+dep_check "shuf" || shuf () {
+	awk -F'\n' 'BEGIN{srand()} {print rand() " " $0}' | sort -n | sed -E 's/[^ ]* //'
+}
+
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
 	[ $log_level -ge 0 ] && printf "$1" >&2
