@@ -1266,9 +1266,8 @@ open_url_handler () {
 get_video_format(){
 	#the sed gets rid of random information
 	case 1 in
-		$is_audio_only) ${ytdl_path} -F "$1" | sed -n '4,$p' | grep 'audio only' | quick_menu_wrapper "Audio format: " | awk '{print $1}' ;;
-		1)
-			printf "%s+bestaudio/best" "$(${ytdl_path} -F "$1" | sed -n '4,$p' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')" ;;
+		$is_audio_only) ${ytdl_path} -q -F "$1" | grep 'audio only' | quick_menu_wrapper "Audio format: " | awk '{print $1}' ;;
+		1) ${ytdl_path} -q -F "$1" | sed '1,2d' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1 "+bestaudio/" $1}' ;;
 	esac
 }
 
