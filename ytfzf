@@ -974,6 +974,8 @@ interface_text () {
 	view_len=10
 	date_len=100
 
+	IFS=" ${tab_space}${new_line}"
+
 	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
 		sort_video_data_fn |
 		while IFS=$tab_space read title channel duration views date url
@@ -981,7 +983,7 @@ interface_text () {
 			video_info_text
 		done |
 		column -t -s "$tab_space" |
-		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
+		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" $fzf_opts | set_keypress |
 		trim_url > "$selected_id_file"
 	#we can't do handle_keypress < "$keypress_file" because it leaves fd0 open which breaks $search_again_shortcut
 	handle_keypress "$(cat "$keypress_file")"
@@ -1185,13 +1187,15 @@ interface_thumbnails () {
 
 	preview_start "$thumbnail_viewer"
 
+	IFS=" ${tab_space}${new_line}"
+
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	#fzf_preview_side will get reset if we don't pass it in
 	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|@tsv' < "$video_json_file" |
 	sort_video_data_fn |
 	fzf -m \
 	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
-	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
+	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" $fzf_thumbnail_opts | set_keypress |
 	trim_url > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
