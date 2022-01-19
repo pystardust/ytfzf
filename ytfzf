@@ -275,6 +275,12 @@ function_exists "downloader" || downloader () {
 : "${hist_file:=$cache_dir/watch_hist}"
 : "${search_hist_file:=$cache_dir/search_hist}"
 
+function_exists "parse_search_hist_file" || parse_search_hist_file () {
+	while read -r line; do
+		printf "%s\n" "${line#*${tab_space}}"
+	done
+}
+
 # history
 : ${enable_hist:=1}
 : ${enable_search_hist:=1}
@@ -1306,7 +1312,7 @@ parse_opt () {
 		L) info_to_print="$info_to_print,L" ;;
 		q|search-hist)
 			[ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"
-			initial_search="$(cat "$search_hist_file" | quick_menu_wrapper)" ;;
+			initial_search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)" ;;
 		pages) pages_to_scrape="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
 		interface)
@@ -1568,9 +1574,11 @@ handle_empty_scrape () {
 }
 #}}}
 
-handle_search_history () {
+
+function_exists "handle_search_history" || handle_search_history () {
 	#search history
-	[ $enable_search_hist -eq 1 ] && [ -n "$1" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && echo "$1" >> "$search_hist_file"
+	date=$(date +'%D %H:%M:%S')
+	printf "%s${tab_space}%s\n" "${date}" "${1}" >> "$2"
 }
 
 make_search () {
@@ -1579,7 +1587,7 @@ make_search () {
 	#this cannot be done inside handle_scraping, because otherwise init_files will get an empty search with search_again
 	is_asking_for_search_necessary && search_prompt_menu_wrapper
 	init_files "$_search"
-	handle_search_history "$_search"
+	[ $enable_search_hist -eq 1 ] && [ -n "$_search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 	handle_scraping "$_search"
 	handle_empty_scrape
 }
