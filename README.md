@@ -78,7 +78,7 @@ sudo make install doc
 
 * If you wish to not install documentation (highly unrecommended) run `sudo make install` instead.
 
-* ytfzf may be in some repositories, such as the AUR, however the above way is the recommended way to install.
+* ytfzf may be in some repositories, such as the AUR, however they may or may not be up to date.
 
 ---
 
