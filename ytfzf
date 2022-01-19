@@ -276,9 +276,7 @@ function_exists "downloader" || downloader () {
 : "${search_hist_file:=$cache_dir/search_hist}"
 
 function_exists "parse_search_hist_file" || parse_search_hist_file () {
-	while read -r line; do
-		printf "%s\n" "${line#*${tab_space}}"
-	done
+	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
 }
 
 # history
