@@ -923,6 +923,32 @@ This function takes in an unlimited amount of arguments, each of which is a link
 .RE
 
 .PP
+Search History
+.RS
+
+.TP
+.BR handle_search_history()
+This function handles appending the search to the given search file.
+.br
+This function takes 2 arguments:
+.RS
+.TP
+.IR 1
+The search to write
+.TP
+.IR 2
+The file to append to.
+.RE
+
+.TP
+.BR parse_search_hist_file()
+This function should parse the search history file, and print out each search separated by new lines.
+.br
+The search history file will be fed through stdin.
+
+.RE
+
+.PP
 Misc
 
 .RS
@@ -932,7 +958,6 @@ Misc
 This function sends a notification for the videos that are about to be played.
 .br
 This function takes an unknown amount of urls as arguments.
-.RE
 
 .TP
 .BR img_display_function ()
