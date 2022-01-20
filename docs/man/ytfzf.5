@@ -1147,20 +1147,6 @@ The final JSON shall be
 .B APPENDED
 to the file given as an argument.
 .RE
-.PP
-Other functions the scraper may define:
-.TP
-.IR search_prompt_menu_<name_of_interface>
-This function should do the same thing as search_prompt_menu().
-This function takes no arguments.
-.br
-If this function is not defined, search_prompt_menu_ext() will be called instead.
-.TP
-.IR quick_menu_<name_of_interface>
-This function should do the same thing as quick_menu().
-This function takes no arguments.
-.br
-If this function is not defined, quick_menu_ext() will be called instead.
 
 .RE
 
@@ -1183,6 +1169,20 @@ This function could handle everything itself, or call another program written in
 interface_<name_of_interface> will take a path to the json file holding all data about all the videos as the first argument.
 .br
 The second argument will be a path to a file to store the selected url in, separated by new lines.
+.PP
+Other functions the scraper may define:
+.TP
+.IR search_prompt_menu_<name_of_interface>
+This function should do the same thing as search_prompt_menu().
+This function takes no arguments.
+.br
+If this function is not defined, search_prompt_menu_ext() will be called instead.
+.TP
+.IR quick_menu_<name_of_interface>
+This function should do the same thing as quick_menu().
+This function takes no arguments.
+.br
+If this function is not defined, quick_menu_ext() will be called instead.
 
 .SH THUMBNAIL VIEWERS
 Custom thumbnail viewers are programs in $YTFZF_THUMBNAIL_VIEWERS_DIR.
