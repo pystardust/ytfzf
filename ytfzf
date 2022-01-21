@@ -324,6 +324,8 @@ function_exists "parse_search_hist_file" || parse_search_hist_file () {
 
 : "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history }"
 
+: ${max_thread_count:=100}
+
 
 # Option Checks {{{
 case "$long_opt_char" in
@@ -624,6 +626,7 @@ scrape_invidious_playlist () {
 	_full_playlist_json="${session_temp_dir}/full-playlist-$playlist_id.json"
 
 	_cur_page=1
+	_thread_count=0
 	while :; do
 		{
 			_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id-$_cur_page.json"
@@ -635,6 +638,8 @@ scrape_invidious_playlist () {
 			_invidious_playlist_json < "$_tmp_json" >> "$_full_playlist_json"
 		} &
 		_cur_page=$((i+1))
+		_thread_count=$((_thread_count+1))
+		[ $_thread_count -ge $max_thread_count ] && wait "$!" && _thread_count=$(jobs -p | wc -l)
 	done
 	wait
 	_concatinate_json_file "${session_temp_dir}/yt-playlist-$playlist_id-" "$_cur_page" "$_full_playlist_json"
@@ -651,6 +656,7 @@ scrape_invidious_search () {
 	page_num=$4
 
 	_cur_page=1
+	_thread_count=0
 	while [ ${_cur_page} -le $page_num ]; do
 		{
 			_tmp_json="${session_temp_dir}/yt-search-$_cur_page.json"
@@ -676,6 +682,8 @@ scrape_invidious_search () {
 				_invidious_search_json_playlist < "$_tmp_json"
 			} >> "$_tmp_json.final"
 		} &
+		_thread_count=$((_thread_count+1))
+		[ $_thread_count -ge $max_thread_count ] && wait "$!" && _thread_count=$(jobs -p | wc -l)
 		_cur_page=$((_cur_page+1))
 	done
 	wait
@@ -720,6 +728,7 @@ scrape_invidious_channel () {
 
 	#here because if scrape_invidious_channel is called more than once, i needs to be reset
 	_cur_page=1
+	_thread_count=0
 	while [ ${_cur_page} -le $page_num ]; do
 		{
 			print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url (pg: $_cur_page)\n"
@@ -738,6 +747,8 @@ scrape_invidious_channel () {
 			} >> "$_tmp_json.final"
 		} &
 		_cur_page=$((_cur_page+1))
+		_thread_count=$((_thread_count+1))
+		[ $_thread_count -ge $max_thread_count ] && wait "$!" && _thread_count=$(jobs -p | wc -l)
 	done
 	wait
 	_concatinate_json_file "${session_temp_dir}/${tmp_file_name}-" "$page_num" "$output_json_file"
@@ -1385,6 +1396,7 @@ parse_opt () {
 		submenu-opts) submenu_opts="${optarg}" ;;
 		submenu-scraping-opts) submenu_scraping_opts="${optarg}" ;;
 		nsfw)  nsfw="${optarg:-true}" ;;
+		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
 		*)
 			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
