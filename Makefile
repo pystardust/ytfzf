@@ -10,15 +10,16 @@ doc:
 	mkdir -p ${DESTDIR}${MANDIR}/man5
 	mkdir -p ${DESTDIR}${DOCDIR}
 	mkdir -p ${DESTDIR}${LICENSEDIR}
-	install -Dm644 docs/man/ytfzf.1 ${DESTDIR}${MANDIR}/man1
-	install -Dm644 docs/man/ytfzf.5 ${DESTDIR}${MANDIR}/man5
-	install -Dm644 docs/conf.sh ${DESTDIR}${DOCDIR}
-	install -Dm644 LICENSE ${DESTDIR}${LICENSEDIR}
+	chmod 644 docs/man/ytfzf.1 docs/man/ytfzf.5 docs/conf.sh LICENSE
+	cp docs/man/ytfzf.1 ${DESTDIR}${MANDIR}/man1
+	cp docs/man/ytfzf.5 ${DESTDIR}${MANDIR}/man5
+	cp docs/conf.sh ${DESTDIR}${DOCDIR}
+	cp LICENSE ${DESTDIR}${LICENSEDIR}
 
 install:
 	chmod 755 ${PROG}
 	mkdir -p ${DESTDIR}${BINDIR}
-	install ${PROG} ${DESTDIR}${BINDIR}/${PROG}
+	cp ${PROG} ${DESTDIR}${BINDIR}/${PROG}
 
 uninstall:
 	rm -f ${DESTDIR}${MANDIR}/man1/ytfzf.1

@@ -249,9 +249,6 @@ make sure $w3mimgdisplay_path is set to the path to w3mimgdisplay
 .IR imv
 Good with tiling window managers
 .TP
-.IR kitty
-Uses kitty's builtin icat to display an image.
-.TP
 .IR custom
 Calls the user defined img_display_function()
 .TP
@@ -337,7 +334,7 @@ The end frame of the video (low quality)
 .br
 
 .TP
-.RB $notify_video_playing
+.RB $notify_playing
 Whether or not to send a notification when a video is about to be played.
 .br
 .RI default: " 0"
@@ -926,6 +923,32 @@ This function takes in an unlimited amount of arguments, each of which is a link
 .RE
 
 .PP
+Search History
+.RS
+
+.TP
+.BR handle_search_history()
+This function handles appending the search to the given search file.
+.br
+This function takes 2 arguments:
+.RS
+.TP
+.IR 1
+The search to write
+.TP
+.IR 2
+The file to append to.
+.RE
+
+.TP
+.BR parse_search_hist_file()
+This function should parse the search history file, and print out each search separated by new lines.
+.br
+The search history file will be fed through stdin.
+
+.RE
+
+.PP
 Misc
 
 .RS
@@ -935,7 +958,6 @@ Misc
 This function sends a notification for the videos that are about to be played.
 .br
 This function takes an unknown amount of urls as arguments.
-.RE
 
 .TP
 .BR img_display_function ()
@@ -1125,20 +1147,6 @@ The final JSON shall be
 .B APPENDED
 to the file given as an argument.
 .RE
-.PP
-Other functions the scraper may define:
-.TP
-.IR search_prompt_menu_<name_of_interface>
-This function should do the same thing as search_prompt_menu().
-This function takes no arguments.
-.br
-If this function is not defined, search_prompt_menu_ext() will be called instead.
-.TP
-.IR quick_menu_<name_of_interface>
-This function should do the same thing as quick_menu().
-This function takes no arguments.
-.br
-If this function is not defined, quick_menu_ext() will be called instead.
 
 .RE
 
@@ -1161,11 +1169,52 @@ This function could handle everything itself, or call another program written in
 interface_<name_of_interface> will take a path to the json file holding all data about all the videos as the first argument.
 .br
 The second argument will be a path to a file to store the selected url in, separated by new lines.
+.PP
+Other functions the scraper may define:
+.TP
+.IR search_prompt_menu_<name_of_interface>
+This function should do the same thing as search_prompt_menu().
+This function takes no arguments.
+.br
+If this function is not defined, search_prompt_menu_ext() will be called instead.
+.TP
+.IR quick_menu_<name_of_interface>
+This function should do the same thing as quick_menu().
+This function takes no arguments.
+.br
+If this function is not defined, quick_menu_ext() will be called instead.
 
 .SH THUMBNAIL VIEWERS
 Custom thumbnail viewers are programs in $YTFZF_THUMBNAIL_VIEWERS_DIR.
-The first argument will be the action, there are 3 actions, start, stop, view
+Arguments:
+.RS
+.TP
+.IR 1
+An action, there are 3 actions, start, stop, view
+.TP
+.IR 2
+The path to the thumbnail.
+.TP
+.IR 3
+x position (in columns) of the image
+.TP
+.IR 4
+y position (in lines) of the image
+.TP
+.IR 5
+width of image (in columns)
+.TP
+.IR 6
+height of image (in lines)
+.TP
+.IR 7
+max width of image (in columns) (width already accounts for this)
+.TP
+.IR 8
+max height of image (in lines) (height already accounts for this)
+.TP
+.IR 9
+side of the terminal to display the image (x, y, width, height already account for this)
 .br
-The second argument will be the max width (in columns)
-.br
-The third argument will be the max height (in coumns)
+this will be either \fIup\fR \fIdown\fR \fIleft\fR \fIright\fR
+.RE

@@ -61,13 +61,18 @@ There are only 2 required dependencies, however the rest require some configurat
 | [`chafa`](https://github.com/hpjansson/chafa)                                     | &#9989;          |
 | [`catimg`](https://github.com/posva/catimg)                                       | &#9989;          |
 | [`display`](https://github.com/ImageMagick/ImageMagick) (from imagemagick)        | &#10060;         |
-| [`kitty`](https://github.com/kovidgoyal/kitty) (only when using `kitty` terminal) | &#9989;          |
 | [`w3m`](https://github.com/tats/w3m) (buggy)                                      | &#10060;         |
 | [`imv`](https://git.sr.ht/~exec64/imv)                                                      | &#9989;         |
 
 # Install
 
-1. Install the dependancies listed [above](#Dependencies)
+<a href="https://repology.org/metapackage/ytfzf">
+    <img src="https://repology.org/badge/vertical-allrepos/ytfzf.svg" alt="Repo status" align="right">
+</a>
+
+**if on `linux` and installed using make on version `2.0` or prior, run `sudo make uninstall-old` first**
+
+1. Install the dependencies listed [above](#Dependencies)
 2. Run the following commands
 ```sh
 git clone https://github.com/pystardust/ytfzf
@@ -77,7 +82,7 @@ sudo make install doc
 
 * If you wish to not install documentation (highly unrecommended) run `sudo make install` instead.
 
-* ytfzf may be in some repositories, such as the AUR, however the above way is the recommended way to install.
+* You may also install `ytfzf` through your package manager, as listed on the side.
 
 ---
 
