@@ -324,7 +324,7 @@ function_exists "parse_search_hist_file" || parse_search_hist_file () {
 
 : "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history }"
 
-: ${max_thread_count:=100}
+: ${max_thread_count:=20}
 
 
 # Option Checks {{{
