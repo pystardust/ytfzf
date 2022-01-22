@@ -317,6 +317,20 @@ Amount of pages to scrape on youtube/invidious.
 This can also be set in the config file with
 .BR pages_to_scrape .
 .TP
+.BI "\-\-max\-threads=amount"
+Amount of threads that can be used to scrape youtube search, playlists, and channels.
+(this does not apply to the subscription scraper).
+.br
+This can also be set in the config file with 
+.BR max_thread_count .
+.TP
+.BI "\-\-single\-threaded"
+Set the max_thread_count to 1, this has the same effect as making everything single threaded.
+(this does not apply to the subscription scraper).
+.br
+This can also bet set in the config file with 
+.BR max_thread_count=1 .
+.TP
 .BI "\-\-odysee\-video\-count=amount"
 Amount of videos to scrape on odysee.
 This can also be set in the config file with

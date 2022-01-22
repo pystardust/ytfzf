@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-2"
+YTFZF_VERSION="2.2.alpha-3"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -35,6 +35,7 @@ c_reset="\033[0m"
 : "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
+
 
 dep_check() {
 	command -v "$1" > /dev/null 2>&1
@@ -325,6 +326,8 @@ function_exists "parse_search_hist_file" || parse_search_hist_file () {
 : "${custom_scrape_search_exclude=}"
 : "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history ${custom_scrape_search_exclude} }"
 
+: ${max_thread_count:=20}
+
 
 # Option Checks {{{
 case "$long_opt_char" in
@@ -416,6 +419,16 @@ _get_request () {
 		-H "User-Agent: $useragent" \
 		-H 'Accept-Language: en-US,en;q=0.9' \
 		--compressed
+}
+
+_start_series_of_threads () {
+	_thread_count=0
+}
+
+_thread_started (){
+	_latest_fork="$1"
+	_thread_count=$((_thread_count+1))
+	[ $_thread_count -ge $max_thread_count ] && wait "$_latest_fork" && _thread_count=$(jobs -p | wc -l)
 }
 
 #}}}
@@ -597,6 +610,21 @@ _invidious_playlist_json () {
 		}
 	]'
 }
+
+_concatinate_json_file () {
+	template="$1"
+	page_count=$2
+	_output_json_file="$3"
+	__cur_page=1
+	set --
+	#this sets the arguments to the files in order for cat
+	while [ "$__cur_page" -le "$page_count" ]; do
+		set -- "$@" "${template}${__cur_page}.json.final"
+		__cur_page=$((__cur_page+1))
+	done
+	cat "$@" >> "$_output_json_file"
+
+}
 #}}}
 
 scrape_invidious_playlist () {
@@ -618,9 +646,10 @@ scrape_invidious_playlist () {
 		jq -e '.videos==[]' < "$_tmp_json" > /dev/null 2>&1  && break
 		print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url, pg: $_cur_page)\n"
 
-		_cur_page=$((_cur_page+1))
 		_invidious_playlist_json < "$_tmp_json" >> "$_full_playlist_json"
+		_cur_page=$((_cur_page+1))
 	done
+
 	#some instances give duplicates over multiple pages, remove the duplicates
 	jq -s '. | flatten | sort_by(.ID) | unique_by(.ID)' < "$_full_playlist_json" >> "$output_json_file"
 
@@ -633,31 +662,37 @@ scrape_invidious_search () {
 	page_num=$4
 
 	_cur_page=1
+	_start_series_of_threads
 	while [ ${_cur_page} -le $page_num ]; do
-		_tmp_json="${session_temp_dir}/yt-search-$_cur_page.json"
-
-		print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $_cur_page)\n"
-
-		_get_request "$invidious_instance/api/v1/search" \
-			-G --data-urlencode "q=$page_query" \
-			--data-urlencode "type=${search_result_type}" \
-			--data-urlencode "sort_by=${search_sort_by}" \
-			--data-urlencode "date=${search_upload_date}" \
-			--data-urlencode "duration=${search_video_duration}" \
-			--data-urlencode "features=${search_result_features}" \
-			--data-urlencode "region=${search_region}" \
-			--data-urlencode "page=${_cur_page}" > "$_tmp_json" || return "$?"
-
-		_get_invidious_thumb_quality_name
-
 		{
-			_invidious_search_json_live < "$_tmp_json"
-			_invidious_search_json_videos < "$_tmp_json"
-			_invidious_search_json_channel < "$_tmp_json"
-			_invidious_search_json_playlist < "$_tmp_json"
-		} >> "$output_json_file"
+			_tmp_json="${session_temp_dir}/yt-search-$_cur_page.json"
+
+			print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $_cur_page)\n"
+
+			_get_request "$invidious_instance/api/v1/search" \
+				-G --data-urlencode "q=$page_query" \
+				--data-urlencode "type=${search_result_type}" \
+				--data-urlencode "sort_by=${search_sort_by}" \
+				--data-urlencode "date=${search_upload_date}" \
+				--data-urlencode "duration=${search_video_duration}" \
+				--data-urlencode "features=${search_result_features}" \
+				--data-urlencode "region=${search_region}" \
+				--data-urlencode "page=${_cur_page}" > "$_tmp_json" || return "$?"
+
+			_get_invidious_thumb_quality_name
+
+			{
+				_invidious_search_json_live < "$_tmp_json"
+				_invidious_search_json_videos < "$_tmp_json"
+				_invidious_search_json_channel < "$_tmp_json"
+				_invidious_search_json_playlist < "$_tmp_json"
+			} >> "$_tmp_json.final"
+		} &
 		_cur_page=$((_cur_page+1))
+		_thread_started "$!"
 	done
+	wait
+	_concatinate_json_file "${session_temp_dir}/yt-search-" "$page_num" "$output_json_file"
 }
 
 scrape_invidious_trending () {
@@ -698,23 +733,29 @@ scrape_invidious_channel () {
 
 	#here because if scrape_invidious_channel is called more than once, i needs to be reset
 	_cur_page=1
+	_start_series_of_threads
 	while [ ${_cur_page} -le $page_num ]; do
-		print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url (pg: $_cur_page)\n"
-		#if this var isn't unique, weird things happen,
-		_tmp_json="${session_temp_dir}/$tmp_file_name-$_cur_page.json"
-		channel_url="$invidious_instance/api/v1/channels/$channel_id/videos"
-		_get_request "${channel_url##* }" \
-			-G --data-urlencode "page=$_cur_page" \
-			> "$_tmp_json" || return "$?"
-
-		_get_invidious_thumb_quality_name
-
 		{
-			_invidious_search_json_videos < "$_tmp_json"
-			_invidious_search_json_live < "$_tmp_json"
-		} >> "$output_json_file"
+			print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url (pg: $_cur_page)\n"
+			#if this var isn't unique, weird things happen,
+			_tmp_json="${session_temp_dir}/$tmp_file_name-$_cur_page.json"
+			channel_url="$invidious_instance/api/v1/channels/$channel_id/videos"
+			_get_request "${channel_url##* }" \
+				-G --data-urlencode "page=$_cur_page" \
+				> "$_tmp_json" || return "$?"
+
+			_get_invidious_thumb_quality_name
+
+			{
+				_invidious_search_json_videos < "$_tmp_json"
+				_invidious_search_json_live < "$_tmp_json"
+			} >> "$_tmp_json.final"
+		} &
 		_cur_page=$((_cur_page+1))
+		_thread_started "$!"
 	done
+	wait
+	_concatinate_json_file "${session_temp_dir}/${tmp_file_name}-" "$page_num" "$output_json_file"
 }
 ## }}}
 
@@ -1371,6 +1412,7 @@ parse_opt () {
 		nsfw)  nsfw="${optarg:-true}" ;;
 		fzf-opts) fzf_opts="${optarg}" ;;
 		fzf-thumbnail-opts) fzf_thumbnail_opts="${optarg}" ;;
+		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
 		*)
 			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
