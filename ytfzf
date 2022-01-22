@@ -618,7 +618,7 @@ scrape_invidious_playlist () {
 		jq -e '.videos==[]' < "$_tmp_json" > /dev/null 2>&1  && break
 		print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url, pg: $_cur_page)\n"
 
-		_cur_pag_cur_page=$((i+1))
+		_cur_page=$((_cur_page+1))
 		_invidious_playlist_json < "$_tmp_json" >> "$_full_playlist_json"
 	done
 	#some instances give duplicates over multiple pages, remove the duplicates
