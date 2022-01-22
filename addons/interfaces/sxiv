@@ -4,9 +4,6 @@
 quick_menu_sxiv () {
     quick_menu
 }
-search_prompt_menu_sxiv () {
-    _search="$(cat ~/.cache/ytfzf/search_hist | dmenu -p "Search: ")"
-}
 interface_sxiv () {
     video_json_file=$1
     selected_id_file=$2
