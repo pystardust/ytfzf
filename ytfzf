@@ -638,22 +638,16 @@ scrape_invidious_playlist () {
 	_full_playlist_json="${session_temp_dir}/full-playlist-$playlist_id.json"
 
 	_cur_page=1
-	_start_series_of_threads
 	while :; do
-		{
-			_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id-$_cur_page.json"
-			_get_request "$invidious_instance/api/v1/playlists/$playlist_id" \
-			-G --data-urlencode "page=$_cur_page" > "$_tmp_json" || return "$?"
-			jq -e '.videos==[]' < "$_tmp_json" > /dev/null 2>&1  && break
-			print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url, pg: $_cur_page)\n"
+		_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id-$_cur_page.json"
+		_get_request "$invidious_instance/api/v1/playlists/$playlist_id" \
+		-G --data-urlencode "page=$_cur_page" > "$_tmp_json" || return "$?"
+		jq -e '.videos==[]' < "$_tmp_json" > /dev/null 2>&1  && break
+		print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url, pg: $_cur_page)\n"
 
-			_invidious_playlist_json < "$_tmp_json" >> "$_full_playlist_json"
-		} &
-		_cur_page=$((i+1))
-		_thread_started "$!"
+		_invidious_playlist_json < "$_tmp_json" >> "$_full_playlist_json"
+		_cur_page=$((_cur_page+1))
 	done
-	wait
-	_concatinate_json_file "${session_temp_dir}/yt-playlist-$playlist_id-" "$_cur_page" "$_full_playlist_json"
 
 	#some instances give duplicates over multiple pages, remove the duplicates
 	jq -s '. | flatten | sort_by(.ID) | unique_by(.ID)' < "$_full_playlist_json" >> "$output_json_file"
