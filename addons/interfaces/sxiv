@@ -1,9 +1,6 @@
 #!/bin/sh
 
 
-quick_menu_sxiv () {
-    quick_menu
-}
 interface_sxiv () {
     video_json_file=$1
     selected_id_file=$2
