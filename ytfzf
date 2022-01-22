@@ -605,6 +605,7 @@ _concatinate_json_file () {
 	_output_json_file="$3"
 	__cur_page=1
 	set --
+	#this sets the arguments to the files in order for cat
 	while [ "$__cur_page" -le "$page_count" ]; do
 		set -- "$@" "${template}${__cur_page}.json.final"
 		__cur_page=$((__cur_page+1))
