@@ -1370,7 +1370,8 @@ parse_opt () {
 			# if we don't check which interface, itll try to source $YTFZF_CUSTOM_INTERFACES_DIR/{ext,scripting} which won't work
 			case "$interface" in
 				"ext"|"scripting"|"") : ;;
-				*) [ -n "$interface" ] && { [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface" || die 2 "interface: \"$interface\" does not exist\n"; } ;;
+				./*|../*|/*|~/*) [ -n "$interface" ] && { [ -f "$interface" ] && . "$interface" && interface="${interface##*/}"; } ||  die 2 "interface: \"$interface\" does not exist\n" ;; 
+				*) [ -n "$interface" ] && { [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface"; } || die 2 "interface: \"$interface\" does not exist\n" ;;
 			esac ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
