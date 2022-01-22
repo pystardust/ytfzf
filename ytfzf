@@ -922,6 +922,12 @@ handle_keypress () {
 			clean_up
 			make_search ""
 			$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
+		*)
+			_fn_name=handle_keypress_$(sed 's/-/_/g' <<-EOF
+							$keypress
+						EOF
+						)
+			function_exists "$_fn_name" && $_fn_name ;;
 	esac
 	unset keypress
 }
