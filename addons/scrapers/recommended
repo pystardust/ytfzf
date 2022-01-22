@@ -1,0 +1,73 @@
+#!/bin/sh
+# needs search_query as $*
+## Scrape data and store video information in videos_data ( and thumbnails )
+
+scrape_recommended () {
+    search=$1
+    output_json_file=$2
+    _tmp_html="${session_temp_dir}/yt-search.html"
+    _tmp_json="${session_temp_dir}/yt-search.json"
+    _cookie_file="$HOME/.config/ytfzf/recommended-cookie"
+
+    printf "%s\n" "Scraping Youtube..."
+
+    [ -f "$_cookie_file" ] || { print_info "It seems you do not have a cookie file, follow the instructions below to get this scraper to work:
+    1. open youtube
+    2. sign in
+    3. press ctrl + shift + i (open inspect element)
+    4. go to network tab
+    5. refresh the page
+    6. click the get request for either the file '/' or 'https://www.youtube.com/api/stats/watchtime'
+    7. find request headers
+    8. copy the Cookie header
+    9. put in $_cookie_file
+    10. add 'custom_scrape_search_exclude=\"recommended\"' to your config file (technically optional)
+    10. run 'ytfzf -c recommended'
+"; exit; }
+
+    read -r cookie < "$_cookie_file"
+    cookie="${cookie#Cookie: }"
+    curl -s -f -b "$_cookie_file" "https://www.youtube.com" \
+		    -H "User-Agent: $4" \
+		    -H 'Accept-Language: en-US,en;q=0.9' \
+		    -H "Cookie: $cookie" \
+		    --compressed > "$_tmp_html" || exit "$?"
+    sed -n '/var *ytInitialData/,$p' < "$_tmp_html" |
+	   tr -d '\n' |
+	   sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;' > "$_tmp_json"
+
+    #gets a list of videos
+    {
+	jq '[ .contents|
+	..|.videoRenderer? |
+	select(. !=null) |
+		{
+			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
+			title: .title.runs[0].text,
+			channel: .longBylineText.runs[0].text,
+			duration:.lengthText.simpleText,
+			views: .shortViewCountText.simpleText,
+			date: .publishedTimeText.simpleText,
+			description: .detailedMetadataSnippets[0].snippetText.runs[0].text,
+			ID: .videoId,
+			thumbs: .thumbnail.thumbnails[0].url
+		}
+	]' < "$_tmp_json" 
+
+	 jq '[ .contents|
+	..|.playlistRenderer? |
+	select(. !=null) |
+		{
+			url: "'"${yt_video_link_domain}"'/playlist?list=\(.videoId)",
+			title: "[Playlist] \(.title.simpleText)",
+			channel: .longBylineText.runs[0].text,
+			duration: "\(.videoCount) videos",
+			views: "playlist",
+			date: "playlist",
+			ID: .playlistId,
+			thumbs: .thumbnails[0].thumbnails[0].url,
+			action: "scrape type=invidious-playlist search='"${yt_video_link_domain}"'/playlist?list=\(.playlistId)"
+		}
+	]' <"$_tmp_json"
+    } >> "$output_json_file"
+}
