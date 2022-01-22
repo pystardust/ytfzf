@@ -1,0 +1,14 @@
+#!/bin/sh
+
+url_handler=w3m
+
+scrape_ddg () {
+    dep_check "w3m" || die 3 "w3m is required as a webbrowser for this scraper"
+    dep_check "ddgr" || die 3 "ddgr is used to scrape duckduckgo"
+    search=$1
+    output_json_file="$2"
+
+    _tmp_json="${session_temp_dir}/ddg.json"
+
+    ddgr --json "$search" | jq '[.[]|{url: .url, title: .title, ID: 3, channel: "", duration: "", views: "", description: .description}]' >> "$output_json_file"
+}

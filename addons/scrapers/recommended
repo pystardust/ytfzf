@@ -22,7 +22,7 @@ scrape_recommended () {
     8. copy the Cookie header
     9. put in $_cookie_file
     10. add 'custom_scrape_search_exclude=\"recommended\"' to your config file (technically optional)
-    10. run 'ytfzf -c recommended'
+    11. run 'ytfzf -c recommended'
 "; exit; }
 
     read -r cookie < "$_cookie_file"
