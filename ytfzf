@@ -322,7 +322,8 @@ function_exists "parse_search_hist_file" || parse_search_hist_file () {
 
 : "${nsfw:=false}"
 
-: "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history }"
+: "${custom_scrape_search_exclude=}"
+: "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history ${custom_scrape_search_exclude} }"
 
 
 # Option Checks {{{

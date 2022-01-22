@@ -624,6 +624,15 @@ Be sure to have a space at the end and beginning of the string.
 .RI default: " youtube-subscriptions S SI T youtube-trending H history "
 
 .TP
+.RB $ custom_scrape_search_exclude
+Extra scrapers to not ask for a search query.
+.br
+This will automatically be appended to $ scrape_search_exclude.
+.br
+In addition, you do not need spaces at the start, and end, only between scrapers.
+.RI default: ""
+
+.TP
 .RB $ gap_space
 A number of spaces equal to half the width of your terminal
 .br
