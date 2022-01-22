@@ -84,6 +84,23 @@ sudo make install doc
 
 * You may also install `ytfzf` through your package manager, as listed on the side.
 
+## Addons
+
+Addons are extra features that will not be as supported as everything built into `ytfzf` itself.
+
+Addons are located in `addons`, copy any addon to `~/.config/ytfzf/{addon-type}/{addon}`, and give it execute permissions.
+
+You may also just copy the entire addon folder type, eg: `cp -r addons/thumbnail-viewers ~/.config/ytfzf/`
+
+### Usage
+
+To use a scraper addon run `ytfzf -c <scraper> ...`
+
+To use a thumbnail-viewer addon run `ytfzf --thumb-viewer=<viewer> ...`
+
+To use a interface addon run `ytfzf --interface=<interface> ...`
+
+
 ---
 
 # Features
@@ -123,14 +140,6 @@ ytfzf -cO <search>
 ```
 
 ---
-
-# Todo
-
-* [ ] More sites
-* [x] Playlists
-* [x] Subscriptions
-* [x] Thumbnails
-
 ---
 
 # Bugs
