@@ -1,0 +1,47 @@
+#!/bin/sh
+
+__invidious_search_json_videos () {
+	jq '
+	def pad_left(n; num):
+		num | tostring |
+			if (n > length) then ((n - length) * "0") + (.) else . end
+		;
+	[ .[] | select(.type=="shortVideo") |
+		{
+			ID: .videoId,
+			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
+			title: .title,
+			channel: .author,
+			thumbs: "'"${invidious_instance}"'/vi/\(.videoId)/'"$thumbnail_quality"'.jpg",
+			duration: "\(.lengthSeconds / 60 | floor):\(pad_left(2; .lengthSeconds % 60))",
+			views: "\(.viewCount)",
+			date: .publishedText,
+			description: .description
+		}
+	]'
+}
+
+scrape_invidious_popular(){
+    search="$1"
+    output_json_file="$2"
+
+    echo "scraping invidious popular"
+   while [ "${i:=1}" -le "$pages_to_scrape" ]; do
+	_tmp_json="${session_temp_dir}/invidious-popular-$i.json"
+
+	[ "$invidious_instance" = "http://localhost:3000" ] && invidious_instance="https://ytprivate.com"
+	_get_request "$invidious_instance/api/v1/popular" \
+	    -G --data-urlencode "page=$1" --compressed > "$_tmp_json" 
+
+	_get_invidious_thumb_quality_name
+
+	{
+	    _invidious_search_json_live < "$_tmp_json"
+	    __invidious_search_json_videos < "$_tmp_json"
+	    _invidious_search_json_channel < "$_tmp_json"
+	    _invidious_search_json_playlist < "$_tmp_json"
+	} >> "$output_json_file"
+	i=$((i+1))
+    done
+    unset i output_json_file
+}
