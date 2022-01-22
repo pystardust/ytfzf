@@ -1358,6 +1358,8 @@ parse_opt () {
 		submenu-opts) submenu_opts="${optarg}" ;;
 		submenu-scraping-opts) submenu_scraping_opts="${optarg}" ;;
 		nsfw)  nsfw="${optarg:-true}" ;;
+		fzf-opts) fzf_opts="${optarg}" ;;
+		fzf-thumbnail-opts) fzf_thumbnail_opts="${optarg}" ;;
 		*)
 			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
