@@ -1159,6 +1159,13 @@ A playlist is a json file in the format of VIDEO JSON FORMAT,
 To easily get the formated json for a video, run
 .I "ytfzf -I VJ <search"
 
+.SH SORT NAMES
+.PP
+A sort name is a function in your config file, or a shell script in $YTFZF_SORT_NAMES_DIR that defines the following functions:
+.br
+.I data_sort_fn()
+.br
+.I get_sort_by()
 
 .SH CUSTOM SCRAPERS
 .PP
