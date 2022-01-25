@@ -1565,12 +1565,12 @@ scrape_website () {
 			    {
 					_tmp_subfile="${session_temp_dir}/channel-$_i"
 					$channel_scraper "$channel_url" "$_tmp_subfile" "channel-$_i" < /dev/null || return "$?"
-					if [ ${fancy_subs} -eq 0 ]; then
+					if [ ${fancy_subs} -eq 1 ]; then
 					    channel_name="$(jq -r '.[0].channel' < "$_tmp_subfile" | grep -vE '^[[:space:]]*null[[:space:]]*$' | head -n 1)"
-					    jq '[{"title": "----------'"${channel_name}"'----------", "action": "do-nothing"}] + .[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
+					    jq '[{"title": "----------'"${channel_name}"'----------", "action": "do-nothing"}] + .[0:'"$sub_link_count"']' < "$_tmp_subfile"
 					else
-						jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
-					fi
+						jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile"
+					fi >> "$ytfzf_video_json_file"
 			    } &
 			    sleep $sleep_time
 		    done <<- EOF
