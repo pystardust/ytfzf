@@ -1,0 +1,7 @@
+#!/bin/sh
+get_sort_by () {
+    echo "${1%%$'\t'*}"
+}
+data_sort_fn () {
+    sort
+}

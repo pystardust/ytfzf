@@ -144,6 +144,7 @@ done
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
 : "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
 : "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
+: "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
 : "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
 
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
@@ -1382,6 +1383,17 @@ parse_opt () {
 		notify-playing) notify_playing="${optarg:-1}" ;;
 		#long-opt exclusives
 		sort) is_sort=${optarg:-1} ;;
+		sort-name)
+			case "$optarg" in
+				./*|../*|/*|~/*) function_exists "$optarg" && . "$optarg" ;;
+				*)
+					if function_exists "$optarg"; then
+						"$optarg"
+					elif [ -f "${YTFZF_SORT_NAMES_DIR}/${optarg}" ]; then
+						. "${YTFZF_SORT_NAMES_DIR}/${optarg}"
+					else false
+					fi ;;
+			esac && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
 		video-pref) video_pref=$optarg ;;
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;

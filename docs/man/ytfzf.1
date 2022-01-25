@@ -189,6 +189,10 @@ This can also be set in the config file with
 .BR \-\-sort
 Sorts videos (after scraping) by upload date.
 .TP
+.BR \-\-sort\-name=name
+Calls a function set in $YTFZF_CONFIG_FILE. Or sources a script in $YTFZF_SORT_NAMES_DIR (if it exists).
+See SORT NAMES in ytfzf(5) for more information.
+.TP
 .BR \-\-fancy\-subs
 Whether or not to have a separator between each subscription.
 When this option is used it automatically disbables \-\-sort as it will mess up this option.
@@ -535,6 +539,11 @@ The default is
 The directory to store custom interface scripts in
 the default is
 .I $YTFZF_CONFIG_DIR/interfaces
+.TP
+.B $YTFZF_SORT_NAMES_DIR
+The directory to store custom sort-name scripts in
+the default is
+.I $YTFZF_CONFIG_DIR/sort-names
 .TP
 .B $cache_dir
 The directory to store cache
