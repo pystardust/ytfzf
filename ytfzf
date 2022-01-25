@@ -54,7 +54,7 @@ add_commas () {
 }
 
 command_exists () {
-	type "$1" > /dev/null 2>&1
+	command -v "$1" > /dev/null 2>&1
 }
 
 get_key_value() {
