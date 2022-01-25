@@ -193,6 +193,8 @@ search_prompt_menu_wrapper () {
 
 : ${interface=}
 
+: ${fancy_subs:=0}
+
 : "${fzf_preview_side:=left}"
 
 : "${thumbnail_viewer:=ueberzug}"
@@ -749,7 +751,7 @@ scrape_invidious_channel () {
 			{
 				_invidious_search_json_videos < "$_tmp_json"
 				_invidious_search_json_live < "$_tmp_json"
-			} >> "$_tmp_json.final"
+			} | jq 'select(.!=[])' >> "$_tmp_json.final"
 		} &
 		_cur_page=$((_cur_page+1))
 		_thread_started "$!"
@@ -1414,6 +1416,9 @@ parse_opt () {
 		fzf-opts) fzf_opts="${optarg}" ;;
 		fzf-thumbnail-opts) fzf_thumbnail_opts="${optarg}" ;;
 		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
+		fancy-subs) 
+			fancy_subs=${optarg:-1} 
+			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
 		*)
 			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
@@ -1479,6 +1484,7 @@ handle_actions () {
 				[ $enable_submenus -eq 0 ] && continue
 				url_handler=submenu_handler
 				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
+			do-nothing*) $(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
 			*) function_exists "handle_custom_action" && handle_custom_action "$_action" ;;
 		esac
 	done
@@ -1557,9 +1563,14 @@ scrape_website () {
 		    while IFS= read channel_url || [ -n "$channel_url" ] ; do
 			    _i=$((_i+1))
 			    {
-				    _tmp_subfile="${session_temp_dir}/channel-$_i"
-				    $channel_scraper "$channel_url" "$_tmp_subfile" "channel-$_i" < /dev/null || return "$?"
-				    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
+					_tmp_subfile="${session_temp_dir}/channel-$_i"
+					$channel_scraper "$channel_url" "$_tmp_subfile" "channel-$_i" < /dev/null || return "$?"
+					if [ ${fancy_subs} -eq 0 ]; then
+					    channel_name="$(jq -r '.[0].channel' < "$_tmp_subfile" | grep -vE '^[[:space:]]*null[[:space:]]*$' | head -n 1)"
+					    jq '[{"title": "----------'"${channel_name}"'----------", "action": "do-nothing"}] + .[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
+					else
+						jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
+					fi
 			    } &
 			    sleep $sleep_time
 		    done <<- EOF
