@@ -4,7 +4,7 @@ scrape_ddg () {
     case "$url_handler" in
 	video_player|audio_player|downloader|multimedia_player) die 1 "It appears your url_handler is not a webbrowser" ;;
     esac
-    dep_check "ddgr" || die 3 "ddgr is used to scrape duckduckgo"
+    command_exists "ddgr" || die 3 "ddgr is used to scrape duckduckgo"
     search=$1
     output_json_file="$2"
 

@@ -53,11 +53,7 @@ add_commas () {
 		}'
 }
 
-dep_check() {
-	command -v "$1" > /dev/null 2>&1
-}
-
-function_exists () {
+command_exists () {
 	type "$1" > /dev/null 2>&1
 }
 
@@ -74,7 +70,7 @@ title_str () {
 }
 
 #backup shuf function, as shuf is not posix
-dep_check "shuf" || shuf () {
+command_exists "shuf" || shuf () {
 	awk -F'\n' 'BEGIN{srand()} {print rand() " " $0}' | sort -n | sed -E 's/[^ ]* //'
 }
 
@@ -116,20 +112,20 @@ trim_url () {
 	done
 }
 
-function_exists "quick_menu" || quick_menu () {
+command_exists "quick_menu" || quick_menu () {
 	fzf --reverse --prompt="$1"
 }
-function_exists "quick_menu_ext" || quick_menu_ext (){
+command_exists "quick_menu_ext" || quick_menu_ext (){
 	external_menu "$1"
 }
-function_exists "quick_menu_scripting" || quick_menu_scripting () {
+command_exists "quick_menu_scripting" || quick_menu_scripting () {
 	quick_menu "$1"
 }
 
 quick_menu_wrapper () {
 	prompt="$1"
 	fn_name=quick_menu$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')
-	if function_exists "$fn_name"; then
+	if command_exists "$fn_name"; then
 		$fn_name "$prompt"
 	else quick_menu_ext "$prompt"
 	fi
@@ -150,7 +146,7 @@ quick_menu_wrapper () {
 
 # hard dependancy checks{{{
 for dep in jq curl; do
-	dep_check "$dep" || die 3 "$dep is a required dependency, please install it\n"
+	command_exists "$dep" || die 3 "$dep is a required dependency, please install it\n"
 done
 #}}}
 
@@ -174,20 +170,20 @@ done
 
 # menu options
 #the menu to use instead of fzf when -D is specified
-function_exists "external_menu" || external_menu () {
+command_exists "external_menu" || external_menu () {
 	#dmenu extremely laggy when showing tabs
 	tr -d '\t' | dmenu -i -l 30 -p "$1"
 }
 
-function_exists "search_prompt_menu" || search_prompt_menu () {
+command_exists "search_prompt_menu" || search_prompt_menu () {
 	printf "Search\n>"
 	read -r _search
 	printf "\033[1A\033[K\r%s\n" "> $_search"
 }
-function_exists "search_prompt_menu_ext" || search_prompt_menu_ext () {
+command_exists "search_prompt_menu_ext" || search_prompt_menu_ext () {
 	_search="$(printf '' | external_menu "Search: ")"
 }
-function_exists "search_prompt_menu_scripting" || search_prompt_menu_scripting () {
+command_exists "search_prompt_menu_scripting" || search_prompt_menu_scripting () {
 	search_prompt_menu
 }
 
@@ -197,7 +193,7 @@ search_prompt_menu_wrapper () {
 	 #we could do :
 	 # $fn_name 2>/dev/null || [ "$?" -eq 127 ] && search_prompt_menu_ext
 	 #however, if we do that, the user won't get their error messages from their script
-	 if function_exists "$fn_name"; then
+	 if command_exists "$fn_name"; then
 		 $fn_name
 	 else search_prompt_menu_ext
 	 fi
@@ -241,7 +237,7 @@ search_prompt_menu_wrapper () {
 
 : ${notify_playing:=0}
 
-function_exists "handle_playing_notifications" || handle_playing_notifications (){
+command_exists "handle_playing_notifications" || handle_playing_notifications (){
 	#if no notify-send push error to /dev/null
 	[ $# -le 1 ] && {
 		while read -r id title; do
@@ -256,35 +252,35 @@ function_exists "handle_playing_notifications" || handle_playing_notifications (
 #job of url handlers is:
 # handle the given urls, and take into account some requested attributes, eg: video_pref, and --detach
 # print what the handler is doing
-function_exists "video_player" || video_player () {
+command_exists "video_player" || video_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
-	dep_check "mpv" || die 3 "mpv is not installed\n"
+	command_exists "mpv" || die 3 "mpv is not installed\n"
 	case "$is_detach" in
 		0) mpv --ytdl-format="$video_pref" "$@" ;;
 		1) setsid -f mpv --ytdl-format="$video_pref" "$@" > /dev/null 2>&1 ;;
 	esac
 }
-function_exists "audio_player" || audio_player () {
+command_exists "audio_player" || audio_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
-	dep_check "mpv" || die 3 "mpv is not installed\n"
+	command_exists "mpv" || die 3 "mpv is not installed\n"
 	mpv --no-video --ytdl-format="$video_pref" "$@"
 }
-function_exists "multimedia_player" || multimedia_player () {
+command_exists "multimedia_player" || multimedia_player () {
 	#this function differentiates whether or not audio_only was requested
 	case "$is_audio_only" in
 		0) video_player "$@" ;;
 		1) audio_player "$@" ;;
 	esac
 }
-function_exists "downloader" || downloader () {
-	dep_check "${ytdl_path}" || die 3 "${ytdl_path} is not installed\n"
+command_exists "downloader" || downloader () {
+	command_exists "${ytdl_path}" || die 3 "${ytdl_path} is not installed\n"
 	case $is_audio_only in
 	    0) ${ytdl_path} -f "${video_pref}" $ytdl_opts "$@"	;;
 	    1) ${ytdl_path} -x $ytdl_opts "$@" ;;
 	esac
 }
 
-[ -z "$ytdl_path" ] && { dep_check "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
+[ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
 
 # directories
 : "${cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf}"
@@ -295,7 +291,7 @@ function_exists "downloader" || downloader () {
 : "${hist_file:=$cache_dir/watch_hist}"
 : "${search_hist_file:=$cache_dir/search_hist}"
 
-function_exists "parse_search_hist_file" || parse_search_hist_file () {
+command_exists "parse_search_hist_file" || parse_search_hist_file () {
 	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
 }
 
@@ -895,7 +891,7 @@ scrape_json_file () {
 
 # Sorting {{{
 
-function_exists "get_sort_by" || get_sort_by () {
+command_exists "get_sort_by" || get_sort_by () {
 	line="$1"
 	date="${line%|*}"
 	date=${date##*|}
@@ -906,7 +902,7 @@ function_exists "get_sort_by" || get_sort_by () {
 	unset line
 }
 
-function_exists "data_sort_fn" || data_sort_fn () {
+command_exists "data_sort_fn" || data_sort_fn () {
 	sort -nr
 }
 
@@ -970,7 +966,7 @@ set_keypress () {
 
 handle_keypress () {
 	keypress="$1"
-	function_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
+	command_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
 	case "$keypress" in
 		$download_shortcut) url_handler=downloader ;;
 		$video_shortcut) url_handler=video_player ;;
@@ -988,7 +984,7 @@ handle_keypress () {
 							$keypress
 						EOF
 						)
-			function_exists "$_fn_name" && $_fn_name ;;
+			command_exists "$_fn_name" && $_fn_name ;;
 	esac
 	unset keypress
 }
@@ -996,7 +992,7 @@ handle_keypress () {
 #}}}
 
 # Takes video json file as $1 and returns the selected video IDs to file $2
-function_exists "video_info_text" || video_info_text () {
+command_exists "video_info_text" || video_info_text () {
 	#we can't just change the views line to %d because it needs to display the "|", and "|$views" is NaN
 	[ "${views#|}" -eq "${views#|}" ] 2>/dev/null && views="$(printf "|%s" "${views#|}" | add_commas)"
 	printf "%-${title_len}.${title_len}s\t" "$title"
@@ -1008,7 +1004,7 @@ function_exists "video_info_text" || video_info_text () {
 	printf "\n"
 }
 
-function_exists "thumbnail_video_info_text" || thumbnail_video_info_text () {
+command_exists "thumbnail_video_info_text" || thumbnail_video_info_text () {
 	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%s" "$views" | add_commas)"
 	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
 	[ -n "$channel" ] && printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
@@ -1032,7 +1028,7 @@ interface_scripting () {
 
 # Text interface {{{
 interface_text () {
-	dep_check "fzf" || die 3 "fzf not installed, cannot use the default menu\n"
+	command_exists "fzf" || die 3 "fzf not installed, cannot use the default menu\n"
 	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
 	video_json_file=$1
 	selected_id_file=$2
@@ -1124,25 +1120,25 @@ preview_stop () {
 	esac
 }
 # ueberzug positioning{{{
-function_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left (){
+command_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left (){
 	width=$1
 	height=$(($2-10))
 	x=2
 	y=10
 }
-function_exists "get_ueberzug_positioning_right" || get_ueberzug_positioning_right (){
+command_exists "get_ueberzug_positioning_right" || get_ueberzug_positioning_right (){
 	width=$1
 	height=$(($2-10))
 	x=$(($1+6))
 	y=10
 }
-function_exists "get_ueberzug_positioning_up" || get_ueberzug_positioning_up (){
+command_exists "get_ueberzug_positioning_up" || get_ueberzug_positioning_up (){
 	width=$1
 	height=$(($2-10))
 	x=2
 	y=9
 }
-function_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down (){
+command_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down (){
 	width=$1
 	height=$(($2-10))
 	#$2*2 goes to the bottom subtracts height, adds padding
@@ -1167,7 +1163,7 @@ preview_display_image () {
 	case $thumbnail_viewer in
 		ueberzug)
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
-			dep_check "ueberzug" || die 3 "ueberzug is not installed\n"
+			command_exists "ueberzug" || die 3 "ueberzug is not installed\n"
 			printf '%s\t' \
 				'action' 'add' \
 				'identifier' 'ytfzf' \
@@ -1181,26 +1177,26 @@ preview_display_image () {
 			;;
 		chafa)
 			printf '\n'
-			dep_check "chafa" || die 3 "\nchafa is not installed\n"
+			command_exists "chafa" || die 3 "\nchafa is not installed\n"
 			chafa -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
 		chafa-16)
 			printf '\n'
-			dep_check "chafa" || die 3 "\nchafa is not installed\n"
+			command_exists "chafa" || die 3 "\nchafa is not installed\n"
 			chafa -c 240 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
 		chafa-tty)
 			printf '\n'
-			dep_check "chafa" || die 3 "\nchafa is not installed\n"
+			command_exists "chafa" || die 3 "\nchafa is not installed\n"
 			chafa -c 16 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
 		catimg)
 			printf '\n'
-			dep_check "catimg" || die 3 "\ncatimg is not installed\n"
+			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
 			catimg -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_dir/${id}.jpg" ;;
 		catimg-256)
 			printf '\n'
-			dep_check "catimg" || die 3 "\ncatimg is not installed\n"
+			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
 			catimg -c -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_dir/${id}.jpg" ;;
 		display)
-			dep_check "display" || die 3 "\nimagemagick is not installed\n"
+			command_exists "display" || die 3 "\nimagemagick is not installed\n"
 			killall display
 			display "$thumb_dir/${id}.jpg" ;;
 		w3m)
@@ -1361,7 +1357,7 @@ parse_opt () {
 	#for some reason optarg may equal opt intentionally,
 	#this checks the unmodified optarg, which will only be equal if there is no = sign
 	[ "$opt" = "$OPTARG" ] && optarg=""
-	function_exists "on_opt_parse" && { on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG" || return 0; }
+	command_exists "on_opt_parse" && { on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG" || return 0; }
 	case $opt in
 		h|help) usage; exit 0 ;;
 		D|external-menu) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface='ext' ;;
@@ -1401,9 +1397,9 @@ parse_opt () {
 		sort) is_sort=${optarg:-1} ;;
 		sort-name)
 			case "$optarg" in
-				./*|../*|/*|~/*) function_exists "$optarg" && . "$optarg" ;;
+				./*|../*|/*|~/*) command_exists "$optarg" && . "$optarg" ;;
 				*)
-					if function_exists "$optarg"; then
+					if command_exists "$optarg"; then
 						"$optarg"
 					elif [ -f "${YTFZF_SORT_NAMES_DIR}/${optarg}" ]; then
 						. "${YTFZF_SORT_NAMES_DIR}/${optarg}"
@@ -1513,7 +1509,7 @@ handle_actions () {
 				url_handler=submenu_handler
 				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
 			do-nothing*) $(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
-			*) function_exists "handle_custom_action" && handle_custom_action "$_action" ;;
+			*) command_exists "handle_custom_action" && handle_custom_action "$_action" ;;
 		esac
 	done
 }
@@ -1527,13 +1523,13 @@ handle_actions () {
 set_save_filters () {
 	initial_search_sort_by="$search_sort_by"
 	initial_search_upload_date="$search_upload_date"
-	function_exists "set_save_custom_filters" && set_save_custom_filters
+	command_exists "set_save_custom_filters" && set_save_custom_filters
 }
 set_save_filters
 init_multi_filters () {
 	search_sort_bys_left="$initial_search_sort_by"
 	search_upload_dates_left="$initial_search_upload_date"
-	function_exists "init_multi_custom_filters" && init_multi_custom_filters
+	command_exists "init_multi_custom_filters" && init_multi_custom_filters
 }
 manage_multi_filters () {
 	#if this is empty search_sort_by will be set to empty which isn't what we want
@@ -1546,7 +1542,7 @@ manage_multi_filters () {
 		search_sort_upload_dates_left="${search_sort_upload_dates_left#*,}"
 	}
 	#for custom scrapers
-	function_exists "manage_multi_custom_filters" && manage_multi_custom_filters
+	command_exists "manage_multi_custom_filters" && manage_multi_custom_filters
 }
 #}}}
 handle_scrape_error () {
@@ -1645,7 +1641,7 @@ handle_scraping (){
 	init_multi_filters
 	for curr_scrape in $scrape; do
 		manage_multi_filters
-		function_exists "on_search" && on_search "$_search" "$curr_scrape"
+		command_exists "on_search" && on_search "$_search" "$curr_scrape"
 		scrape_website "$curr_scrape" "$_search"
 		handle_scrape_error "$?"
 	done
@@ -1668,7 +1664,7 @@ handle_empty_scrape () {
 #}}}
 
 
-function_exists "handle_search_history" || handle_search_history () {
+command_exists "handle_search_history" || handle_search_history () {
 	#search history
 	date=$(date +'%D %H:%M:%S')
 	printf "%s${tab_space}%s\n" "${date}" "${1}" >> "$2"
