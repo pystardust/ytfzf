@@ -899,16 +899,22 @@ scrape_json_file () {
 
 # Comments{{{
 scrape_comments () {
-	search="$1"
+	video_id="$1"
 	output_json_file="$2"
-	set -f
-	IFS=' '
-	for search_ in $search; do
-		case "$search_" in
-			*/*) cat "$search_" >> "$output_json_file" ;;
-			*) die 2 "Search must be path to comments file" ;;
-		esac
+	page_count="$3"
+	_comment_file="${session_temp_dir}/comments-$id.tmp.json"
+	i=1
+	while [ "$i" -le $page_count ]; do
+		print_info "Scraping comments (pg: $i)\n"
+		_out_comment_file="${session_temp_dir}/comments-$i.json.final"
+		_get_request "$invidious_instance/api/v1/comments/${video_id}" -G \
+			--data-urlencode "continuation=$continuation" > "$_comment_file"
+		continuation=$(jq -r '.continuation' < "$_comment_file")
+		jq '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url} ]' < "$_comment_file"  >  "$_out_comment_file"
+		i=$((i+1))
 	done
+	wait
+	_concatinate_json_file "${session_temp_dir}/comments-" "$page_count" "$output_json_file"
 }
 #}}}
 
@@ -916,25 +922,10 @@ scrape_comments () {
 
 #Post Scraping{{{
 
-post_scrape_youtube_search () {
-	id="$(jq -r --arg url "$url" '.[]|select(.url==$url).ID' < "$2")"
-	_comment_file="${session_temp_dir}/comments-$id.tmp.json"
-	_final_comment_file="${session_post_scrape_dir}/comments-$id.json"
-	_get_request "$invidious_instance/api/v1/comments/${id}" > "$_comment_file"
-	continuation=$(jq -r '.continuation' < "$_comment_file")
-	jq '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url} ]' < "$_comment_file"  > "$_final_comment_file"
-	for i in $(seq 1 10); do
-		_get_request "$invidious_instance/api/v1/comments/${id}" -G \
-			--data-urlencode "continuation=$continuation" > "$_comment_file"
-		continuation=$(jq -r '.continuation' < "$_comment_file")
-		jq '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url} ]' < "$_comment_file"  >> "$_final_comment_file"
-	done
-}
-
 post_scrape () {
 	while read -r url; do
 		scraper="$(jq -r --arg url "$url" '.[]|select(.url==$url).scraper' < "$1")"
-		[ "$scraper" = "null" ] && continue
+		[ "$scraper" = "null" ] || ! command_exists post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} && continue
 		post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} "$url" "$ytfzf_video_json_file"
 	done;
 }
@@ -1285,7 +1276,7 @@ preview_img () {
 		set -- "$@" "$line"
 	done <<-EOF
 	$(
-		jq -r --arg url "$url" '.[]|select( .url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .scraper + "\n" + .description' < "$video_json_file"
+		jq -r --arg url "$url" '.[]|select(.url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .scraper + "\n" + .description' < "$video_json_file"
 	#we read scraper here to reduce the calls to jq
 	#description MUST be last because it is the only thing that may contain new lines, which will mess up the while read -r line thing
 	)
@@ -1683,7 +1674,7 @@ scrape_website () {
 		    ;;#}}}
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
-		comments) scrape_comments "$_search" "$ytfzf_video_json_file" ;;
+		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
 		url|U) format_urls <<-EOF | open_url_handler
 			$_search
 			EOF
@@ -1762,20 +1753,23 @@ make_search () {
 
 make_search "$initial_search"
 
-main() while :; do
-	#calls the interface
-	$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
-	handle_actions < "$ytfzf_selected_urls"
+main() { 
+	while :; do
+		#calls the interface
+		$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
+		handle_actions < "$ytfzf_selected_urls"
 
-	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
+		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
-	#there should be no reason for this to happen synchronously. that way the video can pop up immediately
-	post_scrape "$ytfzf_video_json_file" < "$ytfzf_selected_urls" &
+		#there should be no reason for this to happen synchronously. that way the video can pop up immediately
+		post_scrape "$ytfzf_video_json_file" < "$ytfzf_selected_urls" &
 
-	format_urls < "$ytfzf_selected_urls" | open_url_handler
+		format_urls < "$ytfzf_selected_urls" | open_url_handler
 
-	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
-done; main
+		[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
+	done
+}
+main
 
 #doing this after the loop allows for -l and -s to coexist
 while [ $search_again -eq 1 ] ; do
