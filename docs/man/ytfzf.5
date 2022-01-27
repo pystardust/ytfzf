@@ -800,6 +800,10 @@ This function takes no arguments, the relevant variables are listed here:
 .RE
 
 .TP
+.BR thumbnail_video_info_text_<scraper> ()
+This function is the same as thumbnail_video_info_text() for the scraper specified.
+
+.TP
 .BR get_ueberzug_positioning_left ()
 This function sets the variables, $width, $height, $x, and $y.
 .br
@@ -1179,27 +1183,15 @@ Custom scrapers shell scripts located in $YTFZF_CUSTOM_SCRAPERS_DIR.
 A scraper is responsible for scraping videos from a website and APPENDING them to "$ytfzf_video_json_file".
 .br
 The shell script must be the same shell as your /bin/sh.
-.br
-In addition, the script must also define the function
-.I interface_<name_of_interface>
-.br
-With _ replacing \-.
-.br
-This function could handle everything itself, or call another program written in any language to handle it.
-.br
-This function takes 2 arguments:
-.TP
-.IR 1
-Search query.
-.TP
-.IR 2
-Path to store the final JSON of scraped content.
 .PP
-The JSON should be structured as described in VIDEO JSON FORMAT
-.br
-The final JSON shall be
-.B APPENDED
-to the file given as an argument.
+Other functions this script may define:
+.PP
+.I thumbnail_video_info_text_<name_of_scraper>
+.RS
+This function shall print information for the thumbnails interface.
+.PP
+This function is effectively the same as thumbnail_video_info_text().
+.RE
 .RE
 
 .RE
