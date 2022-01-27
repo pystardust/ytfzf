@@ -915,7 +915,7 @@ scrape_comments () {
 		_get_request "$invidious_instance/api/v1/comments/${video_id}" -G \
 			--data-urlencode "continuation=$continuation" > "$_comment_file"
 		continuation=$(jq -r '.continuation' < "$_comment_file")
-		jq --arg continuation "$continuation" '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url, "continuation": $continuation} ]' < "$_comment_file"  >>  "$output_json_file"
+		jq --arg continuation "$continuation" '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": "'"$yt_video_link_domain"'/watch?v='"$video_id"'&lc=\(.commentId)", "action": "do-nothing", "thumbs": .authorThumbnails[2].url, "continuation": $continuation} ]' < "$_comment_file"  >>  "$output_json_file"
 		i=$((i+1))
 	done
 }
