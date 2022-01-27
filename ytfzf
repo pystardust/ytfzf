@@ -915,7 +915,7 @@ post_scrape_invidious_search () {
 	_comment_file="${session_temp_dir}/comments-$id.tmp.json"
 	_final_comment_file="${session_cache_dir}/comments-$id.json"
 	_get_request "$invidious_instance/api/v1/comments/${id}" > "$_comment_file"
-	jq '[ .comments[] | {"channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId} ]' < "$_comment_file"  > "$_final_comment_file"
+	jq '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId} ]' < "$_comment_file"  > "$_final_comment_file"
 }
 
 post_scrape () {
@@ -1039,6 +1039,11 @@ command_exists "video_info_text" || video_info_text () {
 	printf "%-${date_len}.${date_len}s\t" "$date"
 	printf "%s" "$url"
 	printf "\n"
+}
+
+command_exists "thumbnail_video_info_text_comments" || thumbnail_video_info_text_comments () {
+	[ -n "$title" ] && printf "\033[1m%s\n\033[0m" "$title"
+	[ -n "$description" ] && printf "\n%s" "$description"
 }
 
 command_exists "thumbnail_video_info_text" || thumbnail_video_info_text () {
@@ -1266,18 +1271,24 @@ preview_img () {
 		set -- "$@" "$line"
 	done <<-EOF
 	$(
-		jq -r --arg url "$url" '.[]|select( .url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .description' < "$video_json_file"
+		jq -r --arg url "$url" '.[]|select( .url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .description + "\n" + .scraper' < "$video_json_file"
+	#we read scraper here to reduce the calls to jq
 	)
 	EOF
 
 	#this IFS should be as obscure as possible as it will cause bugs otherwise
 	IFS="\\"
-	read -r id title channel duration views date description <<-EOF
+	read -r id title channel duration views date description scraper <<-EOF
 	$*
 	EOF
 	#}}}
 
-	thumbnail_video_info_text
+	if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
+		 thumbnail_video_info_text${scraper:+_$scraper}
+	else
+		thumbnail_video_info_text
+	fi
+
 	preview_display_image "$thumbnail_viewer" "$id"
 }
 
