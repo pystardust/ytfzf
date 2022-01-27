@@ -900,6 +900,9 @@ scrape_json_file () {
 # Comments{{{
 scrape_comments () {
 	video_id="$1"
+	case "$video_id" in
+		*/*) video_id="${video_id##*=}" ;;
+	esac
 	output_json_file="$2"
 	page_count="$3"
 	_comment_file="${session_temp_dir}/comments-$id.tmp.json"
