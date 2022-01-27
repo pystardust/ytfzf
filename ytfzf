@@ -918,17 +918,11 @@ scrape_comments () {
 		jq --arg continuation "$continuation" '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url, "continuation": $continuation} ]' < "$_comment_file"  >>  "$output_json_file"
 		i=$((i+1))
 	done
-	wait
 }
 
 scrape_next_page_comments () {
-	continuation=$(jq -r '.[-1].continuation' < "$ytfzf_video_json_file" | tail -n 1)
-	printf "%s\n" "Scraping comments continuation ($continuation)" >&2
-	_out_comment_file="${session_temp_dir}/comments-$continuation.json.final"
-	_get_request "$invidious_instance/api/v1/comments/${video_id}" -G \
-		--data-urlencode "continuation=$continuation" > "$_comment_file"
-	continuation=$(jq -r '.continuation' < "$_comment_file")
-	jq --arg continuation "$continuation" '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url, "continuation": $continuation} ]' < "$_comment_file"  >>  "$output_json_file"
+	#we can do this because _comment_file is overritten every time, meaning it will contain the latest scrape
+	scrape_comments "$_search" "$video_json_file" "1"
 }
 #}}}
 
