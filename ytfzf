@@ -645,7 +645,7 @@ _concatinate_json_file () {
 		set -- "$@" "${template}${__cur_page}.json.final"
 		__cur_page=$((__cur_page+1))
 	done
-	cat "$@" >> "$_output_json_file"
+	cat "$@" 2>/dev/null >> "$_output_json_file"
 
 }
 #}}}
