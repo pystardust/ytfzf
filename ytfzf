@@ -478,7 +478,7 @@ _youtube_channel_json () {
 	channel_name=$1
 	jq '[ .contents | ..|.gridVideoRenderer? | select(. !=null) |
 	    {
-		scraper: youtube_search,
+		scraper: "youtube_search",
 	    	ID: .videoId,
 		url: "'"$yt_video_link_domain"'/watch?v=\(.videoId)",
 		title: "\(if .title.simpleText then .title.simpleText else .title.runs[0].text end)",
@@ -551,7 +551,7 @@ _get_invidious_thumb_quality_name () {
 _invidious_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
 		{
-			scraper: invidious_search,
+			scraper: "invidious_search",
 			ID: .playlistId,
 			url: "'"${yt_video_link_domain}"'/playlist?list=\(.playlistId)",
 			title: "[playlist] \(.title)",
@@ -566,7 +566,7 @@ _invidious_search_json_channel () {
 	jq '
 	[ .[] | select(.type=="channel") |
 		{
-			scraper: invidious_search,
+			scraper: "invidious_search",
 			ID: .authorId,
 			url: "'"${yt_video_link_domain}"'/channel/\(.authorId)",
 			title: "[channel] \(.author)",
@@ -580,7 +580,7 @@ _invidious_search_json_channel () {
 _invidious_search_json_live () {
 	jq '[ .[] | select(.type=="video" and .liveNow==true) |
 		{
-			scraper: invidious_search,
+			scraper: "invidious_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: "[live] \(.title)",
@@ -619,7 +619,7 @@ _invidious_playlist_json () {
 		;
 	[ .videos | .[] |
 		{
-			scraper: invidious_search,
+			scraper: "invidious_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
@@ -798,7 +798,7 @@ scrape_peertube () {
 		;
 	[ .data | .[] |
 			{
-				scraper: peertube_search,
+				scraper: "peertube_search",
 				ID: .uuid,
 				url: .url,
 				title: .name,
@@ -865,7 +865,7 @@ scrape_odysee () {
 		;
 	[ .[] |select(.duration != null) |
 	    {
-		    scraper: odysee_search,
+		    scraper: "odysee_search",
 			ID: .claimId,
 			title: .title,
 			url: "https://www.odysee.com/\(.channel)/\(.name)",
@@ -895,14 +895,33 @@ scrape_json_file () {
 }
 #}}}
 
+# Comments{{{
+scrape_comments () {
+	search="$1"
+	output_json_file="$2"
+	case "$search" in
+		*/*) cp "$search" "$output_json_file" ;;
+		*) die 2 "Search must be path to comments file" ;;
+	esac
+}
+#}}}
+
 # }}}
 
 #Post Scraping{{{
 
+post_scrape_invidious_search () {
+	id="$(jq -r --arg url "$url" '.[]|select(.url==$url).ID' < "$2")"
+	_comment_file="${session_temp_dir}/comments-$id.tmp.json"
+	_final_comment_file="${session_cache_dir}/comments-$id.json"
+	_get_request "$invidious_instance/api/v1/comments/${id}" > "$_comment_file"
+	jq '[ .comments[] | {"channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId} ]' < "$_comment_file"  > "$_final_comment_file"
+}
+
 post_scrape () {
 	while read -r url; do
-		scraper="$(jq -r --arg url "$url" 'select(.[].url=="$url").scraper' < "$1")"
-		post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} "$url"
+		scraper="$(jq -r --arg url "$url" '.[]|select(.url==$url).scraper' < "$1")"
+		post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} "$url" "$ytfzf_video_json_file"
 	done;
 }
 #}}}
@@ -1240,13 +1259,23 @@ preview_img () {
 	video_json_file=$3
 	url=${line##*|}
 
-	IFS=$tab_space read -r id title channel duration views date description <<-EOF
+	#this rediculous thing is to make it so that if one of the attributes is blank
+	#it doesn't skip the variable{{{
+	set --
+	while read -r line; do
+		set -- "$@" "$line"
+	done <<-EOF
 	$(
-		jq -r --arg url "$url" '.[]|select( .url == $url )|
-			[.ID,.title,.channel,.duration,.views,.date,.description]|
-			@tsv' < "$video_json_file"
+		jq -r --arg url "$url" '.[]|select( .url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .description' < "$video_json_file"
 	)
 	EOF
+
+	#this IFS should be as obscure as possible as it will cause bugs otherwise
+	IFS="\\"
+	read -r id title channel duration views date description <<-EOF
+	$*
+	EOF
+	#}}}
 
 	thumbnail_video_info_text
 	preview_display_image "$thumbnail_viewer" "$id"
@@ -1626,6 +1655,7 @@ scrape_website () {
 		    ;;#}}}
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
+		comments) scrape_comments "$_search" "$ytfzf_video_json_file" ;;
 		url|U) format_urls <<-EOF | open_url_handler
 			$_search
 			EOF
