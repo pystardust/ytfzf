@@ -921,7 +921,14 @@ post_scrape_youtube_search () {
 	_comment_file="${session_temp_dir}/comments-$id.tmp.json"
 	_final_comment_file="${session_post_scrape_dir}/comments-$id.json"
 	_get_request "$invidious_instance/api/v1/comments/${id}" > "$_comment_file"
+	continuation=$(jq -r '.continuation' < "$_comment_file")
 	jq '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url} ]' < "$_comment_file"  > "$_final_comment_file"
+	for i in $(seq 1 10); do
+		_get_request "$invidious_instance/api/v1/comments/${id}" -G \
+			--data-urlencode "continuation=$continuation" > "$_comment_file"
+		continuation=$(jq -r '.continuation' < "$_comment_file")
+		jq '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url} ]' < "$_comment_file"  >> "$_final_comment_file"
+	done
 }
 
 post_scrape () {
