@@ -914,8 +914,8 @@ scrape_comments () {
 
 post_scrape_invidious_search () {
 	id="$(jq -r --arg url "$url" '.[]|select(.url==$url).ID' < "$2")"
-	_comment_file="${session_temp_dir}/comments-$id.tmp.json"
-	_final_comment_file="${session_cache_dir}/comments-$id.json"
+	_comment_file="${session_post_scrape_dir}/comments-$id.tmp.json"
+	_final_comment_file="${session_post_scrape_dir}/comments-$id.json"
 	_get_request "$invidious_instance/api/v1/comments/${id}" > "$_comment_file"
 	jq '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId} ]' < "$_comment_file"  > "$_final_comment_file"
 }
@@ -1545,8 +1545,9 @@ init_files (){
 	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	session_temp_dir="${session_cache_dir}/tmp"
+	session_post_scrape_dir="${session_cache_dir}/post-scrape"
 	thumb_dir="${session_cache_dir}/thumbnails"
-	mkdir -p "$session_temp_dir" "$thumb_dir"
+	mkdir -p "$session_temp_dir" "$thumb_dir" "$session_post_scrape_dir"
 	ytfzf_selected_urls=$session_cache_dir/ids
 	ytfzf_video_json_file=$session_cache_dir/videos_json
 	keypress_file="${session_temp_dir}/menu_keypress"
@@ -1754,6 +1755,7 @@ main() while :; do
 
 	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
+	#there should be no reason for this to happen synchronously. that way the video can pop up immediately
 	post_scrape "$ytfzf_video_json_file" < "$ytfzf_selected_urls" &
 
 	format_urls < "$ytfzf_selected_urls" | open_url_handler

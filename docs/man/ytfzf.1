@@ -577,6 +577,7 @@ The structure of $cache_dir looks like this: (<> represents a placeholder, ? mea
 $cache_dir
 | \-\- watch_hist
 | \-\- <search>\-<pid>
+|  | \-\- post-scrape
 |  | \-\- <submenu-search>-<submenu-pid>?
 |  | \-\- thumbnails?
 |  | \-\- tmp
@@ -600,6 +601,11 @@ The watch history file.
 An instance's parent folder.
 .br
 If no search was given, it instead uses the name "SCRAPE\-<scrape>\-<pid>"
+.TP
+.IR post-scrape
+A folder that contains files relating to the scraping of a selected result.
+.br
+This may include things such as comment json files.
 .TP
 .IR <submenu\-search>\-<submenu\-pid>
 Created when a submenu is opened (eg: when a channel/playlist is selected)
