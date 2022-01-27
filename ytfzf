@@ -1273,14 +1273,15 @@ preview_img () {
 		set -- "$@" "$line"
 	done <<-EOF
 	$(
-		jq -r --arg url "$url" '.[]|select( .url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .description + "\n" + .scraper' < "$video_json_file"
+		jq -r --arg url "$url" '.[]|select( .url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .scraper + "\n" + .description' < "$video_json_file"
 	#we read scraper here to reduce the calls to jq
+	#description MUST be last because it is the only thing that may contain new lines, which will mess up the while read -r line thing
 	)
 	EOF
 
 	#this IFS should be as obscure as possible as it will cause bugs otherwise
-	IFS="\\"
-	read -r id title channel duration views date description scraper <<-EOF
+	IFS='`'
+	read -r id title channel duration views date scraper description <<-EOF
 	$*
 	EOF
 	#}}}
