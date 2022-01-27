@@ -223,9 +223,10 @@ search_prompt_menu_wrapper () {
 : "${show_formats_shortcut:=alt-f}"
 : "${info_shortcut:=alt-i}"
 : "${search_again_shortcut:=alt-s}"
+: "${next_page_shortcut:=alt-p}"
 
 : "${custom_shortcut_binds=}"
-: "${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}}"
+: "${shortcut_binds:=Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}}"
 
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len:=210}
@@ -780,6 +781,7 @@ scrape_invidious_channel () {
 	wait
 	_concatinate_json_file "${session_temp_dir}/${tmp_file_name}-" "$page_num" "$output_json_file"
 }
+
 ## }}}
 
 ## Peertube {{{
@@ -913,11 +915,20 @@ scrape_comments () {
 		_get_request "$invidious_instance/api/v1/comments/${video_id}" -G \
 			--data-urlencode "continuation=$continuation" > "$_comment_file"
 		continuation=$(jq -r '.continuation' < "$_comment_file")
-		jq '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url} ]' < "$_comment_file"  >  "$_out_comment_file"
+		jq --arg continuation "$continuation" '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url, "continuation": $continuation} ]' < "$_comment_file"  >>  "$output_json_file"
 		i=$((i+1))
 	done
 	wait
-	_concatinate_json_file "${session_temp_dir}/comments-" "$page_count" "$output_json_file"
+}
+
+scrape_next_page_comments () {
+	continuation=$(jq -r '.[-1].continuation' < "$ytfzf_video_json_file" | tail -n 1)
+	printf "%s\n" "Scraping comments continuation ($continuation)" >&2
+	_out_comment_file="${session_temp_dir}/comments-$continuation.json.final"
+	_get_request "$invidious_instance/api/v1/comments/${video_id}" -G \
+		--data-urlencode "continuation=$continuation" > "$_comment_file"
+	continuation=$(jq -r '.continuation' < "$_comment_file")
+	jq --arg continuation "$continuation" '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url, "continuation": $continuation} ]' < "$_comment_file"  >>  "$output_json_file"
 }
 #}}}
 
@@ -1020,6 +1031,12 @@ handle_keypress () {
 		$print_link_shortcut) info_to_print="L"; exit_on_info_to_print=1 ;;
 		$show_formats_shortcut) show_formats=1 ;;
 		$info_shortcut) exit_on_info_to_print=1; info_to_print="VJ" ;;
+		$next_page_shortcut) 
+			read -r url < "$selected_id_file"
+			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
+			scrape_next_page_$hovered_scraper
+			unset hovered_scraper
+			;;
 		$search_again_shortcut)
 			clean_up
 			make_search ""

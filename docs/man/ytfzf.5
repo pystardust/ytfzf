@@ -421,6 +421,13 @@ The shortcut to make another search
 .RI default: " alt-s"
 
 .TP
+.RB $ next_page_shortcut
+The shortcut to scrape the next page.
+.br
+Currently only applies to the comments scrape.
+.RI default: " alt-p"
+
+.TP
 .RB $ shortcut_binds
 The keys to listen for in fzf.
 .br
@@ -1195,6 +1202,17 @@ This function shall print information for the thumbnails interface.
 .PP
 This function is effectively the same as thumbnail_video_info_text().
 .RE
+.PP
+.I scrape_next_page_<scraper>
+.RS
+.PP
+This function shall scrape more videos from <scraper>.
+.PP
+<scraper> should be the name put in the "scraper" attribute in VIDEO JSON FORMAT
+.PP
+This function will happen if the user presses alt-p in fzf.
+.PP
+This function takes no arguments.
 .RE
 
 .RE
