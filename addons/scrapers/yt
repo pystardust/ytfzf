@@ -25,6 +25,7 @@ scrape_yt () {
 	..|.videoRenderer? |
 	select(. !=null) |
 		{
+			scraper: "youtube_search",
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title.runs[0].text,
 			channel: .longBylineText.runs[0].text,
@@ -41,6 +42,7 @@ scrape_yt () {
 	..|.playlistRenderer? |
 	select(. !=null) |
 		{
+			scraper: "youtube_search",
 			url: "'"${yt_video_link_domain}"'/playlist?list=\(.videoId)",
 			title: "[Playlist] \(.title.simpleText)",
 			channel: .longBylineText.runs[0].text,

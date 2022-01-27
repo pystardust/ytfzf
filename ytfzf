@@ -553,7 +553,7 @@ _get_invidious_thumb_quality_name () {
 _invidious_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
 		{
-			scraper: "invidious_search",
+			scraper: "youtube_search",
 			ID: .playlistId,
 			url: "'"${yt_video_link_domain}"'/playlist?list=\(.playlistId)",
 			title: "[playlist] \(.title)",
@@ -568,7 +568,7 @@ _invidious_search_json_channel () {
 	jq '
 	[ .[] | select(.type=="channel") |
 		{
-			scraper: "invidious_search",
+			scraper: "youtube_search",
 			ID: .authorId,
 			url: "'"${yt_video_link_domain}"'/channel/\(.authorId)",
 			title: "[channel] \(.author)",
@@ -582,7 +582,7 @@ _invidious_search_json_channel () {
 _invidious_search_json_live () {
 	jq '[ .[] | select(.type=="video" and .liveNow==true) |
 		{
-			scraper: "invidious_search",
+			scraper: "youtube_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: "[live] \(.title)",
@@ -599,7 +599,7 @@ _invidious_search_json_videos () {
 		;
 	[ .[] | select(.type=="video" and .liveNow==false) |
 		{
-			scraper: "invidious_search",
+			scraper: "youtube_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
@@ -901,10 +901,14 @@ scrape_json_file () {
 scrape_comments () {
 	search="$1"
 	output_json_file="$2"
-	case "$search" in
-		*/*) cp "$search" "$output_json_file" ;;
-		*) die 2 "Search must be path to comments file" ;;
-	esac
+	set -f
+	IFS=' '
+	for search_ in $search; do
+		case "$search_" in
+			*/*) cat "$search_" >> "$output_json_file" ;;
+			*) die 2 "Search must be path to comments file" ;;
+		esac
+	done
 }
 #}}}
 
@@ -912,17 +916,18 @@ scrape_comments () {
 
 #Post Scraping{{{
 
-post_scrape_invidious_search () {
+post_scrape_youtube_search () {
 	id="$(jq -r --arg url "$url" '.[]|select(.url==$url).ID' < "$2")"
-	_comment_file="${session_post_scrape_dir}/comments-$id.tmp.json"
+	_comment_file="${session_temp_dir}/comments-$id.tmp.json"
 	_final_comment_file="${session_post_scrape_dir}/comments-$id.json"
 	_get_request "$invidious_instance/api/v1/comments/${id}" > "$_comment_file"
-	jq '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId} ]' < "$_comment_file"  > "$_final_comment_file"
+	jq '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": .commentId, "action": "do-nothing", "thumbs": .authorThumbnails[2].url} ]' < "$_comment_file"  > "$_final_comment_file"
 }
 
 post_scrape () {
 	while read -r url; do
 		scraper="$(jq -r --arg url "$url" '.[]|select(.url==$url).scraper' < "$1")"
+		[ "$scraper" = "null" ] && continue
 		post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} "$url" "$ytfzf_video_json_file"
 	done;
 }
@@ -1544,6 +1549,7 @@ init_files (){
 	SEARCH_PREFIX=$(printf "%s" "$1" | tr '/' '_')
 	#if no search is provided, use a fallback value of SCRAPE-$scrape
 	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
+	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
 	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	session_temp_dir="${session_cache_dir}/tmp"
 	session_post_scrape_dir="${session_cache_dir}/post-scrape"
