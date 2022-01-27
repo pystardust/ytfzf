@@ -295,7 +295,7 @@ scrapes invidious for channels instead of youtube
 Opens the url in the video player and exits
 .TP
 .IR comments
-Scrapes a comments json file produced by ytfzf
+Scrapes the comments of a video id from youtube
 .RE
 .TP
 .BR \-H ", " \-\-history
@@ -604,8 +604,6 @@ If no search was given, it instead uses the name "SCRAPE\-<scrape>\-<pid>"
 .TP
 .IR post-scrape
 A folder that contains files relating to the scraping of a selected result.
-.br
-This may include things such as comment json files.
 .TP
 .IR <submenu\-search>\-<submenu\-pid>
 Created when a submenu is opened (eg: when a channel/playlist is selected)
