@@ -386,6 +386,8 @@ usage () {
 				    	instead of giving a search, give a link to a playlist
 				    youtube-channel
 				    	instead of giving a search, give a link to a channel
+				    comments
+				    	scrapes a comments json file produced by ytfzf
 				    * SI scrapes invidious for channels instead of youtube,
 				    * Y and T both scrape invidious
 				you can use multiple scrapers by separating each with a , eg: youtube,odysee
