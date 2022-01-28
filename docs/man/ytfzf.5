@@ -160,10 +160,19 @@ Prints the data of the selected videos, as appears in the menu.
 .RE
 
 .TP
-.RB $ exit_on_info_to_print
-Whether or not to exit after printing info requested in $info_to_print.
+.RB $ info_wait_action
+The action to do when $info_wait is 1.
 .br
-.RI default: " 0"
+Valid actions:
+.RS
+.TP
+.RI q
+quit
+.TP
+.RI m
+return to menu
+.br
+.RI default: " q"
 
 .TP
 .BR $ info_wait

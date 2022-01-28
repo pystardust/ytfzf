@@ -1370,7 +1370,7 @@ print_requested_info () {
 		    VJ|vj|video-json)
 			    while read -r line; do 
 				    jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file"; 
-			    done < "$url_list"S  ;;
+			    done < "$url_list"  ;;
 		    [Jj]|json) jq < "$ytfzf_video_json_file" ;;
 		    [Ff]|format) printf "%s\n" "$video_pref" ;;
 		    [Rr]|raw) 
