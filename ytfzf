@@ -132,6 +132,18 @@ quick_menu_wrapper () {
 	unset fn_name
 }
 
+search_prompt_menu_wrapper () {
+	#the last sed is to set it to quick_menu if $interfce is "" (default)
+	 fn_name=search_prompt_menu"$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
+	 #we could do :
+	 # $fn_name 2>/dev/null || [ "$?" -eq 127 ] && search_prompt_menu_ext
+	 #however, if we do that, the user won't get their error messages from their script
+	 if command_exists "$fn_name"; then
+		 $fn_name
+	 else search_prompt_menu_ext
+	 fi
+}
+
 # Traps {{{
 [ $__is_fzf_preview -eq 0 ] && trap 'clean_up' EXIT
 [ $__is_fzf_preview -eq 0 ] && trap 'exit' INT TERM HUP
@@ -150,94 +162,79 @@ for dep in jq curl; do
 done
 #}}}
 
+# Configuration options {{{
 
-#configuration handling {{{
-: "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
-: "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
-: "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
-: "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
-: "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
-: "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
-
-[ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
+# Files{{{
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf"
+hist_file="$cache_dir/watch_hist"
+search_hist_file="$cache_dir/search_hist"
+keep_cache=0
 #}}}
 
-# Custom Scrapers {{{
-: "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
-#}}}
-
-: "${useragent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36}"
-
-# menu options
-#the menu to use instead of fzf when -D is specified
-command_exists "external_menu" || external_menu () {
+# Menus {{{
+external_menu () {
 	#dmenu extremely laggy when showing tabs
 	tr -d '\t' | dmenu -i -l 30 -p "$1"
 }
 
-command_exists "search_prompt_menu" || search_prompt_menu () {
+search_prompt_menu () {
 	printf "Search\n>"
 	read -r _search
 	printf "\033[1A\033[K\r%s\n" "> $_search"
 }
-command_exists "search_prompt_menu_ext" || search_prompt_menu_ext () {
+search_prompt_menu_ext () {
 	_search="$(printf '' | external_menu "Search: ")"
 }
-command_exists "search_prompt_menu_scripting" || search_prompt_menu_scripting () {
+search_prompt_menu_scripting () {
 	search_prompt_menu
 }
 
-search_prompt_menu_wrapper () {
-	#the last sed is to set it to quick_menu if $interfce is "" (default)
-	 fn_name=search_prompt_menu"$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
-	 #we could do :
-	 # $fn_name 2>/dev/null || [ "$?" -eq 127 ] && search_prompt_menu_ext
-	 #however, if we do that, the user won't get their error messages from their script
-	 if command_exists "$fn_name"; then
-		 $fn_name
-	 else search_prompt_menu_ext
-	 fi
-}
+enable_submenus=1
 
-: ${enable_submenus:=1}
+submenu_opts=
+submenu_scraping_opts=
 
-: ${submenu_opts=}
-: ${submenu_scraping_opts=}
-
-: ${interface=}
-
-: ${fancy_subs:=0}
-
-: "${fzf_preview_side:=left}"
-
-: "${thumbnail_viewer:=ueberzug}"
-
-: "${w3mimgdisplay_path:=/usr/lib/w3m/w3mimgdisplay}"
-
-# shortcuts
-: "${download_shortcut:=alt-d}"
-: "${video_shortcut:=alt-v}"
-: "${audio_shortcut:=alt-m}"
-: "${detach_shortcut:=alt-e}"
-: "${print_link_shortcut:=alt-l}"
-: "${show_formats_shortcut:=alt-f}"
-: "${info_shortcut:=alt-i}"
-: "${search_again_shortcut:=alt-s}"
-
-: "${custom_shortcut_binds=}"
-: "${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}}"
+interface=
 
 #number of columns (characters on a line) the external menu can have
-: ${external_menu_len:=210}
+external_menu_len=210
 
-: ${is_loop:=0}
-: ${search_again:=0}
+fancy_subs=0
 
-# Notifications
+fzf_preview_side=left
 
-: ${notify_playing:=0}
+thumbnail_viewer=ueberzug
+w3mimgdisplay_path=/usr/lib/w3m/w3mimgdisplay
 
-command_exists "handle_playing_notifications" || handle_playing_notifications (){
+is_loop=0
+search_again=0
+is_sort=0
+
+show_thumbnails=0
+#}}}
+
+# Shortcuts{{{
+download_shortcut=alt-d
+video_shortcut=alt-v
+audio_shortcut="alt-m"
+detach_shortcut="alt-e"
+print_link_shortcut="alt-l"
+show_formats_shortcut="alt-f"
+info_shortcut="alt-i"
+search_again_shortcut="alt-s"
+
+custom_shortcut_binds=
+shortcut_binds="Enter,double-click,${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}"
+#}}}
+
+# Selecting {{{
+scripting_video_count=1
+is_random_select=0
+is_audo_select=0
+#}}}
+
+# Playing {{{
+handle_playing_notifications (){
 	#if no notify-send push error to /dev/null
 	[ $# -le 1 ] && {
 		while read -r id title; do
@@ -248,11 +245,10 @@ command_exists "handle_playing_notifications" || handle_playing_notifications ()
 	} || { notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null; }
 }
 
-# urlhandlers
 #job of url handlers is:
 # handle the given urls, and take into account some requested attributes, eg: video_pref, and --detach
 # print what the handler is doing
-command_exists "video_player" || video_player () {
+video_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
 	case "$is_detach" in
@@ -260,19 +256,19 @@ command_exists "video_player" || video_player () {
 		1) setsid -f mpv --ytdl-format="$video_pref" "$@" > /dev/null 2>&1 ;;
 	esac
 }
-command_exists "audio_player" || audio_player () {
+audio_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
 	mpv --no-video --ytdl-format="$video_pref" "$@"
 }
-command_exists "multimedia_player" || multimedia_player () {
+multimedia_player () {
 	#this function differentiates whether or not audio_only was requested
 	case "$is_audio_only" in
 		0) video_player "$@" ;;
 		1) audio_player "$@" ;;
 	esac
 }
-command_exists "downloader" || downloader () {
+downloader () {
 	command_exists "${ytdl_path}" || die 3 "${ytdl_path} is not installed\n"
 	case $is_audio_only in
 	    0) ${ytdl_path} -f "${video_pref}" $ytdl_opts "$@"	;;
@@ -280,71 +276,72 @@ command_exists "downloader" || downloader () {
 	esac
 }
 
-[ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
+notify_playing=0
+is_detach=0
+is_audio_only=0
+url_handler="multimedia_player"
+info_to_print=
+exit_on_info_to_print=1
+video_pref="best"
+show_formats=0
+#}}}
 
-# directories
-: "${cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf}"
-
-: "${keep_cache:=0}"
-
-# files
-: "${hist_file:=$cache_dir/watch_hist}"
-: "${search_hist_file:=$cache_dir/search_hist}"
-
-command_exists "parse_search_hist_file" || parse_search_hist_file () {
+# History{{{
+parse_search_hist_file () {
 	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
 }
 
-# history
-: ${enable_hist:=1}
-: ${enable_search_hist:=1}
+enable_hist="1"
+enable_search_hist="1"
+#}}}
 
-# format options
-#variable for switching on sort (date)
-: ${is_detach:=0}
-: ${is_audio_only:=0}
-: "${url_handler:=multimedia_player}"
-: ${info_to_print=}
-: ${exit_on_info_to_print:=1}
-: "${video_pref:=best}"
-: ${show_formats:=0}
+# Scraping{{{
+scrape=youtube
+thumbnail_quality=default
+sub_link_count=2
+invidious_instance=https://vid.puffyan.us
+yt_video_link_domain=$invidious_instance
+pages_to_scrape=1
+search_sort_by=relevance
+search_upload_date=
+search_video_duration=
+search_result_type=video
+search_result_features=
+search_region=US
 
-: ${is_sort:=0}
-: ${show_thumbnails:=0}
+odysee_video_search_count=30
+nsfw=false
 
-: ${scripting_video_count:=1}
-: ${is_random_select:=0}
-: ${is_auto_select:=0}
+custom_scrape_search_exclude=
+scrape_search_exclude=" youtube-subscriptions S SI T youtube-trending H history ${custom_scrape_search_exclude} "
 
-# option parsing
-: "${long_opt_char:=-}"
+max_thread_count=20
+#}}}
 
-# scrape
-: "${scrape=youtube}"
-#this comes from invidious' api
-: "${thumbnail_quality=default}"
-: ${sub_link_count:=2}
-: "${invidious_instance:=https://vid.puffyan.us}"
-: "${yt_video_link_domain:=$invidious_instance}"
-: ${pages_to_scrape:=1}
-: ${odysee_video_search_count:=30}
+# Misc {{{
+long_opt_char=-
+useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
+gap_space="                                                                                                                                                                             "
+#}}}
 
-: "${search_sort_by:=relevance}"
-: "${search_upload_date=}"
-: "${search_video_duration=}"
-: "${search_result_type:=video}"
-: "${search_result_features=}"
-: "${search_region:=US}"
+#}}}
 
-: "${nsfw:=false}"
+#configuration handling {{{
+: "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
+: "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
+: "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
+: "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
+: "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
+: "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
+: "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
 
-: "${custom_scrape_search_exclude=}"
-: "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history ${custom_scrape_search_exclude} }"
-
-: ${max_thread_count:=20}
+[ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
+#}}}
 
 
 # Option Checks {{{
+[ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
+
 case "$long_opt_char" in
         [a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric\n" ;;
 	#? = 1 char, * = 1+ chars; ?* = 2+ chars
@@ -355,7 +352,6 @@ esac
 new_line='
 '
 tab_space=$(printf '\t')
-: "${gap_space:=                                                                                                                   }"
 
 # }}}
 
