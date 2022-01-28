@@ -309,7 +309,8 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 : ${is_audio_only:=0}
 : "${url_handler:=multimedia_player}"
 : ${info_to_print=}
-: ${exit_on_info_to_print:=1}
+: ${exit_on_info_to_print:=0}
+: "${info_wait:=1}"
 : "${video_pref:=best}"
 : ${show_formats:=0}
 
@@ -1025,9 +1026,9 @@ handle_keypress () {
 		$video_shortcut) url_handler=video_player ;;
 		$audio_shortcut) url_handler=audio_player ;;
 		$detach_shortcut) is_detach=1 ;;
-		$print_link_shortcut) info_to_print="L"; exit_on_info_to_print=1 ;;
+		$print_link_shortcut) info_to_print="L" ;;
 		$show_formats_shortcut) show_formats=1 ;;
-		$info_shortcut) exit_on_info_to_print=1; info_to_print="VJ" ;;
+		$info_shortcut) info_to_print="VJ" ;;
 		$next_page_shortcut) 
 			read -r url < "$selected_id_file"
 			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
@@ -1360,14 +1361,28 @@ print_requested_info () {
 	set -f
 	IFS=,
 	for request in $info_to_print; do
+		unset IFS
 		case "$request" in
-		    [Ll]|link) unset IFS; printf '%s\n' $* ;;
-		    VJ|vj|video-json) while read -r line; do jq '.[]|select(.url=="'"$line"'")' < "$video_json_file"; done < "$ytfzf_selected_urls" ;;
-		    [Jj]|json) jq < "$video_json_file" ;;
+		    [Ll]|link)
+			    printf "%s\n" "$*"  ;;
+		    VJ|vj|video-json)
+			    while read -r line; do 
+				    jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file"; 
+			    done <<-EOF
+				$@
+				EOF
+			    ;;
+		    [Jj]|json) jq < "$ytfzf_video_json_file" ;;
 		    [Ff]|format) printf "%s\n" "$video_pref" ;;
-		    [Rr]|raw) while read -r line; do jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file"; done < "$ytfzf_selected_urls" ;;
+		    [Rr]|raw) 
+			    while read -r line; do
+				    jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file"; done <<-EOF
+					$@
+					EOF
+			    ;;
 		esac
 	done
+	[ $exit_on_info_to_print -eq 1 ] && exit 0
 }
 
 submenu_handler () {
@@ -1394,20 +1409,9 @@ submenu_handler () {
 open_url_handler () {
 	# isaudio, isdownload, video_pref
 	#urls can either be passed as argument, or through pipe
-	[ -z "$@" ] && {
-		read -r urls
-		set -f
-		unset IFS
-		set -- $urls
-	}
 	[ -z "$*" ] && return 0
 
 	[ $show_formats -eq 1 ] && video_pref="$(get_video_format "$1")"
-
-	if [ -n "$info_to_print"  ]; then
-		print_requested_info "$@"
-		[ $exit_on_info_to_print -eq 1 ] && exit 0
-	fi
 
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
@@ -1504,6 +1508,7 @@ parse_opt () {
 
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
 		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
+		info-wait) info_wait="${optarg:-1}" ;;
 		sort-by) search_sort_by="$optarg" ;;
 		upload-date) search_upload_date="$optarg" ;;
 		video-duration) search_video_duration=$optarg ;;
@@ -1783,7 +1788,18 @@ main() {
 		#there should be no reason for this to happen synchronously. that way the video can pop up immediately
 		post_scrape "$ytfzf_video_json_file" < "$ytfzf_selected_urls" &
 
-		format_urls < "$ytfzf_selected_urls" | open_url_handler
+
+		formatted_urls="$(format_urls < "$ytfzf_selected_urls")"
+		[ "$info_to_print" ] && print_requested_info "$formatted_urls"
+		[ "$info_wait" ] && {
+			print_info "quit (q), open menu (c|m), play (enter): "
+			read -r input
+			case "$input" in
+				[Qq]) break ;;
+				[MmCc]) continue ;;
+			esac
+		}
+		open_url_handler "$formatted_urls"
 
 		[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
 	done
