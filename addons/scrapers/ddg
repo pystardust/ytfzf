@@ -10,5 +10,5 @@ scrape_ddg () {
 
     _tmp_json="${session_temp_dir}/ddg.json"
 
-    ddgr --json "$search" | jq '[.[]|{url: .url, title: .title, ID: 3, channel: "", duration: "", views: "", description: .description}]' >> "$output_json_file"
+    ddgr --json "$search" | jq '[.[]|{scraper: "ddg", url: .url, title: .title, ID: 3, channel: "", duration: "", views: "", description: .description}]' >> "$output_json_file"
 }

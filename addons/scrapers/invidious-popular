@@ -8,6 +8,7 @@ __invidious_search_json_videos () {
 		;
 	[ .[] | select(.type=="shortVideo") |
 		{
+			scraper: "youtube_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,

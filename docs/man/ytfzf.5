@@ -421,10 +421,17 @@ The shortcut to make another search
 .RI default: " alt-s"
 
 .TP
+.RB $ next_page_shortcut
+The shortcut to scrape the next page.
+.br
+Currently only applies to the comments scrape.
+.RI default: " alt-p"
+
+.TP
 .RB $ shortcut_binds
 The keys to listen for in fzf.
 .br
-.RI default: " Enter,double-click,$download_shortcut,$video_shortcut,$detach_shortcut,$print_link_shortcut,$show_formats_shortcut,$info_shortcut,$search_again_shortcut,$custom_shortcut_binds"
+.RI default: " Enter,double-click,$next_page_shortcut,$download_shortcut,$video_shortcut,$detach_shortcut,$print_link_shortcut,$show_formats_shortcut,$info_shortcut,$search_again_shortcut,$custom_shortcut_binds"
 
 .TP
 .RB $ custom_shortcut_binds
@@ -487,12 +494,14 @@ The currently supported options are:
 .IR invidious-channel,
 .TP
 .IR playlist/json-file
+.PP
+The search will be a path to a json file layed out as described in VIDEO JSON FORMAT
 .TP
 .IR history
 .TP
 .IR url
-.PP
-The search will be a path to a json file layed out as described in VIDEO JSON FORMAT
+.TP
+.IR comments
 .br
 .RI default: " youtube"
 .RE
@@ -798,6 +807,10 @@ This function takes no arguments, the relevant variables are listed here:
 .I url
 .EE
 .RE
+
+.TP
+.BR thumbnail_video_info_text_<scraper> ()
+This function is the same as thumbnail_video_info_text() for the scraper specified.
 
 .TP
 .BR get_ueberzug_positioning_left ()
@@ -1132,6 +1145,7 @@ Required object keys:
 ID (string): a unique id to the video
 url (string): the url to the video
 title (string): the title of the video
+scraper (string): The scraper that created the json (used for post_scrape, and thumbnails)
 .EE
 .RE
 .PP
@@ -1179,27 +1193,36 @@ Custom scrapers shell scripts located in $YTFZF_CUSTOM_SCRAPERS_DIR.
 A scraper is responsible for scraping videos from a website and APPENDING them to "$ytfzf_video_json_file".
 .br
 The shell script must be the same shell as your /bin/sh.
-.br
-In addition, the script must also define the function
-.I interface_<name_of_interface>
-.br
-With _ replacing \-.
-.br
-This function could handle everything itself, or call another program written in any language to handle it.
-.br
-This function takes 2 arguments:
-.TP
-.IR 1
-Search query.
-.TP
-.IR 2
-Path to store the final JSON of scraped content.
 .PP
-The JSON should be structured as described in VIDEO JSON FORMAT
-.br
-The final JSON shall be
-.B APPENDED
-to the file given as an argument.
+Other functions this script may define:
+.PP
+.I thumbnail_video_info_text_<name_of_scraper>
+.RS
+This function shall print information for the thumbnails interface.
+.PP
+This function is effectively the same as thumbnail_video_info_text().
+.RE
+.PP
+.I scrape_next_page_<scraper>
+.RS
+.PP
+This function shall scrape more videos from <scraper>.
+.PP
+<scraper> should be the name put in the "scraper" attribute in VIDEO JSON FORMAT
+.PP
+This function will happen if the user presses alt-p in fzf.
+.PP
+This function takes no arguments.
+.RE
+.PP
+.I post_scrape_<scraper>
+.RS
+.PP
+This function does anything after a video is selected from <scraper>
+.PP
+<scraper> should be the name put in the "scraper" attribute in VIDEO JSON FORMAT
+.PP
+This function takes no arguments.
 .RE
 
 .RE

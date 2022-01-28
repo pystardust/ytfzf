@@ -223,9 +223,10 @@ search_prompt_menu_wrapper () {
 : "${show_formats_shortcut:=alt-f}"
 : "${info_shortcut:=alt-i}"
 : "${search_again_shortcut:=alt-s}"
+: "${next_page_shortcut:=alt-p}"
 
 : "${custom_shortcut_binds=}"
-: "${shortcut_binds:=Enter,double-click,${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}}"
+: "${shortcut_binds:=Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}}"
 
 #number of columns (characters on a line) the external menu can have
 : ${external_menu_len:=210}
@@ -386,6 +387,8 @@ usage () {
 				    	instead of giving a search, give a link to a playlist
 				    youtube-channel
 				    	instead of giving a search, give a link to a channel
+				    comments
+				    	scrapes a comments json file produced by ytfzf
 				    * SI scrapes invidious for channels instead of youtube,
 				    * Y and T both scrape invidious
 				you can use multiple scrapers by separating each with a , eg: youtube,odysee
@@ -478,6 +481,7 @@ _youtube_channel_json () {
 	channel_name=$1
 	jq '[ .contents | ..|.gridVideoRenderer? | select(. !=null) |
 	    {
+		scraper: "youtube_search",
 	    	ID: .videoId,
 		url: "'"$yt_video_link_domain"'/watch?v=\(.videoId)",
 		title: "\(if .title.simpleText then .title.simpleText else .title.runs[0].text end)",
@@ -550,6 +554,7 @@ _get_invidious_thumb_quality_name () {
 _invidious_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
 		{
+			scraper: "youtube_search",
 			ID: .playlistId,
 			url: "'"${yt_video_link_domain}"'/playlist?list=\(.playlistId)",
 			title: "[playlist] \(.title)",
@@ -564,6 +569,7 @@ _invidious_search_json_channel () {
 	jq '
 	[ .[] | select(.type=="channel") |
 		{
+			scraper: "youtube_search",
 			ID: .authorId,
 			url: "'"${yt_video_link_domain}"'/channel/\(.authorId)",
 			title: "[channel] \(.author)",
@@ -577,6 +583,7 @@ _invidious_search_json_channel () {
 _invidious_search_json_live () {
 	jq '[ .[] | select(.type=="video" and .liveNow==true) |
 		{
+			scraper: "youtube_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: "[live] \(.title)",
@@ -593,6 +600,7 @@ _invidious_search_json_videos () {
 		;
 	[ .[] | select(.type=="video" and .liveNow==false) |
 		{
+			scraper: "youtube_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
@@ -614,6 +622,7 @@ _invidious_playlist_json () {
 		;
 	[ .videos | .[] |
 		{
+			scraper: "invidious_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
@@ -637,7 +646,7 @@ _concatinate_json_file () {
 		set -- "$@" "${template}${__cur_page}.json.final"
 		__cur_page=$((__cur_page+1))
 	done
-	cat "$@" >> "$_output_json_file"
+	cat "$@" 2>/dev/null >> "$_output_json_file"
 
 }
 #}}}
@@ -772,6 +781,7 @@ scrape_invidious_channel () {
 	wait
 	_concatinate_json_file "${session_temp_dir}/${tmp_file_name}-" "$page_num" "$output_json_file"
 }
+
 ## }}}
 
 ## Peertube {{{
@@ -792,6 +802,7 @@ scrape_peertube () {
 		;
 	[ .data | .[] |
 			{
+				scraper: "peertube_search",
 				ID: .uuid,
 				url: .url,
 				title: .name,
@@ -858,6 +869,7 @@ scrape_odysee () {
 		;
 	[ .[] |select(.duration != null) |
 	    {
+		    scraper: "odysee_search",
 			ID: .claimId,
 			title: .title,
 			url: "https://www.odysee.com/\(.channel)/\(.name)",
@@ -887,7 +899,45 @@ scrape_json_file () {
 }
 #}}}
 
+# Comments{{{
+scrape_comments () {
+	video_id="$1"
+	case "$video_id" in
+		*/*) video_id="${video_id##*=}" ;;
+	esac
+	output_json_file="$2"
+	page_count="$3"
+	_comment_file="${session_temp_dir}/comments-$id.tmp.json"
+	i=1
+	while [ "$i" -le $page_count ]; do
+		print_info "Scraping comments (pg: $i)\n"
+		_out_comment_file="${session_temp_dir}/comments-$i.json.final"
+		_get_request "$invidious_instance/api/v1/comments/${video_id}" -G \
+			--data-urlencode "continuation=$continuation" > "$_comment_file"
+		continuation=$(jq -r '.continuation' < "$_comment_file")
+		jq --arg continuation "$continuation" '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": "'"$yt_video_link_domain"'/watch?v='"$video_id"'&lc=\(.commentId)", "action": "do-nothing", "thumbs": .authorThumbnails[2].url, "continuation": $continuation} ]' < "$_comment_file"  >>  "$output_json_file"
+		i=$((i+1))
+	done
+}
+
+scrape_next_page_comments () {
+	#we can do this because _comment_file is overritten every time, meaning it will contain the latest scrape
+	scrape_comments "$_search" "$video_json_file" "1"
+}
+#}}}
+
 # }}}
+
+#Post Scraping{{{
+
+post_scrape () {
+	while read -r url; do
+		scraper="$(jq -r --arg url "$url" '.[]|select(.url==$url).scraper' < "$1")"
+		[ "$scraper" = "null" ] || ! command_exists post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} && continue
+		post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} "$url" "$ytfzf_video_json_file"
+	done;
+}
+#}}}
 
 # Sorting {{{
 
@@ -975,6 +1025,12 @@ handle_keypress () {
 		$print_link_shortcut) info_to_print="L"; exit_on_info_to_print=1 ;;
 		$show_formats_shortcut) show_formats=1 ;;
 		$info_shortcut) exit_on_info_to_print=1; info_to_print="VJ" ;;
+		$next_page_shortcut) 
+			read -r url < "$selected_id_file"
+			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
+			scrape_next_page_$hovered_scraper
+			unset hovered_scraper
+			;;
 		$search_again_shortcut)
 			clean_up
 			make_search ""
@@ -1002,6 +1058,11 @@ command_exists "video_info_text" || video_info_text () {
 	printf "%-${date_len}.${date_len}s\t" "$date"
 	printf "%s" "$url"
 	printf "\n"
+}
+
+command_exists "thumbnail_video_info_text_comments" || thumbnail_video_info_text_comments () {
+	[ -n "$title" ] && printf "\033[1m%s\n\033[0m" "$title"
+	[ -n "$description" ] && printf "\n%s" "$description"
 }
 
 command_exists "thumbnail_video_info_text" || thumbnail_video_info_text () {
@@ -1222,15 +1283,32 @@ preview_img () {
 	video_json_file=$3
 	url=${line##*|}
 
-	IFS=$tab_space read -r id title channel duration views date description <<-EOF
+	#this rediculous thing is to make it so that if one of the attributes is blank
+	#it doesn't skip the variable{{{
+	set --
+	while read -r line; do
+		set -- "$@" "$line"
+	done <<-EOF
 	$(
-		jq -r --arg url "$url" '.[]|select( .url == $url )|
-			[.ID,.title,.channel,.duration,.views,.date,.description]|
-			@tsv' < "$video_json_file"
+		jq -r --arg url "$url" '.[]|select(.url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .scraper + "\n" + .description' < "$video_json_file"
+	#we read scraper here to reduce the calls to jq
+	#description MUST be last because it is the only thing that may contain new lines, which will mess up the while read -r line thing
 	)
 	EOF
 
-	thumbnail_video_info_text
+	#this IFS should be as obscure as possible as it will cause bugs otherwise
+	IFS='`'
+	read -r id title channel duration views date scraper description <<-EOF
+	$*
+	EOF
+	#}}}
+
+	if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
+		 thumbnail_video_info_text${scraper:+_$scraper}
+	else
+		thumbnail_video_info_text
+	fi
+
 	preview_display_image "$thumbnail_viewer" "$id"
 }
 
@@ -1483,10 +1561,12 @@ init_files (){
 	SEARCH_PREFIX=$(printf "%s" "$1" | tr '/' '_')
 	#if no search is provided, use a fallback value of SCRAPE-$scrape
 	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
+	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
 	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	session_temp_dir="${session_cache_dir}/tmp"
+	session_post_scrape_dir="${session_cache_dir}/post-scrape"
 	thumb_dir="${session_cache_dir}/thumbnails"
-	mkdir -p "$session_temp_dir" "$thumb_dir"
+	mkdir -p "$session_temp_dir" "$thumb_dir" "$session_post_scrape_dir"
 	ytfzf_selected_urls=$session_cache_dir/ids
 	ytfzf_video_json_file=$session_cache_dir/videos_json
 	keypress_file="${session_temp_dir}/menu_keypress"
@@ -1608,6 +1688,7 @@ scrape_website () {
 		    ;;#}}}
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
+		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
 		url|U) format_urls <<-EOF | open_url_handler
 			$_search
 			EOF
@@ -1686,17 +1767,23 @@ make_search () {
 
 make_search "$initial_search"
 
-main() while :; do
-	#calls the interface
-	$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
-	handle_actions < "$ytfzf_selected_urls"
+main() { 
+	while :; do
+		#calls the interface
+		$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
+		handle_actions < "$ytfzf_selected_urls"
 
-	[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
+		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
-	format_urls < "$ytfzf_selected_urls" | open_url_handler
+		#there should be no reason for this to happen synchronously. that way the video can pop up immediately
+		post_scrape "$ytfzf_video_json_file" < "$ytfzf_selected_urls" &
 
-	[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
-done; main
+		format_urls < "$ytfzf_selected_urls" | open_url_handler
+
+		[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
+	done
+}
+main
 
 #doing this after the loop allows for -l and -s to coexist
 while [ $search_again -eq 1 ] ; do

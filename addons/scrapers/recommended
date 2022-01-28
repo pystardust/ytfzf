@@ -42,6 +42,7 @@ scrape_recommended () {
 	..|.videoRenderer? |
 	select(. !=null) |
 		{
+			scraper: "youtube_search",
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title.runs[0].text,
 			channel: .longBylineText.runs[0].text,
