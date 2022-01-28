@@ -31,6 +31,7 @@
 * [`Examples`](#Examples)
 * [`Todo`](#Todo)
 * [`Bugs`](#Bugs)
+* [`Credits`](#Credits)
 
 ---
 
@@ -148,3 +149,10 @@ ytfzf -cO <search>
 
 * *dwm with swallow patch: Images don't render with ueberzug when looped (ie, option `-l`)*
 * *if thumbnails are not working `.Xauthority` might be causing it. Try deleting it and relogging into your computer.*
+
+# Credits
+
+| User        | Contributions                          |
+| :---        | :---                                   |
+| @Pystardust | [contributions](credits/pystardust.md) |
+| @Euro20179  | [contributions](credits/euro20179.md)  |
