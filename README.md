@@ -157,6 +157,5 @@ ytfzf -cO <search>
 | @Pystardust    | [contributions](credits/pystardust.md)    |
 | @Euro20179     | [contributions](credits/euro20179.md)     |
 | @Simonhughxyz  | [contributions](credits/simonhughxyz.md)  |
-| @Mudskipper875 | [contributions](credits/mudskipper875.md) |
 | @Jac-Zac       | [contributions](credits/jac-zac.md)       |
-
+| @Mudskipper875 | [contributions](credits/mudskipper875.md) |
