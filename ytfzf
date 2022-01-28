@@ -247,7 +247,7 @@ command_exists "handle_playing_notifications" || handle_playing_notifications ()
 		while read -r id title; do
 			notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
 		done <<-EOF
-		$(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$video_json_file")
+		$(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
 		EOF
 	} || { notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null; }
 }
@@ -309,7 +309,7 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 : ${is_audio_only:=0}
 : "${url_handler:=multimedia_player}"
 : ${info_to_print=}
-: ${exit_on_info_to_print:=0}
+: ${info_wait_action=}
 : "${info_wait:=1}"
 : "${video_pref:=best}"
 : ${show_formats:=0}
@@ -1358,28 +1358,25 @@ interface_thumbnails () {
 
 # Player {{{
 print_requested_info () {
+	url_list="$1"
 	set -f
 	IFS=,
 	for request in $info_to_print; do
 		unset IFS
 		case "$request" in
 		    [Ll]|link)
-			    printf "%s\n" "$*"  ;;
+			    #cat is better here because a lot of urls could be selected
+			    cat "$url_list" ;;
 		    VJ|vj|video-json)
 			    while read -r line; do 
 				    jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file"; 
-			    done <<-EOF
-				$@
-				EOF
-			    ;;
+			    done < "$url_list"S  ;;
 		    [Jj]|json) jq < "$ytfzf_video_json_file" ;;
 		    [Ff]|format) printf "%s\n" "$video_pref" ;;
 		    [Rr]|raw) 
 			    while read -r line; do
-				    jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file"; done <<-EOF
-					$@
-					EOF
-			    ;;
+				    jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file";
+			    done < "$url_list" ;;
 		esac
 	done
 	return 0
@@ -1408,7 +1405,9 @@ submenu_handler () {
 
 open_url_handler () {
 	# isaudio, isdownload, video_pref
-	#urls can either be passed as argument, or through pipe
+	urls="$(tr '\n' ' ' < "$1")"
+	set -f
+	set -- $urls
 	[ -z "$*" ] && return 0
 
 	[ $show_formats -eq 1 ] && video_pref="$(get_video_format "$1")"
@@ -1425,13 +1424,6 @@ get_video_format(){
 		$is_audio_only) ${ytdl_path} -q -F "$1" | grep 'audio only' | quick_menu_wrapper "Audio format: " | awk '{print $1}' ;;
 		1) ${ytdl_path} -q -F "$1" | sed '1,2d' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1 "+bestaudio/" $1}' ;;
 	esac
-}
-
-format_urls () {
-	#url file will have new lines as seperaters, make it a space
-	while read -r url; do
-		[ -n "$url" ] && printf "%s " "$url"
-	done
 }
 #}}}
 
@@ -1507,7 +1499,8 @@ parse_opt () {
 			esac ;;
 
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
-		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
+		info-print-exit|info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
+		info-action) info_wait_action="$optarg" ;;
 		info-wait) info_wait="${optarg:-1}" ;;
 		sort-by) search_sort_by="$optarg" ;;
 		upload-date) search_upload_date="$optarg" ;;
@@ -1697,11 +1690,9 @@ scrape_website () {
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
 		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
-		url|U) format_urls <<-EOF | open_url_handler
-			$_search
-			EOF
-			exit 0
-			;;
+		url|U) 
+			printf "%s\n" "$_search" > "$ytfzf_selected_urls"
+			open_url_handler  "$ytfzf_selected_urls" ;;
                 *)
                         #custom scrapers {{{
 			[ -f "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" ] && . "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" || return 127
@@ -1789,17 +1780,14 @@ main() {
 		post_scrape "$ytfzf_video_json_file" < "$ytfzf_selected_urls" &
 
 
-		formatted_urls="$(format_urls < "$ytfzf_selected_urls")"
-		[ "$info_to_print" ] && print_requested_info "$formatted_urls" && [ "$info_wait" -eq 1 ] && {
-			[ $exit_on_info_to_print -eq 1 ] && continue
-			print_info "quit (q), open menu (c|m), play (enter): "
-			read -r input
-			case "$input" in
+		[ "$info_to_print" ] && print_requested_info "$ytfzf_selected_urls" && [ "$info_wait" -eq 1 ] && {
+			[ -z "$info_wait_action" ] && { print_info "quit (q), open menu (c|m), play (enter): "; read -r info_wait_action; }
+			case "$info_wait_action" in
 				[Qq]) break ;;
 				[MmCc]) continue ;;
 			esac
 		}
-		open_url_handler "$formatted_urls"
+		open_url_handler "$ytfzf_selected_urls"
 
 		[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
 	done
