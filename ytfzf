@@ -207,6 +207,9 @@ search_prompt_menu_wrapper () {
 : ${interface=}
 
 : ${fancy_subs:=0}
+: "${fancy_subs_left=-------------}"
+: "${fancy_subs_right="${fancy_subs_left}"}"
+
 
 : "${fzf_preview_side:=left}"
 
@@ -1671,7 +1674,7 @@ scrape_website () {
 					$channel_scraper "$channel_url" "$_tmp_subfile" "channel-$_i" < /dev/null || return "$?"
 					if [ ${fancy_subs} -eq 1 ]; then
 					    channel_name="$(jq -r '.[0].channel' < "$_tmp_subfile" | grep -vE '^[[:space:]]*null[[:space:]]*$' | head -n 1)"
-					    jq '[{"title": "----------'"${channel_name}"'----------", "action": "do-nothing"}] + .[0:'"$sub_link_count"']' < "$_tmp_subfile"
+					    jq --arg title "${fancy_subs_left}${channel_name}${fancy_subs_right}" '[{"title": $title, "action": "do-nothing"}] + .[0:'"$sub_link_count"']' < "$_tmp_subfile"
 					else
 						jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile"
 					fi >> "$ytfzf_video_json_file"
