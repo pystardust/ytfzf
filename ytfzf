@@ -1383,6 +1383,7 @@ print_requested_info () {
 		esac
 	done
 	[ $exit_on_info_to_print -eq 1 ] && exit 0
+	return 0
 }
 
 submenu_handler () {
@@ -1790,8 +1791,7 @@ main() {
 
 
 		formatted_urls="$(format_urls < "$ytfzf_selected_urls")"
-		[ "$info_to_print" ] && print_requested_info "$formatted_urls"
-		[ "$info_wait" ] && {
+		[ "$info_to_print" ] && print_requested_info "$formatted_urls" && [ "$info_wait" -eq 1 ] && {
 			print_info "quit (q), open menu (c|m), play (enter): "
 			read -r input
 			case "$input" in
