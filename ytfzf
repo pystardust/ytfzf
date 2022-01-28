@@ -1588,7 +1588,7 @@ handle_actions () {
 				[ $enable_submenus -eq 0 ] && continue
 				url_handler=submenu_handler
 				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
-			do-nothing*) $(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
+			do-nothing*) return 1;;
 			*) command_exists "handle_custom_action" && handle_custom_action "$_action" ;;
 		esac
 	done
@@ -1771,7 +1771,9 @@ main() {
 	while :; do
 		#calls the interface
 		$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
-		handle_actions < "$ytfzf_selected_urls"
+		handle_actions < "$ytfzf_selected_urls" || case "$?" in 
+			1) continue ;;
+		esac
 
 		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
