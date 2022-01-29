@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-6"
+YTFZF_VERSION="2.2.alpha-7"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -247,7 +247,7 @@ command_exists "handle_playing_notifications" || handle_playing_notifications ()
 		while read -r id title; do
 			notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
 		done <<-EOF
-		$(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$video_json_file")
+		$(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
 		EOF
 	} || { notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null; }
 }
@@ -309,7 +309,8 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 : ${is_audio_only:=0}
 : "${url_handler:=multimedia_player}"
 : ${info_to_print=}
-: ${exit_on_info_to_print:=1}
+: ${info_wait_action=q}
+: "${info_wait:=0}"
 : "${video_pref:=best}"
 : ${show_formats:=0}
 
@@ -931,17 +932,6 @@ scrape_next_page_comments () {
 
 # }}}
 
-#Post Scraping{{{
-
-post_scrape () {
-	while read -r url; do
-		scraper="$(jq -r --arg url "$url" '.[]|select(.url==$url).scraper' < "$1")"
-		[ "$scraper" = "null" ] || ! command_exists post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} && continue
-		post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} "$url" "$ytfzf_video_json_file"
-	done;
-}
-#}}}
-
 # Sorting {{{
 
 command_exists "get_sort_by" || get_sort_by () {
@@ -1025,9 +1015,9 @@ handle_keypress () {
 		$video_shortcut) url_handler=video_player ;;
 		$audio_shortcut) url_handler=audio_player ;;
 		$detach_shortcut) is_detach=1 ;;
-		$print_link_shortcut) info_to_print="L"; exit_on_info_to_print=1 ;;
+		$print_link_shortcut) info_to_print="L" ;;
 		$show_formats_shortcut) show_formats=1 ;;
-		$info_shortcut) exit_on_info_to_print=1; info_to_print="VJ" ;;
+		$info_shortcut) info_to_print="VJ" ;;
 		$next_page_shortcut) 
 			read -r url < "$selected_id_file"
 			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
@@ -1357,17 +1347,29 @@ interface_thumbnails () {
 
 # Player {{{
 print_requested_info () {
+	url_list="$1"
 	set -f
 	IFS=,
 	for request in $info_to_print; do
+		unset IFS
 		case "$request" in
-		    [Ll]|link) unset IFS; printf '%s\n' $* ;;
-		    VJ|vj|video-json) while read -r line; do jq '.[]|select(.url=="'"$line"'")' < "$video_json_file"; done < "$ytfzf_selected_urls" ;;
-		    [Jj]|json) jq < "$video_json_file" ;;
+		    [Ll]|link)
+			    #cat is better here because a lot of urls could be selected
+			    cat "$url_list" ;;
+		    VJ|vj|video-json)
+			    while read -r line; do 
+				    jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file"; 
+			    done < "$url_list"  ;;
+		    [Jj]|json) jq < "$ytfzf_video_json_file" ;;
 		    [Ff]|format) printf "%s\n" "$video_pref" ;;
-		    [Rr]|raw) while read -r line; do jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file"; done < "$ytfzf_selected_urls" ;;
+		    [Rr]|raw) 
+			    while read -r line; do
+				    jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file";
+			    done < "$url_list" ;;
 		esac
 	done
+	[ $info_wait -eq 1 ] && { print_info "quit (q), quit (override -l) (Q), open menu (c|m), play (enter): "; read -r info_wait_action; }
+	return 0
 }
 
 submenu_handler () {
@@ -1377,9 +1379,10 @@ submenu_handler () {
 
         printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$final_submenu_json_file"
 
+	unset IFS
 	while read -r line; do
 		#calls ytfzf to reduce code complexity
-		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 $submenu_scraping_opts \
+		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 --info-exit $submenu_scraping_opts \
 			-ac "$(get_key_value "$line" "type")" -IJ "$(get_key_value "$line" "search")" \
 			>> "$final_submenu_json_file"
 	done <<-EOF
@@ -1393,21 +1396,12 @@ submenu_handler () {
 
 open_url_handler () {
 	# isaudio, isdownload, video_pref
-	#urls can either be passed as argument, or through pipe
-	[ -z "$@" ] && {
-		read -r urls
-		set -f
-		unset IFS
-		set -- $urls
-	}
+	urls="$(tr '\n' ' ' < "$1")"
+	set -f
+	set -- $urls
 	[ -z "$*" ] && return 0
 
 	[ $show_formats -eq 1 ] && video_pref="$(get_video_format "$1")"
-
-	if [ -n "$info_to_print"  ]; then
-		print_requested_info "$@"
-		[ $exit_on_info_to_print -eq 1 ] && exit 0
-	fi
 
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
@@ -1421,13 +1415,6 @@ get_video_format(){
 		$is_audio_only) ${ytdl_path} -q -F "$1" | grep 'audio only' | quick_menu_wrapper "Audio format: " | awk '{print $1}' ;;
 		1) ${ytdl_path} -q -F "$1" | sed '1,2d' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1 "+bestaudio/" $1}' ;;
 	esac
-}
-
-format_urls () {
-	#url file will have new lines as seperaters, make it a space
-	while read -r url; do
-		[ -n "$url" ] && printf "%s " "$url"
-	done
 }
 #}}}
 
@@ -1503,7 +1490,9 @@ parse_opt () {
 			esac ;;
 
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
-		info-print-exit) exit_on_info_to_print="${optarg:-1}" ;;
+		info-print-exit|info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
+		info-action) info_wait_action="$optarg" ;;
+		info-wait) info_wait="${optarg:-1}" ;;
 		sort-by) search_sort_by="$optarg" ;;
 		upload-date) search_upload_date="$optarg" ;;
 		video-duration) search_video_duration=$optarg ;;
@@ -1567,9 +1556,8 @@ init_files (){
 	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
 	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	session_temp_dir="${session_cache_dir}/tmp"
-	session_post_scrape_dir="${session_cache_dir}/post-scrape"
 	thumb_dir="${session_cache_dir}/thumbnails"
-	mkdir -p "$session_temp_dir" "$thumb_dir" "$session_post_scrape_dir"
+	mkdir -p "$session_temp_dir" "$thumb_dir"
 	ytfzf_selected_urls=$session_cache_dir/ids
 	ytfzf_video_json_file=$session_cache_dir/videos_json
 	keypress_file="${session_temp_dir}/menu_keypress"
@@ -1692,11 +1680,9 @@ scrape_website () {
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
 		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
-		url|U) format_urls <<-EOF | open_url_handler
-			$_search
-			EOF
-			exit 0
-			;;
+		url|U) 
+			printf "%s\n" "$_search" > "$ytfzf_selected_urls"
+			open_url_handler  "$ytfzf_selected_urls" ;;
                 *)
                         #custom scrapers {{{
 			[ -f "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" ] && . "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" || return 127
@@ -1780,12 +1766,20 @@ main() {
 
 		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
-		#there should be no reason for this to happen synchronously. that way the video can pop up immediately
-		post_scrape "$ytfzf_video_json_file" < "$ytfzf_selected_urls" &
+		#nothing below needs to happen if  this is empty (causes bugs when this is not here)
+		[ ! -s "$ytfzf_selected_urls" ] && break
 
-		format_urls < "$ytfzf_selected_urls" | open_url_handler
+		[ "$info_to_print" ] && print_requested_info "$ytfzf_selected_urls" && case "$info_wait_action" in
+				#simulates old behavior of when alt-l or alt-i is pressed and -l is enabled
+				q) [ $is_loop -eq 1 ]  && continue || break ;;
+				Q) break  ;;
+				[MmCc]) continue ;;
+				'') : ;;
+				*) custom_info_wait_action_"$info_wait_action" ;;
+			esac
+		open_url_handler "$ytfzf_selected_urls"
 
-		[ $is_loop -eq 0 ] || [ ! -s "$ytfzf_selected_urls" ] && break
+		[ $is_loop -eq 0 ] && break
 	done
 }
 main
