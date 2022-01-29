@@ -1782,9 +1782,9 @@ main() {
 		#nothing below needs to happen if  this is empty (causes bugs when this is not here)
 		[ ! -s "$ytfzf_selected_urls" ] && break
 
-		[ "$info_to_print" ] && print_requested_info "$ytfzf_selected_urls" && [ "$info_wait" -eq 1 ] && {
-			[ -z "$info_wait_action" ] && { print_info "quit (q), open menu (c|m), play (enter): "; read -r info_wait_action; }
-		}
+		[ "$info_to_print" ] && print_requested_info "$ytfzf_selected_urls" && [ "$info_wait" -eq 1 ] &&
+			[ -z "$info_wait_action" ] && { print_info "quit (q), open menu (c|m), play (enter): "; 
+			read -r info_wait_action; }
 		#this needs to be outside, or things break if info wait is 0, but info_to_print is not empty
 		case "$info_wait_action" in
 			[Qq]) break ;;
