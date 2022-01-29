@@ -1768,12 +1768,17 @@ main() {
 		[ ! -s "$ytfzf_selected_urls" ] && break
 
 		[ "$info_to_print" ] && print_requested_info "$ytfzf_selected_urls" && [ "$info_wait" -eq 1 ] &&
-			{ print_info "quit (q), open menu (c|m), play (enter): "; 
+			{ print_info "quit (q), quit (override -l) (Q), open menu (c|m), play (enter): "; 
 			read -r info_wait_action; }
 		#this needs to be outside, or things break if info wait is 0, but info_to_print is not empty
 		[ "$info_to_print" ] && case "$info_wait_action" in
-			[Qq]) break ;;
+			q)
+				#simulates old behavior of when alt-l or alt-i is pressed and -l is enabled
+				[ $is_loop -eq 1 ]  && continue || break ;;
+			Q) break  ;;
 			[MmCc]) continue ;;
+			'') : ;;
+			*) custom_info_wait_action_"$info_wait_action" ;;
 		esac
 		open_url_handler "$ytfzf_selected_urls"
 

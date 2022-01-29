@@ -167,10 +167,13 @@ Valid actions:
 .RS
 .TP
 .RI q
-quit
+quit (will go back to menu, if $is_loop is 1).
+.TP
+.RI Q
+quit regardless if loop is enabled or not.
 .TP
 .RI m
-return to menu
+return to menu.
 .br
 .RI default: " q"
 
@@ -793,6 +796,14 @@ This function takes in a line in the form of
 This function sorts the data that is being piped into it.
 .br
 This function takes no arguments, all data is piped into it.
+
+.TP
+.BR custom_info_wait_action_<text> ()
+This function is called if an unknown $info_wait_action is given or read.
+.br
+<text> should be replaced with the text wanted from $info_wait_action, eg: \fIcustom_info_wait_e\fR.
+.br
+This function takes no arguments.
 
 .TP
 .BR video_info_text ()
