@@ -1771,7 +1771,7 @@ main() {
 			{ print_info "quit (q), open menu (c|m), play (enter): "; 
 			read -r info_wait_action; }
 		#this needs to be outside, or things break if info wait is 0, but info_to_print is not empty
-		case "$info_wait_action" in
+		[ "$info_to_print" ] && case "$info_wait_action" in
 			[Qq]) break ;;
 			[MmCc]) continue ;;
 		esac
