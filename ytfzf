@@ -1379,6 +1379,7 @@ submenu_handler () {
 
         printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$final_submenu_json_file"
 
+	unset IFS
 	while read -r line; do
 		#calls ytfzf to reduce code complexity
 		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 --info-exit $submenu_scraping_opts \
