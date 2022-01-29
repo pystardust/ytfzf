@@ -309,7 +309,7 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 : ${is_audio_only:=0}
 : "${url_handler:=multimedia_player}"
 : ${info_to_print=}
-: ${info_wait_action=}
+: ${info_wait_action=q}
 : "${info_wait:=0}"
 : "${video_pref:=best}"
 : ${show_formats:=0}
