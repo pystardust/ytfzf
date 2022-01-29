@@ -932,17 +932,6 @@ scrape_next_page_comments () {
 
 # }}}
 
-#Post Scraping{{{
-
-post_scrape () {
-	while read -r url; do
-		scraper="$(jq -r --arg url "$url" '.[]|select(.url==$url).scraper' < "$1")"
-		[ "$scraper" = "null" ] || ! command_exists post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} && continue
-		post_scrape_${scraper:-YTFZF_UNKNOWN_SCRAPER} "$url" "$ytfzf_video_json_file"
-	done;
-}
-#}}}
-
 # Sorting {{{
 
 command_exists "get_sort_by" || get_sort_by () {
@@ -1565,9 +1554,8 @@ init_files (){
 	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
 	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	session_temp_dir="${session_cache_dir}/tmp"
-	session_post_scrape_dir="${session_cache_dir}/post-scrape"
 	thumb_dir="${session_cache_dir}/thumbnails"
-	mkdir -p "$session_temp_dir" "$thumb_dir" "$session_post_scrape_dir"
+	mkdir -p "$session_temp_dir" "$thumb_dir"
 	ytfzf_selected_urls=$session_cache_dir/ids
 	ytfzf_video_json_file=$session_cache_dir/videos_json
 	keypress_file="${session_temp_dir}/menu_keypress"
@@ -1775,9 +1763,6 @@ main() {
 		esac
 
 		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
-
-		#there should be no reason for this to happen synchronously. that way the video can pop up immediately
-		post_scrape "$ytfzf_video_json_file" < "$ytfzf_selected_urls" &
 
 		#nothing below needs to happen if  this is empty (causes bugs when this is not here)
 		[ ! -s "$ytfzf_selected_urls" ] && break
