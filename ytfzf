@@ -15,6 +15,7 @@ YTFZF_VERSION="2.2.alpha-7"
 	# eg: ytfzf -c terminal (invalid scrape)
 # 3: missing dependancy
 # 4: scraping error
+# 5: empty search
 
 # colors {{{
 c_red="\033[1;31m"
@@ -189,6 +190,7 @@ command_exists "search_prompt_menu_scripting" || search_prompt_menu_scripting ()
 
 search_prompt_menu_wrapper () {
 	#the last sed is to set it to quick_menu if $interfce is "" (default)
+	[ $use_search_hist -eq 1 ] && { _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)"; return; }
 	 fn_name=search_prompt_menu"$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
 	 #we could do :
 	 # $fn_name 2>/dev/null || [ "$?" -eq 127 ] && search_prompt_menu_ext
@@ -302,6 +304,7 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 # history
 : ${enable_hist:=1}
 : ${enable_search_hist:=1}
+: ${use_search_hist:=0}
 
 # format options
 #variable for switching on sort (date)
@@ -1443,9 +1446,7 @@ parse_opt () {
 		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
 		version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
-		q|search-hist)
-			[ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"
-			initial_search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)" ;;
+		q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; use_search_hist=1 ;;
 		pages) pages_to_scrape="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
 		interface)
@@ -1745,6 +1746,7 @@ make_search () {
 	#only ask for search if it's empty and scrape isn't something like S or T
 	#this cannot be done inside handle_scraping, because otherwise init_files will get an empty search with search_again
 	is_asking_for_search_necessary && search_prompt_menu_wrapper
+	[ -z "$_search" ] && exit 5
 	init_files "$_search"
 	[ $enable_search_hist -eq 1 ] && [ -n "$_search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 	handle_scraping "$_search"
