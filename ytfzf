@@ -92,6 +92,7 @@ clean_up () {
 	if [ $__is_fzf_preview -eq 0 ]; then
 		[ -d "$session_cache_dir" ] && [ $keep_cache -eq 0 ] && rm -r "$session_cache_dir"
 	fi
+	command_exists  "on_clean_up" && on_clean_up
 }
 
 is_relative_dir () {

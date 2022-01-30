@@ -1112,6 +1112,12 @@ This function takes 2 arguments:
 .EE
 
 .TP
+.BR on_clean_up ()
+This function is called when the script is cleaning up files from the search, or when the script exits.
+.br
+This function takes no arguments.
+
+.TP
 .BR handle_custom_keypresses ()
 This function gets called in the internal handle_keypress() function, This function should return 0 to not override the default handle_keypress() function.
 .br
