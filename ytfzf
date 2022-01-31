@@ -1298,6 +1298,7 @@ preview_img () {
 	read -r id title channel duration views date scraper description <<-EOF
 	$*
 	EOF
+	description="$(printf "%s" "$description" | tr '`' '\n')"
 	#}}}
 
 	if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
