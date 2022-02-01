@@ -247,6 +247,7 @@ search_prompt_menu_wrapper () {
 command_exists "handle_playing_notifications" || handle_playing_notifications (){
 	#if no notify-send push error to /dev/null
 	[ $# -le 1 ] && {
+		IFS="$tab_space"
 		while read -r id title; do
 			notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
 		done <<-EOF
