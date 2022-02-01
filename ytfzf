@@ -1078,9 +1078,10 @@ interface_scripting () {
 	video_json_file=$1
 	selected_id_file=$2
 	case 1 in
-		"$is_auto_select") jq -r ".[].url"  < "$video_json_file"  ;;
-		"$is_random_select") jq -r ".[].url"  < "$video_json_file"  | shuf ;;
-	esac | sed -n "1,$scripting_video_count"p > "$selected_id_file"
+		"$is_auto_select") jq -r ".[].url"  < "$video_json_file" | sed -n "1,$scripting_video_count"p  ;;
+		"$is_random_select") jq -r ".[].url"  < "$video_json_file"  | shuf  | sed -n "1,$scripting_video_count"p ;;
+		"$is_select_specific") jq -r '.[].url' < "$video_json_file" | sed -n "$scripting_video_count"p 
+	esac > "$selected_id_file"
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
 }
 # }}}
@@ -1440,6 +1441,7 @@ parse_opt () {
 		f|formats) show_formats=${optarg:-1} ;;
 		H|history) scrape="history" ;;
 		x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
+		S|select) interface="scripting" && is_select_specific="1" && scripting_video_count="$optarg" ;;
 		a|auto-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
 		A|select-all) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_auto_select=${optarg:-1} && scripting_video_count='$' ;;
 		r|random-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_random_select=${optarg:-1} ;;
@@ -1521,7 +1523,7 @@ parse_opt () {
 			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
 }
-while getopts "ac:dfhlmn:qrstxADHI:LTU${long_opt_char}:" OPT; do
+while getopts "ac:dfhlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
