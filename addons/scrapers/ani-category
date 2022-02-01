@@ -1,5 +1,6 @@
 #!/bin/sh
 
+#stolen from pystardust/ani-cli
 _decrypt_link() {
 	ajax_url='https://gogoplay.io/encrypt-ajax.php'
 
@@ -17,6 +18,7 @@ _decrypt_link() {
 	grep -Eo 'https:\/\/[-a-zA-Z0-9@:%._\+~#=][a-zA-Z0-9][-a-zA-Z0-9@:%_\+.~#?&\/\/=]*'
 }
 
+#stolen from pystardust/ani-cli
 _ani_category_get_episodes () {
     sed -n -E '
 		/^[[:space:]]*<a href="#" class="active" ep_start/{
@@ -28,16 +30,19 @@ _ani_category_get_episodes () {
 scrape_ani_category () {
     search="$1"
     output_json_file="$2"
+    #stolen from pystardust/ani-cli
     base_url=$(curl -s -L -o /dev/null -w "%{url_effective}\n" https://gogoanime.cm)
     _tmp_html="${session_temp_dir}/ani-category.html"
     _get_request "$base_url/category/$search" > "$_tmp_html"
     episode_count="$(_ani_category_get_episodes "$_tmp_html")"
+    command_exists "openssl" || die 3 "openssl is a required dependency for ani, please install it\n"
     i=1
     _start_series_of_threads
     while [ $i -le "$episode_count" ]; do
 	{
 	    print_info "Scraping anime episode $i\n"
 	    _tmp_json="${session_temp_dir}/ani-category-$i.json.final"
+	    #stolen from pystardust/ani-cli
 	    dpage_link=$(curl -s "$base_url/$search-episode-$i" | sed -n -E 's/^[[:space:]]*<a href="#" rel="100" data-video="([^"]*)".*/\1/p' | sed 's/^/https:/g')
 	    url="$(_decrypt_link "$dpage_link" | head -n 4 | tail -n 1)"
 	    echo "[]" | jq --arg url "$url" --arg title "$search episode $i" '[{"url": $url, "title": $title, "ID": $title}]' > "$_tmp_json"
