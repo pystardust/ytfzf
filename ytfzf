@@ -325,6 +325,7 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 : ${scripting_video_count:=1}
 : ${is_random_select:=0}
 : ${is_auto_select:=0}
+: ${is_specific_select:=0}
 
 # option parsing
 : "${long_opt_char:=-}"
@@ -385,6 +386,7 @@ usage () {
 	-a                      Automatically select the first video
 	-r                      Automatically select a random video
 	-A                      Select all videos
+	-S <number>             Automatically selects a specific video
 	-n <video count>        The amount of videos to select with -a and -r
 	-c <scraper>       	The scraper to use,
 				Builtin scrapers:
@@ -1080,7 +1082,7 @@ interface_scripting () {
 	case 1 in
 		"$is_auto_select") jq -r ".[].url"  < "$video_json_file" | sed -n "1,$scripting_video_count"p  ;;
 		"$is_random_select") jq -r ".[].url"  < "$video_json_file"  | shuf  | sed -n "1,$scripting_video_count"p ;;
-		"$is_select_specific") jq -r '.[].url' < "$video_json_file" | sed -n "$scripting_video_count"p 
+		"$is_specific_select") jq -r '.[].url' < "$video_json_file" | sed -n "$scripting_video_count"p 
 	esac > "$selected_id_file"
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
 }
@@ -1405,6 +1407,7 @@ open_url_handler () {
 	# isaudio, isdownload, video_pref
 	urls="$(tr '\n' ' ' < "$1")"
 	set -f
+	IFS=' '
 	set -- $urls
 	[ -z "$*" ] && return 0
 
@@ -1441,7 +1444,7 @@ parse_opt () {
 		f|formats) show_formats=${optarg:-1} ;;
 		H|history) scrape="history" ;;
 		x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
-		S|select) interface="scripting" && is_select_specific="1" && scripting_video_count="$optarg" ;;
+		S|select) interface="scripting" && is_specific_select="1" && scripting_video_count="$optarg" ;;
 		a|auto-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
 		A|select-all) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_auto_select=${optarg:-1} && scripting_video_count='$' ;;
 		r|random-select) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface="scripting" && is_random_select=${optarg:-1} ;;
