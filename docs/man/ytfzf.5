@@ -1154,6 +1154,18 @@ This function takes 1 argument:
 .ti +4
     The action.
 .EE
+.br
+Exit Codes:
+.RS
+.TP
+.IR 1
+go back to menu
+.TP
+.IR 2
+exit
+.RE
+.RE
+.RS
 
 .TP
 .BR set_save_custom_filters ()
@@ -1257,7 +1269,7 @@ This function shall print information for the thumbnails interface.
 This function is effectively the same as thumbnail_video_info_text().
 .RE
 .PP
-.I scrape_next_page_<scraper>
+.RI scrape_next_page_<scraper>
 .RS
 .PP
 This function shall scrape more videos from <scraper>.
@@ -1267,6 +1279,30 @@ This function shall scrape more videos from <scraper>.
 This function will happen if the user presses alt-p in fzf.
 .PP
 This function takes no arguments.
+.RE
+.PP
+.IR handle_custom_action_<action_name>
+.RS
+.PP
+This function shall handle a custom action.
+.PP
+<action_name> should be the name of the action replacing any "\-" with "_".
+.PP
+This function takes 1 argument.
+.RS
+.TP
+.IR 1
+The action arguments
+.RE
+Exit Codes:
+.RS
+.TP
+.IR 1
+go back to menu
+.TP
+.IR 2
+exit
+.RS
 .RE
 
 .RE
