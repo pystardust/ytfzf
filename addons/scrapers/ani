@@ -1,0 +1,32 @@
+#!/bin/sh
+
+_ani_get_categories () {
+    #stolen from pystardust/ani-cli
+	sed -n 's_^[[:space:]]*<a href="/category/\([^"]*\)" title="\([^"]*\)".*_\1_p' "$1"
+}
+_ani_get_thumbnails () {
+	category="$1"
+    #stolen from pystardust/ani-cli
+	sed -n 's_^[[:space:]]*<img src="\(.*/cover/'"$category"'\.[^"]*\)" alt="[^"]*" />_\1_p' "$2"
+}
+
+scrape_ani () {
+    search="$1"
+    output_json_file="$2"
+    search="$(printf "%s" "$search" | tr '[[:space:]]' '-')"
+    #their url could move a lot
+    #stolen from pystardust/ani-cli
+    base_url=$(curl -s -L -o /dev/null -w "%{url_effective}\n" https://gogoanime.cm)
+    _tmp_html="${session_temp_dir}/ani.html"
+    _get_request "$base_url/search.html" -G -d "keyword=$search" > "$_tmp_html"
+    _tmp_categories_file=${session_temp_dir}/ani-categories.list
+    _tmp_thumbnails_file="${session_temp_dir}/ani-thumbnails.list"
+    _tmp_json_var="[]"
+    _ani_get_categories "$_tmp_html" | tee "$_tmp_categories_file" | {
+	while read -r category; do
+	    thumbnail="$(_ani_get_thumbnails "$category" "$_tmp_html")"
+	    _tmp_json_var=$(printf "%s" "$_tmp_json_var" | jq --arg thumbnail "$thumbnail" --arg title "$category" '. + [{"title": $title, "ID": $title, "url": "'"$base_url/category/"'\($title)", "thumbs": $thumbnail, "action": "scrape type=ani-category search=\($title)"}]')
+	done
+	echo "$_tmp_json_var" >> "$output_json_file"
+    }
+}
