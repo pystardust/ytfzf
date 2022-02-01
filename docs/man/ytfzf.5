@@ -77,7 +77,7 @@ The directory to store cache files in.
 .br
 It is highly recommended to only change this if $__is_submenu is 0, or funky things could happen
 .br
-.RI default: " $XDG_CACHE_HOME/ytfzf (or $HOME/.cache/ytfzf)"
+.IR default: " $XDG_CACHE_HOME/ytfzf (or $HOME/.cache/ytfzf)"
 
 .TP
 .RB $ hist_file
@@ -85,25 +85,25 @@ The file to write watch history to if $enable_hist is 1
 .br
 It is highly recommended to only change this if $__is_submenu is 0, or funky things could happen
 .br
-.RI default: " $cache_dir/watch_hist"
+.IR default: " $cache_dir/watch_hist"
 
 .TP
 .RB $ search_hist_file
 The file to write search history to if $enable_search_hist is 1
 .br
-.RI default: " $cache_dir/search_hist"
+.IR default: " $cache_dir/search_hist"
 
 .TP
 .RB $ ytfzf_selected_urls
 The file to store the ids of selected video(s) in.
 .br
-.RI default: " $cache_dir/urls"
+.IR default: " $cache_dir/urls"
 
 .TP
 .RB $ ytfzf_video_json_file
 The file to store the json data of scraped videos.
 .br
-.RI default: " $cache_dir/videos_json"
+.IR default: " $cache_dir/videos_json"
 
 .RE
 
@@ -116,26 +116,26 @@ How to play the selected videos.
 .RB $ is_detach
 Whether or not to detach the video player from the terminal.
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ is_audio_only
 Whether or not to only play audio.
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ url_handler
 The function/programs to handle the selected videos
 .br
 See URL handlers for a list of builtin url handlers
-.RI default: " multimedia_player"
+.IR default: " multimedia_player"
 
 .TP
 .RB $ yt_video_link_domain
 The domain to play youtube videos from (does not apply to odysee and peertube, or youtube playlists)
 .br
-.RI default: " $invidious_instance"
+.IR default: " $invidious_instance"
 
 .TP
 .RB $ info_to_print
@@ -166,28 +166,28 @@ The action to do when $info_wait is 1.
 Valid actions:
 .RS
 .TP
-.RI q
+.IR q
 quit (will go back to menu, if $is_loop is 1).
 .TP
-.RI Q
+.IR Q
 quit regardless if loop is enabled or not.
 .TP
-.RI m
+.IR m
 return to menu.
 .br
-.RI default: " q"
+.IR default: " q"
 
 .TP
 .BR $ info_wait
 Whether or not to wait for input after printing info.
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ video_pref
 The video preference to use for youtube-dl in mpv.
 .br
-.RI default: " best"
+.IR default: " best"
 
 .RE
 
@@ -217,7 +217,7 @@ default
 .RB $ external_menu_len
 The amount of cols in interface_ext, (\-D)
 .br
-.RI default: " 210"
+.IR default: " 210"
 
 .TP
 .RB $ fzf_preview_side
@@ -234,7 +234,7 @@ Valid options:
 .TP
 .IR down
 .TP
-.RI default: " left"
+.IR default: " left"
 .RE
 
 .TP
@@ -243,7 +243,7 @@ Opts to give to fzf for the default interface.
 .br
 Be careful or this could break the functionality of ytfzf
 .br
-.RI default: 
+.IR default: 
 
 .TP
 .RB $ fzf_thumbnail_opts
@@ -251,7 +251,7 @@ Opts to give to fzf for the thumbnail interface.
 .br
 Be careful or this could break the functionality of ytfzf
 .br
-.RI default: 
+.IR default: 
 
 .TP
 .RB $ thumbnail_viewer
@@ -286,20 +286,20 @@ Good with tiling window managers
 .IR custom
 Calls the user defined img_display_function()
 .TP
-.RI default: " ueberzug"
+.IR default: " ueberzug"
 .RE
 
 .TP
 .RB $ w3mimgdisplay_path
 Path to w3mimgdisplay
 .br
-.RI defaut: " /usr/lib/w3m/w3mimgdisplay"
+.IR defaut: " /usr/lib/w3m/w3mimgdisplay"
 
 .TP
 .RB $ show_formats
 Whether or not to bring up the format selection menu.
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ enable_submenus
@@ -307,43 +307,43 @@ Whether or not to enable submenus,
 .br
 A submenu is a menu that appears after a playlist or channel is selected.
 (Currently only supported with youtube/invidious scraper)
-.RI default: " 1"
+.IR default: " 1"
 
 .TP
 .RB $ submenu_opts
 Options to use in submenus.
-.RI default: ""
+.IR default: ""
 
 .TP
 .RB $ submenu_scraping_opts
 Options to use for scraping for submenus.
-.RI default: ""
+.IR default: ""
 
 .TP
 .RB $ is_sort
 Whether or not to sort scraped videos by date in the menu
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ fancy_subs
 Whether or not to have a separator between each subscription
-.RI defualt: " 0"
+.IR defualt: " 0"
 
 .TP
 .RB $ fancy_subs_left
 The text to display on the left of the channel name when fancy_subs is 1.
-.RI default: " -------------"
+.IR default: " -------------"
 
 .TP
 .RB $ fancy_subs_right
 The text to display on the right of the channel name when fancy_subs is 1.
-.RI default: " $fancy_subs_left"
+.IR default: " $fancy_subs_left"
 
 .TP
 .RB $ show_thumbnails
 Whether or not to show thumbnails in fzf.
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ thumbnail_quality
@@ -386,80 +386,80 @@ The end frame of the video (low quality)
 .RB $notify_playing
 Whether or not to send a notification when a video is about to be played.
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ is_loop
 Whether or not to show the menu after the selected videos have stopped playing.
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ search_again
 Whether or not to make another search after fzf is closed.
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ download_shortcut
 The shortcut to download the selected videos.
 .br
-.RI default: " alt-d"
+.IR default: " alt-d"
 
 .TP
 .RB $ video_shortcut
 The shortcut to watch the selected videos.
 .br
-.RI default: " alt-v"
+.IR default: " alt-v"
 
 .TP
 .RB $ audio_shortcut
 The shortcut to listen to the selected videos.
 .br
-.RI default: " alt-m"
+.IR default: " alt-m"
 
 .TP
 .RB $ detach_shortcut
 The shortcut to use the detach player.
 .br
-.RI default: " alt-e"
+.IR default: " alt-e"
 
 .TP
 .RB $ print_link_shortcut
 The shortcut to use to print the link.
 .br
-.RI default: " alt-l"
+.IR default: " alt-l"
 
 .TP
 .RB $ show_formats_shortcut
 The shortcut to show formats before playing the video.
 .br
-.RI default: " alt-f"
+.IR default: " alt-f"
 
 .TP
 .RB $ info_shortcut
 The shortcut to get all info about the selected video.
 .br
-.RI default: " alt-i"
+.IR default: " alt-i"
 
 .TP
 .RB $ search_again_shortcut
 The shortcut to make another search
 .br
-.RI default: " alt-s"
+.IR default: " alt-s"
 
 .TP
 .RB $ next_page_shortcut
 The shortcut to scrape the next page.
 .br
 Currently only applies to the comments scrape.
-.RI default: " alt-p"
+.IR default: " alt-p"
 
 .TP
 .RB $ shortcut_binds
 The keys to listen for in fzf.
 .br
-.RI default: " Enter,double-click,$next_page_shortcut,$download_shortcut,$video_shortcut,$detach_shortcut,$print_link_shortcut,$show_formats_shortcut,$info_shortcut,$search_again_shortcut,$custom_shortcut_binds"
+.IR default: " Enter,double-click,$next_page_shortcut,$download_shortcut,$video_shortcut,$detach_shortcut,$print_link_shortcut,$show_formats_shortcut,$info_shortcut,$search_again_shortcut,$custom_shortcut_binds"
 
 .TP
 .RB $ custom_shortcut_binds
@@ -478,25 +478,25 @@ Auto selecting
 .RB $ is_auto_select
 Whether or not to auto select the first \-n videos. (only works if $interface=scripting)
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ is_random_select
 Whether or not to randomly select \-n videos. (only works if $interface=scripting)
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ is_specific_select
 Whether or not to select a specific video (use $ scripting_video_count to specify which) (only works if $interface=scripting)
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ scripting_video_count
 The amount of videos to get with \-a or \-r.
 .br
-.RI default: " 1"
+.IR default: " 1"
 
 .RE
 
@@ -537,7 +537,7 @@ The search will be a path to a json file layed out as described in VIDEO JSON FO
 .TP
 .IR comments
 .br
-.RI default: " youtube"
+.IR default: " youtube"
 .RE
 
 .TP
@@ -601,7 +601,7 @@ The type of results to get.
 .RB $ nsfw
 Whether or not to search for nsfw videos in odysee/O.
 .br
-.RI default: " false"
+.IR default: " false"
 
 .TP
 .RB $ search_result_features
@@ -630,38 +630,38 @@ The features to have on a video (comma seperated).
 .TP
 .RB $ search_region
 The region (country code) to search.
-.RI default: " US"
+.IR default: " US"
 
 .TP
 .RB $ invidious_instance
 The instance of invidious to use.
 .br
-.RI default: " https://vid.puffyan.us"
+.IR default: " https://vid.puffyan.us"
 
 .TP
 .RB $ pages_to_scrape
 The amount of pages to scrape on youtube/invidious.
 .br
-.RI default: " 1"
+.IR default: " 1"
 
 .TP
 .RB $ max_thread_count
 The amount of threads that can be used while scraping youtube search, playlists, and channels.
 (this does not apply to the subscription scraper)
 .br
-.RI default: " 20"
+.IR default: " 20"
 
 .TP
 .RB $ odysee_video_search_count
 The amount of videos to scrape on odysee.
 .br
-.RI default: " 30"
+.IR default: " 30"
 
 .TP
 .RB $ sub_link_count
 The amount of videos to scrape per channel when getting subscriptions.
 .br
-.RI default: " 2"
+.IR default: " 2"
 
 .RE
 
@@ -676,7 +676,7 @@ The scrapers to not ask for a search query.
 .br
 Be sure to have a space at the end and beginning of the string.
 .br
-.RI default: " youtube-subscriptions S SI T youtube-trending H history "
+.IR default: " youtube-subscriptions S SI T youtube-trending H history "
 
 .TP
 .RB $ custom_scrape_search_exclude
@@ -685,31 +685,31 @@ Extra scrapers to not ask for a search query.
 This will automatically be appended to $ scrape_search_exclude.
 .br
 In addition, you do not need spaces at the start, and end, only between scrapers.
-.RI default: ""
+.IR default: ""
 
 .TP
 .RB $ gap_space
 A number of spaces equal to half the width of your terminal
 .br
-.RI default: " 115 spaces"
+.IR default: " 115 spaces"
 
 .TP
 .RB $ enable_hist
 Whether or not to keep track of history
 .br
-.RI default: " 1"
+.IR default: " 1"
 
 .TP
 .RB $ enable_search_hist
 Whether or not to keep track of search history
 .br
-.RI default: " 1"
+.IR default: " 1"
 
 .TP
 .RB $ use_search_hist
 Whether or not to use search history instead of a search.
 .br
-.RI default: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ log_level
@@ -725,14 +725,14 @@ Log only warnings and errors
 .IR 2
 Log only errors
 .TP
-.RI default: " 2"
+.IR default: " 2"
 .RE
 
 .TP
 .RB $ useragent
 The useragent to use when scraping websites.
 .br
-.RI default: " \(dqMozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36\(dq"
+.IR default: " \(dqMozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36\(dq"
 
 .TP
 .RB $ ytdl_opts
@@ -747,7 +747,7 @@ If
 is installed that will be prefered over
 .I youtube-dl
 .br
-.RI default: " youtube\-dl"
+.IR default: " youtube\-dl"
 
 .RE
 
@@ -760,7 +760,7 @@ Option Parsing
 .RB $ long_opt_char
 The char to use for long opts.
 .br
-.RI default: " \-"
+.IR default: " \-"
 
 .PP
 State
@@ -1269,7 +1269,7 @@ This function shall print information for the thumbnails interface.
 This function is effectively the same as thumbnail_video_info_text().
 .RE
 .PP
-.RI scrape_next_page_<scraper>
+.IR scrape_next_page_<scraper>
 .RS
 .PP
 This function shall scrape more videos from <scraper>.
