@@ -1521,7 +1521,7 @@ parse_opt () {
 		fzf-thumbnail-opts) fzf_thumbnail_opts="${optarg}" ;;
 		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
 		#flip the bit
-		disable-back) enable_back_button=$((optarg^1)) ;;
+		disable-back) enable_back_button=${optarg:-0} ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
