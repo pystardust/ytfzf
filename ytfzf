@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-8"
+YTFZF_VERSION="2.2.alpha-9"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -213,6 +213,7 @@ search_prompt_menu_wrapper () {
 : "${fancy_subs_left=-------------}"
 : "${fancy_subs_right="${fancy_subs_left}"}"
 
+: "${enable_back_button:=1}"
 
 : "${fzf_preview_side:=left}"
 
@@ -1386,7 +1387,7 @@ submenu_handler () {
 	#reset for future submenus
 	: > "$final_submenu_json_file"
 
-        printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$final_submenu_json_file"
+        [ $enable_back_button -eq 1 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$final_submenu_json_file"
 
 	unset IFS
 	while read -r line; do
@@ -1519,6 +1520,8 @@ parse_opt () {
 		fzf-opts) fzf_opts="${optarg}" ;;
 		fzf-thumbnail-opts) fzf_thumbnail_opts="${optarg}" ;;
 		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
+		#flip the bit
+		disable-back) enable_back_button=$((optarg^1)) ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
