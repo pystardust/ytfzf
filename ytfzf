@@ -89,6 +89,14 @@ print_error () {
 clean_up () {
 	# print_info "cleaning up\n"
 	# clean up only as parent process
+	#kill ytfzf sub process{{{
+	#i think this needs to be written to a file becuase of sub-shells
+	jobs_file="${session_cache_dir}/the-jobs-need-to-be-written-to-a-file.list"
+	jobs -p > "$jobs_file"
+	while read -r line; do
+		[ "$line" ] && kill "$line" 2> /dev/null
+	done < "$jobs_file"
+	#}}}
 	if [ $__is_fzf_preview -eq 0 ]; then
 		[ -d "$session_cache_dir" ] && [ $keep_cache -eq 0 ] && rm -r "$session_cache_dir"
 	fi
