@@ -1540,6 +1540,7 @@ parse_opt () {
 		install-addons)
 			[ ! -d ".git" ] && git clone "https://github.com/pystardust/ytfzf" _tmp_ytfzf && cd _tmp_ytfzf
 			set +f
+			mkdir -p "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_CUSTOM_SCRAPERS_DIR" "$YTFZF_SORT_NAMES_DIR" "$YTFZF_URL_HANDLERS_DIR"
 			print_info "installing thumbnail-viewers\n"
 			cp addons/thumbnail-viewers/* "$YTFZF_THUMBNAIL_VIEWERS_DIR"
 			print_info "installing interfaces\n"
