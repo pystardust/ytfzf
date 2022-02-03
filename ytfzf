@@ -1504,9 +1504,9 @@ parse_opt () {
 		thumb-viewer)
 			case "$optarg" in
 				#these are special cases, where they are not themselves commands
-				chafa-16|catimg-256) thumbnail_viewer="$optarg" ;;
+				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|display|w3m|imv|ueberzug) thumbnail_viewer="$optarg" ;;
 				*)
-					is_relative_dir "$optarg" || command -v "$optarg" > /dev/null 2>&1 &&\
+					is_relative_dir "$optarg" &&\
 						thumbnail_viewer="$optarg" ||\
 						thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}" ;;
 			esac ;;
