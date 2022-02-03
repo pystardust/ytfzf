@@ -1,0 +1,8 @@
+#!/bin/sh
+
+read -r video_pref is_audio_only is_detach
+
+case "$is_detach" in
+    0) vlc "$@" ;;
+    1) setsid -f vlc "$@" > /dev/null 2>&1 ;;
+esac

@@ -103,6 +103,8 @@ To use a thumbnail-viewer addon run `ytfzf --thumb-viewer=<viewer> ...`
 
 To use a interface addon run `ytfzf --interface=<interface> ...`
 
+To use a url-handler addon run `ytfzf --url-handler=<handler> ...`
+
 To use a sort-name addon run `ytfzf --sort-name=<sort-name> ...`
 
 ---

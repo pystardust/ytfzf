@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-11"
+YTFZF_VERSION="2.2.alpha-12"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -168,6 +168,7 @@ done
 : "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
 : "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
 : "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
+: "${YTFZF_URL_HANDLERS_DIR:=$YTFZF_CONFIG_DIR/url-handlers}"
 
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 #}}}
@@ -1428,7 +1429,7 @@ open_url_handler () {
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
-	printf "%s" "$video_pref" "$is_audio_only" "$is_detach" | "$url_handler" "$@"
+	printf "%s\t" "$video_pref" "$is_audio_only" "$is_detach" | "$url_handler" "$@"
 }
 
 get_video_format(){
@@ -1523,7 +1524,7 @@ parse_opt () {
 		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
 		disable-submenus) enable_submenus="${optarg:-0}" ;;
 		thumbnail-quality) thumbnail_quality="$optarg" ;;
-		url-handler) url_handler="${optarg:-multimedia_player}" ;;
+		url-handler) command_exists "$optarg" && url_handler="${optarg:-multimedia_player}" || url_handler="${YTFZF_URL_HANDLERS_DIR}/$optarg" ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts) submenu_opts="${optarg}" ;;
 		submenu-scraping-opts) submenu_scraping_opts="${optarg}" ;;
