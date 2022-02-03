@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-13"
+YTFZF_VERSION="2.2.alpha-15"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -346,7 +346,7 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 # scrape
 : "${scrape=youtube}"
 #this comes from invidious' api
-: "${thumbnail_quality=default}"
+: "${thumbnail_quality=high}"
 : ${sub_link_count:=2}
 : "${invidious_instance:=https://vid.puffyan.us}"
 : "${yt_video_link_domain:=$invidious_instance}"
