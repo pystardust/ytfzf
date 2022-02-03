@@ -280,7 +280,10 @@ command_exists "video_player" || video_player () {
 command_exists "audio_player" || audio_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
-	mpv --no-video --ytdl-format="$video_pref" "$@"
+	case "$is_detach" in
+		0) mpv --no-video --ytdl-format="$video_pref" "$@" ;;
+		1) setsid -f mpv --force-window --no-video --ytdl-format="$video_pref" "$@"  > /dev/null 2>&1 ;;
+	esac
 }
 command_exists "multimedia_player" || multimedia_player () {
 	#this function differentiates whether or not audio_only was requested
