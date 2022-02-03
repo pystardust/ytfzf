@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-15"
+YTFZF_VERSION="2.2.alpha-16"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1475,9 +1475,9 @@ parse_opt () {
 			# if we don't check which interface, itll try to source $YTFZF_CUSTOM_INTERFACES_DIR/{ext,scripting} which won't work
 			case "$interface" in
 				"ext"|"scripting"|"") : ;;
-				./*|../*|/*|~/*) { [ -f "$interface" ] || die 2 "interface: \"$interface\" does not exist\n" ; }  && . "$interface" && interface="${interface##*/}" ;; 
-				*) [ -n "$interface" ] && { [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] ||  die 2 "interface: \"$interface\" does not exist\n"; } && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface" ;;
-			esac ;;
+				./*|../*|/*|~/*) [ -f "$interface" ] && . "$interface" && interface="${interface##*/}" ;; 
+				*) [ -n "$interface" ] && [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface" ;;
+			esac || die 2 "$optarg is not an interface\n" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
@@ -1504,16 +1504,11 @@ parse_opt () {
 		thumb-viewer)
 			case "$optarg" in
 				#these are special cases, where they are not themselves commands
-				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|display|w3m|imv|ueberzug) thumbnail_viewer="$optarg" ;;
+				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|display|w3m|imv|ueberzug) thumbnail_viewer="$optarg" ; true ;;
+				./*|/*|../*|~/*) thumbnail_viewer="$optarg"; false ;;
 				*)
-					if is_relative_dir "$optarg"; then
-						thumbnail_viewer="$optarg"
-					else
-						thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}"
-						[ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n"
-					fi ;;
-			esac ;;
-
+					thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}"; false
+			esac || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n" ;;
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
 		info-print-exit|info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
 		info-action) info_wait_action="$optarg" ;;
@@ -1537,6 +1532,22 @@ parse_opt () {
 		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
 		#flip the bit
 		disable-back) enable_back_button=${optarg:-0} ;;
+		install-addons)
+			[ ! -d ".git" ] && git clone "https://github.com/pystardust/ytfzf" _tmp_ytfzf && cd _tmp_ytfzf
+			set +f
+			print_info "installing thumbnail-viewers\n"
+			cp addons/thumbnail-viewers/* "$YTFZF_THUMBNAIL_VIEWERS_DIR"
+			print_info "installing interfaces\n"
+			cp addons/interfaces/* "$YTFZF_CUSTOM_INTERFACES_DIR"
+			print_info "installing scrapers\n"
+			cp addons/scrapers/* "$YTFZF_CUSTOM_SCRAPERS_DIR"
+			print_info "installing sort-names\n"
+			cp addons/sort-names/* "$YTFZF_SORT_NAMES_DIR"
+			print_info "installing url-handlers\n"
+			cp addons/url-handlers/* "$YTFZF_URL_HANDLERS_DIR"
+			cd ..
+			rm -rf _tmp_ytfzf
+			exit ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
