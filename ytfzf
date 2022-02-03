@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-12"
+YTFZF_VERSION="2.2.alpha-13"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1311,11 +1311,11 @@ preview_img () {
 	EOF
 
 	#this IFS should be as obscure as possible as it will cause bugs otherwise
-	IFS='`'
+	IFS=$tab_space
 	read -r id title channel duration views date scraper description <<-EOF
 	$*
 	EOF
-	description="$(printf "%s" "$description" | tr '`' '\n')"
+	description="$(printf "%s" "$description" | tr '\t' '\n')"
 	#}}}
 
 	if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
