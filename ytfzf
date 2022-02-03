@@ -1522,7 +1522,12 @@ parse_opt () {
 		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
 		disable-submenus) enable_submenus="${optarg:-0}" ;;
 		thumbnail-quality) thumbnail_quality="$optarg" ;;
-		url-handler) command_exists "$optarg" && url_handler="${optarg:-multimedia_player}" || url_handler="${YTFZF_URL_HANDLERS_DIR}/$optarg" ;;
+		url-handler) 
+			if command_exists "$optarg"; then
+				url_handler="${optarg:-multimedia_player}"
+			else 
+				[ -f "${YTFZF_URL_HANDLERS_DIR}/$optarg" ] && url_handler="${YTFZF_URL_HANDLERS_DIR}/$optarg" || die 2 "$optarg is not a url-handler"
+			fi ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts) submenu_opts="${optarg}" ;;
 		submenu-scraping-opts) submenu_scraping_opts="${optarg}" ;;
