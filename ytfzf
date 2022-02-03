@@ -1506,9 +1506,12 @@ parse_opt () {
 				#these are special cases, where they are not themselves commands
 				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|display|w3m|imv|ueberzug) thumbnail_viewer="$optarg" ;;
 				*)
-					is_relative_dir "$optarg" &&\
-						thumbnail_viewer="$optarg" ||\
-						thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}" ;;
+					if is_relative_dir "$optarg"; then
+						thumbnail_viewer="$optarg"
+					else
+						thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}"
+						[ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n"
+					fi ;;
 			esac ;;
 
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
