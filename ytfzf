@@ -1594,7 +1594,7 @@ shift $((OPTIND-1))
 init_files (){
 	YTFZF_PID=$$
 	#$1 will be a search
-	SEARCH_PREFIX=$(printf "%s" "$1" | tr '/' '_')
+	SEARCH_PREFIX=$(printf "%s" "$1" | tr '/' '_' | tr -d "\"'")
 	#if no search is provided, use a fallback value of SCRAPE-$scrape
 	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
