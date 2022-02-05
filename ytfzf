@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-22"
+YTFZF_VERSION="2.2.alpha-23"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1322,27 +1322,41 @@ preview_img () {
 	video_json_file=$3
 	url=${line##*|}
 
-	#this rediculous thing is to make it so that if one of the attributes is blank
-	#it doesn't skip the variable{{{
-	set --
-	while read -r line; do
-		set -- "$@" "$line"
-	done <<-EOF
-	$(
-		jq -r --arg url "$url" '.[]|select(.url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .scraper + "\n" + .description' < "$video_json_file"
-	#we read scraper here to reduce the calls to jq
-	#description MUST be last because it is the only thing that may contain new lines, which will mess up the while read -r line thing
-	)
-	EOF
-
-	#this IFS should be as obscure as possible as it will cause bugs otherwise
-	IFS='`'
-	read -r id title channel duration views date scraper description <<-EOF
-	$*
-	EOF
-	description="$(printf "%s" "$description" | tr '`' '\n')"
-	#}}}
-
+	#make sure all variables are set{{{
+	_correct_json=$(jq -r --arg url "$url" '.[]|select(.url==$url)' < "$video_json_file")
+	id="$(sed -En 's/^[[:space:]]*"ID":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+$_correct_json
+EOF
+)"
+	title="$(sed -En 's/^[[:space:]]*"title":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+$_correct_json
+EOF
+)"
+	channel="$(sed -En 's/^[[:space:]]*"channel":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+$_correct_json
+EOF
+)"
+	views="$(sed -En 's/^[[:space:]]*"views":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+$_correct_json
+EOF
+)"
+	date="$(sed -En 's/^[[:space:]]*"date":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+$_correct_json
+EOF
+)"
+	scraper="$(sed -En 's/^[[:space:]]*"scraper":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+$_correct_json
+EOF
+)"
+	description="$(sed -En 's/^[[:space:]]*"description":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+$_correct_json
+EOF
+)"
+	description="$(sed 's/\\n/\n/g' <<EOF
+$description
+EOF
+)"
+#}}}
 	if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
 		 thumbnail_video_info_text${scraper:+_$scraper}
 	else
