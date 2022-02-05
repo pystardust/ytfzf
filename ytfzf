@@ -1329,31 +1329,31 @@ preview_img () {
 
 	#make sure all variables are set{{{
 	_correct_json=$(jq -r --arg url "$url" '.[]|select(.url==$url)' < "$video_json_file")
-	id="$(sed -En 's/^[[:space:]]*"ID":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	id="$(sed -n 's/^[[:space:]]*"ID":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	title="$(sed -En 's/^[[:space:]]*"title":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	title="$(sed -n 's/^[[:space:]]*"title":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	channel="$(sed -En 's/^[[:space:]]*"channel":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	channel="$(sed -n 's/^[[:space:]]*"channel":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	views="$(sed -En 's/^[[:space:]]*"views":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	views="$(sed -n 's/^[[:space:]]*"views":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	date="$(sed -En 's/^[[:space:]]*"date":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	date="$(sed -n 's/^[[:space:]]*"date":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	scraper="$(sed -En 's/^[[:space:]]*"scraper":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	scraper="$(sed -n 's/^[[:space:]]*"scraper":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	description="$(sed -En 's/^[[:space:]]*"description":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	description="$(sed -n 's/^[[:space:]]*"description":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
