@@ -1587,24 +1587,6 @@ parse_opt () {
 		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
 		#flip the bit
 		disable-back) enable_back_button=${optarg:-0} ;;
-		install-addons)
-			[ ! -d ".git" ] && git clone "https://github.com/pystardust/ytfzf" _tmp_ytfzf && cd _tmp_ytfzf
-			set +f
-			mkdir -p "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_CUSTOM_SCRAPERS_DIR" "$YTFZF_SORT_NAMES_DIR" "$YTFZF_URL_HANDLERS_DIR"
-			chmod +x "$YTFZF_THUMBNAIL_VIEWERS_DIR"/* "$YTFZF_CUSTOM_INTERFACES_DIR"/* "$YTFZF_CUSTOM_SCRAPERS_DIR"/* "$YTFZF_SORT_NAMES_DIR"/* "$YTFZF_URL_HANDLERS_DIR"/*
-			print_info "installing thumbnail-viewers\n"
-			cp addons/thumbnail-viewers/* "$YTFZF_THUMBNAIL_VIEWERS_DIR"
-			print_info "installing interfaces\n"
-			cp addons/interfaces/* "$YTFZF_CUSTOM_INTERFACES_DIR"
-			print_info "installing scrapers\n"
-			cp addons/scrapers/* "$YTFZF_CUSTOM_SCRAPERS_DIR"
-			print_info "installing sort-names\n"
-			cp addons/sort-names/* "$YTFZF_SORT_NAMES_DIR"
-			print_info "installing url-handlers\n"
-			cp addons/url-handlers/* "$YTFZF_URL_HANDLERS_DIR"
-			cd ..
-			rm -rf _tmp_ytfzf
-			exit ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
