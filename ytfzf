@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-20"
+YTFZF_VERSION="2.2.alpha-21"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1304,7 +1304,7 @@ preview_img () {
 		set -- "$@" "$line"
 	done <<-EOF
 	$(
-		jq -r --arg url "$url" '.[]|select(.url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .scraper + "\n" + .description' < "$video_json_file"
+		jq -r --arg url "$url" '.[]|select(.url == $url )| .ID + "\t" + .title + "\t" + .channel + "\t" + .duration + "\t" + .views + "\t" + .date + "\t" + .scraper + "\t" + .description' < "$video_json_file"
 	#we read scraper here to reduce the calls to jq
 	#description MUST be last because it is the only thing that may contain new lines, which will mess up the while read -r line thing
 	)
@@ -1811,10 +1811,7 @@ main() {
 	while :; do
 		#calls the interface
 		$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
-		handle_actions < "$ytfzf_selected_urls" || case "$?" in 
-			1) continue ;;
-			2) break ;;
-		esac
+		handle_actions < "$ytfzf_selected_urls" || { [ "$?" -eq 2 ] || continue && break; }
 
 		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
