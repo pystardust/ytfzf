@@ -351,6 +351,13 @@ Whether or not to show thumbnails in fzf.
 .IR default: " 0"
 
 .TP
+.RB $ skip_thumb_download
+Whether or not to skip thumbnail download.
+This is useful for CUSTOM THUMBNAILS
+.br
+.IR default: " 0"
+
+.TP
 .RB $ thumbnail_quality
 Select the quality of the thumbnails.
 Currently only supports youtube
@@ -1203,6 +1210,12 @@ This function is called before the website is scraped.
 This function takes no arguments.
 
 .RE
+
+.SH CUSTOM THUMBNAILS
+.PP
+Custom thumbnails are located in $YTFZF_CUSTOM_THUMBNAILS_DIR.
+The name of the image must be <video-id>.jpg
+To see an example, make a search with \fIytfzf\fR and locate the \fIthumbnails\fR folder in $cache_dir/search
 
 .SH VIDEO JSON FORMAT
 .PP
