@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-21"
+YTFZF_VERSION="2.2.alpha-22"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -931,7 +931,7 @@ scrape_comments () {
 	esac
 	output_json_file="$2"
 	page_count="$3"
-	_comment_file="${session_temp_dir}/comments-$id.tmp.json"
+	_comment_file="${session_temp_dir}/comments-$video_id.tmp.json"
 	i=1
 	while [ "$i" -le $page_count ]; do
 		print_info "Scraping comments (pg: $i)\n"
@@ -1158,6 +1158,31 @@ interface_ext () {
 
 # Thumbnail Interface {{{
 
+get_missing_thumbnails () {
+	ids="$(jq -r '.[]|select(.thumbs!=null)|.thumbs+";"+.ID' < "$video_json_file")"
+	unset IFS
+	set +f
+	for file in "$thumb_dir"/*; do
+		file="${file##*/}"
+		id="${file%.*}"
+		[ "$id" = "*" ] || [ -z "$id" ] && break;
+		ids="$(printf "%s\n" "$ids" | sed "/;${id}/d")"
+	done
+	printf "%s\n" "$ids"
+}
+
+download_thumbnails () {
+	print_info 'Fetching thumbnails...\n'
+	curl_config_file="${session_temp_dir}/curl_config"
+	: > "$curl_config_file"
+	for id in "$@"; do
+		printf "url=\"%s\"\noutput=\"$thumb_dir/%s.jpg\"\n" "${id%;*}" "${id#*;}"
+	done >> "$curl_config_file"
+	[ ! -s "$curl_config_file" ] && return 0
+	curl -fLZ -K "$curl_config_file"
+	[ $? -eq 2 ] && curl -fL -K "$curl_config_file"
+}
+
 # Image preview {{{
 preview_start () {
 	thumbnail_viewer=$1
@@ -1304,18 +1329,18 @@ preview_img () {
 		set -- "$@" "$line"
 	done <<-EOF
 	$(
-		jq -r --arg url "$url" '.[]|select(.url == $url )| .ID + "\t" + .title + "\t" + .channel + "\t" + .duration + "\t" + .views + "\t" + .date + "\t" + .scraper + "\t" + .description' < "$video_json_file"
+		jq -r --arg url "$url" '.[]|select(.url == $url )| .ID + "\n" + .title + "\n" + .channel + "\n" + .duration + "\n" + .views + "\n" + .date + "\n" + .scraper + "\n" + .description' < "$video_json_file"
 	#we read scraper here to reduce the calls to jq
 	#description MUST be last because it is the only thing that may contain new lines, which will mess up the while read -r line thing
 	)
 	EOF
 
 	#this IFS should be as obscure as possible as it will cause bugs otherwise
-	IFS=$tab_space
+	IFS='`'
 	read -r id title channel duration views date scraper description <<-EOF
 	$*
 	EOF
-	description="$(printf "%s" "$description" | tr '\t' '\n')"
+	description="$(printf "%s" "$description" | tr '`' '\n')"
 	#}}}
 
 	if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
@@ -1333,17 +1358,10 @@ interface_thumbnails () {
 	selected_id_file=$2
 
 	# Download thumbnails, only if they're not already downloaded
-	find "$thumb_dir" -type d -empty | grep -q "$thumb_dir" && {
-		print_info 'Fetching thumbnails...\n'
-		curl_config_file="${session_temp_dir}/curl_config"
-		jq -r '.[]|select(.thumbs!=null)|"
-			url = \"\(.thumbs)\"
-			output = \"'"$thumb_dir"'/\(.ID).jpg\""' \
-				< "$video_json_file" > "$curl_config_file"
-			# curl version > 7.66.0 ( else remove -Z )
-			curl -fLZ -K "$curl_config_file"
-			[ $? -eq 2 ] && curl -fL -K "$curl_config_file"
-	}
+	
+	unset IFS
+	set -f
+	download_thumbnails $(get_missing_thumbnails)
 
 	preview_start "$thumbnail_viewer"
 
