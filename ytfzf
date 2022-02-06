@@ -1267,6 +1267,7 @@ preview_display_image () {
 	id=$2
 	thumb_path="${thumb_dir}/${id}.jpg"
 	[ -f "${thumb_path}" ] || thumb_path="${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg"
+	[ -f "${thumb_path}" ] || die 1 "\nNo thumbnail found for this video\n"
 	case $thumbnail_viewer in
 		ueberzug)
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
