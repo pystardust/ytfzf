@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-23"
+YTFZF_VERSION="2.2.alpha-24"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -169,6 +169,7 @@ done
 : "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
 : "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
 : "${YTFZF_URL_HANDLERS_DIR:=$YTFZF_CONFIG_DIR/url-handlers}"
+: "${YTFZF_CUSTOM_THUMBNAILS_DIR:=$YTFZF_CONFIG_DIR/thumbnails}"
 
 : "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
 
@@ -336,6 +337,7 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 
 : ${is_sort:=0}
 : ${show_thumbnails:=0}
+: ${skip_thumb_download:=0}
 
 : ${scripting_video_count:=1}
 : ${is_random_select:=0}
@@ -1174,6 +1176,7 @@ get_missing_thumbnails () {
 }
 
 download_thumbnails () {
+	[ $skip_thumb_download -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
 	print_info 'Fetching thumbnails...\n'
 	curl_config_file="${session_temp_dir}/curl_config"
 	: > "$curl_config_file"
@@ -1262,6 +1265,8 @@ get_ueberzug_positioning () {
 preview_display_image () {
 	thumbnail_viewer=$1
 	id=$2
+	thumb_path="${thumb_dir}/${id}.jpg"
+	[ -f "${thumb_path}" ] || thumb_path="${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg"
 	case $thumbnail_viewer in
 		ueberzug)
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
@@ -1269,7 +1274,7 @@ preview_display_image () {
 			printf '%s\t' \
 				'action' 'add' \
 				'identifier' 'ytfzf' \
-				'path' "$thumb_dir/${id}.jpg" \
+				'path' "$thumb_path" \
 				'x' "$x" \
 				'y' "$y" \
 				'scaler' 'fit_contain' \
@@ -1280,38 +1285,38 @@ preview_display_image () {
 		chafa)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
+			chafa -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_path" ;;
 		chafa-16)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -c 240 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
+			chafa -c 240 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_path" ;;
 		chafa-tty)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -c 16 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_dir/${id}.jpg" ;;
+			chafa -c 16 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_path" ;;
 		catimg)
 			printf '\n'
 			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
-			catimg -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_dir/${id}.jpg" ;;
+			catimg -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_path" ;;
 		catimg-256)
 			printf '\n'
 			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
-			catimg -c -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_dir/${id}.jpg" ;;
+			catimg -c -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_path" ;;
 		display)
 			command_exists "display" || die 3 "\nimagemagick is not installed\n"
 			killall display
 			display "$thumb_dir/${id}.jpg" ;;
 		w3m)
 			while true; do
-				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_dir/${id}.jpg" 3 | $w3mimgdisplay_path
+				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_path" 3 | $w3mimgdisplay_path
 			done ;;
 		imv) 
-			imv-msg "$imv_pid" open "$thumb_dir/$id.jpg"
+			imv-msg "$imv_pid" open "$thumb_path"
 			imv-msg "$imv_pid" next
 			;;
 		*) 
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
-			"$thumbnail_viewer" "view" "${thumb_dir}/${id}.jpg" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
+			"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
 
 	esac
 }
@@ -1326,31 +1331,31 @@ preview_img () {
 
 	#make sure all variables are set{{{
 	_correct_json=$(jq -r --arg url "$url" '.[]|select(.url==$url)' < "$video_json_file")
-	id="$(sed -En 's/^[[:space:]]*"ID":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	id="$(sed -n 's/^[[:space:]]*"ID":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	title="$(sed -En 's/^[[:space:]]*"title":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	title="$(sed -n 's/^[[:space:]]*"title":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	channel="$(sed -En 's/^[[:space:]]*"channel":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	channel="$(sed -n 's/^[[:space:]]*"channel":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	views="$(sed -En 's/^[[:space:]]*"views":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	views="$(sed -n 's/^[[:space:]]*"views":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	date="$(sed -En 's/^[[:space:]]*"date":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	date="$(sed -n 's/^[[:space:]]*"date":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	scraper="$(sed -En 's/^[[:space:]]*"scraper":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	scraper="$(sed -n 's/^[[:space:]]*"scraper":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
-	description="$(sed -En 's/^[[:space:]]*"description":[[:space:]]*"([^"\n]*)",/\1/p' <<EOF
+	description="$(sed -n 's/^[[:space:]]*"description":[[:space:]]*"\([^"\n]*\)"/\1/p' <<EOF
 $_correct_json
 EOF
 )"
@@ -1360,7 +1365,7 @@ EOF
 )"
 #}}}
 	if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
-		 thumbnail_video_info_text${scraper:+_$scraper}
+		thumbnail_video_info_text${scraper:+_$scraper}
 	else
 		thumbnail_video_info_text
 	fi
@@ -1587,6 +1592,7 @@ parse_opt () {
 		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
 		#flip the bit
 		disable-back) enable_back_button=${optarg:-0} ;;
+		skip-thumb-download) skip_thumb_download=${optarg:-1} ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
