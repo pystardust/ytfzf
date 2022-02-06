@@ -170,6 +170,8 @@ done
 : "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
 : "${YTFZF_URL_HANDLERS_DIR:=$YTFZF_CONFIG_DIR/url-handlers}"
 
+: "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
+
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 #}}}
 
@@ -1508,7 +1510,12 @@ parse_opt () {
 			case "$interface" in
 				"ext"|"scripting"|"") : ;;
 				./*|../*|/*|~/*) [ -f "$interface" ] && . "$interface" && interface="${interface##*/}" ;; 
-				*) [ -n "$interface" ] && [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ] && . "$YTFZF_CUSTOM_INTERFACES_DIR/$interface" ;;
+				*) 
+					if [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ]; then
+						. "$YTFZF_CUSTOM_INTERFACES_DIR/$interface"
+					elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/interfaces/${interface}" ]; then
+						. "${YTFZF_SYSTEM_ADDON_DIR}/interfaces/${interface}"
+					fi ;;
 			esac || die 2 "$optarg is not an interface\n" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
@@ -1525,6 +1532,8 @@ parse_opt () {
 						"$optarg"
 					elif [ -f "${YTFZF_SORT_NAMES_DIR}/${optarg}" ]; then
 						. "${YTFZF_SORT_NAMES_DIR}/${optarg}"
+					elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/sort-names/${optarg}" ]; then
+						. "${YTFZF_SYSTEM_ADDON_DIR}/sort-names/${optarg}"
 					else false
 					fi ;;
 			esac && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
@@ -1539,7 +1548,11 @@ parse_opt () {
 				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|display|w3m|imv|ueberzug) thumbnail_viewer="$optarg" ; true ;;
 				./*|/*|../*|~/*) thumbnail_viewer="$optarg"; false ;;
 				*)
-					thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}"; false
+					if [ -f "${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}" ]; then
+						thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}"
+					else
+						thumbnail_viewer="${YTFZF_SYSTEM_ADDON_DIR}/thumbnail-viewers/$optarg"
+					fi; false
 			esac || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n" ;;
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
 		info-print-exit|info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
@@ -1558,7 +1571,12 @@ parse_opt () {
 			if command_exists "$optarg"; then
 				url_handler="${optarg:-multimedia_player}"
 			else 
-				[ -f "${YTFZF_URL_HANDLERS_DIR}/$optarg" ] && url_handler="${YTFZF_URL_HANDLERS_DIR}/$optarg" || die 2 "$optarg is not a url-handler"
+				if [ -f "${YTFZF_URL_HANDLERS_DIR}/$optarg" ]; then
+					url_handler="${YTFZF_URL_HANDLERS_DIR}/$optarg"
+				elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/url-handlers/$optarg" ]; then
+					url_handler="${YTFZF_SYSTEM_ADDON_DIR}/url-handlers/$optarg"
+				else die 2 "$optarg is not a url-handler"
+				fi
 			fi ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts) submenu_opts="${optarg}" ;;
@@ -1569,24 +1587,6 @@ parse_opt () {
 		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
 		#flip the bit
 		disable-back) enable_back_button=${optarg:-0} ;;
-		install-addons)
-			[ ! -d ".git" ] && git clone "https://github.com/pystardust/ytfzf" _tmp_ytfzf && cd _tmp_ytfzf
-			set +f
-			mkdir -p "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_CUSTOM_SCRAPERS_DIR" "$YTFZF_SORT_NAMES_DIR" "$YTFZF_URL_HANDLERS_DIR"
-			chmod +x "$YTFZF_THUMBNAIL_VIEWERS_DIR"/* "$YTFZF_CUSTOM_INTERFACES_DIR"/* "$YTFZF_CUSTOM_SCRAPERS_DIR"/* "$YTFZF_SORT_NAMES_DIR"/* "$YTFZF_URL_HANDLERS_DIR"/*
-			print_info "installing thumbnail-viewers\n"
-			cp addons/thumbnail-viewers/* "$YTFZF_THUMBNAIL_VIEWERS_DIR"
-			print_info "installing interfaces\n"
-			cp addons/interfaces/* "$YTFZF_CUSTOM_INTERFACES_DIR"
-			print_info "installing scrapers\n"
-			cp addons/scrapers/* "$YTFZF_CUSTOM_SCRAPERS_DIR"
-			print_info "installing sort-names\n"
-			cp addons/sort-names/* "$YTFZF_SORT_NAMES_DIR"
-			print_info "installing url-handlers\n"
-			cp addons/url-handlers/* "$YTFZF_URL_HANDLERS_DIR"
-			cd ..
-			rm -rf _tmp_ytfzf
-			exit ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
