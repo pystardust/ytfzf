@@ -11,7 +11,7 @@ scrape_osu(){
 }
 
 on_startup_osu () {
-    scrape_search_exclude="$scrap_search_exclude osu "
+    scrape_search_exclude="$scrape_search_exclude osu "
 }
 
 thumbnail_video_info_text_osu () {

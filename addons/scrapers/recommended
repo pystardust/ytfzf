@@ -2,6 +2,10 @@
 # needs search_query as $*
 ## Scrape data and store video information in videos_data ( and thumbnails )
 
+on_startup_recommended () {
+    scrape_search_exclude="$scrape_search_exclude recommended "
+}
+
 scrape_recommended () {
     search=$1
     output_json_file=$2
