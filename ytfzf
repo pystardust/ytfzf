@@ -48,6 +48,7 @@ source_scrapers () {
 		fi
 		command_exists "on_startup_$_scr" && on_startup_$_scr
 	done
+	unset IFS
 }
 
 add_commas () {
