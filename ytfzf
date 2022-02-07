@@ -1188,6 +1188,12 @@ download_thumbnails () {
 	[ $? -eq 2 ] && curl -fL -K "$curl_config_file"
 }
 
+get_video_json_attr () {
+	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^"\n]*\)",*/\1/p' <<EOF
+$_correct_json
+EOF
+}
+
 # Image preview {{{
 preview_start () {
 	thumbnail_viewer=$1
@@ -1332,39 +1338,16 @@ preview_img () {
 
 	#make sure all variables are set{{{
 	_correct_json=$(jq -r --arg url "$url" '.[]|select(.url==$url)' < "$video_json_file")
-	id="$(sed -n 's/^[[:space:]]*"ID":[[:space:]]*"\([^"\n]*\)",*/\1/p' <<EOF
-$_correct_json
-EOF
-)"
-	title="$(sed -n 's/^[[:space:]]*"title":[[:space:]]*"\([^"\n]*\)",*/\1/p' <<EOF
-$_correct_json
-EOF
-)"
-	channel="$(sed -n 's/^[[:space:]]*"channel":[[:space:]]*"\([^"\n]*\)",*/\1/p' <<EOF
-$_correct_json
-EOF
-)"
-	views="$(sed -n 's/^[[:space:]]*"views":[[:space:]]*"\([^"\n]*\)",*/\1/p' <<EOF
-$_correct_json
-EOF
-)"
-	date="$(sed -n 's/^[[:space:]]*"date":[[:space:]]*"\([^"\n]*\)",*/\1/p' <<EOF
-$_correct_json
-EOF
-)"
-	scraper="$(sed -n 's/^[[:space:]]*"scraper":[[:space:]]*"\([^"\n]*\)",*/\1/p' <<EOF
-$_correct_json
-EOF
-)"
-	description="$(sed -n 's/^[[:space:]]*"description":[[:space:]]*"\([^"\n]*\)",*/\1/p' <<EOF
-$_correct_json
-EOF
-)"
-	description="$(sed 's/\\n/\n/g' <<EOF
-$description
-EOF
-)"
+	id="$(get_video_json_attr "ID")"
+	title="$(get_video_json_attr "title")"
+	channel="$(get_video_json_attr "channel")"
+	views="$(get_video_json_attr "views")"
+	date="$(get_video_json_attr "date")"
+	scraper="$(get_video_json_attr "scraper")"
+	description="$(get_video_json_attr "description" | sed 's/\\n/\n/g')"
 #}}}
+
+	#[ -f "${YTFZF_CUSTOM_SCRAPERS_DIR}/$scraper" ] && . "${YTFZF_CUSTOM_SCRAPERS_DIR}/$scraper" || return 127
 	if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
 		thumbnail_video_info_text${scraper:+_$scraper}
 	else
@@ -1523,7 +1506,12 @@ parse_opt () {
 						. "${YTFZF_SYSTEM_ADDON_DIR}/interfaces/${interface}"
 					fi ;;
 			esac || die 2 "$optarg is not an interface\n" ;;
-		c|scrape) scrape=$optarg ;;
+		c|scrape) 
+			#TODO
+			#source addon scrapers here (go through each scraper in optarg)
+			#add on_startup_$scraper function that gets called here
+			#add $YTFZF_SYSTEM_ADDON_DIR/scrapers here
+			scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
 		I) info_to_print=$optarg ;;
