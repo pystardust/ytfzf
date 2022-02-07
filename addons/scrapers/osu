@@ -1,0 +1,26 @@
+#!/bin/sh
+scrape_osu(){
+    url_handler="$BROWSER"
+    output_json_file="$2"
+    curl -Li \
+	-H "Accept: application/json, text/javascript, */*; q=0.01" \
+	-H "User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0" \
+	https://osu.ppy.sh/beatmapsets | grep '{"beatmapsets"' > "${session_temp_dir}/osu.json"
+
+    jq '[.beatmapsets[]|{"ID": "osu-\(.id)", "channel": .creator, "thumbs": .covers.cover, "title": .title_unicode, "scraper": "osu", "views": "\(.play_count)", "url": "https://osu.ppy.sh/beatmapsets/\(.id)", "bpm": "\(.bpm)",  "diffs": "\(.beatmaps|length)"}]'  < "${session_temp_dir}/osu.json" > "$output_json_file"
+}
+
+on_startup_osu () {
+    scrape_search_exclude="$scrap_search_exclude osu "
+}
+
+thumbnail_video_info_text_osu () {
+	bpm="$(get_video_json_attr "bpm")"
+	diffs="$(get_video_json_attr "diffs")"
+	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%s" "$views" | add_commas)"
+	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
+	[ -n "$channel" ] && printf "\n ${c_blue}Channel:    ${c_green}%s" "$channel"
+	[ -n "$bpm" ] && printf "\n ${c_blue}BPM:        ${c_red}%s" "$bpm"
+	[ -n "$diffs" ] && printf "\n ${c_blue}Diffs:      ${c_red}%s" "$diffs"
+	[ -n "$views" ] && printf "\n ${c_blue}Views:      ${c_magenta}%s" "$views"
+}
