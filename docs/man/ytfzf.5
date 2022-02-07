@@ -1280,6 +1280,13 @@ The shell script must be the same shell as your /bin/sh.
 .PP
 Other functions this script may define:
 .PP
+.I on_startup_<name_of_scraper>
+.RS
+This function will be called when the scraper is sourced (which is when the user asks for it).
+.PP
+This function takes no arguments.
+.RE
+.PP
 .I thumbnail_video_info_text_<name_of_scraper>
 .RS
 This function shall print information for the thumbnails interface.

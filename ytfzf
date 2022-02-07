@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-24"
+YTFZF_VERSION="2.2.alpha-25"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -36,6 +36,19 @@ c_reset="\033[0m"
 : "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
+
+source_scrapers () {
+	set -f
+	IFS=","
+	for _scr in $scrape; do
+		if [ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$_scr" ]; then
+			. "${YTFZF_CUSTOM_SCRAPERS_DIR}/$_scr"
+		elif [ -f "$YTFZF_SYSTEM_ADDON_DIR/scrapers/$_scr" ]; then
+			. "${YTFZF_SYSTEM_ADDON_DIR}/scrapers/$_scr"
+		fi
+		command_exists "on_startup_$_scr" && on_startup_$_scr
+	done
+}
 
 add_commas () {
 	awk '
@@ -1347,7 +1360,6 @@ preview_img () {
 	description="$(get_video_json_attr "description" | sed 's/\\n/\n/g')"
 #}}}
 
-	#[ -f "${YTFZF_CUSTOM_SCRAPERS_DIR}/$scraper" ] && . "${YTFZF_CUSTOM_SCRAPERS_DIR}/$scraper" || return 127
 	if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
 		thumbnail_video_info_text${scraper:+_$scraper}
 	else
@@ -1377,7 +1389,7 @@ interface_thumbnails () {
 	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|@tsv' < "$video_json_file" |
 	sort_video_data_fn |
 	fzf -m \
-	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
+	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
 	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" $fzf_thumbnail_opts | set_keypress |
 	trim_url > "$selected_id_file"
 
@@ -1506,12 +1518,7 @@ parse_opt () {
 						. "${YTFZF_SYSTEM_ADDON_DIR}/interfaces/${interface}"
 					fi ;;
 			esac || die 2 "$optarg is not an interface\n" ;;
-		c|scrape) 
-			#TODO
-			#source addon scrapers here (go through each scraper in optarg)
-			#add on_startup_$scraper function that gets called here
-			#add $YTFZF_SYSTEM_ADDON_DIR/scrapers here
-			scrape=$optarg ;;
+		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
 		I) info_to_print=$optarg ;;
@@ -1597,6 +1604,7 @@ while getopts "ac:dfhlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
 				preview_img)
 					session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
 					shift
+					source_scrapers
 					preview_img "$@"
 					;;
 			esac
@@ -1609,6 +1617,10 @@ while getopts "ac:dfhlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
 	esac
 done
 shift $((OPTIND-1))
+#}}}
+
+#Post opt scrape{{{
+source_scrapers
 #}}}
 
 # Get search{{{
@@ -1763,7 +1775,6 @@ scrape_website () {
 			open_url_handler  "$ytfzf_selected_urls" ;;
                 *)
                         #custom scrapers {{{
-			[ -f "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" ] && . "${YTFZF_CUSTOM_SCRAPERS_DIR}/${scrape_type}" || return 127
 			scrape_$(printf "%s" "$scrape_type" | sed 's/-/_/g') "$_search" "$ytfzf_video_json_file" || return "$?"
                         #}}}
 	esac
