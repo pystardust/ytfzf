@@ -1685,28 +1685,17 @@ handle_actions () {
 #there has to be at least 1 set of backup variables because search_sort_by=${search_sort_by%%,*} will give incorrect filters when there are 3+ filters
 # multi filters {{{
 set_save_filters () {
-	initial_search_sort_by="$search_sort_by"
-	initial_search_upload_date="$search_upload_date"
-	command_exists "set_save_custom_filters" && set_save_custom_filters
-}
-set_save_filters
-init_multi_filters () {
-	search_sort_bys_left="$initial_search_sort_by"
-	search_upload_dates_left="$initial_search_upload_date"
-	command_exists "init_multi_custom_filters" && init_multi_custom_filters
+	IFS=","
+	set -f
+	[ ! -s "${session_cache_dir}/sort-by.list " ] && printf "%s\n" $search_sort_by > "${session_cache_dir}/sort-by.list"
+	[ ! -s "${session_cache_dir}/upload-date.list " ] && printf "%s\n" $search_upload_date > "${session_cache_dir}/upload-date.list"
+	unset IFS
 }
 manage_multi_filters () {
 	#if this is empty search_sort_by will be set to empty which isn't what we want
-	[ -n "$search_sort_bys_left" ] && {
-		search_sort_by="${search_sort_bys_left%%,*}"
-		search_sort_bys_left="${search_sort_bys_left#*,}"
-	}
-	[ -n "$search_upload_date" ] && {
-		search_upload_date="${search_upload_dates_left%%,*}"
-		search_sort_upload_dates_left="${search_sort_upload_dates_left#*,}"
-	}
+	search_sort_by=$(head -n "${__scrape_count}" "${session_cache_dir}/sort-by.list" | tail -n 1)
+	search_upload_date=$(head -n "${__scrape_count}" "${session_cache_dir}/upload-date.list" | tail -n 1)
 	#for custom scrapers
-	command_exists "manage_multi_custom_filters" && manage_multi_custom_filters
 }
 #}}}
 handle_scrape_error () {
@@ -1800,8 +1789,8 @@ handle_scraping (){
 	_search="$1"
 	IFS=","
 	set -f
-	init_multi_filters
 	for curr_scrape in $scrape; do
+		__scrape_count=$((__scrape_count+1))
 		manage_multi_filters
 		command_exists "on_search" && on_search "$_search" "$curr_scrape"
 		scrape_website "$curr_scrape" "$_search"
@@ -1838,6 +1827,7 @@ make_search () {
 	#this cannot be done inside handle_scraping, because otherwise init_files will get an empty search with search_again
 	is_asking_for_search_necessary && { search_prompt_menu_wrapper; [ -z "$_search" ] && exit 5; }
 	init_files "$_search"
+	set_save_filters
 	[ $enable_search_hist -eq 1 ] && [ -n "$_search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 	handle_scraping "$_search"
 	handle_empty_scrape
