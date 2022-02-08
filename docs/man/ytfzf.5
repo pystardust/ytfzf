@@ -1116,6 +1116,24 @@ This function takes 4 arguments:
 .EE
 
 .TP
+.BR on_opt_parse<opt_name> ()
+This function gets called before an option is parsed.
+A non 0 exit code will override the default behavior of a specific option.
+.br
+This function takes 3 arguments:
+.RS
+.TP
+.I 1
+The the optarg
+.TP
+.I 2
+The raw opt
+.TP
+.I 3
+The raw optarg
+.RE
+
+.TP
 .BR on_search ()
 This function gets called each time a website is scraped.
 .br

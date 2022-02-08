@@ -1485,6 +1485,8 @@ parse_opt () {
 	#this checks the unmodified optarg, which will only be equal if there is no = sign
 	[ "$opt" = "$OPTARG" ] && optarg=""
 	command_exists "on_opt_parse" && { on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG" || return 0; }
+	fn_name="on_opt_parse_$(printf "%s" "$opt" | tr '-' '_')"
+	command_exists "$fn_name" && { $fn_name "$optarg" "$OPT" "$OPTARG" || return 0; }
 	case $opt in
 		h|help) usage; exit 0 ;;
 		D|external-menu) [ -z "$optarg" ] || [ $optarg -eq 1 ] && interface='ext' ;;
