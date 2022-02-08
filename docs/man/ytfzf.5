@@ -774,6 +774,8 @@ The char to use for long opts.
 .br
 .IR default: " \-"
 
+.RE
+
 .PP
 State
 .br
@@ -1198,39 +1200,6 @@ go back to menu
 .IR 2
 exit
 .RE
-.RE
-.RS
-
-.TP
-.BR set_save_custom_filters ()
-This function should set backup variables for multi_filter.
-.br
-To see how this is done, take a look at the set_save_custom_filters() function in ytfzf.
-.br
-This function is called once when the script starts.
-.br
-This function takes no arguments.
-
-.TP
-.BR init_multi_filters ()
-This function should initialize the backup variables for multi_filter, (this is different from set_save_custom_filters())
-.br
-To see how this is done, take a look at the init_multi_filters() function in ytfzf.
-.br
-This function is called before it starts scraping websites.
-.br
-This function takes no arguments.
-
-.TP
-.BR manage_multi_custom_filters ()
-This function should add the ability for filters to be used in multiple scrapes,
-.br
-To see how this is done, take a look at the manage_multi_filters() function in ytfzf.
-.br
-This function is called before the website is scraped.
-.br
-This function takes no arguments.
-
 .RE
 
 .SH CUSTOM THUMBNAILS
