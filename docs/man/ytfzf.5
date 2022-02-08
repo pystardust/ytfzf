@@ -553,6 +553,11 @@ The search will be a path to a json file layed out as described in VIDEO JSON FO
 .RE
 
 .TP
+.RB  $ multi_search
+Whether or not to enable multi search.
+.IR default: " 0"
+
+.TP
 .RB $ search_sort_by
 The attribute to sort by when searching.
 .RS
@@ -1152,6 +1157,17 @@ This function takes 2 arguments:
 .ti +4
     The current scrape
 .EE
+
+.TP
+.BR on_search_<search_query> ()
+This function gets called each time a website is scraped, if the current search matches <search_query>.
+.br
+This function takes 1 argument.
+.RS
+.TP
+.I 1
+The current scrape
+.RE
 
 .TP
 .BR on_clean_up ()

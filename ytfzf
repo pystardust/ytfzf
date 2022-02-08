@@ -378,6 +378,8 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 : "${search_result_features=}"
 : "${search_region:=US}"
 
+: "${multi_search:=0}"
+
 : "${nsfw:=false}"
 
 : "${custom_scrape_search_exclude=}"
@@ -1592,6 +1594,7 @@ parse_opt () {
 		#flip the bit
 		disable-back) enable_back_button=${optarg:-0} ;;
 		skip-thumb-download) skip_thumb_download=${optarg:-1} ;;
+		multi-search) multi_search=${optarg:-1} ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
@@ -1683,7 +1686,7 @@ handle_actions () {
 # scraping wrappers {{{
 #there are 2 sets of backup variables because of -s, total_search* gets used up in manage_multi_filters
 #there has to be at least 1 set of backup variables because search_sort_by=${search_sort_by%%,*} will give incorrect filters when there are 3+ filters
-# multi filters {{{
+# multi {{{
 set_save_filters () {
 	IFS=","
 	set -f
@@ -1696,6 +1699,15 @@ manage_multi_filters () {
 	search_sort_by=$(head -n "${__scrape_count}" "${session_cache_dir}/sort-by.list" | tail -n 1)
 	search_upload_date=$(head -n "${__scrape_count}" "${session_cache_dir}/upload-date.list" | tail -n 1)
 	#for custom scrapers
+}
+init_multi_search () {
+	IFS=","
+	set -f
+	printf "%s\n" $1 > "${session_cache_dir}/searches.list"
+	unset IFS
+}
+next_search (){
+	head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1
 }
 #}}}
 handle_scrape_error () {
@@ -1792,7 +1804,9 @@ handle_scraping (){
 	for curr_scrape in $scrape; do
 		__scrape_count=$((__scrape_count+1))
 		manage_multi_filters
+		[ $multi_search -eq 1 ] && _search="$(next_search)"
 		command_exists "on_search" && on_search "$_search" "$curr_scrape"
+		command_exists "on_search_$_search" && on_search$_search "$curr_scrape"
 		scrape_website "$curr_scrape" "$_search"
 		handle_scrape_error "$?"
 	done
@@ -1827,9 +1841,10 @@ make_search () {
 	#this cannot be done inside handle_scraping, because otherwise init_files will get an empty search with search_again
 	is_asking_for_search_necessary && { search_prompt_menu_wrapper; [ -z "$_search" ] && exit 5; }
 	init_files "$_search"
+	init_multi_search "$_search"
 	set_save_filters
 	[ $enable_search_hist -eq 1 ] && [ -n "$_search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
-	handle_scraping "$_search"
+	handle_scraping "$_search" "$_save_search"
 	handle_empty_scrape
 }
 #}}}
