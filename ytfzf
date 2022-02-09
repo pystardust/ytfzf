@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-27"
+YTFZF_VERSION="2.2.alpha-28"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1185,7 +1185,7 @@ get_missing_thumbnails () {
 
 	jq -r '.[]|select(.thumbs!=null)|.ID' < "$video_json_file" | sort > $_tmp_id_list_file &
 	ids="$(jq -r '.[]|select(.thumbs!=null)|.thumbs + ";" + .ID' < "$video_json_file")"
-	ls -1 "$thumb_dir" | sed 's/\..*//' | sort > "$_downloaded_ids_file"
+	ls -1 "$thumb_dir" | sed 's/\..*//' > "$_downloaded_ids_file"
 	wait
 
 	missing_ids="$(diff $_downloaded_ids_file $_tmp_id_list_file | sed 's/^> //p')"
@@ -1818,6 +1818,8 @@ handle_scraping (){
 		scrape_website "$curr_scrape" "$_search"
 		handle_scrape_error "$?"
 	done
+	unique="$(jq 'unique_by(.ID)' < "$ytfzf_video_json_file")"
+	printf "%s\n" "$unique" > "$ytfzf_video_json_file"; unset unique
 }
 
 #check if nothing was scraped{{{
