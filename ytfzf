@@ -539,6 +539,37 @@ _youtube_channel_json () {
 }
 #}}}
 
+scrape_subscriptions () {
+    ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
+
+    [ "$scrape_type" = "SI" ] && { channel_scraper="scrape_invidious_channel"; sleep_time=0.03; } || { channel_scraper="scrape_youtube_channel"; sleep_time=0.01; }
+
+    #if _tmp_subfile does not have a unique name, weird things happen
+    #must be _i because scrape_invidious_channel uses $i
+    _i=0
+    while IFS= read channel_url || [ -n "$channel_url" ] ; do
+	    _i=$((_i+1))
+	    {
+			_tmp_subfile="${session_temp_dir}/channel-$_i"
+			$channel_scraper "$channel_url" "$_tmp_subfile" "channel-$_i" < /dev/null || return "$?"
+			if [ ${fancy_subs} -eq 1 ]; then
+				channel_name="$(jq -r '.[0].channel' < "$_tmp_subfile")"
+			    jq --arg title "${fancy_subs_left}${channel_name}${fancy_subs_right}" '[{"title": $title, "action": "do-nothing", "url": $title, "ID": $title}] + .[0:'"$sub_link_count"']' < "$_tmp_subfile"
+			else
+				jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile"
+			fi >> "$ytfzf_video_json_file"
+	    } &
+	    sleep $sleep_time
+    done <<- EOF
+	$(sed \
+		-e "s/#.*//" \
+		-e "/^[[:space:]]*$/d" \
+		-e "s/[[:space:]]*//g" \
+		"$YTFZF_SUBSCRIPTIONS_FILE" )
+	EOF
+    wait
+}
+
 scrape_youtube_channel () {
 	channel_url="$1"
 	output_json_file="$2"
@@ -1744,42 +1775,9 @@ scrape_website () {
 		playlist|p|json-file) scrape_json_file "$_search" "$ytfzf_video_json_file" ;;
 		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "channel-1" "$pages_to_scrape" ;;
 		youtube-channel) scrape_youtube_channel "$_search" "$ytfzf_video_json_file" "channel-1" ;;
-		youtube|Y)
-			# youtube scrape {{{
-			#$i is so multiple pages can be scraped
-			scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$pages_to_scrape" || return "$?" ;;
-			# }}}
+		youtube|Y) scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$pages_to_scrape" || return "$?" ;;
 		youtube-trending|T) scrape_invidious_trending  "$_search" "$ytfzf_video_json_file" "trending";;
-		youtube-subscriptions|S|SI)#{{{
-		    ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
-
-		    [ "$scrape_type" = "SI" ] && { channel_scraper="scrape_invidious_channel"; sleep_time=0.03; } || { channel_scraper="scrape_youtube_channel"; sleep_time=0.01; }
-
-		    #if _tmp_subfile does not have a unique name, weird things happen
-		    #must be _i because scrape_invidious_channel uses $i
-		    _i=0
-		    while IFS= read channel_url || [ -n "$channel_url" ] ; do
-			    _i=$((_i+1))
-			    {
-					_tmp_subfile="${session_temp_dir}/channel-$_i"
-					$channel_scraper "$channel_url" "$_tmp_subfile" "channel-$_i" < /dev/null || return "$?"
-					if [ ${fancy_subs} -eq 1 ]; then
-					    channel_name="$(jq -r '.[0].channel' < "$_tmp_subfile" | grep -vE '^[[:space:]]*null[[:space:]]*$' | head -n 1)"
-					    jq --arg title "${fancy_subs_left}${channel_name}${fancy_subs_right}" '[{"title": $title, "action": "do-nothing", "url": $url}] + .[0:'"$sub_link_count"']' < "$_tmp_subfile"
-					else
-						jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile"
-					fi >> "$ytfzf_video_json_file"
-			    } &
-			    sleep $sleep_time
-		    done <<- EOF
-			$(sed \
-				-e "s/#.*//" \
-				-e "/^[[:space:]]*$/d" \
-				-e "s/[[:space:]]*//g" \
-				"$YTFZF_SUBSCRIPTIONS_FILE" )
-			EOF
-		    wait
-		    ;;#}}}
+		youtube-subscriptions|S|SI) scrape_subscriptions "$scrape_type" "$ytfzf_video_json_file" ;;
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
 		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
