@@ -553,7 +553,7 @@ scrape_subscriptions () {
 			_tmp_subfile="${session_temp_dir}/channel-$_i"
 			$channel_scraper "$channel_url" "$_tmp_subfile" "channel-$_i" < /dev/null || return "$?"
 			if [ ${fancy_subs} -eq 1 ]; then
-				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].channel + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel) }]' < "$_tmp_subfile"
+				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].channel + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel)" }]' < "$_tmp_subfile"
 			fi >> "$ytfzf_video_json_file"
 			jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile" >> "$ytfzf_video_json_file"
 	    } &
