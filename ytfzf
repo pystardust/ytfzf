@@ -1190,10 +1190,10 @@ get_missing_thumbnails () {
 
 	missing_ids="$(diff $_downloaded_ids_file $_tmp_id_list_file | sed 's/^> //p')"
 
-	IFS="|"
 	set -f
 	set -- $missing_ids
-	grep "($*)" <<EOF
+	IFS="|"
+	grep -E "($*)" <<EOF
 $ids
 EOF
 	unset IFS _tmp_id_list_file _downloaded_ids_file
@@ -1796,13 +1796,14 @@ scrape_website () {
 }
 
 is_asking_for_search_necessary () {
-	IFS=","
-	set -f
-	for _scr in $scrape; do
-		printf "%s" "$scrape_search_exclude" | grep -Fqv " $_scr " && { [ "$_search" = "-" ] || [ -z "$_search" ]; } && return 0
-	done
-	return 1
-
+	_scr=" $(sed 's/,/ | /g' <<EOF
+$scrape
+EOF
+) "
+	grep -Eq "($_scr)" <<EOF
+$scrape_search_exclude
+EOF
+	[ "$_search-" != "-" ]
 }
 
 handle_scraping (){
@@ -1841,8 +1842,7 @@ handle_empty_scrape () {
 
 command_exists "handle_search_history" || handle_search_history () {
 	#search history
-	date=$(date +'%D %H:%M:%S')
-	printf "%s${tab_space}%s\n" "${date}" "${1}" >> "$2"
+	printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
 }
 
 make_search () {
