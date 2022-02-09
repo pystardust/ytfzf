@@ -1219,12 +1219,13 @@ get_missing_thumbnails () {
 	ls -1 "$thumb_dir" | sed 's/\..*//' > "$_downloaded_ids_file"
 	wait
 
-	missing_ids="$(diff "$_downloaded_ids_file" "$_tmp_id_list_file" | sed 's/^> //p')"
+	missing_ids="$(diff "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^> //p')"
 
 	set -f
 	set -- $missing_ids
 	IFS="|"
-	grep -E "($*)" <<EOF
+	search_grep="$*"
+	grep -E "(${search_grep:-${tab_space}})" <<EOF
 $ids
 EOF
 	unset IFS _tmp_id_list_file _downloaded_ids_file
