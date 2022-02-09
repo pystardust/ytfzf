@@ -1188,7 +1188,7 @@ get_missing_thumbnails () {
 	ls -1 "$thumb_dir" | sed 's/\..*//' > "$_downloaded_ids_file"
 	wait
 
-	missing_ids="$(diff $_downloaded_ids_file $_tmp_id_list_file | sed 's/^> //p')"
+	missing_ids="$(diff "$_downloaded_ids_file" "$_tmp_id_list_file" | sed 's/^> //p')"
 
 	set -f
 	set -- $missing_ids
@@ -1697,9 +1697,10 @@ handle_actions () {
 # multi {{{
 set_save_filters () {
 	IFS=","
-	set -f
-	[ ! -s "${session_cache_dir}/sort-by.list " ] && printf "%s\n" $search_sort_by > "${session_cache_dir}/sort-by.list"
-	[ ! -s "${session_cache_dir}/upload-date.list " ] && printf "%s\n" $search_upload_date > "${session_cache_dir}/upload-date.list"
+	set -f -C
+	printf "%s\n" $search_sort_by > "${session_cache_dir}/sort-by.list"
+	printf "%s\n" $search_upload_date > "${session_cache_dir}/upload-date.list"
+	set +C
 	unset IFS
 }
 manage_multi_filters () {
