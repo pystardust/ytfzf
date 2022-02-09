@@ -1800,10 +1800,11 @@ is_asking_for_search_necessary () {
 $scrape
 EOF
 ) "
-	grep -Eq "($_scr)" <<EOF
+	#for some reason using [ "$_search-" = "-" ] doesn't work, but the code below does
+	grep -Eqv "($_scr)" <<EOF && [ "${_search:--}" = "-" ] && return 0
 $scrape_search_exclude
 EOF
-	[ "$_search-" != "-" ]
+	return 1
 }
 
 handle_scraping (){
