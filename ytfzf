@@ -1212,9 +1212,9 @@ get_missing_thumbnails () {
 	_tmp_id_list_file="${session_temp_dir}/all-ids.list"
 	_downloaded_ids_file="${session_temp_dir}/downloaded-ids.list"
 
-	jq -r '.[]|select(.thumbs!=null)|.ID' < "$video_json_file" | sort > $_tmp_id_list_file
+	jq -r '.[]|select(.thumbs!=null)|.ID' < "$video_json_file" | sort |uniq > $_tmp_id_list_file
 	ids="$(jq -r '.[]|select(.thumbs!=null)|.thumbs + ";" + .ID' < "$video_json_file")"
-	ls -1 "$thumb_dir" | sed 's/\..*//' > "$_downloaded_ids_file"
+	ls -1 "$thumb_dir" | sed 's/\..*//' | sort > "$_downloaded_ids_file"
 
 	missing_ids="$(diff "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^> //p')"
 
@@ -1233,6 +1233,7 @@ download_thumbnails () {
 	print_info 'Fetching thumbnails...\n'
 	curl_config_file="${session_temp_dir}/curl_config"
 	[ -z "$*" ] && return 0
+	: > "$curl_config_file"
 	for line in "$@"; do
 		printf "url=\"%s\"\noutput=\"$thumb_dir/%s.jpg\"\n" "${line%%;*}" "${line##*;}"
 	done >> "$curl_config_file"
