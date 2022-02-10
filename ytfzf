@@ -1232,6 +1232,7 @@ download_thumbnails () {
 	[ $skip_thumb_download -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
 	print_info 'Fetching thumbnails...\n'
 	curl_config_file="${session_temp_dir}/curl_config"
+	[ -z "$*" ] && return 0
 	for line in "$@"; do
 		printf "url=\"%s\"\noutput=\"$thumb_dir/%s.jpg\"\n" "${line%%;*}" "${line##*;}"
 	done >> "$curl_config_file"
