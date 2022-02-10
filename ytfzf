@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.alpha-30"
+YTFZF_VERSION="2.2.alpha-31"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1390,7 +1390,7 @@ preview_img () {
 	url=${line##*|}
 
 	#make sure all variables are set{{{
-	_correct_json=$(jq -r --arg url "$url" '.[]|select(.url==$url)' < "$video_json_file")
+	_correct_json=$(jq -r --arg url "$url" '[.[]|select(.url==$url)]|unique_by(.ID)[0]' < "$video_json_file")
 	id="$(get_video_json_attr "ID")"
 	title="$(get_video_json_attr "title")"
 	channel="$(get_video_json_attr "channel")"
@@ -1818,8 +1818,6 @@ handle_scraping (){
 		scrape_website "$curr_scrape" "$_search"
 		handle_scrape_error "$?"
 	done
-	unique="$(jq 'unique_by(.ID)' < "$ytfzf_video_json_file")"
-	printf "%s\n" "$unique" > "$ytfzf_video_json_file"; unset unique
 }
 
 #check if nothing was scraped{{{
