@@ -1283,6 +1283,13 @@ preview_stop () {
 			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
 }
+preview_no_img (){
+	thumbnail_viewer="$1"
+	case $thumbnail_viewer in
+		ueberzug|chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m|imv) : ;;
+		*) "$thumbnail_viewer" "no-img" ;;
+	esac && die 1 "\nno image found" 
+}
 # ueberzug positioning{{{
 command_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left (){
 	width=$1
@@ -1326,7 +1333,7 @@ preview_display_image () {
 	id=$2
 	thumb_path="${thumb_dir}/${id}.jpg"
 	[ -f "${thumb_path}" ] || thumb_path="${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg"
-	[ -f "${thumb_path}" ] || die 1 "\nNo thumbnail found for this video\n"
+	[ -f "${thumb_path}" ] || preview_no_img "$thumbnail_viewer"
 	case $thumbnail_viewer in
 		ueberzug)
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"

@@ -7,5 +7,6 @@ case "$action" in
     view)
 	kitty +kitten icat --clear --transfer-mode file
 	kitty +kitten icat --place "${5}x${6}@${3}x${4}" --scale-up --transfer-mode file "$2"  ;;
+    no-img) kitty +kitten icat --clear --transfer-mode file ;;
     stop) : ;;
 esac
