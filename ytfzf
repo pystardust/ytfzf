@@ -91,13 +91,13 @@ command_exists "shuf" || shuf () {
 
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
-	[ $log_level -ge 0 ] && printf "$1" >&2
+	[ $log_level -ge 2 ] && printf "$1" >&2
 }
 print_warning () {
 	[ $log_level -ge 1 ] && printf "${c_yellow}${1}${c_reset}" >&2
 }
 print_error () {
-	[ $log_level -ge 2 ] && printf "${c_red}${1}${c_reset}" >&2
+	[ $log_level -ge 0 ] && printf "${c_red}${1}${c_reset}" >&2
 }
 
 clean_up () {
