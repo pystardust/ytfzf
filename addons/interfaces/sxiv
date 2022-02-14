@@ -5,6 +5,7 @@
 #branch 4
 #branch 5
 #branch 6
+#branch 7
 
 interface_sxiv () {
     video_json_file=$1
