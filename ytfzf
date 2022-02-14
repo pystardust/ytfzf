@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.beta-3"
+YTFZF_VERSION="2.2.beta-4"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -291,16 +291,16 @@ command_exists "video_player" || video_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
 	case "$is_detach" in
-		0) mpv --ytdl-format="$video_pref" "$@" ;;
-		1) setsid -f mpv --ytdl-format="$video_pref" "$@" > /dev/null 2>&1 ;;
+		0) mpv --ytdl-format="$ytdl_pref" "$@" ;;
+		1) setsid -f mpv --ytdl-format="$ytdl_pref" "$@" > /dev/null 2>&1 ;;
 	esac
 }
 command_exists "audio_player" || audio_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
 	case "$is_detach" in
-		0) mpv --no-video --ytdl-format="$video_pref" "$@" ;;
-		1) setsid -f mpv --force-window --no-video --ytdl-format="$video_pref" "$@"  > /dev/null 2>&1 ;;
+		0) mpv --no-video --ytdl-format="$ytdl_pref" "$@" ;;
+		1) setsid -f mpv --force-window --no-video --ytdl-format="$ytdl_pref" "$@"  > /dev/null 2>&1 ;;
 	esac
 }
 command_exists "multimedia_player" || multimedia_player () {
@@ -313,7 +313,7 @@ command_exists "multimedia_player" || multimedia_player () {
 command_exists "downloader" || downloader () {
 	command_exists "${ytdl_path}" || die 3 "${ytdl_path} is not installed\n"
 	case $is_audio_only in
-	    0) ${ytdl_path} -f "${video_pref}" $ytdl_opts "$@"	;;
+	    0) ${ytdl_path} -f "${ytdl_pref}" $ytdl_opts "$@"	;;
 	    1) ${ytdl_path} -x $ytdl_opts "$@" ;;
 	esac
 }
@@ -346,7 +346,8 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 : ${info_to_print=}
 : ${info_wait_action=q}
 : "${info_wait:=0}"
-: "${video_pref:=best}"
+: "${video_pref:=bestvideo}"
+: "${audio_pref:=bestaudio}"
 : ${show_formats:=0}
 
 : ${is_sort:=0}
@@ -1466,7 +1467,7 @@ print_requested_info () {
 				    jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file"; 
 			    done < "$url_list"  ;;
 		    [Jj]|json) jq < "$ytfzf_video_json_file" ;;
-		    [Ff]|format) printf "%s\n" "$video_pref" ;;
+		    [Ff]|format) printf "%s\n" "$ytdl_pref" ;;
 		    [Rr]|raw) 
 			    while read -r line; do
 				    jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file";
@@ -1500,27 +1501,27 @@ submenu_handler () {
 }
 
 open_url_handler () {
-	# isaudio, isdownload, video_pref
+	# isaudio, isdownload, ytdl_pref
 	urls="$(tr '\n' ' ' < "$1")"
 	set -f
 	IFS=' '
 	set -- $urls
 	[ -z "$*" ] && return 0
 
-	[ $show_formats -eq 1 ] && video_pref="$(get_video_format "$1")"
+	[ $show_formats -eq 1 ] && ytdl_pref="$(get_video_format "$1")"
 
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
-	printf "%s\t" "$video_pref" "$is_audio_only" "$is_detach" | "$url_handler" "$@"
+	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" | "$url_handler" "$@"
 }
 
 get_video_format(){
 	#the sed gets rid of random information
-	case 1 in
-		$is_audio_only) ${ytdl_path} -q -F "$1" | grep 'audio only' | quick_menu_wrapper "Audio format: " | awk '{print $1}' ;;
-		1) ${ytdl_path} -q -F "$1" | sed '1,2d' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1 "+bestaudio/" $1}' ;;
-	esac
+  _audio_choices="$(${ytdl_path} -q -F "$1" | grep 'audio only')"
+  [ "$_audio_choices" ] && audio_pref="$(echo "$_audio_choices" | quick_menu_wrapper "Audio format: " | awk '{print $1}')"
+  [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" | sed '1,2d' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
+  printf "%s+%s/%s/%s" "$video_pref" "$audio_pref" "$video_pref" "$audio_pref"
 }
 #}}}
 
@@ -1589,6 +1590,8 @@ parse_opt () {
 					fi ;;
 			esac && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
 		video-pref) video_pref=$optarg ;;
+    ytdl-pref) ytdl_pref=$optarg ;;
+    audio-pref) audio_pref=$optarg ;;
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
@@ -1670,6 +1673,7 @@ shift $((OPTIND-1))
 
 #Post opt scrape{{{
 source_scrapers
+: "${ytdl_pref:=$video_pref+$audio_pref/$video_pref/$audio_pref}"
 #}}}
 
 # Get search{{{

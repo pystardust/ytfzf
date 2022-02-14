@@ -187,7 +187,19 @@ Whether or not to wait for input after printing info.
 .RB $ video_pref
 The video preference to use for youtube-dl in mpv.
 .br
-.IR default: " best"
+.IR default: " bestvideo"
+
+.TP
+.RB $ audio_pref
+The audio preference to use for youtube-dl in mpv.
+.br
+.IR default: " bestaudio"
+
+.TP
+.RB $ ytdl_pref
+The preference to use for youtube-dl in mpv.
+.br
+.IR default: " $video_pref+$audio_pref/$video_pref/$audio_pref"
 
 .RE
 
