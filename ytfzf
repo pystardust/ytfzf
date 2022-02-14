@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1338.1692043"
+YTFZF_VERSION="git-1339.1e5f672"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1515,6 +1515,7 @@ open_url_handler () {
     case "$format_selection_screen" in
       simple) ytdl_pref="$(get_video_format_quality "$1")" ;;
       normal) ytdl_pref="$(get_video_format "$1")" ;;
+      *) ytdl_pref="$(get_video_format_$format_selection_screen "$@")" ;;
     esac
   }
 
