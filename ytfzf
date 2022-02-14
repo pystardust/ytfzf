@@ -1178,7 +1178,7 @@ interface_text () {
 			video_info_text
 		done |
 		column -t -s "$tab_space" |
-		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" $fzf_opts | set_keypress |
+		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
 		trim_url > "$selected_id_file"
 	#we can't do handle_keypress < "$keypress_file" because it leaves fd0 open which breaks $search_again_shortcut
 	handle_keypress "$(cat "$keypress_file")"
@@ -1442,7 +1442,7 @@ interface_thumbnails () {
 	sort_video_data_fn |
 	fzf -m \
 	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
-	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" $fzf_thumbnail_opts | set_keypress |
+	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
 	trim_url > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
@@ -1652,8 +1652,6 @@ parse_opt () {
 		submenu-opts) submenu_opts="${optarg}" ;;
 		submenu-scraping-opts) submenu_scraping_opts="${optarg}" ;;
 		nsfw)  nsfw="${optarg:-true}" ;;
-		fzf-opts) fzf_opts="${optarg}" ;;
-		fzf-thumbnail-opts) fzf_thumbnail_opts="${optarg}" ;;
 		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
 		#flip the bit
 		disable-back) enable_back_button=${optarg:-0} ;;
