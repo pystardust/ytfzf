@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1335.8ee441a"
+YTFZF_VERSION="git-1336.950b53a"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -420,7 +420,8 @@ usage () {
 	-a                      Automatically select the first video
 	-r                      Automatically select a random video
 	-A                      Select all videos
-	-S <number>             Automatically selects a specific video
+  -S <sed address>        Automatically selects a specific video based on a given sed address,
+                          see ytfzf(1) for more info.
 	-n <video count>        The amount of videos to select with -a and -r
 	-c <scraper>       	The scraper to use,
 				Builtin scrapers:

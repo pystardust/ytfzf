@@ -263,8 +263,24 @@ Select all results.
 .BR \-r ", " \-\-random\-select
 Auto\-play a random result,
 .TP
-.BR \-S " \fInumber\fR" ", " \-\-select=\fInumber
+.BR \-S " \fIsed address\fR" ", " "\-\-select=\fIsed address\fR"
 Auto\-play a specifc video.
+.PP
+.RS
+Examples:
+.RS
+.TP
+.IR 2
+Select the second video
+.TP
+.IR $
+Select the last video
+.TP
+.IR /^h/
+Select all videos starting with h
+.RE
+.RE
+
 .TP
 .BR \-n " \fInumber\fR" ", " \-\-link\-count=\fInumber
 The \fInumber\fR of videos to select with \fB\-a\fR or \fB\-r\fR.
