@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1337.7ab0789"
+YTFZF_VERSION="git-1338.1692043"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -349,6 +349,8 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 : "${video_pref:=bestvideo}"
 : "${audio_pref:=bestaudio}"
 : ${show_formats:=0}
+: "${format_selection_screen:=normal}"
+: "${format_selection_sort:=height}"
 
 : ${is_sort:=0}
 : ${show_thumbnails:=0}
@@ -1509,7 +1511,12 @@ open_url_handler () {
 	set -- $urls
 	[ -z "$*" ] && return 0
 
-	[ $show_formats -eq 1 ] && ytdl_pref="$(get_video_format "$1")"
+	[ $show_formats -eq 1 ] && {
+    case "$format_selection_screen" in
+      simple) ytdl_pref="$(get_video_format_quality "$1")" ;;
+      normal) ytdl_pref="$(get_video_format "$1")" ;;
+    esac
+  }
 
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
@@ -1517,11 +1524,21 @@ open_url_handler () {
 	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" | "$url_handler" "$@"
 }
 
+get_video_format_simple () {
+	# select format if flag given
+  formats=$(${ytdl_path} -F "$1") 
+  line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
+  quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | quick_menu_wrapper "video quality" | sed "s/p//g")
+  [ "$quality" = Audio ] && is_audio_only=1 && printf "%s" "bestaudio" ||
+    printf "%s" "bestvideo[height=?$quality][vcodec!=?vp9]+bestaudio/best"
+	unset max_quality quality
+}
+
 get_video_format(){
 	#the sed gets rid of random information
-  _audio_choices="$(${ytdl_path} -q -F "$1" | grep 'audio only')"
+  _audio_choices="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort" | grep 'audio only')"
   [ "$_audio_choices" ] && audio_pref="$(echo "$_audio_choices" | quick_menu_wrapper "Audio format: " | awk '{print $1}')"
-  [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" | sed '1,2d' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
+  [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort"| sed '1,2d' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
   printf "%s+%s/%s/%s" "$video_pref" "$audio_pref" "$video_pref" "$audio_pref"
 }
 #}}}
@@ -1642,6 +1659,8 @@ parse_opt () {
 		disable-back) enable_back_button=${optarg:-0} ;;
 		skip-thumb-download) skip_thumb_download=${optarg:-1} ;;
 		multi-search) multi_search=${optarg:-1} ;;
+    format-selection) format_selection_screen=${optarg:-quality};;
+    format-sort) format_selection_sort="$optarg" ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
