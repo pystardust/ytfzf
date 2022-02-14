@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1336.950b53a"
+YTFZF_VERSION="git-1337.7ab0789"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1146,7 +1146,7 @@ interface_scripting () {
 	case 1 in
 		"$is_auto_select") jq -r ".[].url"  < "$video_json_file" | sed -n "1,$scripting_video_count"p  ;;
 		"$is_random_select") jq -r ".[].url"  < "$video_json_file"  | shuf  | sed -n "1,$scripting_video_count"p ;;
-		"$is_specific_select") jq -r '.[].url' < "$video_json_file" | sed -n "$scripting_video_count"p 
+		"$is_specific_select") jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file" | sed -n "$scripting_video_count"p | cut -f6 | tr -d '|';;
 	esac > "$selected_id_file"
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
 }
