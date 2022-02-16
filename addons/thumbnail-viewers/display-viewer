@@ -1,0 +1,10 @@
+#!/bin/sh
+
+case "$1" in
+  start) command_exists "display" || die 3 "\nimagemagick is not installed" ;;
+  stop) : ;;
+  no-img) killall display ;;
+  view)
+			killall display
+			display "$2" ;;
+esac

@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1346.b3f94aa"
+YTFZF_VERSION="git-1346.4a5ef64"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1263,7 +1263,7 @@ preview_start () {
 			ueberzug layer --parser simple < "$UEBERZUG_FIFO" 2>/dev/null &
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m) : ;;
     kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
 		imv)
 			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
@@ -1282,7 +1282,7 @@ preview_stop () {
 		ueberzug)
 			exec 3>&- # close file descriptor 3, closing ueberzug
 			;;
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m|kitty) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|kitty) : ;;
 		imv) kill "$imv_pid" ;;
 		*)
 			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
@@ -1291,7 +1291,7 @@ preview_stop () {
 preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
-		ueberzug|chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m|imv) : ;;
+		ueberzug|chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|imv) : ;;
     kitty) kitty +kitten icat --clear --transfer-mode file ;;
 		*) "$thumbnail_viewer" "no-img" ;;
 	esac && die 1 "\nno image found" 
@@ -1375,10 +1375,6 @@ preview_display_image () {
 			printf '\n'
 			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
 			catimg -c -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_path" ;;
-		display)
-			command_exists "display" || die 3 "\nimagemagick is not installed\n"
-			killall display
-			display "$thumb_dir/${id}.jpg" ;;
 		w3m)
 			while true; do
 				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_path" 3 | $w3mimgdisplay_path
@@ -1623,7 +1619,7 @@ parse_opt () {
 		thumb-viewer)
 			case "$optarg" in
 				#these are special cases, where they are not themselves commands
-				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|display|w3m|imv|ueberzug|kitty) thumbnail_viewer="$optarg" ; true ;;
+				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|w3m|imv|ueberzug|kitty) thumbnail_viewer="$optarg" ; true ;;
 				./*|/*|../*|~/*) thumbnail_viewer="$optarg"; false ;;
 				*)
 					if [ -f "${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}" ]; then
