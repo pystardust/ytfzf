@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1343.3c4478a"
+YTFZF_VERSION="git-1346.b3f94aa"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1264,6 +1264,7 @@ preview_start () {
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m) : ;;
+    kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
 		imv)
 			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
 			imv "$thumb_dir/${first_img}.jpg" &
@@ -1281,7 +1282,7 @@ preview_stop () {
 		ueberzug)
 			exec 3>&- # close file descriptor 3, closing ueberzug
 			;;
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m|kitty) : ;;
 		imv) kill "$imv_pid" ;;
 		*)
 			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
@@ -1291,6 +1292,7 @@ preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
 		ueberzug|chafa|chafa-16|chafa-tty|catimg|catimg-256|display|w3m|imv) : ;;
+    kitty) kitty +kitten icat --clear --transfer-mode file ;;
 		*) "$thumbnail_viewer" "no-img" ;;
 	esac && die 1 "\nno image found" 
 }
@@ -1385,6 +1387,10 @@ preview_display_image () {
 			imv-msg "$imv_pid" open "$thumb_path"
 			imv-msg "$imv_pid" next
 			;;
+    kitty)
+			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
+      kitty +kitten icat --clear --transfer-mode file
+      kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" ;;
 		*) 
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 			"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
@@ -1617,7 +1623,7 @@ parse_opt () {
 		thumb-viewer)
 			case "$optarg" in
 				#these are special cases, where they are not themselves commands
-				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|display|w3m|imv|ueberzug) thumbnail_viewer="$optarg" ; true ;;
+				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|display|w3m|imv|ueberzug|kitty) thumbnail_viewer="$optarg" ; true ;;
 				./*|/*|../*|~/*) thumbnail_viewer="$optarg"; false ;;
 				*)
 					if [ -f "${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}" ]; then

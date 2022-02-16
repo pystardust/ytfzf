@@ -65,7 +65,8 @@ There are only 2 required dependencies, however the rest require some configurat
 | [`catimg`](https://github.com/posva/catimg)                                       | &#9989;          |
 | [`display`](https://github.com/ImageMagick/ImageMagick) (from imagemagick)        | &#10060;         |
 | [`w3m`](https://github.com/tats/w3m) (buggy)                                      | &#10060;         |
-| [`imv`](https://git.sr.ht/~exec64/imv)                                                      | &#9989;         |
+| [`imv`](https://git.sr.ht/~exec64/imv)                                            | &#9989;          |
+| [`kitty`](https://github.com/kovidgoyal/kitty)                                    | &#9989;          |
 
 # Install
 
