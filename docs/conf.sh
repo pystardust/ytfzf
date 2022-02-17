@@ -8,7 +8,7 @@
 #a sample config below:
 
 #Variables {{{
-#video_pref="248+bestaudio/best"
+#ytdl_pref="248+bestaudio/best"
 ##scrape 1 video link per channel instead of the default 2
 #sub_link_count=1
 #show_thumbnails=1
@@ -22,15 +22,13 @@
 
 #use vlc instead of mpv
 #video_player () {
-#    #this function does not take video_pref into account, as vlc has no option (that i know of) to change it
-#    notify_info "Playing $# video(s)"
 #    #check if detach is enabled
 #    case "$is_detach" in
-#	#disabled
-#	0) vlc "$@" ;;
-#	#enabled
-#	1) setsid -f vlc "$@" > /dev/null 2>&1 ;;
-#    esac
+      #	#disabled
+      #	0) vlc "$@" ;;
+      #	#enabled
+      #	1) setsid -f vlc "$@" > /dev/null 2>&1 ;;
+  #    esac
 #}
 
 #on_opt_parse () {
