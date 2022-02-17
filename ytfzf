@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1348.82d178f"
+YTFZF_VERSION="git-1349.b3c1fd7"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -36,6 +36,10 @@ c_reset="\033[0m"
 : "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
+
+detach_cmd () {
+  nohup "$@" > "/dev/null" 2>&1 & 
+}
 
 source_scrapers () {
 	set -f
@@ -290,17 +294,15 @@ command_exists "handle_playing_notifications" || handle_playing_notifications ()
 command_exists "video_player" || video_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
-	case "$is_detach" in
-		0) mpv --ytdl-format="$ytdl_pref" "$@" ;;
-		1) setsid -f mpv --ytdl-format="$ytdl_pref" "$@" > /dev/null 2>&1 ;;
-	esac
+    [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
+    $use_detach_cmd mpv --ytdl-format="$ytdl_pref" "$@"
 }
 command_exists "audio_player" || audio_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
 	case "$is_detach" in
 		0) mpv --no-video --ytdl-format="$ytdl_pref" "$@" ;;
-		1) setsid -f mpv --force-window --no-video --ytdl-format="$ytdl_pref" "$@"  > /dev/null 2>&1 ;;
+		1) detach_cmd mpv --force-window --no-video --ytdl-format="$ytdl_pref" "$@" ;;
 	esac
 }
 command_exists "multimedia_player" || multimedia_player () {
@@ -310,11 +312,13 @@ command_exists "multimedia_player" || multimedia_player () {
 		1) audio_player "$@" ;;
 	esac
 }
+
 command_exists "downloader" || downloader () {
 	command_exists "${ytdl_path}" || die 3 "${ytdl_path} is not installed\n"
+    [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
 	case $is_audio_only in
-	    0) ${ytdl_path} -f "${ytdl_pref}" $ytdl_opts "$@"	;;
-	    1) ${ytdl_path} -x $ytdl_opts "$@" ;;
+	    0) $use_detach_cmd ${ytdl_path} -f "${ytdl_pref}" $ytdl_opts "$@"	;;
+	    1) $use_detach_cmd ${ytdl_path} -x -f "${audio_pref}" $ytdl_opts "$@" ;;
 	esac
 }
 
