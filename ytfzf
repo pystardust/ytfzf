@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1349.b3c1fd7"
+YTFZF_VERSION="git-1351.5125b78"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -608,7 +608,7 @@ _get_real_channel_link () {
 	domain=${1#https://}
 	domain=${domain%%/*}
 	url=$(printf "%s" "$1" | sed -E "s_(https://)?www.youtube.com_${invidious_instance}_")
-	real_path="$(curl -is "$url" | grep "^[lL]"ocation | sed 's/[Ll]ocation: //')"
+    real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p')"
 	#prints the origional url because it was correct
 	[ -z "$real_path" ] && printf "%s\n" "$1" && return 0
 	#printf is not used because weird flushing? issues.
@@ -1827,15 +1827,12 @@ scrape_website () {
 }
 
 is_asking_for_search_necessary () {
-	_scr=" $(sed 's/,/ | /g' <<EOF
-$scrape
-EOF
-) "
-	#for some reason using [ "$_search-" = "-" ] doesn't work, but the code below does
-	grep -Eqv "($_scr)" <<EOF && [ "${_search:--}" = "-" ] && return 0
-$scrape_search_exclude
-EOF
-	return 1
+    IFS=,
+    for _scr in $scrape; do
+      case "$scrape_search_exclude" in
+        *" "$_scr" "*) return 1 ;;
+      esac
+    done
 }
 
 handle_scraping (){
