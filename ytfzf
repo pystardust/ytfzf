@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1351.5125b78"
+YTFZF_VERSION="git-1351.393d7b3"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1827,12 +1827,15 @@ scrape_website () {
 }
 
 is_asking_for_search_necessary () {
-    IFS=,
-    for _scr in $scrape; do
-      case "$scrape_search_exclude" in
-        *" "$_scr" "*) return 1 ;;
-      esac
-    done
+  	_scr=" $(sed 's/,/ | /g' <<EOF
+$scrape
+EOF
+) "
+	#for some reason using [ "$_search-" = "-" ] doesn't work, but the code below does
+	grep -Eqv "($_scr)" <<EOF && [ "${_search:--}" = "-" ] && return 0
+$scrape_search_exclude
+EOF
+	return 1
 }
 
 handle_scraping (){
