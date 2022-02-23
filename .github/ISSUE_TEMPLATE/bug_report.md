@@ -18,7 +18,7 @@ assignees: ''
 ### Information
  - OS:
  - Terminal:
- - Version:
+ - Ytfzf version:
 - Output of `ls -l "$(which sh)"` (if your using fish: `ls -l (which sh)`):
 
 
