@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1358.1230304"
+YTFZF_VERSION="git-1360.1ba1c22"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -183,6 +183,7 @@ done
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
 : "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
+: "${YTFZF_SCRAPELIST_FILE:=$YTFZF_CONFIG_DIR/scrapelist}"
 : "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
 : "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
 : "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
@@ -390,7 +391,7 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 : "${nsfw:=false}"
 
 : "${custom_scrape_search_exclude=}"
-: "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history ${custom_scrape_search_exclude} }"
+: "${scrape_search_exclude:= youtube-subscriptions S SI SL T youtube-trending H history ${custom_scrape_search_exclude} }"
 
 : ${max_thread_count:=20}
 
@@ -559,7 +560,7 @@ scrape_subscriptions () {
 	    _i=$((_i+1))
 	    {
 			_tmp_subfile="${session_temp_dir}/channel-$_i"
-			$channel_scraper "$channel_url" "$_tmp_subfile" "channel-$_i" < /dev/null || return "$?"
+			$channel_scraper "$channel_url" "$_tmp_subfile" < /dev/null || return "$?"
 			if [ ${fancy_subs} -eq 1 ]; then
 				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].channel + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel)" }]' < "$_tmp_subfile"
 			fi >> "$ytfzf_video_json_file"
@@ -576,13 +577,28 @@ scrape_subscriptions () {
     wait
 }
 
+scrape_scrape_list () {
+  output_json_file=$2
+    ! [ -f "${YTFZF_SCRAPELIST_FILE}" ] && die 2 "scrape list file doesn't exist\n"
+
+	_start_series_of_threads
+    i=0
+    while IFS=' ' read -r _scr_type s; do
+      {
+        ytfzf_video_json_file="${session_temp_dir}/SL-$i.json.final" scrape_website "$_scr_type" "$s"
+        handle_scrape_error "$?"
+      } &
+      _thread_started "$!"
+      i=$((i+1))
+    done < "$YTFZF_SCRAPELIST_FILE"
+    wait
+	_concatinate_json_file "${session_temp_dir}/SL-" "$i" "$output_json_file"
+}
+
 scrape_youtube_channel () {
 	channel_url="$1"
 	output_json_file="$2"
-	tmp_filename="$3"
 	print_info "Scraping Youtube channel: $channel_url\n"
-	_tmp_html="${session_temp_dir}/${tmp_filename}.html"
-	_tmp_json="${session_temp_dir}/${tmp_filename}.json"
 
 	# Converting channel title page url to channel video url
 	case "$channel_url" in
@@ -593,6 +609,10 @@ scrape_youtube_channel () {
 	[ "$channel_id/videos" = "$channel_url" ] &&\
 		print_warning "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
 		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
+
+	tmp_filename="channel-${channel_id}"
+	_tmp_html="${session_temp_dir}/${tmp_filename}.html"
+	_tmp_json="${session_temp_dir}/${tmp_filename}.json"
 
 	_get_request "https://www.youtube.com/channel/${channel_id}/videos" > "$_tmp_html"
 	_youtube_get_json < "$_tmp_html" > "$_tmp_json"
@@ -821,7 +841,6 @@ scrape_invidious_trending () {
 scrape_invidious_channel () {
 	channel_url=$1
 	output_json_file=$2
-	tmp_file_name=$3
 	#default to one, because -cSI does not give a page count
 	page_num=${4:-1}
 
@@ -835,6 +854,9 @@ scrape_invidious_channel () {
 		print_warning "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
 		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
 
+	tmp_file_name="channel-${channel_id}"
+	_tmp_html="${session_temp_dir}/${tmp_file_name}.html"
+	_tmp_json="${session_temp_dir}/${tmp_file_name}.json"
 
 	#here because if scrape_invidious_channel is called more than once, i needs to be reset
 	_cur_page=1
@@ -1805,11 +1827,12 @@ scrape_website () {
 		invidious-playlist|youtube-playlist) scrape_invidious_playlist "$_search" "$ytfzf_video_json_file" ;;
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
 		playlist|p|json-file) scrape_json_file "$_search" "$ytfzf_video_json_file" ;;
-		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "channel-1" "$pages_to_scrape" ;;
-		youtube-channel) scrape_youtube_channel "$_search" "$ytfzf_video_json_file" "channel-1" ;;
+		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
+		youtube-channel) scrape_youtube_channel "$_search" "$ytfzf_video_json_file" ;;
 		youtube|Y) scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$pages_to_scrape" || return "$?" ;;
 		youtube-trending|T) scrape_invidious_trending  "$_search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S|SI) scrape_subscriptions "$scrape_type" "$ytfzf_video_json_file" ;;
+  scrape-list|SL) scrape_scrape_list "$_search" "$ytfzf_video_json_file" ;;
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
 		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
