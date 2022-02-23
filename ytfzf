@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1360.1ba1c22"
+YTFZF_VERSION="git-1360.1ccae75"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -431,20 +431,8 @@ usage () {
                                 see ytfzf(1) for more info.
         -n <video count>        The amount of videos to select with -a and -r
         -c <scraper>       	The scraper to use,
-              Builtin scrapers:
-                  youtube/Y, youtube-trending/T, youtube-subscriptions/S/SI,
-                  peertube/P, odysee/lbry/O,
-                  history/H,
-                  url/U,
-                  youtube-playlist
-                    instead of giving a search, give a link to a playlist
-                  youtube-channel
-                    instead of giving a search, give a link to a channel
-                  comments
-                    scrapes a comments json file produced by ytfzf
-                  * SI scrapes invidious for channels instead of youtube,
-                  * Y and T both scrape invidious
-              you can use multiple scrapers by separating each with a , eg: youtube,odysee
+                  See ytfzf(1) for a list of builtin scrapers
+                  you can use multiple scrapers by separating each with a , eg: youtube,odysee
         -H                      alias for -c H
         -t			Show thumbnails
         --thumb-viewer=viewer   The program to use for displaying thumbnails.
@@ -590,7 +578,12 @@ scrape_scrape_list () {
       } &
       _thread_started "$!"
       i=$((i+1))
-    done < "$YTFZF_SCRAPELIST_FILE"
+    done <<- EOF
+	$(sed \
+		-e "s/#.*//" \
+		-e "/^[[:space:]]*$/d" \
+		"$YTFZF_SCRAPELIST_FILE" )
+	EOF
     wait
 	_concatinate_json_file "${session_temp_dir}/SL-" "$i" "$output_json_file"
 }
@@ -1832,7 +1825,7 @@ scrape_website () {
 		youtube|Y) scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$pages_to_scrape" || return "$?" ;;
 		youtube-trending|T) scrape_invidious_trending  "$_search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S|SI) scrape_subscriptions "$scrape_type" "$ytfzf_video_json_file" ;;
-  scrape-list|SL) scrape_scrape_list "$_search" "$ytfzf_video_json_file" ;;
+        scrape-list|SL) scrape_scrape_list "$_search" "$ytfzf_video_json_file" ;;
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
 		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;

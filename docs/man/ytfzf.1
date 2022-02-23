@@ -347,6 +347,10 @@ Tabs:
 .I SI
 scrapes invidious for channels instead of youtube
 .TP
+.IR scrape\-list | SL
+uses your $YTFZF_SCRAPELIST_FILE as scrape and search input.
+See "scrape lists" ytfzf(5) for more information.
+.TP
 .IR peertube | P
 .TP
 .IR odysee | lbry | O
@@ -603,6 +607,11 @@ The defualt is
 The subscriptions file to use.
 The deafult is
 .I $YTFZF_CONFIG_DIR/subscriptions
+.TP
+.B $YTFZF_SCRAPELIST_FILE
+The scrapelist file to use.
+The default is
+.I $YTFZF_CONFIG_DIR/scrapelist
 .TP
 .B $YTFZF_THUMBNAIL_VIEWERS_DIR
 The directory to keep additional thumbnail viewers.
