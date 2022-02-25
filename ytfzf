@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1360.1ccae75"
+YTFZF_VERSION="git-1361.aa8b6be"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -109,7 +109,7 @@ clean_up () {
 	# clean up only as parent process
 	#kill ytfzf sub process{{{
 	#i think this needs to be written to a file becuase of sub-shells
-	jobs_file="${session_cache_dir:-${TMPDIR:-/tmp}}/the-jobs-need-to-be-written-to-a-file.list"
+	jobs_file="${TMPDIR:-/tmp}/the-jobs-need-to-be-written-to-a-file.list"
 	jobs -p > "$jobs_file"
 	while read -r line; do
 		[ "$line" ] && kill "$line" 2> /dev/null
