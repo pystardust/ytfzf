@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1361.aa8b6be"
+YTFZF_VERSION="git-1362.8da1aca"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1542,7 +1542,7 @@ open_url_handler () {
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
-	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" | "$url_handler" "$@"
+	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" | session_temp_dir="${session_temp_dir}" session_cache_dir="${session_cache_dir}" "$url_handler" "$@"
 }
 
 get_video_format_simple () {
