@@ -1,4 +1,4 @@
-PROG=ytfzf1
+PROG=ytfzf12
 PREFIX=/usr/local
 BINDIR=${PREFIX}/bin
 DOCDIR=${PREFIX}/share/doc/ytfzf
