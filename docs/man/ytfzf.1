@@ -104,7 +104,7 @@ The available options are:
 .RS
 .TP
 .IR L | l | link
-Print the URL of the selected videos.
+Prints the URL of the selected videos.
 .TP
 .IR VJ | vj | video\-json
 Prints the json of the selected videos.
@@ -186,7 +186,7 @@ This can also be changed in the config file with
 .BR \-\-thumb\-viewer=program
 Use program for displaying thumbnails.
 .br
-Bulitin programs:
+Built-in programs:
 .RS
 .TP
 .IR chafa, chafa-16, chafa-tty
@@ -270,16 +270,16 @@ Auto selecting
 .RS
 .TP
 .BR \-a ", " \-\-auto\-select
-Auto\-play the first result,
+Auto\-play the first result.
 .TP
 .BR \-A ", " \-\-select\-all
 Select all results.
 .TP
 .BR \-r ", " \-\-random\-select
-Auto\-play a random result,
+Auto\-play a random result.
 .TP
 .BR \-S " \fIsed address\fR" ", " "\-\-select=\fIsed address\fR"
-Auto\-play a specifc video.
+Auto\-play a specific video.
 .PP
 .RS
 Examples:
@@ -308,7 +308,7 @@ Scrapers
 .TP
 .BI \-c " scrapers" ", " "\-\-scrape=scrapers"
 Set which scraper to use.
-Multiple scrapers can be separated by ,
+Multiple scrapers can be separated by comma (,).
 The currently supported builtin scrapers are:
 .RS
 .TP
@@ -381,7 +381,7 @@ Whether or not to use multi search.
 .br
 To use multi search, seperate each search with a comma, this works well when using multiple scrapers.
 .br
-This can a lso be set in the config file with
+This can also be set in the config file with
 .BR multi_search .
 .TP
 .B \-\-force\-youtube
@@ -435,9 +435,9 @@ This can also be set in the config file with
 .BI "\-\-sort\-by=sort"
 Works with youtube/Y and odysee/O.
 .br
-To use a different sort for each scrape, use a "," to separate the sorts.
+To use a different sort for each scrape, use comma (,) to separate the sorts.
 .br
-As apposed to \-\-sort, this happens during the serach, not after.
+As apposed to \-\-sort, this happens during the search, not after.
 Results should sort by:
 .RS
 .TP
@@ -453,9 +453,9 @@ Results should sort by:
 .RE
 .TP
 .BI "\-\-upload\-date=time\-frame"
-Works with, youtube/Y and odysee/O
+Works with youtube/Y and odysee/O
 .br
-To use a different sort for each scrape, use a "," to separate the dates.
+To use a different sort for each scrape, use comma (,) to separate the dates.
 .br
 Search for videos within the last:
 .RS
@@ -547,7 +547,7 @@ The features to have on a video (comma separated).
 .BI "\-\-region"
 The region (country code) to search.
 .br
-Supported by the scrapes youtube/Y, and youtube-trending/T
+Supported by the scrapes youtube/Y and youtube-trending/T
 .RE
 
 .PP
@@ -559,7 +559,7 @@ Converts channel links from 'https://youtube.com/c/name' to 'https://youtube.com
 .TP
 .BR \-q
 Use search history instead of a search.
-Thsi can also be set in the config file with
+This can also be set in the config file with
 .BR use_search_hist .
 .TP
 .BR \-x ", " \-\-history\-clear=<search|watch>
@@ -664,7 +664,7 @@ Watch history (if $enable_hist is 1)
 
 .SH CACHE
 .PP
-Each instance of ytfzf has it's own directory in $cache_dir.
+Each instance of ytfzf has its own directory in $cache_dir.
 .br
 The structure of $cache_dir looks like this: (<> represents a placeholder, ? means optional)
 .RS
@@ -695,13 +695,13 @@ The watch history file.
 .IR <search>\-<pid>
 An instance's parent folder.
 .br
-If no search was given, it instead uses the name "SCRAPE\-<scrape>\-<pid>"
+If no search was given it uses the name "SCRAPE\-<scrape>\-<pid>" instead.
 .TP
 .IR post-scrape
 A folder that contains files relating to the scraping of a selected result.
 .TP
 .IR <submenu\-search>\-<submenu\-pid>
-Created when a submenu is opened (eg: when a channel/playlist is selected)
+Created when a submenu is opened (eg: when a channel/playlist is selected).
 .TP
 .IR submenu
 The folder to hold information about the submenu, all subitems are the same as the parent equivelent.
@@ -722,7 +722,7 @@ For scrapers that need to scrape websites, this is the output of curl.
 The json scraped from a website.
 .TP
 .IR menu_keypress
-The key pressed in fzf
+The key pressed in fzf.
 .TP
 .IR submenu.json
 A temp json file used to store the video_json of links to be put into the submenu.
@@ -755,7 +755,7 @@ Report bugs on github
 you can redistribute it and/or modify it under the terms of the
 \fIGNU General Public License version 3\fR as published by the Free Software Foundation.
 .PP
-\fBytfzf\fR is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY;
+\fBytfzf\fR is distributed in the hope that it will be useful but WITHOUT ANY WARRANTY;
 without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU General Public License for more details.
 .PP

@@ -36,7 +36,7 @@ ytfzf --channel-link="https://www.youtube.com/c/SomeOrdinaryGamers"
 .br
 Before adding it to your subscriptions file
 .PP
-A comment can be created by having '#comment' on it's own line or after a link.
+A comment can be created by having '#comment' on its own line or after a link.
 For example:
 .RS
 .EX
@@ -142,12 +142,12 @@ Whether or not to only play audio.
 .RB $ url_handler
 The function/programs to handle the selected videos
 .br
-See URL handlers for a list of builtin url handlers
+See URL handlers for a list of built-in url handlers
 .IR default: " multimedia_player"
 
 .TP
 .RB $ yt_video_link_domain
-The domain to play youtube videos from (does not apply to odysee and peertube, or youtube playlists)
+The domain to play youtube videos from (does not apply to odysee and peertube or youtube playlists)
 .br
 .IR default: " $invidious_instance"
 
@@ -316,7 +316,7 @@ Whether or not to bring up the format selection menu.
 
 .TP
 .RB $ format_selection_screen
-The format selection screen to use.
+The format that selection screen will use.
 Types:
 .RS
 .IR simple
@@ -486,7 +486,7 @@ The shortcut to get all info about the selected video.
 
 .TP
 .RB $ search_again_shortcut
-The shortcut to make another search
+The shortcut to make another search.
 .br
 .IR default: " alt-s"
 
@@ -652,7 +652,7 @@ Whether or not to search for nsfw videos in odysee/O.
 
 .TP
 .RB $ search_result_features
-The features to have on a video (comma seperated).
+The features to have on a video (comma separated).
 .RS
 .TP
 .IR hd
@@ -999,7 +999,7 @@ This function takes 1 argument, and takes input from stdin
 .br
 1: The prompt to use.
 .br
-stdin: the items to chose from (separated by new lines)
+stdin: the items to choose from (separated by new lines)
 
 .TP
 .BR quick_menu_ext ()
@@ -1011,19 +1011,19 @@ This function takes 1 argument, and takes input from stdin
 .br
 1: The prompt to use.
 .br
-stdin: the items to chose from (separated by new lines)
+stdin: the items to choose from (separated by new lines)
 
 .TP
 .BR quick_menu_scripting ()
 This function should do the same thing as quick_menu()
 .br
-This funtion is caleld when quick_menu() would be called, but when \-a, \-r, or \-A is enabled.
+This funtion is called when quick_menu() would be called, but when \-a, \-r, or \-A is enabled.
 .br
 This function takes 1 argument, and takes input from stdin
 .br
 1: The prompt to use.
 .br
-stdin: the items to chose from (separated by new lines)
+stdin: the items to choose from (separated by new lines)
 
 .RE
 
@@ -1041,7 +1041,7 @@ and
 .PP
 Modifier variables will be piped into a URL handler to allow for URL handlers to be written in any language.
 .br
-They will be piped in the order shown above seperated by spaces.
+They will be piped in the order shown above separated by spaces.
 
 .TP
 .BR multimedia_player ()
@@ -1079,7 +1079,7 @@ A custom format selection screen
 .br
 This function should print the final ytdl format to use.
 .br
-This function takes all urls as seperate arguments.
+This function takes all urls as separate arguments.
 
 .RE
 
@@ -1200,7 +1200,7 @@ This function takes 2 arguments:
 
 .TP
 .BR on_search_<search_query> ()
-This function gets called each time a website is scraped, if the current search matches <search_query>.
+This function gets called each time a website is scraped if the current search matches <search_query>.
 .br
 This function takes 1 argument.
 .RS
@@ -1217,7 +1217,7 @@ This function takes no arguments.
 
 .TP
 .BR handle_custom_keypresses ()
-This function gets called in the internal handle_keypress() function, This function should return 0 to not override the default handle_keypress() function.
+This function gets called in the internal handle_keypress() function. This function should return 0 to not override the default handle_keypress() function.
 .br
 This function takes 1 argument:
 .EX
@@ -1240,7 +1240,7 @@ The name of this function should replace the "*" with the name of the shortcut, 
 .br
 in addition replace any "\-" with "_".
 .br
-This function is called after handle_custom_keypresses() if it returned 0, and the shortcut is not a builtin shortcut.
+This function is called after handle_custom_keypresses() if it returned 0, and the shortcut is not a built-in shortcut.
 .br
 This function takes 0 arguments.
 
@@ -1250,7 +1250,7 @@ The name of this function should replace the "*" with the name of the shortcut, 
 .br
 in addition replace any "\-" with "_".
 .br
-This function is called after handle_custom_post_keypresses() if it returned 0, and the shortcut is not a builtin shortcut.
+This function is called after handle_custom_post_keypresses() if it returned 0, and the shortcut is not a built-in shortcut.
 .br
 this function takes 0 arguments.
 

@@ -13,7 +13,7 @@ YTFZF_VERSION="git-1367.dbca920"
 # 1: general error
 # 2: invalid -opt or command argument, invalid argument for opt, configuration error
 	# eg: ytfzf -c terminal (invalid scrape)
-# 3: missing dependancy
+# 3: missing dependency
 # 4: scraping error
 # 5: empty search
 
@@ -108,7 +108,7 @@ clean_up () {
 	# print_info "cleaning up\n"
 	# clean up only as parent process
 	#kill ytfzf sub process{{{
-	#i think this needs to be written to a file becuase of sub-shells
+	#i think this needs to be written to a file because of sub-shells
 	jobs_file="${TMPDIR:-/tmp}/the-jobs-need-to-be-written-to-a-file.list"
 	jobs -p > "$jobs_file"
 	while read -r line; do
@@ -432,7 +432,7 @@ usage () {
         -n <video count>        The amount of videos to select with -a and -r
         -c <scraper>       	The scraper to use,
                   See ytfzf(1) for a list of builtin scrapers
-                  you can use multiple scrapers by separating each with a , eg: youtube,odysee
+                  you can use multiple scrapers by separating each with a comma, eg: youtube,odysee
         -H                      alias for -c H
         -t			Show thumbnails
         --thumb-viewer=viewer   The program to use for displaying thumbnails.
