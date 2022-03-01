@@ -1227,6 +1227,14 @@ This function takes 1 argument:
 .EE
 
 .TP
+.BR handle_custom_post_keypresses ()
+This function gets called in the internal handle_post_keypress() function, this function should return 0 to not override the default handle_post_keypress() function.
+.br
+The job of this function is to undo the changes of the last keypress.
+.br
+This function takes no arguments, it must get the keypress from $keypress_file
+
+.TP
 .BR handle_keypress_* ()
 The name of this function should replace the "*" with the name of the shortcut, eg: \fIalt_d\fR
 .br
@@ -1235,6 +1243,16 @@ in addition replace any "\-" with "_".
 This function is called after handle_custom_keypresses() if it returned 0, and the shortcut is not a builtin shortcut.
 .br
 This function takes 0 arguments.
+
+.TP
+.BR handle_post_keypress_* ()
+The name of this function should replace the "*" with the name of the shortcut, eg: \fIalt_d\fR
+.br
+in addition replace any "\-" with "_".
+.br
+This function is called after handle_custom_post_keypresses() if it returned 0, and the shortcut is not a builtin shortcut.
+.br
+this function takes 0 arguments.
 
 .TP
 .BR handle_custom_action ()

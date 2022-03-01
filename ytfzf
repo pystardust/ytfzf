@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1362.8da1aca"
+YTFZF_VERSION="git-1367.dbca920"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1099,17 +1099,38 @@ set_keypress () {
 	unset keypress
 }
 
+handle_post_keypress () {
+    read -r keypress < "$keypress_file"
+	command_exists "handle_custom_post_keypresses" && { handle_custom_post_keypresses "$keypress" || return "$?"; }
+	case "$keypress" in
+		$download_shortcut|$video_shortcut|$audio_shortcut) url_handler=$_last_url_handler ;;
+		$detach_shortcut) is_detach=0 ;;
+		$print_link_shortcut|$info_shortcut) info_to_print="$_last_info_to_print" ;;
+		$show_formats_shortcut) show_formats=0 ;;
+		$next_page_shortcut) : ;;
+		$search_again_shortcut) : ;;
+		*)
+			_fn_name=handle_post_keypress_$(sed 's/-/_/g' <<-EOF
+							$keypress
+						EOF
+						)
+			command_exists "$_fn_name" && $_fn_name ;;
+	esac
+	unset keypress
+
+}
+
 handle_keypress () {
 	keypress="$1"
 	command_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
 	case "$keypress" in
-		$download_shortcut) url_handler=downloader ;;
-		$video_shortcut) url_handler=video_player ;;
-		$audio_shortcut) url_handler=audio_player ;;
+		$download_shortcut) _last_url_handler=$url_handler; url_handler=downloader ;;
+		$video_shortcut) _last_url_handler=$url_handler; url_handler=video_player ;;
+		$audio_shortcut) _last_url_handler=$url_handler; url_handler=audio_player ;;
 		$detach_shortcut) is_detach=1 ;;
-		$print_link_shortcut) info_to_print="L" ;;
+		$print_link_shortcut) _last_info_to_print="$info_to_print"; info_to_print="L" ;;
 		$show_formats_shortcut) show_formats=1 ;;
-		$info_shortcut) info_to_print="VJ" ;;
+		$info_shortcut) _last_info_to_print="$info_to_print"; $info_to_print="VJ" ;;
 		$next_page_shortcut) 
 			read -r url < "$selected_id_file"
 			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
@@ -1176,6 +1197,8 @@ interface_scripting () {
 # Text interface {{{
 interface_text () {
 	command_exists "fzf" || die 3 "fzf not installed, cannot use the default menu\n"
+    #if it doesn't exist, this menu has not opened yet, no need to revert the actions of the last keypress
+    [ -f "$keypress_file" ] && handle_post_keypress
 	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
 	video_json_file=$1
 	selected_id_file=$2
