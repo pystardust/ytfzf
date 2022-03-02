@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1367.dbca920"
+YTFZF_VERSION="git-1369.5e732a3"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -835,7 +835,7 @@ scrape_invidious_channel () {
 	channel_url=$1
 	output_json_file=$2
 	#default to one, because -cSI does not give a page count
-	page_num=${4:-1}
+	page_num=${3:-1}
 
 	# Converting channel title page url to channel video url
 	case "$channel_url" in
