@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1369.5e732a3"
+YTFZF_VERSION="git-1370.20f9ff2"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -445,7 +445,7 @@ usage () {
                   J:         print the json of all videos shown in the search
                   R:         print the data of the selected videos, as appears in the menu
                   F:         print the selected video format
-              -x                       Clear search and watch history (use --history-clear=<search|watch> to specify 1)
+        -x                       Clear search and watch history (use --history-clear=<search|watch> to specify 1)
         --disable-submenus       Whether or not to disable submenus, which are menus for things like playlists and channels
         --version                Get the current version
 
@@ -1966,4 +1966,4 @@ while [ $search_again -eq 1 ] ; do
 done
 #}}}
 
-# vim:foldmethod=marker
+# vim:foldmethod=marker:shiftwidth=4:tabstop=4
