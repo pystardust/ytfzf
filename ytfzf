@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1372.a9b0f29"
+YTFZF_VERSION="git-1372.d1a839a"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -183,7 +183,6 @@ done
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
 : "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
-: "${YTFZF_SCRAPELIST_FILE:=$YTFZF_CONFIG_DIR/scrapelist}"
 : "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
 : "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
 : "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
@@ -563,29 +562,6 @@ scrape_subscriptions () {
 		"$YTFZF_SUBSCRIPTIONS_FILE" )
 	EOF
     wait
-}
-
-scrape_scrape_list () {
-  output_json_file=$2
-    ! [ -f "${YTFZF_SCRAPELIST_FILE}" ] && die 2 "scrape list file doesn't exist\n"
-
-	_start_series_of_threads
-    i=0
-    while IFS=' ' read -r _scr_type s; do
-      {
-        ytfzf_video_json_file="${session_temp_dir}/SL-$i.json.final" scrape_website "$_scr_type" "$s"
-        handle_scrape_error "$?"
-      } &
-      _thread_started "$!"
-      i=$((i+1))
-    done <<- EOF
-	$(sed \
-		-e "s/#.*//" \
-		-e "/^[[:space:]]*$/d" \
-		"$YTFZF_SCRAPELIST_FILE" )
-	EOF
-    wait
-	_concatinate_json_file "${session_temp_dir}/SL-" "$i" "$output_json_file"
 }
 
 scrape_youtube_channel () {
@@ -1848,7 +1824,6 @@ scrape_website () {
 		youtube|Y) scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$pages_to_scrape" || return "$?" ;;
 		youtube-trending|T) scrape_invidious_trending  "$_search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S|SI) scrape_subscriptions "$scrape_type" "$ytfzf_video_json_file" ;;
-        scrape-list|SL) scrape_scrape_list "$_search" "$ytfzf_video_json_file" ;;
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
 		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
