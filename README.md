@@ -107,6 +107,8 @@ To use a url-handler addon run `ytfzf --url-handler=<handler> ...`
 
 To use a sort-name addon run `ytfzf --sort-name=<sort-name> ...`
 
+To use an extension addon run `ytfzf --ext=<extension> ...`
+
 ---
 
 # Features
