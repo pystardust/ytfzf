@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+print_info () {
+	[ $log_level -ge 2 ] && notify-send -c ytfzf-info "$1"
+}
+print_warning () {
+	[ $log_level -ge 1 ] && notify-send -c ytfzf-warning "$1"
+}
+print_error () {
+	[ $log_level -ge 0 ] && notify-send -c ytfzf-error "$1"
+}

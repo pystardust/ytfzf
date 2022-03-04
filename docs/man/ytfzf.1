@@ -392,12 +392,6 @@ Scraper Options
 .PP
 Currently, \-\-video\-duration, \-\-type, \-\-thumbnail\-quality, and \-\-features only applies to the scrape: youtube/Y
 .TP
-.BR \-D ", " \-\-external\-menu
-Use an external menu instead of fzf.
-The default is \fIdmenu\fR.
-This can also be set in the config file with
-.BR is_ext_menu .
-.TP
 .BI "\-\-pages=amount"
 Amount of pages to scrape on youtube/invidious, and the comments scraper.
 This can also be set in the config file with
@@ -582,6 +576,13 @@ Specify the path to youtube\-dl or a fork of youtube\-dl for downloading.
 .br
 This can also be set in the config file with
 .BR ytdl_path .
+.TP
+.BI \-\-ext=extension
+Load an extension.
+.br
+You may also add
+.I "load_extension extension"
+to your config file.
 .RE
 
 .SH CONFIGURATION
@@ -640,6 +641,15 @@ The directory to store custom thumbnails
 the default is
 .I $YTFZF_CONFIG_DIR/thumbnails
 .TP
+.B $YTFZF_EXTENSIONS_DIR
+The directory to store extensions
+the default is
+.I $YTFZF_CONFIG_DIR/extensions
+.TP
+.TP
+.B $YTFZF_SYSTEM_ADDON_DIR
+The directory to store system installed addons.
+The default may vary depending on how you installed ytfzf.
 .B $cache_dir
 The directory to store cache
 the default is

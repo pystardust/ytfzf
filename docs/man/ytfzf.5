@@ -1462,3 +1462,15 @@ side of the terminal to display the image (x, y, width, height already account f
 .br
 this will be either \fIup\fR \fIdown\fR \fIleft\fR \fIright\fR
 .RE
+
+.SH EXTENSIONS
+.PP
+Extensions are essentially extra config files that you can load in your own config file.
+.PP
+Extensions should either be in $YTFZF_EXTENSIONS_DIR or $YTFZF_SYSTEM_ADDON_DIR/extensions
+.PP
+An extension can do anything a config file can, this includes modifying the default utility functions in ytfzf (which could break the script)
+.PP
+To load an extension add
+.I "load_extension name-of-extension"
+to $YTFZF_CONFIG_FILE
