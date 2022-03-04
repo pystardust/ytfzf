@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1376.12f31ca"
+YTFZF_VERSION="git-1378.390d450"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -25,6 +25,7 @@ c_blue="\033[1;34m"
 c_magenta="\033[1;35m"
 c_cyan="\033[1;36m"
 c_reset="\033[0m"
+c_bold="\033[1m"
 #}}}
 
 # debugging
@@ -1170,7 +1171,7 @@ handle_keypress () {
 
 
 command_exists "thumbnail_video_info_text_comments" || thumbnail_video_info_text_comments () {
-	[ -n "$title" ] && printf "\033[1m%s\n\033[0m" "$title"
+	[ -n "$title" ] && printf "${c_bold}%s\n${c_reset}" "$title"
 	[ -n "$description" ] && printf "\n%s" "$description"
 }
 # Scripting interfaces {{{
@@ -1696,6 +1697,20 @@ parse_opt () {
         format-selection) format_selection_screen=${optarg:-quality};;
         format-sort) format_selection_sort="$optarg" ;;
         ext) load_extension "$optarg" ;;
+        list-addons) 
+            for path in "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_SORT_NAMES_DIR"\
+                "$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_EXTENSIONS_DIR"; do
+                ! [ -d "$path" ] && continue
+                printf "${c_bold}%s:${c_reset}\n" "user addon, ${path##*/}"
+                ls "$path"
+            done
+            echo ----------------
+            for path in $(ls -1 $YTFZF_SYSTEM_ADDON_DIR); do
+                printf "${c_bold}%s:${c_reset}\n" "system addon, ${path##*/}"
+                ls "$YTFZF_SYSTEM_ADDON_DIR/$path"
+            done
+            exit
+            ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
