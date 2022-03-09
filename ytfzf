@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1378.3cb67a5"
+YTFZF_VERSION="git-1379.ad7b5a6"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1375,9 +1375,9 @@ preview_display_image () {
 	thumb_path="${thumb_dir}/${id}.jpg"
 	[ -f "${thumb_path}" ] || thumb_path="${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg"
 	[ -f "${thumb_path}" ] || preview_no_img "$thumbnail_viewer"
+    get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 	case $thumbnail_viewer in
 		ueberzug)
-			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 			command_exists "ueberzug" || die 3 "ueberzug is not installed\n"
 			printf '%s\t' \
 				'action' 'add' \
@@ -1393,35 +1393,34 @@ preview_display_image () {
 		chafa)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_path" ;;
+            chafa -s "$((width-4))x$height" "$thumb_path" ;;
 		chafa-16)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -c 240 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_path" ;;
+			chafa -c 240 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
 		chafa-tty)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -c 16 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_path" ;;
+			chafa -c 16 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
 		catimg)
 			printf '\n'
 			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
-			catimg -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_path" ;;
+			catimg -w $width "$thumb_path" ;;
 		catimg-256)
 			printf '\n'
 			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
-			catimg -c -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_path" ;;
+			catimg -c -w $width "$thumb_path" ;;
 		w3m)
 			while true; do
-				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_path" 3 | $w3mimgdisplay_path
+				printf "%b\n%s;\n" "0;1;10;130;$((width*5));$((width*3));;;;;$thumb_path" 3 | $w3mimgdisplay_path
 			done ;;
 		imv) 
 			imv-msg "$imv_pid" open "$thumb_path"
 			imv-msg "$imv_pid" next
 			;;
-    kitty)
-			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
-      kitty +kitten icat --clear --transfer-mode file
-      kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" ;;
+        kitty)
+            kitty +kitten icat --clear --transfer-mode file
+            kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" ;;
 		*) 
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 			"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
