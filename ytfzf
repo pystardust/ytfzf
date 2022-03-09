@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1378.390d450"
+YTFZF_VERSION="git-1378.3cb67a5"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1255,7 +1255,7 @@ get_missing_thumbnails () {
 	ids="$(jq -r '.[]|select(.thumbs!=null)|.thumbs + ";" + .ID' < "$video_json_file")"
 	ls -1 "$thumb_dir" | sed 's/\..*//' | sort > "$_downloaded_ids_file"
 
-	missing_ids="$(diff "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^> //p')"
+	missing_ids="$(diff -u "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^+//p' | sed '1d')"
 
 	set -f
 	set -- $missing_ids
