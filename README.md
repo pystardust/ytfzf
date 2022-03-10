@@ -85,6 +85,10 @@ sudo make install doc
 
 * If you wish to not install documentation (highly unrecommended) run `sudo make install` instead.
 
+* If you wish to install addons, run `sudo make addons`
+    * `YTFZF_SYSTEM_ADDONS_DIR` will point to `/usr/local/share/ytfzf/addons` even if you set `PREFIX` to something else
+    * If you use a different prefix, it would be smart to export `YTFZF_SYSTEM_ADDONS_DIR` to `$PREFIX/share/ytfzf/addons` in a shell startup file.
+
 * You may also install `ytfzf` through your package manager, as listed on the side.
 
 ## Addons
