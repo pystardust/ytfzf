@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1379.ad7b5a6"
+YTFZF_VERSION="git-1380.ee077a5"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -32,9 +32,7 @@ c_bold="\033[1m"
 : ${log_level:=2}
 
 #state variables
-: "${__is_submenu:=0}"
-: "${__is_scrape_for_submenu:=0}"
-: "${__is_fzf_preview:=0}"
+: "${__is_submenu:=0}" "${__is_scrape_for_submenu:=0}" "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
 
@@ -262,7 +260,6 @@ for dep in jq curl; do
 done
 #}}}
 
-
 #configuration handling {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
@@ -287,49 +284,29 @@ done
 
 # menu options
 
-: ${enable_submenus:=1}
-
-: ${submenu_opts=}
-: ${submenu_scraping_opts=}
+: ${enable_submenus:=1} ${submenu_opts=} ${submenu_scraping_opts=} "${enable_back_button:=1}"
 
 : ${interface=}
 
-: ${fancy_subs:=0}
-: "${fancy_subs_left=-------------}"
-: "${fancy_subs_right="${fancy_subs_left}"}"
+: ${fancy_subs:=0} "${fancy_subs_left=-------------}" "${fancy_subs_right="${fancy_subs_left}"}"
 
-: "${enable_back_button:=1}"
-
-: "${fzf_preview_side:=left}"
-
-: "${thumbnail_viewer:=ueberzug}"
+: "${fzf_preview_side:=left}" "${thumbnail_viewer:=ueberzug}"
 
 : "${w3mimgdisplay_path:=/usr/lib/w3m/w3mimgdisplay}"
 
 # shortcuts
-: "${download_shortcut:=alt-d}"
-: "${video_shortcut:=alt-v}"
-: "${audio_shortcut:=alt-m}"
-: "${detach_shortcut:=alt-e}"
-: "${print_link_shortcut:=alt-l}"
-: "${show_formats_shortcut:=alt-f}"
-: "${info_shortcut:=alt-i}"
-: "${search_again_shortcut:=alt-s}"
-: "${next_page_shortcut:=alt-p}"
-
+: "${download_shortcut:=alt-d}" "${video_shortcut:=alt-v}" "${audio_shortcut:=alt-m}" "${detach_shortcut:=alt-e}" "${print_link_shortcut:=alt-l}" "${show_formats_shortcut:=alt-f}" "${info_shortcut:=alt-i}" "${search_again_shortcut:=alt-s}" "${next_page_shortcut:=alt-p}"
 : "${custom_shortcut_binds=}"
 : "${shortcut_binds:=Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}}"
 
-#number of columns (characters on a line) the external menu can have
-: ${external_menu_len:=210}
+#interface design
+: ${show_thumbnails:=0} ${is_sort:=0} ${skip_thumb_download:=0} ${external_menu_len:=210}
 
-: ${is_loop:=0}
-: ${search_again:=0}
+: ${is_loop:=0} ${search_again:=0}
 
 # Notifications
 
 : ${notify_playing:=0}
-
 
 # urlhandlers
 #job of url handlers is:
@@ -369,41 +346,25 @@ command_exists "downloader" || downloader () {
 [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
 
 # directories
-: "${cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf}"
-
-: "${keep_cache:=0}"
+: "${cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf}" "${keep_cache:=0}"
 
 # files
-: "${hist_file:=$cache_dir/watch_hist}"
-: "${search_hist_file:=$cache_dir/search_hist}"
+: "${hist_file:=$cache_dir/watch_hist}" "${search_hist_file:=$cache_dir/search_hist}"
 
 # history
-: ${enable_hist:=1}
-: ${enable_search_hist:=1}
+: ${enable_hist:=1} ${enable_search_hist:=1}
 : ${use_search_hist:=0}
 
 # format options
 #variable for switching on sort (date)
-: ${is_detach:=0}
-: ${is_audio_only:=0}
+: ${is_detach:=0} ${is_audio_only:=0}
 : "${url_handler:=multimedia_player}"
-: ${info_to_print=}
-: ${info_wait_action=q}
-: "${info_wait:=0}"
-: "${video_pref:=bestvideo}"
-: "${audio_pref:=bestaudio}"
-: ${show_formats:=0}
-: "${format_selection_screen:=normal}"
-: "${format_selection_sort:=height}"
-
-: ${is_sort:=0}
-: ${show_thumbnails:=0}
-: ${skip_thumb_download:=0}
+: ${info_to_print=} "${info_wait:=0}" ${info_wait_action=q}
+: "${video_pref:=bestvideo}" "${audio_pref:=bestaudio}"
+: ${show_formats:=0} "${format_selection_screen:=normal}" "${format_selection_sort:=height}"
 
 : ${scripting_video_count:=1}
-: ${is_random_select:=0}
-: ${is_auto_select:=0}
-: ${is_specific_select:=0}
+: ${is_random_select:=0} ${is_auto_select:=0} ${is_specific_select:=0}
 
 # option parsing
 : "${long_opt_char:=-}"
@@ -413,24 +374,13 @@ command_exists "downloader" || downloader () {
 #this comes from invidious' api
 : "${thumbnail_quality=high}"
 : ${sub_link_count:=2}
-: "${invidious_instance:=https://vid.puffyan.us}"
-: "${yt_video_link_domain:=https://youtube.com}"
-: ${pages_to_scrape:=1}
-: ${odysee_video_search_count:=30}
-
-: "${search_sort_by:=relevance}"
-: "${search_upload_date=}"
-: "${search_video_duration=}"
-: "${search_result_type:=video}"
-: "${search_result_features=}"
-: "${search_region:=US}"
+: "${invidious_instance:=https://vid.puffyan.us}" "${yt_video_link_domain:=https://youtube.com}"
+: "${search_sort_by:=relevance}" "${search_upload_date=}" "${search_video_duration=}" "${search_result_type:=video}" "${search_result_features=}" "${search_region:=US}" ${pages_to_scrape:=1}
+: "${nsfw:=false}" ${odysee_video_search_count:=30}
 
 : "${multi_search:=0}"
 
-: "${nsfw:=false}"
-
-: "${custom_scrape_search_exclude=}"
-: "${scrape_search_exclude:= youtube-subscriptions S SI SL T youtube-trending H history ${custom_scrape_search_exclude} }"
+: "${custom_scrape_search_exclude=}" "${scrape_search_exclude:= youtube-subscriptions S SI SL T youtube-trending H history ${custom_scrape_search_exclude} }"
 
 : ${max_thread_count:=20}
 
