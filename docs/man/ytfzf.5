@@ -1184,6 +1184,17 @@ The raw optarg
 .RE
 
 .TP
+.BR on_post_set_vars () 
+This fnction gets called after all vars are set, and all opts are parsed.
+.br
+This function takes no arguments.
+
+.TP
+.BR on_post_set_vars_<ext_name> ()
+Replace ext_name with the name of an extension (with - replaced with _).
+This function is the same as \fBon_post_set_vars\fR
+
+.TP
 .BR on_search ()
 This function gets called each time a website is scraped.
 .br

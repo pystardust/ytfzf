@@ -1,0 +1,16 @@
+auto_play_handler () {
+    _url="$1"
+	case "$is_audio_only" in
+		0) video_player "$@" ;;
+		1) audio_player "$@" ;;
+	esac
+    case "$_url" in
+        */*) id="${_url##*=}" ;;
+        *) id="$_url" ;;
+    esac
+    ytfzf --ext=auto-play -a -cR "$id"
+}
+
+on_post_set_vars_auto_play () {
+    url_handler=auto_play_handler
+}

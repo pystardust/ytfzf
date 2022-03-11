@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1383.3d4a031"
+YTFZF_VERSION="git-1384.0a00095"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -35,6 +35,16 @@ c_bold="\033[1m"
 : "${__is_submenu:=0}" "${__is_scrape_for_submenu:=0}" "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
+
+do_an_event_function () {
+    event="$1"
+    shift
+    command_exists "$event" && $event "$@"
+    for ext in $loaded_extensions; do
+        command_exists "${event}_$ext" && ${event}_$ext "$@"
+    done
+}
+
 
 # Takes video json file as $1 and returns the selected video IDs to file $2
 video_info_text () {
@@ -140,7 +150,7 @@ clean_up () {
 	if [ $__is_fzf_preview -eq 0 ]; then
 		[ -d "$session_cache_dir" ] && [ $keep_cache -eq 0 ] && rm -r "$session_cache_dir"
 	fi
-	command_exists  "on_clean_up" && on_clean_up
+    do_an_event_function on_clean_up
 }
 
 is_relative_dir () {
@@ -232,6 +242,8 @@ quick_menu_wrapper () {
 
 load_extension () {
     ext=$1
+    loaded_extensions="$loaded_extensions $(printf "%s" "$ext" | sed 's/[ -]/_/g')"
+    loaded_extensions="${loaded_extensions# }"
     if [ -f "${YTFZF_EXTENSIONS_DIR}/${ext}" ]; then
         . "${YTFZF_EXTENSIONS_DIR}/${ext}"
     elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/extensions/${ext}" ]; then
@@ -1723,6 +1735,8 @@ done
 shift $((OPTIND-1))
 #}}}
 
+do_an_event_function "on_post_set_vars"
+
 #Post opt scrape{{{
 source_scrapers
 : "${ytdl_pref:=$video_pref+$audio_pref/$video_pref/$audio_pref}"
@@ -1875,7 +1889,7 @@ handle_scraping (){
 		__scrape_count=$((__scrape_count+1))
 		manage_multi_filters
 		[ $multi_search -eq 1 ] && _search="$(next_search)"
-		command_exists "on_search" && on_search "$_search" "$curr_scrape"
+        do_an_event_function "on_search" && on_search "$_search" "$curr_scrape"
 		command_exists "on_search_$_search" && on_search_$_search "$curr_scrape"
 		scrape_website "$curr_scrape" "$_search"
 		handle_scrape_error "$?"
