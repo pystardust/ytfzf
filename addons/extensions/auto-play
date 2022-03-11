@@ -1,16 +1,28 @@
 auto_play_handler () {
     _url="$1"
-	case "$is_audio_only" in
-		0) video_player "$@" ;;
-		1) audio_player "$@" ;;
-	esac
+    multimedia_player "$@"
     case "$_url" in
         */*) id="${_url##*=}" ;;
         *) id="$_url" ;;
     esac
-    ytfzf --ext=auto-play -a -cR "$id"
+    ytfzf --ext=auto-play --auto-play-opts="$auto_play_opts" -cR $auto_play_opts "$id"
+}
+
+on_opt_parse_auto_play_help () {
+    print_info "
+Usage: ytfzf --ext=auto-play <search>
+    Options:
+        --auto-play-opts:                 opts to use for auto play, default: -a
+"
+    exit 0
+}
+
+on_opt_parse_auto_play_opts () {
+    auto_play_opts="$1"
+    return 1
 }
 
 on_post_set_vars_auto_play () {
+    : "${auto_play_opts:=-a}"
     url_handler=auto_play_handler
 }
