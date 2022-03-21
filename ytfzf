@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1388.e085c69"
+YTFZF_VERSION="git-1388.71c7f18"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
