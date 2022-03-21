@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1388.71c7f18"
+YTFZF_VERSION="git-1389.0fb4a76"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -90,18 +90,24 @@ source_scrapers () {
 add_commas () {
 	awk '
 		{
-			for(i=length($1); i>0; i--){
-				if(i % 3 == 0 && i != length($1)){
-					printf ","
+            for(i=0; i<length($1); i++){
+				if(i % 3 == 0 && i!=0){
+                    printf ","
 				}
-				printf substr($1, length($1) - i, 1)
+                printf "%s", substr($1, length($1) - i, 1)
 			}
 		}
 
 		END{
-			#print a new line
-			print ""
-		}'
+            print ""
+		}' |
+        awk '
+            {
+                for (i=length($1); i>0; i--){
+                    printf "%s", substr($1, i, 1)
+                }
+            }
+        '
 }
 
 command_exists () {
