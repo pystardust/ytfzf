@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1389.0fb4a76"
+YTFZF_VERSION="git-1390.de16967"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -49,7 +49,7 @@ do_an_event_function () {
 # Takes video json file as $1 and returns the selected video IDs to file $2
 video_info_text () {
 	#we can't just change the views line to %d because it needs to display the "|", and "|$views" is NaN
-	[ "${views#|}" -eq "${views#|}" ] 2>/dev/null && views="$(printf "|%s" "${views#|}" | add_commas)"
+	[ "${views#|}" -eq "${views#|}" ] 2>/dev/null && views="|$(printf "%s" "${views#|}" | add_commas)"
 	printf "%-${title_len}.${title_len}s\t" "$title"
 	printf "%-${channel_len}.${channel_len}s\t" "$channel"
 	printf "%-${dur_len}.${dur_len}s\t" "$duration"
