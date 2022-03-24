@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1390.de16967"
+YTFZF_VERSION="git-1391.9e75e04"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1976,4 +1976,4 @@ while [ $search_again -eq 1 ] ; do
 done
 #}}}
 
-# vim:foldmethod=marker:shiftwidth=4:tabstop=4
+#vim:foldmethod=marker:shiftwidth=4:tabstop=4
