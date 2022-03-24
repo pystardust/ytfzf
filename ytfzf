@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1391.9e75e04"
+YTFZF_VERSION="git-1392.1daa434"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1895,7 +1895,7 @@ handle_scraping (){
 		__scrape_count=$((__scrape_count+1))
 		manage_multi_filters
 		[ $multi_search -eq 1 ] && _search="$(next_search)"
-        do_an_event_function "on_search" && on_search "$_search" "$curr_scrape"
+        do_an_event_function "on_search"
 		command_exists "on_search_$_search" && on_search_$_search "$curr_scrape"
 		scrape_website "$curr_scrape" "$_search"
 		handle_scrape_error "$?"
