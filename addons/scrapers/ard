@@ -34,7 +34,7 @@ scrape_ard () {
 			thumbs: (.images.aspect16x9.src | gsub("{width}"; "'"$_thumbnail_width"'")), 
 			duration: "\(.duration / 60 | floor):\(pad_left(2; .duration % 60))",
 			date: "\(.broadcastedOn | fromdateiso8601 | strftime("%Y-%m-%d"))",
-			description: .longSynopsis,
+			description: .show.synopsis,
 		}]' < "$_tmp_json" > "$output_json_file"
 	
 }
