@@ -1,6 +1,6 @@
 #!/bin/sh
 
-_ard_get_thumbnail_width() {
+_ard_get_thumbnail_width () {
 	case "$1" in
 		maxres) echo "4096" ;;		# 4K
 		maxresdefault) _ard_get_thumbnail_width "maxres" ;;
@@ -10,6 +10,11 @@ _ard_get_thumbnail_width() {
 		sddefault) _ard_get_thumbnail_width "medium" ;;
 		*) _ard_get_thumbnail_width "default" ;;
 	esac
+}
+
+_ard_correct_ytdl_pref () {
+	ytdl_pref="best"
+	print_warning "bestvideo ist not supported for ARD, fallback to best\n"
 }
 
 scrape_ard () {
@@ -40,7 +45,8 @@ scrape_ard () {
 
 on_startup_ard () {
 	# This is neccessary because ytdl only plays the audio when bestvideo is chosen (as of 2022-03-28)
-	case "bestvideo" in
-		*$ytdl_pref*) ytdl_pref="best" ;;
-	esac
+	awk \
+		-v string="$ytdl_pref" \
+		-v substring="bestvideo" ' \
+		BEGIN { if (match(string, substring)) {exit 1} }' || _ard_correct_ytdl_pref
 }
