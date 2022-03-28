@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1394.3621621"
+YTFZF_VERSION="git-1401.1e28111"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -574,6 +574,7 @@ scrape_subscriptions () {
 
 scrape_youtube_channel () {
 	channel_url="$1"
+    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\n" && return 100
 	output_json_file="$2"
 	print_info "Scraping Youtube channel: $channel_url\n"
 
@@ -752,6 +753,7 @@ _concatinate_json_file () {
 
 scrape_invidious_playlist () {
 	playlist_url=$1
+    [ "$playlist_url" = ":help" ] && print_info "The search should be a link to a youtube playlist\n" && return 100
 	output_json_file=$2
 
 	playlist_id="${playlist_url##*[?]list=}"
@@ -780,6 +782,7 @@ scrape_invidious_playlist () {
 
 scrape_invidious_search () {
 	page_query=$1
+    [ "$page_query" = ":help" ] && print_info "Make a youtube search\n" && return 100
 	output_json_file=$2
 	pagetype=$3
 	page_num=$4
@@ -820,6 +823,7 @@ scrape_invidious_search () {
 
 scrape_invidious_video_recommended () {
     video="$1"
+    [ "$video" = ":help" ] && print_info "The search should be a link to a youtube video\n" && return 100
     output_json_file="$2"
     case "$video" in
         */*) video="${video##*=}" ;;
@@ -832,6 +836,7 @@ scrape_invidious_video_recommended () {
 
 scrape_invidious_trending () {
 	trending_tab=$(title_str $1)
+    [ "$trending_tab" = ":help" ] && print_info "The search should be one of: Normal, Gaming, Music, News\n" && return 100
 	output_json_file=$2
 	print_info "Scraping YouTube (with $invidious_instance) trending (${trending_tab:-Normal})\n"
 
@@ -850,6 +855,7 @@ scrape_invidious_trending () {
 
 scrape_invidious_channel () {
 	channel_url=$1
+    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\n" && return 100
 	output_json_file=$2
 	#default to one, because -cSI does not give a page count
 	page_num=${3:-1}
@@ -900,6 +906,7 @@ scrape_invidious_channel () {
 ## Peertube {{{
 scrape_peertube () {
 	page_query=$1
+    [ "$page_query" = ":help" ] && print_info "Search peertube\n" && return 100
 	output_json_file=$2
 	print_info "Scraping Peertube ($page_query)\n"
 
@@ -933,6 +940,7 @@ scrape_peertube () {
 ## Odysee {{{
 scrape_odysee () {
 	page_query=$1
+    [ "$page_query" = ":help" ] && print_info "Search odysee\n" && return 100
 	[ "${#page_query}" -le 2 ] && die 4 "Odysee searches must be 3 or more characters\n"
 	output_json_file=$2
 	print_info "Scraping Odysee ($page_query)\n"
@@ -1015,6 +1023,7 @@ scrape_json_file () {
 # Comments{{{
 scrape_comments () {
 	video_id="$1"
+    [ "$video_id" = ":help" ] && print_info "Search should be a link to a youtube video\n" && return 100
 	case "$video_id" in
 		*/*) video_id="${video_id##*=}" ;;
 	esac
@@ -1841,6 +1850,8 @@ handle_scrape_error () {
 					print_error "There was an error scraping $curr_scrape ($invidious_instance)\nTry changing invidious instances\n" ;;
 				*) print_error "There was an error scraping $curr_scrape\n" ;;
 			esac ;;
+        #:help search operator
+        100) return 100;;
 		126) print_info "$curr_scrape does not have execute permissions\n" ;;
 		127) die 2 "invalid scraper: $curr_scrape\n" ;;
 	esac
@@ -1900,6 +1911,8 @@ handle_scraping (){
 		scrape_website "$curr_scrape" "$_search"
 		handle_scrape_error "$?"
 	done
+    #:help search operator
+    [ "$?" -eq 100 ] && return 100
 }
 
 #check if nothing was scraped{{{
@@ -1934,6 +1947,8 @@ make_search () {
 	set_save_filters
 	[ $enable_search_hist -eq 1 ] && [ -n "$_search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 	handle_scraping "$_search" "$_save_search"
+    #:help search operator
+    [ "$?" -eq 100 ] && exit 0
 	handle_empty_scrape
 }
 #}}}

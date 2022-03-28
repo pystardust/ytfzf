@@ -8,6 +8,7 @@ on_startup_recommended () {
 
 scrape_recommended () {
     search=$1
+    [ "$search" = ":help" ] && print_info "scrapers your recommended list based on your tracker cookie\n" && return 100
     output_json_file=$2
     _tmp_html="${session_temp_dir}/yt-search.html"
     _tmp_json="${session_temp_dir}/yt-search.json"

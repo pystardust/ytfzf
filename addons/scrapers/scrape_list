@@ -2,6 +2,7 @@ YTFZF_SCRAPELIST_FILE="$HOME/.config/ytfzf/scrapelist"
 
 scrape_scrape_list () {
     f=${1:-YTFZF_SCRAPELIST_FILE}
+    [ "$f" = ":help" ] && print_info "Search should be a scrapelist file\nthis is an example scrapelist file:\nY youtube search\nO odysee search\n" && return 100
     output_json_file=$2
     ! [ -f "${f}" ] && die 2 "scrape list file ($f) doesn't exist\n"
 
@@ -23,4 +24,3 @@ scrape_scrape_list () {
     wait
 	_concatinate_json_file "${session_temp_dir}/SL-" "$i" "$output_json_file"
 }
-

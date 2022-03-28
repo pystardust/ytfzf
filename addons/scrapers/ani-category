@@ -29,6 +29,7 @@ _ani_category_get_episodes () {
 
 scrape_ani_category () {
     search="$1"
+    [ "$search" = ":help" ] && print_info "Search should be the specific anime to watch from gogoanime\n" && return 100
     output_json_file="$2"
     #stolen from pystardust/ani-cli
     base_url=$(curl -s -L -o /dev/null -w "%{url_effective}\n" https://gogoanime.cm)

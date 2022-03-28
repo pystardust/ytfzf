@@ -19,6 +19,7 @@ _ard_correct_ytdl_pref () {
 
 scrape_ard () {
 	search=$(echo "$1" | sed 's/ /+/g')
+    [ "$search" = ":help" ] && print_info "Search https://www.ardmediathek.de/\n" && return 100
 	output_json_file="$2"
 	search_url="https://api.ardmediathek.de/search-system/mediathek/ard/search/vods?query=$search&pageNumber=0&pageSize=$((20 * pages_to_scrape))"
 	_tmp_json="${session_temp_dir}/ard_search.json"
