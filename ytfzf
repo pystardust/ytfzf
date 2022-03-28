@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1392.1daa434"
+YTFZF_VERSION="git-1394.3621621"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -82,7 +82,7 @@ source_scrapers () {
 		elif [ -f "$YTFZF_SYSTEM_ADDON_DIR/scrapers/$_scr" ]; then
 			. "${YTFZF_SYSTEM_ADDON_DIR}/scrapers/$_scr"
 		fi
-		command_exists "on_startup_$_scr" && on_startup_$_scr
+		[ $__is_fzf_preview -eq 0 ] && command_exists "on_startup_$_scr" && on_startup_$_scr
 	done
 	unset IFS
 }
@@ -1744,8 +1744,8 @@ shift $((OPTIND-1))
 do_an_event_function "on_post_set_vars"
 
 #Post opt scrape{{{
-source_scrapers
 : "${ytdl_pref:=$video_pref+$audio_pref/$video_pref/$audio_pref}"
+source_scrapers
 #}}}
 
 # Get search{{{
