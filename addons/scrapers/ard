@@ -14,7 +14,7 @@ _ard_get_thumbnail_width () {
 
 _ard_correct_ytdl_pref () {
 	ytdl_pref="best"
-	print_warning "bestvideo ist not supported for ARD, fallback to best\n"
+	[ $__is_fzf_preview -eq 0 ] && print_warning "ytdl_pref $1 ist not supported for ARD, fallback to best\n"
 }
 
 scrape_ard () {
@@ -44,9 +44,13 @@ scrape_ard () {
 }
 
 on_startup_ard () {
-	# This is neccessary because ytdl only plays the audio when bestvideo is chosen (as of 2022-03-28)
-	awk \
+	# With ytdl_pref="" or ytdl="bestvideo" only audio is played (as of 2022-03-28), this fixes this:
+	if [ -z "$ytdl_pref" ]; then
+		_ard_correct_ytdl_pref "empty string" 
+	else
+		awk \
 		-v string="$ytdl_pref" \
 		-v substring="bestvideo" ' \
-		BEGIN { if (match(string, substring)) {exit 1} }' || _ard_correct_ytdl_pref
+		BEGIN { if (match(string, substring)) {exit 1} }' || _ard_correct_ytdl_pref "bestvideo"
+	fi
 }
