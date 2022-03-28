@@ -13,7 +13,7 @@ _ard_get_thumbnail_width() {
 }
 
 scrape_ard () {
-	search=$(echo "$1" | sed 's/ /+/')
+	search=$(echo "$1" | sed 's/ /+/g')
 	output_json_file="$2"
 	search_url="https://api.ardmediathek.de/search-system/mediathek/ard/search/vods?query=$search&pageNumber=0&pageSize=$((20 * pages_to_scrape))"
 	_tmp_json="${session_temp_dir}/ard_search.json"
@@ -35,6 +35,12 @@ scrape_ard () {
 			duration: "\(.duration / 60 | floor):\(pad_left(2; .duration % 60))",
 			date: "\(.broadcastedOn | fromdateiso8601 | strftime("%Y-%m-%d"))",
 			description: .show.synopsis,
-		}]' < "$_tmp_json" > "$output_json_file"
-	
+		}]' < "$_tmp_json" >> "$output_json_file"
+}
+
+on_startup_ard () {
+	# This is neccessary because ytdl only plays the audio when bestvideo is chosen (as of 2022-03-28)
+	case "bestvideo" in
+		*$ytdl_pref*) ytdl_pref="best" ;;
+	esac
 }
