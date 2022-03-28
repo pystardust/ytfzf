@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1401.1e28111"
+YTFZF_VERSION="git-1402.b47dbcb"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -133,13 +133,13 @@ command_exists "shuf" || shuf () {
 
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
-	[ $log_level -ge 2 ] && printf "$1" >&2
+	[ $log_level -ge 2 ] && printf -- "$1" >&2
 }
 print_warning () {
-	[ $log_level -ge 1 ] && printf "${c_yellow}${1}${c_reset}" >&2
+	[ $log_level -ge 1 ] && printf -- "${c_yellow}${1}${c_reset}" >&2
 }
 print_error () {
-	[ $log_level -ge 0 ] && printf "${c_red}${1}${c_reset}" >&2
+	[ $log_level -ge 0 ] && printf -- "${c_red}${1}${c_reset}" >&2
 }
 
 clean_up () {
@@ -1851,7 +1851,7 @@ handle_scrape_error () {
 				*) print_error "There was an error scraping $curr_scrape\n" ;;
 			esac ;;
         #:help search operator
-        100) return 100;;
+        100) print_info "---------\n" && return 100;;
 		126) print_info "$curr_scrape does not have execute permissions\n" ;;
 		127) die 2 "invalid scraper: $curr_scrape\n" ;;
 	esac
