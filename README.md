@@ -160,9 +160,9 @@ Everything that is an option can also be configured in `~/.config/ytfzf/conf.sh`
 
 In addition, the video player and other things may be changed here
 
-Here is a [docs/conf.sh](sample configuration) (please dont use it)
+Here is a [sample configuration](docs/conf.sh) (please dont use it)
 
-For more information, see `ytfzf(5)` which should be installed, if it's not see [https://github.com/pystardust/ytfzf/wiki](the wiki).
+For more information, see `ytfzf(5)` which should be installed, if it's not see [the wiki](https://github.com/pystardust/ytfzf/wiki).
 
 ---
 
