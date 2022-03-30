@@ -1,0 +1,28 @@
+#!/bin/sh
+
+gui_dialog () {
+    MAIN_DIALOG="<window><vbox scrollable=\"true\" vscrollbar-policy=\"0\">"
+    while read -r line; do
+        url="${line##*|}"
+        _correct_json="$(jq -r --arg url "$url" '[.[]|select(.url==$url)]|unique_by(.ID)[0]' < "$video_json_file")"
+        id="$(get_video_json_attr "ID")"
+        title="$(get_video_json_attr "title")"
+        channel="$(get_video_json_attr "channel")"
+        views="$(get_video_json_attr "views")"
+        date="$(get_video_json_attr "date")"
+        scraper="$(get_video_json_attr "scraper")"
+        duration="$(get_video_json_attr "duration")"
+        description="$(get_video_json_attr "description" | sed 's/\\n/\n/g')"
+        MAIN_DIALOG="$MAIN_DIALOG<hbox><vbox><text><label>$title (@$channel)</label></text><text><label>$views views</label></text><text><label>uploaded: $date</label></text><text><label>duration: $duration</label></text><button><label>$url</label></button></vbox><pixmap><input file>$thumb_dir/$id.jpg</input></pixmap></hbox>"
+    done
+    unset IFS
+    download_thumbnails $(get_missing_thumbnails)
+    MAIN_DIALOG="$MAIN_DIALOG<width>100</width><height>100</height></vbox></window>" gtkdialog
+}
+
+interface_gui () {
+    video_json_file="$1"
+    selected_id_file="$2"
+	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
+        sort_video_data_fn | gui_dialog | sed -n -e 's/EXIT="\(.*\)"/\1/p' -e 's/[[:space:]]*//g' > "$selected_id_file"
+}

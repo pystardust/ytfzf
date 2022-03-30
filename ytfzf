@@ -1268,6 +1268,7 @@ get_missing_thumbnails () {
 	missing_ids="$(diff -u "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^+//p' | sed '1d')"
 
 	set -f
+    unset IFS
 	set -- $missing_ids
 	IFS="|"
 	search_grep="$*"

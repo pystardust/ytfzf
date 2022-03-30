@@ -1,0 +1,35 @@
+#!/bin/sh
+
+tab_space="$(printf '\t')"
+
+vars=$(MAIN_DIALOG="
+<window>
+    <vbox>
+        <entry>
+            <default>Search...</default>
+            <variable>search</variable>
+        </entry>
+        <button>
+            <label>Search!</label>
+        </button>
+    </vbox>
+</window>" gtkdialog)
+
+while read -r line; do
+    case "$line" in
+        search*) initial_search=${line#*=} ;;
+        EXIT*) break ;;
+    esac
+done <<EOF
+$vars
+EOF
+
+if [ -f "$YTFZF_CUSTOM_INTERFACES_DIR/gui" ]; then
+    . "$YTFZF_CUSTOM_INTERFACES_DIR/gui"
+elif [ -f "$YTFZF_SYSTEM_ADDON_DIR/interfaces/gui" ]; then
+    . "$YTFZF_SYSTEM_ADDON_DIR/interfaces/gui"
+else 
+    die 2 "the gui interface addon is required for this extension\n"
+fi
+
+interface=gui
