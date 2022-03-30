@@ -1,5 +1,7 @@
 #!/bin/sh
 
+command_exists "gtkdialog" || die 3 "gtkdialog (https://github.com/puppylinux-woof-CE/gtkdialog) is required for the gui extension\n"
+
 tab_space="$(printf '\t')"
 
 vars=$(MAIN_DIALOG="
