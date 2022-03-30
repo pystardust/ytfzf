@@ -2,20 +2,21 @@
 
 #stolen from pystardust/ani-cli
 _decrypt_link() {
-	ajax_url='https://gogoplay.io/encrypt-ajax.php'
+    ajax_url="https://gogoplay4.com/encrypt-ajax.php"
 
 	#get the id from the url
-	video_id=$(echo "$1" | cut -d\? -f2 | cut -d\& -f1 | sed 's/id=//g')
+    id=$(printf "%s" "$1" | sed -nE 's/.*id=(.*)&title.*/\1/p')
 
 	#construct ajax parameters
-	secret_key='3235373436353338353932393338333936373634363632383739383333323838'
-	iv='34323036393133333738303038313335'
-	ajax=$(echo "$video_id" | openssl enc -aes256  -K "$secret_key" -iv "$iv" -a)
+	secret_key='3633393736383832383733353539383139363339393838303830383230393037'
+	iv='34373730343738393639343138323637'
+    ajax=$(echo $id|openssl enc -e -aes256 -K "$secret_key" -iv "$iv" | base64)
 
 	#send the request to the ajax url
-	curl -s -H 'x-requested-with:XMLHttpRequest' "$ajax_url" -d "id=$ajax" -d "time=69420691337800813569" |
-	sed -e 's/\].*/\]/' -e 's/\\//g' |
-	grep -Eo 'https:\/\/[-a-zA-Z0-9@:%._\+~#=][a-zA-Z0-9][-a-zA-Z0-9@:%_\+.~#?&\/\/=]*'
+    data=$(curl -s -H "X-Requested-With:XMLHttpRequest" "$ajax_url" -d "id=$ajax" | sed -e 's/{"data":"//' -e 's/"}/\n/' -e 's/\\//g')
+
+    printf '%s' "$data" | base64 -d | openssl enc -d -aes256 -K "$secret_key" -iv "$iv" | sed -e 's/\].*/\]/' -e 's/\\//g' |
+        grep -Eo 'https:\/\/[-a-zA-Z0-9@:%._\+~#=][a-zA-Z0-9][-a-zA-Z0-9@:%_\+.~#?&\/\/=]*'
 }
 
 #stolen from pystardust/ani-cli
@@ -27,9 +28,22 @@ _ani_category_get_episodes () {
 		}' "$1"
 }
 
+_get_dpage_link () {
+# get the download page url
+	anime_id="$1"
+	ep_no="$2"
+	# credits to fork: https://github.com/Dink4n/ani-cli for the fix 
+	for params in "-episode-$ep_no" "-$ep_no" "-episode-$ep_no-1" "-camrip-episode-$ep_no"; do
+		anime_page=$(curl -s "$base_url/$anime_id$params")
+		printf '%s' "$anime_page" |  grep -q '<h1 class="entry-title">404</h1>' || break
+	done
+	printf '%s' "$anime_page" |
+		sed -n -E 's/.*class="active" rel="1" data-video="([^"]*)".*/\1/p' | sed 's/^/https:/g'
+}
+
 scrape_ani_category () {
     search="$1"
-    [ "$search" = ":help" ] && print_info "Search should be the specific anime to watch from gogoanime\ncurrently broken\n" && return 100
+    [ "$search" = ":help" ] && print_info "Search should be the specific anime to watch from gogoanime\n" && return 100
     output_json_file="$2"
     #stolen from pystardust/ani-cli
     base_url=$(curl -s -L -o /dev/null -w "%{url_effective}\n" https://gogoanime.cm)
@@ -44,7 +58,7 @@ scrape_ani_category () {
 	    print_info "Scraping anime episode $i\n"
 	    _tmp_json="${session_temp_dir}/ani-category-$i.json.final"
 	    #stolen from pystardust/ani-cli
-	    dpage_link=$(curl -s "$base_url/$search-episode-$i" | sed -n -E 's/^[[:space:]]*<a href="#" rel="100" data-video="([^"]*)".*/\1/p' | sed 's/^/https:/g')
+	    dpage_link=$(_get_dpage_link "$search" "$i")
 	    url="$(_decrypt_link "$dpage_link" | head -n 4 | tail -n 1)"
 	    echo "[]" | jq --arg url "$url" --arg title "$search episode $i" '[{"url": $url, "title": $title, "ID": $title}]' > "$_tmp_json"
 	} &
