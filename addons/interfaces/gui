@@ -1,23 +1,53 @@
 #!/bin/sh
 
+: "${YTFZF_INTERFACE_GUI_CSS:=$YTFZF_CONFIG_DIR/interface-gui.css}"
+
 gui_dialog () {
+    css_file="${session_temp_dir}/gtk.css"
+    if [ -f "$YTFZF_GUI_CSS" ]; then
+        css_file="$YTFZF_GUI_CSS"
+    else
+        : > "$css_file"
+    fi
     MAIN_DIALOG="<window><vbox scrollable=\"true\" vscrollbar-policy=\"0\">"
     while read -r line; do
         url="${line##*|}"
         _correct_json="$(jq -r --arg url "$url" '[.[]|select(.url==$url)]|unique_by(.ID)[0]' < "$video_json_file")"
         id="$(get_video_json_attr "ID")"
         title="$(get_video_json_attr "title")"
-        channel="$(get_video_json_attr "channel")"
+        channel="$(get_video_json_attr "channel" | add_commas)"
         views="$(get_video_json_attr "views")"
         date="$(get_video_json_attr "date")"
         scraper="$(get_video_json_attr "scraper")"
         duration="$(get_video_json_attr "duration")"
         description="$(get_video_json_attr "description" | sed 's/\\n/\n/g')"
-        MAIN_DIALOG="$MAIN_DIALOG<hbox><vbox><text><label>$title (@$channel)</label></text><text><label>$views views</label></text><text><label>uploaded: $date</label></text><text><label>duration: $duration</label></text><button><label>$url</label></button></vbox><pixmap><input file>$thumb_dir/$id.jpg</input></pixmap></hbox>"
+        MAIN_DIALOG="$MAIN_DIALOG
+        <hbox>
+            <vbox>
+                <text name=\"TitleText\">
+                    <label>$title (@$channel)</label>
+                </text>
+                <text name=\"ViewsText\">
+                    <label>$views views</label>
+                </text>
+                <text name=\"DateText\">
+                    <label>uploaded: $date</label>
+                </text>
+                <text name=\"DurationText\">
+                    <label>duration: $duration</label>
+                </text>
+                <button name=\"UrlButton\">
+                    <label>$url</label>
+                </button>
+            </vbox>
+            <pixmap name=\"Thumbnail\">
+                <input file>$thumb_dir/$id.jpg</input>
+            </pixmap>
+        </hbox>"
     done
     unset IFS
     download_thumbnails $(get_missing_thumbnails)
-    MAIN_DIALOG="$MAIN_DIALOG<width>100</width><height>100</height></vbox></window>" gtkdialog
+    MAIN_DIALOG="$MAIN_DIALOG<width>100</width><height>100</height></vbox></window>" gtkdialog --styles="$css_file"
 }
 
 interface_gui () {
@@ -26,4 +56,9 @@ interface_gui () {
     command_exists "gtkdialog" || die 3 "gtkdialog (https://github.com/puppylinux-woof-CE/gtkdialog) is required for the gui interface\n"
 	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
         sort_video_data_fn | gui_dialog | sed -n -e 's/EXIT="\(.*\)"/\1/p' -e 's/[[:space:]]*//g' > "$selected_id_file"
+}
+
+on_opt_parse_i_gui_help (){ 
+    print_info "YTFZF_INTERFACE_GUI_CSS is a file for custom css for the window\nselectors:\n#TitleText\n#ViewsText\n#DateText\n#DurationText\n#UrlButton\n#Thumbnail\n"
+    exit 0
 }
