@@ -43,15 +43,3 @@ scrape_ard () {
 			description: .show.synopsis,
 		}]' < "$_tmp_json" >> "$output_json_file"
 }
-
-on_startup_ard () {
-	# With ytdl_pref="" or ytdl="bestvideo" only audio is played (as of 2022-03-28), this fixes this:
-	if [ -z "$ytdl_pref" ]; then
-		_ard_correct_ytdl_pref "empty string" 
-	else
-		awk \
-		-v string="$ytdl_pref" \
-		-v substring="bestvideo" ' \
-		BEGIN { if (match(string, substring)) {exit 1} }' || _ard_correct_ytdl_pref "bestvideo"
-	fi
-}
