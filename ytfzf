@@ -1406,8 +1406,13 @@ preview_display_image () {
             read -r x y w h term_pid <<-EOF
 $(swaymsg -t get_tree | jq -r '..|try select(.focused==true)|[.rect.x,.rect.y,.rect.width,.rect.height,.pid]|@tsv')
 EOF
+            read -r output_x output_y <<-EOF
+$(swaymsg -t get_tree | jq -r '..|try select(.type=="output")|[.rect.x,.rect.y]|@tsv')
+EOF
+            x=$((x-output_x))
+            y=$((y-output_y))
             w_half=$((w/2)) h_half=$((h/2))
-            w_correct=$((w_half-20))
+            w_correct=$((w_half-40))
             img_size="$(identify -format "%w %h" "$thumb_path")"
             img_w="${img_size% *}"
             img_h="${img_size#* }"
@@ -1428,7 +1433,7 @@ EOF
                 img_h=$((h_half-20))
                 img_w="$(printf "%s / %s\n" "$img_w" "$scale_diff" |bc)"
             fi
-            swayimg -s fit -g $((x)),$((y+h/6+70)),$((img_w)),$((img_h)) "$thumb_path" & 2> /dev/null >&2
+            swayimg -s fit -g $((x+10)),$((y+h/6+70)),$((img_w)),$((img_h)) "$thumb_path" & 2> /dev/null >&2
             sleep 0.1
             swaymsg "[pid=\"$term_pid\"]" focus > /dev/null 2>&1
             #without this there are weird flushing issues
