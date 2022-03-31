@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1374.d9171dd"
+YTFZF_VERSION="git-1375.4a4af13"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1378,16 +1378,21 @@ preview_display_image () {
             read -r x y w h term_pid <<-EOF
 $(swaymsg -t get_tree | jq -r '..|try select(.focused==true)|[.rect.x,.rect.y,.rect.width,.rect.height,.pid]|@tsv')
 EOF
-            #TODO, base geometry on font size, current numbers are 11pt
             w_half=$((w/2)) h_half=$((h/2))
             w_correct=$((w_half-20))
             img_size="$(identify -format "%w %h" "$thumb_path")"
             img_w="${img_size% *}"
             img_h="${img_size#* }"
-            img_w=$((img_w-20))
-            if [ "$img_w" -gt "$w_half" ]; then
-                scale_diff="$(printf "scale=4;%s / %s\n" "$img_w" "$w_half" |bc)"
-                img_w=$((w_half-20))
+            img_w=$((img_w))
+            if [ "$img_w" -lt "$w_correct" ]; then
+                scale_diff="$(printf "scale=4;%s / %s\n" "$w_correct" "$img_w" |bc)"
+                img_w=$((w_correct))
+                img_h="$(printf "%s * %s\n" "$img_h" "$scale_diff" |bc)"
+                img_h="${img_h%.*}"
+            fi
+            if [ "$img_w" -gt "$w_correct" ]; then
+                scale_diff="$(printf "scale=4;%s / %s\n" "$img_w" "$w_correct" |bc)"
+                img_w=$((w_correct))
                 img_h="$(printf "%s / %s\n" "$img_h" "$scale_diff" |bc)"
             fi
             if [ "$img_h" -gt "$h_half" ]; then
@@ -1395,7 +1400,7 @@ EOF
                 img_h=$((h_half-20))
                 img_w="$(printf "%s / %s\n" "$img_w" "$scale_diff" |bc)"
             fi
-            swayimg  -g $((x)),$((y+h/6+70)),$((img_w)),$((img_h)) "$thumb_path" & 2> /dev/null >&2
+            swayimg -s fit -g $((x)),$((y+h/6+70)),$((img_w)),$((img_h)) "$thumb_path" & 2> /dev/null >&2
             sleep 0.1
             swaymsg "[pid=\"$term_pid\"]" focus > /dev/null 2>&1
             #without this there are weird flushing issues
