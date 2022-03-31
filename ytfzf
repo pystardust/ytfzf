@@ -1406,8 +1406,9 @@ preview_display_image () {
             read -r x y w h term_pid <<-EOF
 $(swaymsg -t get_tree | jq -r '..|try select(.focused==true)|[.rect.x,.rect.y,.rect.width,.rect.height,.pid]|@tsv')
 EOF
+            focused_id=$(swaymsg -t get_tree| jq -r '.focus[0]')
             read -r output_x output_y <<-EOF
-$(swaymsg -t get_tree | jq -r '..|try select(.type=="output")|[.rect.x,.rect.y]|@tsv')
+$(swaymsg -t get_tree | jq -r '..|try select(.type=="output" and .id=='"$focused_id"')|[.rect.x,.rect.y]|@tsv')
 EOF
             x=$((x-output_x))
             y=$((y-output_y))
