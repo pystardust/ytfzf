@@ -8,7 +8,7 @@ LICENSEDIR=${PREFIX}/share/licenses/ytfzf
 YTFZF_SYSTEM_ADDON_DIR=${PREFIX}/share/ytfzf/addons
 
 doc:
-	mkdir -p ${DESTDIR}${MANDIR}/man1
+	%mkdir -p ${DESTDIR}${MANDIR}/man1
 	mkdir -p ${DESTDIR}${MANDIR}/man5
 	mkdir -p ${DESTDIR}${DOCDIR}
 	mkdir -p ${DESTDIR}${LICENSEDIR}
