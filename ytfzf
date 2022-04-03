@@ -1957,7 +1957,7 @@ handle_scraping (){
 
 #check if nothing was scraped{{{
 handle_empty_scrape () {
-	[ ! -s "$ytfzf_video_json_file" ] && die 4 "Nothing was scraped\n"
+    [ ! -s "$ytfzf_video_json_file" ] && print_error "Nothing was scraped\n" && return 1
 
 	#sometimes the file fils up with empty arrays, we have to check if that's the case
 	something_was_scraped=0
@@ -1967,7 +1967,8 @@ handle_empty_scrape () {
 		#we can break if something was scraped, otherwise we are wasting time in the loop
 		break
 	done < "$ytfzf_video_json_file"
-	[ $something_was_scraped -eq 0 ] && die 4 "Nothing was scraped\n"
+	[ $something_was_scraped -eq 0 ] && print_error "Nothing was scraped\n" && return 1
+    return 0
 }
 #}}}
 
@@ -1989,13 +1990,18 @@ make_search () {
 	handle_scraping "$_search" "$_save_search"
     #:help search operator
     [ "$?" -eq 100 ] && exit 0
-	handle_empty_scrape
 }
 #}}}
 
 # Main {{{
 
 make_search "$initial_search"
+until handle_empty_scrape; do 
+    case "$search_again" in
+        0) die 4 ;;
+        1) make_search ;;
+    esac
+done
 
 main() { 
 	while :; do
