@@ -182,3 +182,4 @@ For more information, see `ytfzf(5)` which should be installed, if it's not see 
 | Jac-Zac       | [contributions](credits/jac-zac.md)       ||
 | Mudskipper875 | [contributions](credits/mudskipper875.md) ||
 | Gardockt | [contributions](credits/gardockt.md)||
+| qoheniac | [contributions](credits/qoheniac.md)||
