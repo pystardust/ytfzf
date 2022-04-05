@@ -1410,14 +1410,20 @@ EOF
             read -r output_x output_y <<-EOF
 $(swaymsg -t get_tree | jq -r '..|try select(.type=="output" and .id=='"$focused_id"')|[.rect.x,.rect.y]|@tsv')
 EOF
+            #we're subtracting output_* to make sure swayimg places on correct monitor
             x=$((x-output_x))
             y=$((y-output_y))
+            TTY_COLS=$(tput cols)
+            TTY_LINES=$(tput lines)
             w_half=$((w/2)) h_half=$((h/2))
-            w_correct=$((w_half-40))
+            #how many pixels per col
+            col_px_width=$((w/TTY_COLS))
+            #how many pixels per line
+            line_px_height=$((h/TTY_LINES))
+            w_correct=$((w_half-2*col_px_width))
             img_size="$(identify -format "%w %h" "$thumb_path")"
             img_w="${img_size% *}"
             img_h="${img_size#* }"
-            img_w=$((img_w))
             if [ "$img_w" -lt "$w_correct" ]; then
                 scale_diff="$(printf "scale=4;%s / %s\n" "$w_correct" "$img_w" |bc)"
                 img_w=$((w_correct))
@@ -1431,10 +1437,12 @@ EOF
             fi
             if [ "$img_h" -gt "$h_half" ]; then
                 scale_diff="$(printf "scale=4;%s / %s\n" "$img_h" "$h_half" |bc)"
+                #-20 is to leave space for the text
                 img_h=$((h_half-20))
                 img_w="$(printf "%s / %s\n" "$img_w" "$scale_diff" |bc)"
             fi
-            swayimg -s fit -g $((x+10)),$((y+h/6+70)),$((img_w)),$((img_h)) "$thumb_path" & 2> /dev/null >&2
+                                                #leave 10 lines of space for the text
+            swayimg -s fit -g $((x+col_px_width)),$((y+line_px_height*10)),$((img_w)),$((img_h)) "$thumb_path" & 2> /dev/null >&2
             sleep 0.1
             swaymsg "[pid=\"$term_pid\"]" focus > /dev/null 2>&1
             #without this there are weird flushing issues
