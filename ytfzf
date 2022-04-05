@@ -1372,12 +1372,16 @@ command_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down 
 }
 
 command_exists "get_swayimg_positioning_left" || get_swayimg_positioning_left () {
+    #allows space for text
     y_gap=$((line_px_height*8))
     
-    w_correct=$(((max_width/2-2*col_px_width)-x_gap))
+    #it's subtracting the gap between the border and the edge of terminal
+    w_correct=$((max_width/2-2*col_px_width))
     h_correct=$((max_height-3*line_px_height-y_gap))
 
+    #offset from the edge by half a column
     x=$((term_x+col_px_width/2))
+    #move down to allow for text
     y=$((term_y+y_gap))
     [ "$img_w" -gt "$w_correct" ] && img_w=$((w_correct))
     #-20 is to leave space for the text
@@ -1386,14 +1390,18 @@ command_exists "get_swayimg_positioning_left" || get_swayimg_positioning_left ()
 
 command_exists "get_swayimg_positioning_right" || get_swayimg_positioning_right () {
     get_swayimg_positioning_left "$@"
+    #after setting the positioning as if side was `left` set x to the correct place
     x=$((term_x+w_half+col_px_width/2))
 }
 
 command_exists "get_swayimg_positioning_up" || get_swayimg_positioning_up () {
     w_correct=$((max_width/2))
+    #offset from border slightly
     h_correct=$((max_height-2*line_px_height))
 
+    #offset from info text by 30 columns
     x=$((term_x+30*col_px_width))
+    #go down from the top by 2 lines
     y=$((term_y+2*line_px_height))
 
     [ "$img_w" -gt "$w_correct" ] && img_w=$((w_correct))
@@ -1402,15 +1410,9 @@ command_exists "get_swayimg_positioning_up" || get_swayimg_positioning_up () {
 }
 
 command_exists "get_swayimg_positioning_down" || get_swayimg_positioning_down () {
-    w_correct=$((max_width/2))
-    h_correct=$((max_height-2*line_px_height))
-
-    x=$((term_x+30*col_px_width))
+get_swayimg_positioning_up "$@"
+    #after setting the positioning as if side was `up` set y to the correct place
     y=$((term_y+max_height/2+2*line_px_height))
-
-    [ "$img_w" -gt "$w_correct" ] && img_w=$((w_correct))
-    #-20 is to leave space for the text
-    [ "$img_h" -gt "$h_correct" ] && img_h=$((h_correct))
 }
 
 get_swayimg_positioning () {
