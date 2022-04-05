@@ -1204,11 +1204,15 @@ interface_text () {
     #if it doesn't exist, this menu has not opened yet, no need to revert the actions of the last keypress
     [ -f "$keypress_file" ] && handle_post_keypress
 	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
+
+    command_exists "tput" || print_warning "tput not found, defaulting to terminal width of 80 columns\n"
+
 	video_json_file=$1
 	selected_id_file=$2
 
 	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
 	TTY_COLS=$(tput cols)
+    TTY_COLS=${TTY_COLS:-80}
 	title_len=$((TTY_COLS/2))
 	channel_len=$((TTY_COLS/5))
 	dur_len=7
