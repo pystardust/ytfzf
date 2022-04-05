@@ -1403,6 +1403,7 @@ preview_display_image () {
 				'height' "$height" > "$UEBERZUG_FIFO"
 			;;
         swayimg)
+            command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n"
             read -r x y w h term_pid <<-EOF
 $(swaymsg -t get_tree | jq -r '..|try select(.focused==true)|[.rect.x,.rect.y,.rect.width,.rect.height,.pid]|@tsv')
 EOF
