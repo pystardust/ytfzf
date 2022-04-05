@@ -1205,7 +1205,8 @@ interface_text () {
     [ -f "$keypress_file" ] && handle_post_keypress
 	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
 
-    command_exists "tput" || print_warning "tput not found, defaulting to terminal width of 80 columns\n"
+    command_exists "tput" || print_warning "command \"tput\" not found, defaulting to terminal width of 80 columns\n"
+    command_exists "column" && use_column=1 || { print_warning "command \"column\" not found, the menu may look very bad\n" && use_column=0; }
 
 	video_json_file=$1
 	selected_id_file=$2
@@ -1227,7 +1228,7 @@ interface_text () {
 		do
 			video_info_text
 		done |
-		column -t -s "$tab_space" |
+        { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
 		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
 		trim_url > "$selected_id_file"
 	#we can't do handle_keypress < "$keypress_file" because it leaves fd0 open which breaks $search_again_shortcut
