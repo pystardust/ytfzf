@@ -67,7 +67,7 @@ There are only 2 required dependencies, however the rest require some configurat
 | [`w3m`](https://github.com/tats/w3m) (buggy)                                      | &#10060;         |
 | [`imv`](https://git.sr.ht/~exec64/imv)                                            | &#9989;          |
 | [`kitty`](https://github.com/kovidgoyal/kitty)                                    | &#9989;          |
-| [`swayimg`](https://github.com/artemsen/swayimg)                                  | &#9989;          |
+| [`swayimg`](https://github.com/artemsen/swayimg)                                  | only on `sway`   |
 
 # Install
 
