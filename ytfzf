@@ -1312,7 +1312,7 @@ preview_start () {
 			UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
-			ueberzug layer --parser simple < "$UEBERZUG_FIFO" 2>/dev/null &
+			ueberzug layer --parser json < "$UEBERZUG_FIFO"  &
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|swayimg) : ;;
@@ -1344,7 +1344,15 @@ preview_stop () {
 preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
-		ueberzug|chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|imv) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|imv) : ;;
+        ueberzug)
+            { 
+                printf "{"
+                printf "\"%s\": \"%s\"," "action" "remove" "identifier" "ytfzf"
+                printf '"%s": "%s"' "draw" "True"
+                printf "}\n"
+            } > "$UEBERZUG_FIFO"
+			;;
         kitty) kitty +kitten icat --clear --transfer-mode file ;;
         swayimg) killall swayimg 2> /dev/null; true ;; #we want this to be true so that the && at the bottom happens
 		*) "$thumbnail_viewer" "no-img" ;;
@@ -1446,23 +1454,29 @@ get_ueberzug_positioning () {
 preview_display_image () {
 	thumbnail_viewer=$1
 	id=$2
-	thumb_path="${thumb_dir}/${id}.jpg"
-	[ -f "${thumb_path}" ] || thumb_path="${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg"
-	[ -f "${thumb_path}" ] || preview_no_img "$thumbnail_viewer"
+
+    for path in "${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg" "${thumb_dir}/${id}.jpg"  "${YTFZF_CUSTOM_THUMBNAILS_DIR}/YTFZF:DEFAULT.jpg"; do
+        thumb_path="$path"
+        [ -f "${thumb_path}" ] && break
+    done || preview_no_img "$thumbnail_viewer"
+
     get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 	case $thumbnail_viewer in
 		ueberzug)
 			command_exists "ueberzug" || die 3 "ueberzug is not installed\n"
-			printf '%s\t' \
-				'action' 'add' \
-				'identifier' 'ytfzf' \
-				'path' "$thumb_path" \
-				'x' "$x" \
-				'y' "$y" \
-				'scaler' 'fit_contain' \
-				'width' "$width" > "$UEBERZUG_FIFO"
-			printf '%s\t%s\n' \
-				'height' "$height" > "$UEBERZUG_FIFO"
+            {
+                printf "{"
+                printf '"%s": "%s",' \
+                    'action' 'add' \
+                    'identifier' 'ytfzf' \
+                    'path' "$thumb_path" \
+                    'x' "$x" \
+                    'y' "$y" \
+                    'scaler' 'fit_contain' \
+                    'width' "$width"
+                printf '"%s": "%s"' 'height' "$height"
+                printf "}\n"
+            } > "$UEBERZUG_FIFO"
 			;;
         swayimg)
             command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n"

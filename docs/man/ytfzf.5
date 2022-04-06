@@ -390,7 +390,6 @@ Whether or not to show thumbnails in fzf.
 .TP
 .RB $ skip_thumb_download
 Whether or not to skip thumbnail download.
-This is useful for CUSTOM THUMBNAILS
 .br
 .IR default: " 0"
 
@@ -1387,8 +1386,15 @@ exit
 .SH CUSTOM THUMBNAILS
 .PP
 Custom thumbnails are located in $YTFZF_CUSTOM_THUMBNAILS_DIR.
-The name of the image must be <video-id>.jpg
+The name of the image must be
+.I <video-id>.jpg
+.PP
 To see an example, make a search with \fIytfzf\fR and locate the \fIthumbnails\fR folder in $cache_dir/search
+.PP
+Custom thumbnails are going to try to be loaded before the official thumbnail.
+.br
+If a custom thumbnail, and the official thumbnail doesn't exist, ytfzf will try to use 
+.I $YTFZF_CUSTOM_THUMBNAILS_DIR/YTFZF:DEFUALT.jpg .
 
 .SH VIDEO JSON FORMAT
 .PP
