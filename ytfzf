@@ -1345,7 +1345,8 @@ preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
 		ueberzug|chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|imv) : ;;
-    kitty) kitty +kitten icat --clear --transfer-mode file ;;
+        kitty) kitty +kitten icat --clear --transfer-mode file ;;
+        swayimg) killall swayimg 2> /dev/null; true ;; #we want this to be true so that the && at the bottom happens
 		*) "$thumbnail_viewer" "no-img" ;;
 	esac && die 1 "\nno image found" 
 }
