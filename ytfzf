@@ -1298,7 +1298,7 @@ download_thumbnails () {
 }
 
 get_video_json_attr () {
-	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^\n]*\)",*/\1/p' <<EOF | xargs -0 printf '%b'
+	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^\n]*\)",*/\1/p' <<EOF | sed 's/\\\([\\"]\)/\1/g'
 $_correct_json
 EOF
 }
