@@ -380,7 +380,7 @@ command_exists "downloader" || downloader () {
 : "${url_handler_opts=}"
 : ${info_to_print=} "${info_wait:=0}" ${info_wait_action=q}
 : "${video_pref:=bestvideo}" "${audio_pref:=bestaudio}"
-: ${show_formats:=0} "${format_selection_screen:=normal}" "${format_selection_sort:=height}"
+: ${show_formats:=0} "${format_selection_screen:=simple}" "${format_selection_sort:=height}"
 
 : ${scripting_video_count:=1}
 : ${is_random_select:=0} ${is_auto_select:=0} ${is_specific_select:=0}
@@ -1808,7 +1808,7 @@ parse_opt () {
 		disable-back) enable_back_button=${optarg:-0} ;;
 		skip-thumb-download) skip_thumb_download=${optarg:-1} ;;
 		multi-search) multi_search=${optarg:-1} ;;
-        format-selection) format_selection_screen=${optarg:-quality};;
+        format-selection) format_selection_screen=${optarg:-normal};;
         format-sort) format_selection_sort="$optarg" ;;
         ext) load_extension "$optarg" ;;
         url-handler-opts) url_handler_opts="$optarg" ;;
