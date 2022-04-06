@@ -1298,7 +1298,7 @@ download_thumbnails () {
 }
 
 get_video_json_attr () {
-	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^"\n]*\)",*/\1/p' <<EOF
+	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^\n]*\)",*/\1/p' <<EOF | xargs -0 printf '%b'
 $_correct_json
 EOF
 }
@@ -1537,7 +1537,7 @@ preview_img () {
 	url=${line##*|}
 
 	#make sure all variables are set{{{
-	_correct_json=$(jq -r --arg url "$url" '[.[]|select(.url==$url)]|unique_by(.ID)[0]' < "$video_json_file")
+	_correct_json=$(jq -nr --arg url "$url" '[inputs[]|select(.url==$url)][0]' < "$video_json_file")
 	id="$(get_video_json_attr "ID")"
 	title="$(get_video_json_attr "title")"
 	channel="$(get_video_json_attr "channel")"
@@ -1574,7 +1574,7 @@ interface_thumbnails () {
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	#fzf_preview_side will get reset if we don't pass it in
-	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|@tsv' < "$video_json_file" |
+	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|join("\t")' < "$video_json_file" |
 	sort_video_data_fn |
 	SHELL="" fzf -m \
 	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
