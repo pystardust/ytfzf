@@ -1642,7 +1642,7 @@ submenu_handler () {
 	unset IFS
 	while read -r line; do
 		#calls ytfzf to reduce code complexity
-		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 --info-exit $submenu_scraping_opts \
+		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 --info-exit $submenu_scraping_opts --search-again=0 \
 			-ac "$(get_key_value "$line" "type")" -IJ "$(get_key_value "$line" "search")" \
 			>> "$final_submenu_json_file"
 	done <<-EOF
@@ -1651,7 +1651,8 @@ submenu_handler () {
 
 	#the hist_file thing is to prevent watch_hist from being put in $session_cache_dir
 	set -f
-	__is_submenu=1 hist_file="$hist_file" cache_dir="${session_cache_dir}" $0 $submenu_opts --keep-cache -cp "$final_submenu_json_file"
+	__is_submenu=1 hist_file="$hist_file" cache_dir="${session_cache_dir}" $0 $submenu_opts --search-again=0 --keep-cache -cp "$final_submenu_json_file"
+
 }
 
 open_url_handler () {
