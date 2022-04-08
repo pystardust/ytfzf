@@ -303,9 +303,6 @@ For the kitty terminal.
 .IR swayimg
 Only works on the sway wayland compositor
 .TP
-.IR custom
-Calls the user defined img_display_function()
-.TP
 .IR default: " ueberzug"
 .RE
 
@@ -1215,23 +1212,6 @@ Misc
 This function sends a notification for the videos that are about to be played.
 .br
 This function takes an unknown amount of urls as arguments.
-
-.TP
-.BR img_display_function ()
-This function displays the currently selected video's thumbnail in fzf.
-.br
-This function takes 3 arguments:
-.RS
-.TP
-.IR 1
-Path to the image to display
-.TP
-.IR 2
-Maximum width
-.TP
-.IR 3
-Maximum height
-.RE
 
 .TP
 .BR on_opt_parse ()
