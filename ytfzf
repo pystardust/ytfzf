@@ -228,6 +228,7 @@ handle_playing_notifications (){
 		done <<-EOF
 		$(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
 		EOF
+        unset IFS
 	} || { notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null; }
 }
 
@@ -1220,7 +1221,7 @@ interface_text () {
 	view_len=10
 	date_len=100
 
-	IFS=" ${tab_space}${new_line}"
+	unset IFS
 
 	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
 		sort_video_data_fn |
@@ -1585,7 +1586,7 @@ interface_thumbnails () {
 
 	preview_start "$thumbnail_viewer"
 
-	IFS=" ${tab_space}${new_line}"
+    unset IFS
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	#fzf_preview_side will get reset if we don't pass it in
@@ -1628,6 +1629,7 @@ print_requested_info () {
 			    done < "$url_list" ;;
 		esac
 	done
+    unset IFS
 	[ $info_wait -eq 1 ] && { print_info "quit (q), quit (override -l) (Q), open menu (c|m), play (enter): "; read -r info_wait_action; }
 	return 0
 }
@@ -1670,10 +1672,10 @@ open_url_handler () {
     esac
   }
 
+    unset IFS
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
-    unset IFS
 	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" | session_temp_dir="${session_temp_dir}" session_cache_dir="${session_cache_dir}" "$url_handler" "$@"
 }
 
@@ -2019,6 +2021,7 @@ handle_scraping (){
 		scrape_website "$curr_scrape" "$_search"
 		handle_scrape_error "$?"
 	done
+    unset IFS
     #:help search operator
     [ "$?" -eq 100 ] && return 100
 }
