@@ -1336,7 +1336,7 @@ preview_stop () {
 			exec 3>&- # close file descriptor 3, closing ueberzug
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|kitty) : ;;
-        swayimg) killall swayimg ;;
+        swayimg) killall swayimg 2> /dev/null;;
 		imv) kill "$imv_pid" ;;
 		*)
 			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
