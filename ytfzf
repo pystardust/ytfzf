@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2.1.rc-5"
+YTFZF_VERSION="2.2.1.rc-6"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -35,6 +35,10 @@ c_bold="\033[1m"
 : "${__is_submenu:=0}" "${__is_scrape_for_submenu:=0}" "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
+
+remove_ansi_escapes () {
+    sed 's/[[[:digit:]][[:digit:]]*\(;\|m\)//g'
+}
 
 do_an_event_function () {
     event="$1"
@@ -179,7 +183,7 @@ trim_url () {
 }
 
 quick_menu () {
-	fzf --reverse --prompt="$1"
+	fzf --ansi --reverse --prompt="$1"
 }
 quick_menu_ext (){
 	external_menu "$1"
@@ -191,7 +195,7 @@ quick_menu_scripting () {
 #the menu to use instead of fzf when -D is specified
 external_menu () {
 	#dmenu extremely laggy when showing tabs
-	tr -d '\t' | dmenu -i -l 30 -p "$1"
+	tr -d '\t' | remove_ansi_escapes | dmenu -i -l 30 -p "$1"
 }
 
 search_prompt_menu () {
@@ -1693,7 +1697,7 @@ get_video_format(){
 	#the sed gets rid of random information
   _audio_choices="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort" | grep 'audio only')"
   [ "$_audio_choices" ] && audio_pref="$(echo "$_audio_choices" | quick_menu_wrapper "Audio format: " | awk '{print $1}')"
-  [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort"| sed '1,2d' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
+  [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort"|  sed 's/\\033\[[[:digit:]]*m//g' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
   printf "%s+%s/%s/%s" "$video_pref" "$audio_pref" "$video_pref" "$audio_pref"
 }
 #}}}
