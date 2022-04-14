@@ -2025,9 +2025,10 @@ handle_scraping (){
 		scrape_website "$curr_scrape" "$_search"
 		handle_scrape_error "$?"
 	done
+    rv="$?"
     unset IFS
     #:help search operator
-    [ "$?" -eq 100 ] && return 100
+    [ "$rv" -eq 100 ] && return 100
 }
 
 #check if nothing was scraped{{{
