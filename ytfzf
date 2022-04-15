@@ -37,7 +37,7 @@ c_bold="\033[1m"
 # Utility functions {{{
 
 remove_ansi_escapes () {
-    sed 's/[[[:digit:]][[:digit:]]*\(;\|m\)//g'
+    sed -e 's/\[\([[:digit:]][[:digit:]]*\(;\|m\)\)*//g' -e 's/[^[:print:]]*//g'
 }
 
 do_an_event_function () {
