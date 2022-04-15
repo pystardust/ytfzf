@@ -1,0 +1,26 @@
+YTFZF_SCRAPELIST_FILE="$HOME/.config/ytfzf/scrapelist"
+
+scrape_scrape_list () {
+    f=${1:-YTFZF_SCRAPELIST_FILE}
+    [ "$f" = ":help" ] && print_info "Search should be a scrapelist file\nthis is an example scrapelist file:\nY youtube search\nO odysee search\n" && return 100
+    output_json_file=$2
+    ! [ -f "${f}" ] && die 2 "scrape list file ($f) doesn't exist\n"
+
+	_start_series_of_threads
+    i=0
+    while IFS=' ' read -r _scr_type s; do
+      {
+        ytfzf_video_json_file="${session_temp_dir}/SL-$i.json.final" scrape_website "$_scr_type" "$s"
+        handle_scrape_error "$?"
+      } &
+      _thread_started "$!"
+      i=$((i+1))
+    done <<- EOF
+	$(sed \
+		-e "s/#.*//" \
+		-e "/^[[:space:]]*$/d" \
+		"$f" )
+	EOF
+    wait
+	_concatinate_json_file "${session_temp_dir}/SL-" "$i" "$output_json_file"
+}

@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.2"
+YTFZF_VERSION="2.3"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -13,7 +13,7 @@ YTFZF_VERSION="2.2"
 # 1: general error
 # 2: invalid -opt or command argument, invalid argument for opt, configuration error
 	# eg: ytfzf -c terminal (invalid scrape)
-# 3: missing dependancy
+# 3: missing dependency
 # 4: scraping error
 # 5: empty search
 
@@ -25,17 +25,53 @@ c_blue="\033[1;34m"
 c_magenta="\033[1;35m"
 c_cyan="\033[1;36m"
 c_reset="\033[0m"
+c_bold="\033[1m"
 #}}}
 
 # debugging
 : ${log_level:=2}
 
 #state variables
-: "${__is_submenu:=0}"
-: "${__is_scrape_for_submenu:=0}"
-: "${__is_fzf_preview:=0}"
+: "${__is_submenu:=0}" "${__is_scrape_for_submenu:=0}" "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
+
+remove_ansi_escapes () {
+    sed -e 's/\[\([[:digit:]][[:digit:]]*\(;\|m\)\)*//g' -e 's/[^[:print:]]*//g'
+}
+
+do_an_event_function () {
+    event="$1"
+    shift
+    command_exists "$event" && $event "$@"
+    for ext in $loaded_extensions; do
+        command_exists "${event}_$ext" && ${event}_$ext "$@"
+    done
+}
+
+
+# Takes video json file as $1 and returns the selected video IDs to file $2
+video_info_text () {
+	#we can't just change the views line to %d because it needs to display the "|", and "|$views" is NaN
+	[ "${views#|}" -eq "${views#|}" ] 2>/dev/null && views="|$(printf "%s" "${views#|}" | add_commas)"
+	printf "%-${title_len}.${title_len}s\t" "$title"
+	printf "%-${channel_len}.${channel_len}s\t" "$channel"
+	printf "%-${dur_len}.${dur_len}s\t" "$duration"
+	printf "%-${view_len}.${view_len}s\t" "$views"
+	printf "%-${date_len}.${date_len}s\t" "$date"
+	printf "%s" "$url"
+	printf "\n"
+}
+
+thumbnail_video_info_text () {
+	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%s" "$views" | add_commas)"
+	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
+	[ -n "$channel" ] && printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
+	[ -n "$duration" ] && printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
+	[ -n "$views" ] && printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
+	[ -n "$date" ] && printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
+	[ -n "$description" ] && printf "\n ${c_blue}Description ${c_reset}: %s" "$(printf "%s" "$description" | sed 's/\\n/\n/g')"
+}
 
 detach_cmd () {
   nohup "$@" > "/dev/null" 2>&1 & 
@@ -50,7 +86,7 @@ source_scrapers () {
 		elif [ -f "$YTFZF_SYSTEM_ADDON_DIR/scrapers/$_scr" ]; then
 			. "${YTFZF_SYSTEM_ADDON_DIR}/scrapers/$_scr"
 		fi
-		command_exists "on_startup_$_scr" && on_startup_$_scr
+		[ $__is_fzf_preview -eq 0 ] && command_exists "on_startup_$_scr" && on_startup_$_scr
 	done
 	unset IFS
 }
@@ -58,18 +94,24 @@ source_scrapers () {
 add_commas () {
 	awk '
 		{
-			for(i=length($1); i>0; i--){
-				if(i % 3 == 0 && i != length($1)){
-					printf ","
+            for(i=0; i<length($1); i++){
+				if(i % 3 == 0 && i!=0){
+                    printf ","
 				}
-				printf substr($1, length($1) - i, 1)
+                printf "%s", substr($1, length($1) - i, 1)
 			}
 		}
 
 		END{
-			#print a new line
-			print ""
-		}'
+            print ""
+		}' |
+        awk '
+            {
+                for (i=length($1); i>0; i--){
+                    printf "%s", substr($1, i, 1)
+                }
+            }
+        '
 }
 
 command_exists () {
@@ -95,21 +137,21 @@ command_exists "shuf" || shuf () {
 
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
-	[ $log_level -ge 2 ] && printf "$1" >&2
+	[ $log_level -ge 2 ] && printf -- "$1" >&2
 }
 print_warning () {
-	[ $log_level -ge 1 ] && printf "${c_yellow}${1}${c_reset}" >&2
+	[ $log_level -ge 1 ] && printf -- "${c_yellow}${1}${c_reset}" >&2
 }
 print_error () {
-	[ $log_level -ge 0 ] && printf "${c_red}${1}${c_reset}" >&2
+	[ $log_level -ge 0 ] && printf -- "${c_red}${1}${c_reset}" >&2
 }
 
 clean_up () {
 	# print_info "cleaning up\n"
 	# clean up only as parent process
 	#kill ytfzf sub process{{{
-	#i think this needs to be written to a file becuase of sub-shells
-	jobs_file="${session_cache_dir:-${TMPDIR:-/tmp}}/the-jobs-need-to-be-written-to-a-file.list"
+	#i think this needs to be written to a file because of sub-shells
+	jobs_file="${TMPDIR:-/tmp}/the-jobs-need-to-be-written-to-a-file.list"
 	jobs -p > "$jobs_file"
 	while read -r line; do
 		[ "$line" ] && kill "$line" 2> /dev/null
@@ -118,7 +160,7 @@ clean_up () {
 	if [ $__is_fzf_preview -eq 0 ]; then
 		[ -d "$session_cache_dir" ] && [ $keep_cache -eq 0 ] && rm -r "$session_cache_dir"
 	fi
-	command_exists  "on_clean_up" && on_clean_up
+    do_an_event_function on_clean_up
 }
 
 is_relative_dir () {
@@ -140,15 +182,64 @@ trim_url () {
 	done
 }
 
-command_exists "quick_menu" || quick_menu () {
-	fzf --reverse --prompt="$1"
+quick_menu () {
+	fzf --ansi --reverse --prompt="$1"
 }
-command_exists "quick_menu_ext" || quick_menu_ext (){
+quick_menu_ext (){
 	external_menu "$1"
 }
-command_exists "quick_menu_scripting" || quick_menu_scripting () {
+quick_menu_scripting () {
 	quick_menu "$1"
 }
+
+#the menu to use instead of fzf when -D is specified
+external_menu () {
+	#dmenu extremely laggy when showing tabs
+	tr -d '\t' | remove_ansi_escapes | dmenu -i -l 30 -p "$1"
+}
+
+search_prompt_menu () {
+	printf "Search\n>"
+	read -r _search
+	printf "\033[1A\033[K\r%s\n" "> $_search"
+}
+search_prompt_menu_ext () {
+	_search="$(printf '' | external_menu "Search: ")"
+}
+search_prompt_menu_scripting () {
+	search_prompt_menu
+}
+
+search_prompt_menu_wrapper () {
+	#the last sed is to set it to quick_menu if $interfce is "" (default)
+	[ $use_search_hist -eq 1 ] && { _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)"; return; }
+	 fn_name=search_prompt_menu"$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
+	 #we could do :
+	 # $fn_name 2>/dev/null || [ "$?" -eq 127 ] && search_prompt_menu_ext
+	 #however, if we do that, the user won't get their error messages from their script
+	 if command_exists "$fn_name"; then
+		 $fn_name
+	 else search_prompt_menu_ext
+	 fi
+}
+
+handle_playing_notifications (){
+	#if no notify-send push error to /dev/null
+	[ $# -le 1 ] && {
+		IFS="$tab_space"
+		while read -r id title; do
+			notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
+		done <<-EOF
+		$(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
+		EOF
+        unset IFS
+	} || { notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null; }
+}
+
+parse_search_hist_file () {
+	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
+}
+
 
 quick_menu_wrapper () {
 	prompt="$1"
@@ -158,6 +249,20 @@ quick_menu_wrapper () {
 	else quick_menu_ext "$prompt"
 	fi
 	unset fn_name
+}
+
+load_extension () {
+    ext=$1
+    loaded_extensions="$loaded_extensions $(printf "%s" "$ext" | sed 's/[ -]/_/g')"
+    loaded_extensions="${loaded_extensions# }"
+    if [ -f "${YTFZF_EXTENSIONS_DIR}/${ext}" ]; then
+        . "${YTFZF_EXTENSIONS_DIR}/${ext}"
+    elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/extensions/${ext}" ]; then
+        . "${YTFZF_SYSTEM_ADDON_DIR}/extensions/${ext}"
+    else
+        . "$ext"
+    fi
+    return $?
 }
 
 # Traps {{{
@@ -178,7 +283,6 @@ for dep in jq curl; do
 done
 #}}}
 
-
 #configuration handling {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
@@ -188,6 +292,7 @@ done
 : "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
 : "${YTFZF_URL_HANDLERS_DIR:=$YTFZF_CONFIG_DIR/url-handlers}"
 : "${YTFZF_CUSTOM_THUMBNAILS_DIR:=$YTFZF_CONFIG_DIR/thumbnails}"
+: "${YTFZF_EXTENSIONS_DIR:=$YTFZF_CONFIG_DIR/extensions}"
 
 : "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
 
@@ -201,91 +306,30 @@ done
 : "${useragent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36}"
 
 # menu options
-#the menu to use instead of fzf when -D is specified
-command_exists "external_menu" || external_menu () {
-	#dmenu extremely laggy when showing tabs
-	tr -d '\t' | dmenu -i -l 30 -p "$1"
-}
 
-command_exists "search_prompt_menu" || search_prompt_menu () {
-	printf "Search\n>"
-	read -r _search
-	printf "\033[1A\033[K\r%s\n" "> $_search"
-}
-command_exists "search_prompt_menu_ext" || search_prompt_menu_ext () {
-	_search="$(printf '' | external_menu "Search: ")"
-}
-command_exists "search_prompt_menu_scripting" || search_prompt_menu_scripting () {
-	search_prompt_menu
-}
-
-search_prompt_menu_wrapper () {
-	#the last sed is to set it to quick_menu if $interfce is "" (default)
-	[ $use_search_hist -eq 1 ] && { _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)"; return; }
-	 fn_name=search_prompt_menu"$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
-	 #we could do :
-	 # $fn_name 2>/dev/null || [ "$?" -eq 127 ] && search_prompt_menu_ext
-	 #however, if we do that, the user won't get their error messages from their script
-	 if command_exists "$fn_name"; then
-		 $fn_name
-	 else search_prompt_menu_ext
-	 fi
-}
-
-: ${enable_submenus:=1}
-
-: ${submenu_opts=}
-: ${submenu_scraping_opts=}
+: ${enable_submenus:=1} ${submenu_opts=} ${submenu_scraping_opts=} "${enable_back_button:=1}"
 
 : ${interface=}
 
-: ${fancy_subs:=0}
-: "${fancy_subs_left=-------------}"
-: "${fancy_subs_right="${fancy_subs_left}"}"
+: ${fancy_subs:=0} "${fancy_subs_left=-------------}" "${fancy_subs_right="${fancy_subs_left}"}"
 
-: "${enable_back_button:=1}"
-
-: "${fzf_preview_side:=left}"
-
-: "${thumbnail_viewer:=ueberzug}"
+: "${fzf_preview_side:=left}" "${thumbnail_viewer:=ueberzug}"
 
 : "${w3mimgdisplay_path:=/usr/lib/w3m/w3mimgdisplay}"
 
 # shortcuts
-: "${download_shortcut:=alt-d}"
-: "${video_shortcut:=alt-v}"
-: "${audio_shortcut:=alt-m}"
-: "${detach_shortcut:=alt-e}"
-: "${print_link_shortcut:=alt-l}"
-: "${show_formats_shortcut:=alt-f}"
-: "${info_shortcut:=alt-i}"
-: "${search_again_shortcut:=alt-s}"
-: "${next_page_shortcut:=alt-p}"
-
+: "${download_shortcut:=alt-d}" "${video_shortcut:=alt-v}" "${audio_shortcut:=alt-m}" "${detach_shortcut:=alt-e}" "${print_link_shortcut:=alt-l}" "${show_formats_shortcut:=alt-f}" "${info_shortcut:=alt-i}" "${search_again_shortcut:=alt-s}" "${next_page_shortcut:=alt-p}"
 : "${custom_shortcut_binds=}"
 : "${shortcut_binds:=Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}}"
 
-#number of columns (characters on a line) the external menu can have
-: ${external_menu_len:=210}
+#interface design
+: ${show_thumbnails:=0} ${is_sort:=0} ${skip_thumb_download:=0} ${external_menu_len:=210}
 
-: ${is_loop:=0}
-: ${search_again:=0}
+: ${is_loop:=0} ${search_again:=0}
 
 # Notifications
 
 : ${notify_playing:=0}
-
-command_exists "handle_playing_notifications" || handle_playing_notifications (){
-	#if no notify-send push error to /dev/null
-	[ $# -le 1 ] && {
-		IFS="$tab_space"
-		while read -r id title; do
-			notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
-		done <<-EOF
-		$(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
-		EOF
-	} || { notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null; }
-}
 
 # urlhandlers
 #job of url handlers is:
@@ -295,14 +339,14 @@ command_exists "video_player" || video_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
     [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
-    $use_detach_cmd mpv --ytdl-format="$ytdl_pref" "$@"
+    $use_detach_cmd mpv --ytdl-format="$ytdl_pref" $url_handler_opts "$@"
 }
 command_exists "audio_player" || audio_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
 	case "$is_detach" in
-		0) mpv --no-video --ytdl-format="$ytdl_pref" "$@" ;;
-		1) detach_cmd mpv --force-window --no-video --ytdl-format="$ytdl_pref" "$@" ;;
+		0) mpv --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
+		1) detach_cmd mpv --force-window --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
 	esac
 }
 command_exists "multimedia_player" || multimedia_player () {
@@ -325,45 +369,26 @@ command_exists "downloader" || downloader () {
 [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
 
 # directories
-: "${cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf}"
-
-: "${keep_cache:=0}"
+: "${cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf}" "${keep_cache:=0}"
 
 # files
-: "${hist_file:=$cache_dir/watch_hist}"
-: "${search_hist_file:=$cache_dir/search_hist}"
-
-command_exists "parse_search_hist_file" || parse_search_hist_file () {
-	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
-}
+: "${hist_file:=$cache_dir/watch_hist}" "${search_hist_file:=$cache_dir/search_hist}"
 
 # history
-: ${enable_hist:=1}
-: ${enable_search_hist:=1}
+: ${enable_hist:=1} ${enable_search_hist:=1}
 : ${use_search_hist:=0}
 
 # format options
 #variable for switching on sort (date)
-: ${is_detach:=0}
-: ${is_audio_only:=0}
+: ${is_detach:=0} ${is_audio_only:=0}
 : "${url_handler:=multimedia_player}"
-: ${info_to_print=}
-: ${info_wait_action=q}
-: "${info_wait:=0}"
-: "${video_pref:=bestvideo}"
-: "${audio_pref:=bestaudio}"
-: ${show_formats:=0}
-: "${format_selection_screen:=normal}"
-: "${format_selection_sort:=height}"
-
-: ${is_sort:=0}
-: ${show_thumbnails:=0}
-: ${skip_thumb_download:=0}
+: "${url_handler_opts=}"
+: ${info_to_print=} "${info_wait:=0}" ${info_wait_action=q}
+: "${video_pref:=bestvideo}" "${audio_pref:=bestaudio}"
+: ${show_formats:=0} "${format_selection_screen:=simple}" "${format_selection_sort:=height}"
 
 : ${scripting_video_count:=1}
-: ${is_random_select:=0}
-: ${is_auto_select:=0}
-: ${is_specific_select:=0}
+: ${is_random_select:=0} ${is_auto_select:=0} ${is_specific_select:=0}
 
 # option parsing
 : "${long_opt_char:=-}"
@@ -373,24 +398,13 @@ command_exists "parse_search_hist_file" || parse_search_hist_file () {
 #this comes from invidious' api
 : "${thumbnail_quality=high}"
 : ${sub_link_count:=2}
-: "${invidious_instance:=https://vid.puffyan.us}"
-: "${yt_video_link_domain:=https://youtube.com}"
-: ${pages_to_scrape:=1}
-: ${odysee_video_search_count:=30}
-
-: "${search_sort_by:=relevance}"
-: "${search_upload_date=}"
-: "${search_video_duration=}"
-: "${search_result_type:=video}"
-: "${search_result_features=}"
-: "${search_region:=US}"
+: "${invidious_instance:=https://vid.puffyan.us}" "${yt_video_link_domain:=https://youtube.com}"
+: "${search_sort_by:=relevance}" "${search_upload_date=}" "${search_video_duration=}" "${search_result_type:=video}" "${search_result_features=}" "${search_region:=US}" ${pages_to_scrape:=1}
+: "${nsfw:=false}" ${odysee_video_search_count:=30}
 
 : "${multi_search:=0}"
 
-: "${nsfw:=false}"
-
-: "${custom_scrape_search_exclude=}"
-: "${scrape_search_exclude:= youtube-subscriptions S SI T youtube-trending H history ${custom_scrape_search_exclude} }"
+: "${custom_scrape_search_exclude=}" "${scrape_search_exclude:= youtube-subscriptions S SI SL T youtube-trending H history ${custom_scrape_search_exclude} }"
 
 : ${max_thread_count:=20}
 
@@ -430,20 +444,8 @@ usage () {
                                 see ytfzf(1) for more info.
         -n <video count>        The amount of videos to select with -a and -r
         -c <scraper>       	The scraper to use,
-              Builtin scrapers:
-                  youtube/Y, youtube-trending/T, youtube-subscriptions/S/SI,
-                  peertube/P, odysee/lbry/O,
-                  history/H,
-                  url/U,
-                  youtube-playlist
-                    instead of giving a search, give a link to a playlist
-                  youtube-channel
-                    instead of giving a search, give a link to a channel
-                  comments
-                    scrapes a comments json file produced by ytfzf
-                  * SI scrapes invidious for channels instead of youtube,
-                  * Y and T both scrape invidious
-              you can use multiple scrapers by separating each with a , eg: youtube,odysee
+                  See ytfzf(1) for a list of builtin scrapers
+                  you can use multiple scrapers by separating each with a comma, eg: youtube,odysee
         -H                      alias for -c H
         -t			Show thumbnails
         --thumb-viewer=viewer   The program to use for displaying thumbnails.
@@ -456,7 +458,7 @@ usage () {
                   J:         print the json of all videos shown in the search
                   R:         print the data of the selected videos, as appears in the menu
                   F:         print the selected video format
-              -x                       Clear search and watch history (use --history-clear=<search|watch> to specify 1)
+        -x                       Clear search and watch history (use --history-clear=<search|watch> to specify 1)
         --disable-submenus       Whether or not to disable submenus, which are menus for things like playlists and channels
         --version                Get the current version
 
@@ -559,7 +561,7 @@ scrape_subscriptions () {
 	    _i=$((_i+1))
 	    {
 			_tmp_subfile="${session_temp_dir}/channel-$_i"
-			$channel_scraper "$channel_url" "$_tmp_subfile" "channel-$_i" < /dev/null || return "$?"
+			$channel_scraper "$channel_url" "$_tmp_subfile" < /dev/null || return "$?"
 			if [ ${fancy_subs} -eq 1 ]; then
 				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].channel + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel)" }]' < "$_tmp_subfile"
 			fi >> "$ytfzf_video_json_file"
@@ -578,11 +580,9 @@ scrape_subscriptions () {
 
 scrape_youtube_channel () {
 	channel_url="$1"
+    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\n" && return 100
 	output_json_file="$2"
-	tmp_filename="$3"
 	print_info "Scraping Youtube channel: $channel_url\n"
-	_tmp_html="${session_temp_dir}/${tmp_filename}.html"
-	_tmp_json="${session_temp_dir}/${tmp_filename}.json"
 
 	# Converting channel title page url to channel video url
 	case "$channel_url" in
@@ -593,6 +593,10 @@ scrape_youtube_channel () {
 	[ "$channel_id/videos" = "$channel_url" ] &&\
 		print_warning "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
 		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
+
+	tmp_filename="channel-${channel_id}"
+	_tmp_html="${session_temp_dir}/${tmp_filename}.html"
+	_tmp_json="${session_temp_dir}/${tmp_filename}.json"
 
 	_get_request "https://www.youtube.com/channel/${channel_id}/videos" > "$_tmp_html"
 	_youtube_get_json < "$_tmp_html" > "$_tmp_json"
@@ -694,6 +698,27 @@ _invidious_search_json_videos () {
 		}
 	]'
 }
+_invidious_search_json_generic () {
+	jq '
+	def pad_left(n; num):
+		num | tostring |
+			if (n > length) then ((n - length) * "0") + (.) else . end
+		;
+	[ .[] |
+		{
+			scraper: "youtube_search",
+			ID: .videoId,
+			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
+			title: .title,
+			channel: .author,
+			thumbs: "'"${invidious_instance}"'/vi/\(.videoId)/'"$thumbnail_quality"'.jpg",
+			duration: "\(.lengthSeconds / 60 | floor):\(pad_left(2; .lengthSeconds % 60))",
+			views: "\(.viewCount)",
+			date: .publishedText,
+			description: .description
+		}
+	]'
+}
 
 _invidious_playlist_json () {
 	jq '
@@ -734,6 +759,7 @@ _concatinate_json_file () {
 
 scrape_invidious_playlist () {
 	playlist_url=$1
+    [ "$playlist_url" = ":help" ] && print_info "The search should be a link to a youtube playlist\n" && return 100
 	output_json_file=$2
 
 	playlist_id="${playlist_url##*[?]list=}"
@@ -762,6 +788,7 @@ scrape_invidious_playlist () {
 
 scrape_invidious_search () {
 	page_query=$1
+    [ "$page_query" = ":help" ] && print_info "Make a youtube search\n" && return 100
 	output_json_file=$2
 	pagetype=$3
 	page_num=$4
@@ -800,8 +827,22 @@ scrape_invidious_search () {
 	_concatinate_json_file "${session_temp_dir}/yt-search-" "$page_num" "$output_json_file"
 }
 
+scrape_invidious_video_recommended () {
+    video="$1"
+    [ "$video" = ":help" ] && print_info "The search should be a link to a youtube video\n" && return 100
+    output_json_file="$2"
+    case "$video" in
+        */*) video="${video##*=}" ;;
+    esac
+    _tmp_json="${session_temp_dir}/invidious-video-recommended.json"
+    _get_request "$invidious_instance/api/v1/videos/$video" | jq '.recommendedVideos' > "$_tmp_json"
+    _get_invidious_thumb_quality_name
+    _invidious_search_json_generic < "$_tmp_json" >> "$output_json_file"
+}
+
 scrape_invidious_trending () {
 	trending_tab=$(title_str $1)
+    [ "$trending_tab" = ":help" ] && print_info "The search should be one of: Normal, Gaming, Music, News\n" && return 100
 	output_json_file=$2
 	print_info "Scraping YouTube (with $invidious_instance) trending (${trending_tab:-Normal})\n"
 
@@ -820,10 +861,10 @@ scrape_invidious_trending () {
 
 scrape_invidious_channel () {
 	channel_url=$1
+    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\n" && return 100
 	output_json_file=$2
-	tmp_file_name=$3
 	#default to one, because -cSI does not give a page count
-	page_num=${4:-1}
+	page_num=${3:-1}
 
 	# Converting channel title page url to channel video url
 	case "$channel_url" in
@@ -835,6 +876,9 @@ scrape_invidious_channel () {
 		print_warning "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
 		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
 
+	tmp_file_name="channel-${channel_id}"
+	_tmp_html="${session_temp_dir}/${tmp_file_name}.html"
+	_tmp_json="${session_temp_dir}/${tmp_file_name}.json"
 
 	#here because if scrape_invidious_channel is called more than once, i needs to be reset
 	_cur_page=1
@@ -868,6 +912,7 @@ scrape_invidious_channel () {
 ## Peertube {{{
 scrape_peertube () {
 	page_query=$1
+    [ "$page_query" = ":help" ] && print_info "Search peertube\n" && return 100
 	output_json_file=$2
 	print_info "Scraping Peertube ($page_query)\n"
 
@@ -901,6 +946,7 @@ scrape_peertube () {
 ## Odysee {{{
 scrape_odysee () {
 	page_query=$1
+    [ "$page_query" = ":help" ] && print_info "Search odysee\n" && return 100
 	[ "${#page_query}" -le 2 ] && die 4 "Odysee searches must be 3 or more characters\n"
 	output_json_file=$2
 	print_info "Scraping Odysee ($page_query)\n"
@@ -983,6 +1029,7 @@ scrape_json_file () {
 # Comments{{{
 scrape_comments () {
 	video_id="$1"
+    [ "$video_id" = ":help" ] && print_info "Search should be a link to a youtube video\n" && return 100
 	case "$video_id" in
 		*/*) video_id="${video_id##*=}" ;;
 	esac
@@ -1084,17 +1131,38 @@ set_keypress () {
 	unset keypress
 }
 
+handle_post_keypress () {
+    read -r keypress < "$keypress_file"
+	command_exists "handle_custom_post_keypresses" && { handle_custom_post_keypresses "$keypress" || return "$?"; }
+	case "$keypress" in
+		$download_shortcut|$video_shortcut|$audio_shortcut) url_handler=$_last_url_handler ;;
+		$detach_shortcut) is_detach=0 ;;
+		$print_link_shortcut|$info_shortcut) info_to_print="$_last_info_to_print" ;;
+		$show_formats_shortcut) show_formats=0 ;;
+		$next_page_shortcut) : ;;
+		$search_again_shortcut) : ;;
+		*)
+			_fn_name=handle_post_keypress_$(sed 's/-/_/g' <<-EOF
+							$keypress
+						EOF
+						)
+			command_exists "$_fn_name" && $_fn_name ;;
+	esac
+	unset keypress
+
+}
+
 handle_keypress () {
 	keypress="$1"
 	command_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
 	case "$keypress" in
-		$download_shortcut) url_handler=downloader ;;
-		$video_shortcut) url_handler=video_player ;;
-		$audio_shortcut) url_handler=audio_player ;;
+		$download_shortcut) _last_url_handler=$url_handler; url_handler=downloader ;;
+		$video_shortcut) _last_url_handler=$url_handler; url_handler=video_player ;;
+		$audio_shortcut) _last_url_handler=$url_handler; url_handler=audio_player ;;
 		$detach_shortcut) is_detach=1 ;;
-		$print_link_shortcut) info_to_print="L" ;;
+		$print_link_shortcut) _last_info_to_print="$info_to_print"; info_to_print="L" ;;
 		$show_formats_shortcut) show_formats=1 ;;
-		$info_shortcut) info_to_print="VJ" ;;
+		$info_shortcut) _last_info_to_print="$info_to_print"; $info_to_print="VJ" ;;
 		$next_page_shortcut) 
 			read -r url < "$selected_id_file"
 			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
@@ -1117,34 +1185,11 @@ handle_keypress () {
 
 #}}}
 
-# Takes video json file as $1 and returns the selected video IDs to file $2
-command_exists "video_info_text" || video_info_text () {
-	#we can't just change the views line to %d because it needs to display the "|", and "|$views" is NaN
-	[ "${views#|}" -eq "${views#|}" ] 2>/dev/null && views="$(printf "|%s" "${views#|}" | add_commas)"
-	printf "%-${title_len}.${title_len}s\t" "$title"
-	printf "%-${channel_len}.${channel_len}s\t" "$channel"
-	printf "%-${dur_len}.${dur_len}s\t" "$duration"
-	printf "%-${view_len}.${view_len}s\t" "$views"
-	printf "%-${date_len}.${date_len}s\t" "$date"
-	printf "%s" "$url"
-	printf "\n"
-}
 
 command_exists "thumbnail_video_info_text_comments" || thumbnail_video_info_text_comments () {
-	[ -n "$title" ] && printf "\033[1m%s\n\033[0m" "$title"
+	[ -n "$title" ] && printf "${c_bold}%s\n${c_reset}" "$title"
 	[ -n "$description" ] && printf "\n%s" "$description"
 }
-
-command_exists "thumbnail_video_info_text" || thumbnail_video_info_text () {
-	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%s" "$views" | add_commas)"
-	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
-	[ -n "$channel" ] && printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
-	[ -n "$duration" ] && printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
-	[ -n "$views" ] && printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
-	[ -n "$date" ] && printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
-	[ -n "$description" ] && printf "\n ${c_blue}Description ${c_reset}: %s" "$(printf "%s" "$description" | sed 's/\\n/\n/g')"
-}
-
 # Scripting interfaces {{{
 interface_scripting () {
 	video_json_file=$1
@@ -1161,19 +1206,26 @@ interface_scripting () {
 # Text interface {{{
 interface_text () {
 	command_exists "fzf" || die 3 "fzf not installed, cannot use the default menu\n"
+    #if it doesn't exist, this menu has not opened yet, no need to revert the actions of the last keypress
+    [ -f "$keypress_file" ] && handle_post_keypress
 	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
+
+    command_exists "tput" || print_warning "command \"tput\" not found, defaulting to terminal width of 80 columns\n"
+    command_exists "column" && use_column=1 || { print_warning "command \"column\" not found, the menu may look very bad\n" && use_column=0; }
+
 	video_json_file=$1
 	selected_id_file=$2
 
 	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
 	TTY_COLS=$(tput cols)
+    TTY_COLS=${TTY_COLS:-80}
 	title_len=$((TTY_COLS/2))
 	channel_len=$((TTY_COLS/5))
 	dur_len=7
 	view_len=10
 	date_len=100
 
-	IFS=" ${tab_space}${new_line}"
+	unset IFS
 
 	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
 		sort_video_data_fn |
@@ -1181,7 +1233,7 @@ interface_text () {
 		do
 			video_info_text
 		done |
-		column -t -s "$tab_space" |
+        { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
 		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
 		trim_url > "$selected_id_file"
 	#we can't do handle_keypress < "$keypress_file" because it leaves fd0 open which breaks $search_again_shortcut
@@ -1224,9 +1276,10 @@ get_missing_thumbnails () {
 	ids="$(jq -r '.[]|select(.thumbs!=null)|.thumbs + ";" + .ID' < "$video_json_file")"
 	ls -1 "$thumb_dir" | sed 's/\..*//' | sort > "$_downloaded_ids_file"
 
-	missing_ids="$(diff "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^> //p')"
+	missing_ids="$(diff -u "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^+//p' | sed '1d')"
 
 	set -f
+    unset IFS
 	set -- $missing_ids
 	IFS="|"
 	search_grep="$*"
@@ -1250,7 +1303,7 @@ download_thumbnails () {
 }
 
 get_video_json_attr () {
-	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^"\n]*\)",*/\1/p' <<EOF
+	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^\n]*\)",*/\1/p' <<EOF | sed 's/\\\([\\"]\)/\1/g'
 $_correct_json
 EOF
 }
@@ -1264,10 +1317,10 @@ preview_start () {
 			UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
-			ueberzug layer --parser simple < "$UEBERZUG_FIFO" 2>/dev/null &
+			ueberzug layer --parser json < "$UEBERZUG_FIFO"  &
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|swayimg) : ;;
     kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
 		imv)
 			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
@@ -1287,6 +1340,7 @@ preview_stop () {
 			exec 3>&- # close file descriptor 3, closing ueberzug
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|kitty) : ;;
+        swayimg) killall swayimg 2> /dev/null;;
 		imv) kill "$imv_pid" ;;
 		*)
 			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
@@ -1295,8 +1349,17 @@ preview_stop () {
 preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
-		ueberzug|chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|imv) : ;;
-    kitty) kitty +kitten icat --clear --transfer-mode file ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|imv) : ;;
+        ueberzug)
+            { 
+                printf "{"
+                printf "\"%s\": \"%s\"," "action" "remove" "identifier" "ytfzf"
+                printf '"%s": "%s"' "draw" "True"
+                printf "}\n"
+            } > "$UEBERZUG_FIFO"
+			;;
+        kitty) kitty +kitten icat --clear --transfer-mode file ;;
+        swayimg) killall swayimg 2> /dev/null; true ;; #we want this to be true so that the && at the bottom happens
 		*) "$thumbnail_viewer" "no-img" ;;
 	esac && die 1 "\nno image found" 
 }
@@ -1326,71 +1389,158 @@ command_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down 
 	y=$(($2*2-height+2))
 	x=2
 }
+
+command_exists "get_swayimg_positioning_left" || get_swayimg_positioning_left () {
+    #allows space for text
+    y_gap=$((line_px_height*8))
+    
+    #it's subtracting the gap between the border and the edge of terminal
+    w_correct=$((max_width/2-2*col_px_width))
+    h_correct=$((max_height-3*line_px_height-y_gap))
+
+    #offset from the edge by half a column
+    x=$((term_x+col_px_width/2))
+    #move down to allow for text
+    y=$((term_y+y_gap))
+    [ "$img_w" -gt "$w_correct" ] && img_w=$((w_correct))
+    #-20 is to leave space for the text
+    [ "$img_h" -gt "$h_correct" ] && img_h=$((h_correct))
+}
+
+command_exists "get_swayimg_positioning_right" || get_swayimg_positioning_right () {
+    get_swayimg_positioning_left "$@"
+    #after setting the positioning as if side was `left` set x to the correct place
+    x=$((term_x+w_half+col_px_width/2))
+}
+
+command_exists "get_swayimg_positioning_up" || get_swayimg_positioning_up () {
+    w_correct=$((max_width/2))
+    #offset from border slightly
+    h_correct=$((max_height-2*line_px_height))
+
+    #offset from info text by 30 columns
+    x=$((term_x+30*col_px_width))
+    #go down from the top by 2 lines
+    y=$((term_y+2*line_px_height))
+
+    [ "$img_w" -gt "$w_correct" ] && img_w=$((w_correct))
+    #-20 is to leave space for the text
+    [ "$img_h" -gt "$h_correct" ] && img_h=$((h_correct))
+}
+
+command_exists "get_swayimg_positioning_down" || get_swayimg_positioning_down () {
+get_swayimg_positioning_up "$@"
+    #after setting the positioning as if side was `up` set y to the correct place
+    y=$((term_y+max_height/2+2*line_px_height))
+}
+
+get_swayimg_positioning () {
+    max_width=$1
+    max_height=$2
+    term_x=$3
+    term_y=$4
+    col_px_width=$5
+    line_px_height=$6
+
+    img_size="$(identify -format "%w %h" "$thumb_path")"
+    img_w=${img_size% *}
+    img_h=${img_size#* }
+
+    get_swayimg_positioning_$fzf_preview_side "${img_size% *}" "${img_size#* }" "$max_width" "$max_height" "$term_x" "$term_y" "$col_px_width" "$line_px_height"
+}
+
 get_ueberzug_positioning () {
 	max_width=$1
 	max_height=$2
 	side=$3
-	case "$fzf_preview_side" in
-		left) get_ueberzug_positioning_left "$max_width" "$max_height" ;;
-		right) get_ueberzug_positioning_right "$max_width" "$max_height" ;;
-		up) get_ueberzug_positioning_up "$max_width" "$max_height" ;;
-		down) get_ueberzug_positioning_down "$max_width" "$max_height" ;;
-	esac
+    get_ueberzug_positioning_$fzf_preview_side "$max_width" "$max_height"
 }
 #}}}
 preview_display_image () {
 	thumbnail_viewer=$1
 	id=$2
-	thumb_path="${thumb_dir}/${id}.jpg"
-	[ -f "${thumb_path}" ] || thumb_path="${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg"
-	[ -f "${thumb_path}" ] || preview_no_img "$thumbnail_viewer"
+
+    for path in "${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg" "${thumb_dir}/${id}.jpg"  "${YTFZF_CUSTOM_THUMBNAILS_DIR}/YTFZF:DEFAULT.jpg"; do
+        thumb_path="$path"
+        [ -f "${thumb_path}" ] && break
+    done || preview_no_img "$thumbnail_viewer"
+
+    get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 	case $thumbnail_viewer in
 		ueberzug)
-			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 			command_exists "ueberzug" || die 3 "ueberzug is not installed\n"
-			printf '%s\t' \
-				'action' 'add' \
-				'identifier' 'ytfzf' \
-				'path' "$thumb_path" \
-				'x' "$x" \
-				'y' "$y" \
-				'scaler' 'fit_contain' \
-				'width' "$width" > "$UEBERZUG_FIFO"
-			printf '%s\t%s\n' \
-				'height' "$height" > "$UEBERZUG_FIFO"
+            {
+                printf "{"
+                printf '"%s": "%s",' \
+                    'action' 'add' \
+                    'identifier' 'ytfzf' \
+                    'path' "$thumb_path" \
+                    'x' "$x" \
+                    'y' "$y" \
+                    'scaler' 'fit_contain' \
+                    'width' "$width"
+                printf '"%s": "%s"' 'height' "$height"
+                printf "}\n"
+            } > "$UEBERZUG_FIFO"
 			;;
+        swayimg)
+            command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n"
+            read -r x y w h term_pid <<-EOF
+$(swaymsg -t get_tree | jq -r '..|try select(.focused==true)|[.rect.x,.rect.y,.rect.width,.rect.height,.pid]|@tsv')
+EOF
+            focused_id=$(swaymsg -t get_tree| jq -r '.focus[0]')
+            read -r output_x output_y <<-EOF
+$(swaymsg -t get_tree | jq -r '..|try select(.type=="output" and .id=='"$focused_id"')|[.rect.x,.rect.y]|@tsv')
+EOF
+            #we're subtracting output_* to make sure swayimg places on correct monitor
+            x=$((x-output_x))
+            y=$((y-output_y))
+            TTY_COLS=$(tput cols)
+            TTY_LINES=$(tput lines)
+            w_half=$((w/2)) h_half=$((h/2))
+            #how many pixels per col
+            col_px_width=$((w/TTY_COLS))
+            #how many pixels per line
+            line_px_height=$((h/TTY_LINES))
+
+            get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
+            swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path" & 2> /dev/null >&2
+            sleep 0.1
+            swaymsg "[pid=\"$term_pid\"]" focus > /dev/null 2>&1
+            #without this there are weird flushing issues
+            echo ;;
 		chafa)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_path" ;;
+            chafa -s "$((width-4))x$height" "$thumb_path" ;;
 		chafa-16)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -c 240 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_path" ;;
+			chafa -c 240 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
 		chafa-tty)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -c 16 -s "$((FZF_PREVIEW_COLUMNS-2))x$((FZF_PREVIEW_LINES-10))" "$thumb_path" ;;
+			chafa -c 16 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
 		catimg)
 			printf '\n'
 			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
-			catimg -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_path" ;;
+			catimg -w $width "$thumb_path" ;;
 		catimg-256)
 			printf '\n'
 			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
-			catimg -c -w $((FZF_PREVIEW_COLUMNS+50)) "$thumb_path" ;;
+			catimg -c -w $width "$thumb_path" ;;
 		w3m)
 			while true; do
-				printf "%b\n%s;\n" "0;1;10;130;$((FZF_PREVIEW_COLUMNS*5));$((FZF_PREVIEW_COLUMNS*3));;;;;$thumb_path" 3 | $w3mimgdisplay_path
+				printf "%b\n%s;\n" "0;1;10;130;$((width*5));$((width*3));;;;;$thumb_path" 3 | $w3mimgdisplay_path
 			done ;;
 		imv) 
 			imv-msg "$imv_pid" open "$thumb_path"
 			imv-msg "$imv_pid" next
 			;;
-    kitty)
-			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
-      kitty +kitten icat --clear --transfer-mode file
-      kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" ;;
+        kitty)
+            get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
+            kitty +kitten icat --clear --transfer-mode file
+            kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" ;;
 		*) 
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 			"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
@@ -1407,7 +1557,7 @@ preview_img () {
 	url=${line##*|}
 
 	#make sure all variables are set{{{
-	_correct_json=$(jq -r --arg url "$url" '[.[]|select(.url==$url)]|unique_by(.ID)[0]' < "$video_json_file")
+	_correct_json=$(jq -nr --arg url "$url" '[inputs[]|select(.url==$url)][0]' < "$video_json_file")
 	id="$(get_video_json_attr "ID")"
 	title="$(get_video_json_attr "title")"
 	channel="$(get_video_json_attr "channel")"
@@ -1440,13 +1590,13 @@ interface_thumbnails () {
 
 	preview_start "$thumbnail_viewer"
 
-	IFS=" ${tab_space}${new_line}"
+    unset IFS
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	#fzf_preview_side will get reset if we don't pass it in
-	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|@tsv' < "$video_json_file" |
+	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|join("\t")' < "$video_json_file" |
 	sort_video_data_fn |
-	fzf -m \
+    SHELL="$(command -v sh)" fzf -m \
 	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
 	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
 	trim_url > "$selected_id_file"
@@ -1483,6 +1633,7 @@ print_requested_info () {
 			    done < "$url_list" ;;
 		esac
 	done
+    unset IFS
 	[ $info_wait -eq 1 ] && { print_info "quit (q), quit (override -l) (Q), open menu (c|m), play (enter): "; read -r info_wait_action; }
 	return 0
 }
@@ -1497,7 +1648,7 @@ submenu_handler () {
 	unset IFS
 	while read -r line; do
 		#calls ytfzf to reduce code complexity
-		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 --info-exit $submenu_scraping_opts \
+		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 --info-exit $submenu_scraping_opts --search-again=0 \
 			-ac "$(get_key_value "$line" "type")" -IJ "$(get_key_value "$line" "search")" \
 			>> "$final_submenu_json_file"
 	done <<-EOF
@@ -1506,7 +1657,8 @@ submenu_handler () {
 
 	#the hist_file thing is to prevent watch_hist from being put in $session_cache_dir
 	set -f
-	__is_submenu=1 hist_file="$hist_file" cache_dir="${session_cache_dir}" $0 $submenu_opts --keep-cache -cp "$final_submenu_json_file"
+	__is_submenu=1 hist_file="$hist_file" cache_dir="${session_cache_dir}" $0 $submenu_opts --search-again=0 --keep-cache -cp "$final_submenu_json_file"
+
 }
 
 open_url_handler () {
@@ -1524,10 +1676,11 @@ open_url_handler () {
     esac
   }
 
+    unset IFS
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
-	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" | "$url_handler" "$@"
+	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" | session_temp_dir="${session_temp_dir}" session_cache_dir="${session_cache_dir}" "$url_handler" "$@"
 }
 
 get_video_format_simple () {
@@ -1544,7 +1697,7 @@ get_video_format(){
 	#the sed gets rid of random information
   _audio_choices="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort" | grep 'audio only')"
   [ "$_audio_choices" ] && audio_pref="$(echo "$_audio_choices" | quick_menu_wrapper "Audio format: " | awk '{print $1}')"
-  [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort"| sed '1,2d' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
+  [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort"|  sed 's/\\033\[[[:digit:]]*m//g' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
   printf "%s+%s/%s/%s" "$video_pref" "$audio_pref" "$video_pref" "$audio_pref"
 }
 #}}}
@@ -1623,7 +1776,7 @@ parse_opt () {
 		thumb-viewer)
 			case "$optarg" in
 				#these are special cases, where they are not themselves commands
-				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|w3m|imv|ueberzug|kitty) thumbnail_viewer="$optarg" ; true ;;
+				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|w3m|imv|ueberzug|kitty|swayimg) thumbnail_viewer="$optarg" ; true ;;
 				./*|/*|../*|~/*) thumbnail_viewer="$optarg"; false ;;
 				*)
 					if [ -f "${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}" ]; then
@@ -1663,8 +1816,24 @@ parse_opt () {
 		disable-back) enable_back_button=${optarg:-0} ;;
 		skip-thumb-download) skip_thumb_download=${optarg:-1} ;;
 		multi-search) multi_search=${optarg:-1} ;;
-    format-selection) format_selection_screen=${optarg:-quality};;
-    format-sort) format_selection_sort="$optarg" ;;
+        format-selection) format_selection_screen=${optarg:-normal};;
+        format-sort) format_selection_sort="$optarg" ;;
+        ext) load_extension "$optarg" ;;
+        url-handler-opts) url_handler_opts="$optarg" ;;
+        list-addons) 
+            for path in "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_SORT_NAMES_DIR"\
+                "$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_EXTENSIONS_DIR"; do
+                ! [ -d "$path" ] && continue
+                printf "${c_bold}%s:${c_reset}\n" "user addon, ${path##*/}"
+                ls "$path"
+            done
+            echo ----------------
+            for path in $(ls -1 $YTFZF_SYSTEM_ADDON_DIR); do
+                printf "${c_bold}%s:${c_reset}\n" "system addon, ${path##*/}"
+                ls "$YTFZF_SYSTEM_ADDON_DIR/$path"
+            done
+            exit
+            ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
@@ -1695,9 +1864,11 @@ done
 shift $((OPTIND-1))
 #}}}
 
+do_an_event_function "on_post_set_vars"
+
 #Post opt scrape{{{
+: "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
 source_scrapers
-: "${ytdl_pref:=$video_pref+$audio_pref/$video_pref/$audio_pref}"
 #}}}
 
 # Get search{{{
@@ -1793,6 +1964,8 @@ handle_scrape_error () {
 					print_error "There was an error scraping $curr_scrape ($invidious_instance)\nTry changing invidious instances\n" ;;
 				*) print_error "There was an error scraping $curr_scrape\n" ;;
 			esac ;;
+        #:help search operator
+        100) print_info "---------\n" && return 100;;
 		126) print_info "$curr_scrape does not have execute permissions\n" ;;
 		127) die 2 "invalid scraper: $curr_scrape\n" ;;
 	esac
@@ -1805,14 +1978,15 @@ scrape_website () {
 		invidious-playlist|youtube-playlist) scrape_invidious_playlist "$_search" "$ytfzf_video_json_file" ;;
 		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
 		playlist|p|json-file) scrape_json_file "$_search" "$ytfzf_video_json_file" ;;
-		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "channel-1" "$pages_to_scrape" ;;
-		youtube-channel) scrape_youtube_channel "$_search" "$ytfzf_video_json_file" "channel-1" ;;
+		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
+		youtube-channel) scrape_youtube_channel "$_search" "$ytfzf_video_json_file" ;;
 		youtube|Y) scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$pages_to_scrape" || return "$?" ;;
 		youtube-trending|T) scrape_invidious_trending  "$_search" "$ytfzf_video_json_file" "trending";;
 		youtube-subscriptions|S|SI) scrape_subscriptions "$scrape_type" "$ytfzf_video_json_file" ;;
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
 		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
+        video-recommended|R) scrape_invidious_video_recommended "$_search" "$ytfzf_video_json_file" ;;
 		url|U) 
 			printf "%s\n" "$_search" > "$ytfzf_selected_urls"
 			open_url_handler  "$ytfzf_selected_urls" ;;
@@ -1846,16 +2020,20 @@ handle_scraping (){
 		__scrape_count=$((__scrape_count+1))
 		manage_multi_filters
 		[ $multi_search -eq 1 ] && _search="$(next_search)"
-		command_exists "on_search" && on_search "$_search" "$curr_scrape"
+        do_an_event_function "on_search" "$_search" "$curr_scrape"
 		command_exists "on_search_$_search" && on_search_$_search "$curr_scrape"
 		scrape_website "$curr_scrape" "$_search"
 		handle_scrape_error "$?"
 	done
+    rv="$?"
+    unset IFS
+    #:help search operator
+    [ "$rv" -eq 100 ] && return 100
 }
 
 #check if nothing was scraped{{{
 handle_empty_scrape () {
-	[ ! -s "$ytfzf_video_json_file" ] && die 4 "Nothing was scraped\n"
+    [ ! -s "$ytfzf_video_json_file" ] && print_error "Nothing was scraped\n" && return 1
 
 	#sometimes the file fils up with empty arrays, we have to check if that's the case
 	something_was_scraped=0
@@ -1865,7 +2043,8 @@ handle_empty_scrape () {
 		#we can break if something was scraped, otherwise we are wasting time in the loop
 		break
 	done < "$ytfzf_video_json_file"
-	[ $something_was_scraped -eq 0 ] && die 4 "Nothing was scraped\n"
+	[ $something_was_scraped -eq 0 ] && print_error "Nothing was scraped\n" && return 1
+    return 0
 }
 #}}}
 
@@ -1885,13 +2064,20 @@ make_search () {
 	set_save_filters
 	[ $enable_search_hist -eq 1 ] && [ -n "$_search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 	handle_scraping "$_search" "$_save_search"
-	handle_empty_scrape
+    #:help search operator
+    [ "$?" -eq 100 ] && exit 0
 }
 #}}}
 
 # Main {{{
 
 make_search "$initial_search"
+until handle_empty_scrape; do 
+    case "$search_again" in
+        0) die 4 ;;
+        1) make_search ;;
+    esac
+done
 
 main() { 
 	while :; do
@@ -1927,4 +2113,4 @@ while [ $search_again -eq 1 ] ; do
 done
 #}}}
 
-# vim:foldmethod=marker
+#vim:foldmethod=marker:shiftwidth=4:tabstop=4

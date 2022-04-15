@@ -20,6 +20,20 @@ from Youtube, Peertube or Odysee
 (without API)
 and opens/downloads them using mpv/youtube\-dl.
 
+.SH SEARCH OPERATORS
+
+.PP
+Search operators are special search queries.
+.PP
+Standard search operators include:
+.RS
+.TP
+.IR :help
+Prints a possibly brief description of how to use the scraper.
+.RE
+.PP
+Addon scrapers may have more or less search operators
+
 .SH OPTIONS
 
 .PP
@@ -104,7 +118,7 @@ The available options are:
 .RS
 .TP
 .IR L | l | link
-Print the URL of the selected videos.
+Prints the URL of the selected videos.
 .TP
 .IR VJ | vj | video\-json
 Prints the json of the selected videos.
@@ -130,6 +144,12 @@ The action to do when \-\-info\-wait is 1.
 Whether or not to wait after printing info requested with \-I or \-L.
 This can also be set in the config file with
 .BR info_wait .
+.RE
+.TP
+.BR \-\-url\-handler\-opts=opts
+Opts to pass to the url handler, by default this will pass extra opts to mpv.
+This can also be set in the config file with
+.BR url_handler_opts .
 .RE
 
 .PP
@@ -186,7 +206,7 @@ This can also be changed in the config file with
 .BR \-\-thumb\-viewer=program
 Use program for displaying thumbnails.
 .br
-Bulitin programs:
+Built-in programs:
 .RS
 .TP
 .IR chafa, chafa-16, chafa-tty
@@ -194,9 +214,6 @@ chafa, chafa with 16 colors, chafa with 4 colors.
 .TP
 .IR catimg, catimg-256
 catimg, catimg with 256 colors.
-.TP
-.IR display
-Imagemagick's display module.
 .TP
 .IR w3m
 Uses a workaround to get w3m to work in fzf, may take up a lot of cpu.
@@ -206,6 +223,9 @@ Good with tiling window managers
 .TP
 .IR kitty
 For the kitty terminal.
+.TP
+.IR swayimg
+Only works on the sway wayland compositor.
 .TP
 .IR <custom>
 Additional viewers can be put into $YTFZF_THUMBNAIL_VIEWERS_DIR.
@@ -270,16 +290,16 @@ Auto selecting
 .RS
 .TP
 .BR \-a ", " \-\-auto\-select
-Auto\-play the first result,
+Auto\-play the first result.
 .TP
 .BR \-A ", " \-\-select\-all
 Select all results.
 .TP
 .BR \-r ", " \-\-random\-select
-Auto\-play a random result,
+Auto\-play a random result.
 .TP
 .BR \-S " \fIsed address\fR" ", " "\-\-select=\fIsed address\fR"
-Auto\-play a specifc video.
+Auto\-play a specific video.
 .PP
 .RS
 Examples:
@@ -308,7 +328,7 @@ Scrapers
 .TP
 .BI \-c " scrapers" ", " "\-\-scrape=scrapers"
 Set which scraper to use.
-Multiple scrapers can be separated by ,
+Multiple scrapers can be separated by comma (,).
 The currently supported builtin scrapers are:
 .RS
 .TP
@@ -322,6 +342,9 @@ Scrapes a youtube channel with youtube
 Scrapes a youtube channel with $invidious_instance
 .br
 When this scrape is active the search query is the link to a channel.
+.TP
+.IR video-recommended | R
+Scrapes recommended videos from an invidious video link
 .TP
 .IR youtube-playlist | invidious-playlist
 Scrapes a youtube playlist
@@ -345,7 +368,11 @@ Tabs:
 .TP
 .IR youtube\-subscriptions | S | SI
 .I SI
-scrapes invidious for channels instead of youtube
+Scrapes invidious for channels instead of youtube. Scraping youtube may result in rate limiting.
+.TP
+.IR scrape\-list | SL
+uses your $YTFZF_SCRAPELIST_FILE as scrape and search input.
+See "scrape lists" ytfzf(5) for more information.
 .TP
 .IR peertube | P
 .TP
@@ -377,7 +404,7 @@ Whether or not to use multi search.
 .br
 To use multi search, seperate each search with a comma, this works well when using multiple scrapers.
 .br
-This can a lso be set in the config file with
+This can also be set in the config file with
 .BR multi_search .
 .TP
 .B \-\-force\-youtube
@@ -390,12 +417,6 @@ Scraper Options
 .RS
 .PP
 Currently, \-\-video\-duration, \-\-type, \-\-thumbnail\-quality, and \-\-features only applies to the scrape: youtube/Y
-.TP
-.BR \-D ", " \-\-external\-menu
-Use an external menu instead of fzf.
-The default is \fIdmenu\fR.
-This can also be set in the config file with
-.BR is_ext_menu .
 .TP
 .BI "\-\-pages=amount"
 Amount of pages to scrape on youtube/invidious, and the comments scraper.
@@ -431,9 +452,9 @@ This can also be set in the config file with
 .BI "\-\-sort\-by=sort"
 Works with youtube/Y and odysee/O.
 .br
-To use a different sort for each scrape, use a "," to separate the sorts.
+To use a different sort for each scrape, use comma (,) to separate the sorts.
 .br
-As apposed to \-\-sort, this happens during the serach, not after.
+As apposed to \-\-sort, this happens during the search, not after.
 Results should sort by:
 .RS
 .TP
@@ -449,9 +470,9 @@ Results should sort by:
 .RE
 .TP
 .BI "\-\-upload\-date=time\-frame"
-Works with, youtube/Y and odysee/O
+Works with youtube/Y and odysee/O
 .br
-To use a different sort for each scrape, use a "," to separate the dates.
+To use a different sort for each scrape, use comma (,) to separate the dates.
 .br
 Search for videos within the last:
 .RS
@@ -543,7 +564,7 @@ The features to have on a video (comma separated).
 .BI "\-\-region"
 The region (country code) to search.
 .br
-Supported by the scrapes youtube/Y, and youtube-trending/T
+Supported by the scrapes youtube/Y and youtube-trending/T
 .RE
 
 .PP
@@ -555,7 +576,7 @@ Converts channel links from 'https://youtube.com/c/name' to 'https://youtube.com
 .TP
 .BR \-q
 Use search history instead of a search.
-Thsi can also be set in the config file with
+This can also be set in the config file with
 .BR use_search_hist .
 .TP
 .BR \-x ", " \-\-history\-clear=<search|watch>
@@ -581,6 +602,16 @@ Specify the path to youtube\-dl or a fork of youtube\-dl for downloading.
 .br
 This can also be set in the config file with
 .BR ytdl_path .
+.TP
+.BI \-\-ext=extension
+Load an extension.
+.br
+You may also add
+.I "load_extension extension"
+to your config file.
+.TP
+.BI \-\-list\-addons
+Lists all addons and exits.
 .RE
 
 .SH CONFIGURATION
@@ -603,6 +634,11 @@ The defualt is
 The subscriptions file to use.
 The deafult is
 .I $YTFZF_CONFIG_DIR/subscriptions
+.TP
+.B $YTFZF_SCRAPELIST_FILE
+The scrapelist file to use.
+The default is
+.I $YTFZF_CONFIG_DIR/scrapelist
 .TP
 .B $YTFZF_THUMBNAIL_VIEWERS_DIR
 The directory to keep additional thumbnail viewers.
@@ -634,6 +670,15 @@ The directory to store custom thumbnails
 the default is
 .I $YTFZF_CONFIG_DIR/thumbnails
 .TP
+.B $YTFZF_EXTENSIONS_DIR
+The directory to store extensions
+the default is
+.I $YTFZF_CONFIG_DIR/extensions
+.TP
+.TP
+.B $YTFZF_SYSTEM_ADDON_DIR
+The directory to store system installed addons.
+The default may vary depending on how you installed ytfzf.
 .B $cache_dir
 The directory to store cache
 the default is
@@ -655,7 +700,7 @@ Watch history (if $enable_hist is 1)
 
 .SH CACHE
 .PP
-Each instance of ytfzf has it's own directory in $cache_dir.
+Each instance of ytfzf has its own directory in $cache_dir.
 .br
 The structure of $cache_dir looks like this: (<> represents a placeholder, ? means optional)
 .RS
@@ -686,13 +731,13 @@ The watch history file.
 .IR <search>\-<pid>
 An instance's parent folder.
 .br
-If no search was given, it instead uses the name "SCRAPE\-<scrape>\-<pid>"
+If no search was given it uses the name "SCRAPE\-<scrape>\-<pid>" instead.
 .TP
 .IR post-scrape
 A folder that contains files relating to the scraping of a selected result.
 .TP
 .IR <submenu\-search>\-<submenu\-pid>
-Created when a submenu is opened (eg: when a channel/playlist is selected)
+Created when a submenu is opened (eg: when a channel/playlist is selected).
 .TP
 .IR submenu
 The folder to hold information about the submenu, all subitems are the same as the parent equivelent.
@@ -713,7 +758,7 @@ For scrapers that need to scrape websites, this is the output of curl.
 The json scraped from a website.
 .TP
 .IR menu_keypress
-The key pressed in fzf
+The key pressed in fzf.
 .TP
 .IR submenu.json
 A temp json file used to store the video_json of links to be put into the submenu.
@@ -746,7 +791,7 @@ Report bugs on github
 you can redistribute it and/or modify it under the terms of the
 \fIGNU General Public License version 3\fR as published by the Free Software Foundation.
 .PP
-\fBytfzf\fR is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY;
+\fBytfzf\fR is distributed in the hope that it will be useful but WITHOUT ANY WARRANTY;
 without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU General Public License for more details.
 .PP

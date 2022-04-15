@@ -1,5 +1,6 @@
 #!/bin/sh
 scrape_osu(){
+    [ "$1" = ":help" ] && print_info "gets the newest beatmaps, and opens the link in $BROWSER\n" && return 100
     url_handler="$BROWSER"
     output_json_file="$2"
     curl -Li \

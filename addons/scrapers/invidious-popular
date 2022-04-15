@@ -24,6 +24,7 @@ __invidious_search_json_videos () {
 
 scrape_invidious_popular(){
     search="$1"
+    [ "$search" = ":help" ] && print_info "Scrapes what is currently popular on $invidious_instance\n" && return 100
     output_json_file="$2"
 
     echo "scraping invidious popular"

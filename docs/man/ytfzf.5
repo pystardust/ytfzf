@@ -36,7 +36,7 @@ ytfzf --channel-link="https://www.youtube.com/c/SomeOrdinaryGamers"
 .br
 Before adding it to your subscriptions file
 .PP
-A comment can be created by having '#comment' on it's own line or after a link.
+A comment can be created by having '#comment' on its own line or after a link.
 For example:
 .RS
 .EX
@@ -44,6 +44,20 @@ For example:
 #comment
 .IR link-to-channel " #best channel"
 .EE
+.RE
+
+.SS scrape lists
+.PP
+A file that is a list of scrape types an searches, such as:
+.RS
+.EX
+.I youtube this is a search
+.EX
+.I odysee this is an odysee search
+.EE
+.RE
+.PP
+Just like subscriptions, scrape lists can have comments
 .RE
 
 .SS scrapers
@@ -128,14 +142,14 @@ Whether or not to only play audio.
 .RB $ url_handler
 The function/programs to handle the selected videos
 .br
-See URL handlers for a list of builtin url handlers
+See URL handlers for a list of built-in url handlers
 .IR default: " multimedia_player"
 
 .TP
 .RB $ yt_video_link_domain
-The domain to play youtube videos from (does not apply to odysee and peertube, or youtube playlists)
+The domain to play youtube videos from (does not apply to odysee and peertube or youtube playlists)
 .br
-.IR default: " $invidious_instance"
+.IR default: " https://www.youtube.com"
 
 .TP
 .RB $ info_to_print
@@ -199,7 +213,14 @@ The audio preference to use for youtube-dl in mpv.
 .RB $ ytdl_pref
 The preference to use for youtube-dl in mpv.
 .br
-.IR default: " $video_pref+$audio_pref/$video_pref/$audio_pref"
+.IR default: " $video_pref+$audio_pref/best/$video_pref/$audio_pref"
+
+.TP
+.RB $ url_handler_opts
+Opts to pass to the url handler, by default this will pass extra opts to mpv.
+This can also be set in the config file with
+.BR url_handler_opts
+.RE
 
 .RE
 
@@ -269,9 +290,6 @@ Uses chafa with 4 colors
 .IR catimg-256
 Uses catimg with 256 colors
 .TP
-.IR display
-Uses imagemagick's preview image
-.TP
 .IR w3m
 Uses a workaround to get w3m to work in fzf, may take up a lot of cpu,
 make sure $w3mimgdisplay_path is set to the path to w3mimgdisplay
@@ -282,8 +300,8 @@ Good with tiling window managers
 .IR kitty
 For the kitty terminal.
 .TP
-.IR custom
-Calls the user defined img_display_function()
+.IR swayimg
+Only works on the sway wayland compositor
 .TP
 .IR default: " ueberzug"
 .RE
@@ -302,13 +320,13 @@ Whether or not to bring up the format selection menu.
 
 .TP
 .RB $ format_selection_screen
-The format selection screen to use.
+The format that selection screen will use.
 Types:
 .RS
 .IR simple
 .IR normal
 .br
-.IR default: " normal"
+.IR default: " simple"
 .RE
 
 .TP
@@ -369,7 +387,6 @@ Whether or not to show thumbnails in fzf.
 .TP
 .RB $ skip_thumb_download
 Whether or not to skip thumbnail download.
-This is useful for CUSTOM THUMBNAILS
 .br
 .IR default: " 0"
 
@@ -472,7 +489,7 @@ The shortcut to get all info about the selected video.
 
 .TP
 .RB $ search_again_shortcut
-The shortcut to make another search
+The shortcut to make another search.
 .br
 .IR default: " alt-s"
 
@@ -549,19 +566,21 @@ The currently supported options are:
 .TP
 .IR odysee / lbry .
 .TP
-.IR youtube-playlist,
+.IR youtube-playlist ,
 .TP
-.IR youtube-channel,
+.IR youtube-channel ,
 .TP
-.IR invidious-channel,
+.IR invidious-channel ,
 .TP
-.IR playlist/json-file
+.IR video-recommended ,
+.TP
+.IR playlist/json-file ,
 .PP
 The search will be a path to a json file layed out as described in VIDEO JSON FORMAT
 .TP
-.IR history
+.IR history ,
 .TP
-.IR url
+.IR url ,
 .TP
 .IR comments
 .br
@@ -638,7 +657,7 @@ Whether or not to search for nsfw videos in odysee/O.
 
 .TP
 .RB $ search_result_features
-The features to have on a video (comma seperated).
+The features to have on a video (comma separated).
 .RS
 .TP
 .IR hd
@@ -902,6 +921,7 @@ This function is the same as thumbnail_video_info_text() for the scraper specifi
 .TP
 .BR get_ueberzug_positioning_left ()
 This function sets the variables, $width, $height, $x, and $y.
+$x, and $y, should represent cols and lines not pixels.
 .br
 These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is left.
 .br
@@ -915,6 +935,7 @@ This function takes 2 arguments:
 .TP
 .BR get_ueberzug_positioning_right ()
 This function sets the variables, $width, $height, $x, and $y.
+$x, and $y, should represent cols and lines not pixels.
 .br
 These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is right.
 .br
@@ -928,6 +949,7 @@ This function takes 2 arguments:
 .TP
 .BR get_ueberzug_positioning_up ()
 This function sets the variables, $width, $height, $x, and $y.
+$x, and $y, should represent cols and lines not pixels.
 .br
 These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is up.
 .br
@@ -941,6 +963,7 @@ This function takes 2 arguments:
 .TP
 .BR get_ueberzug_positioning_down ()
 This function sets the variables, $width, $height, $x, and $y.
+$x, and $y, should represent cols and lines not pixels.
 .br
 These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is down.
 .br
@@ -949,6 +972,90 @@ This function takes 2 arguments:
 .EX
 .I max_width
 .I max_height
+.RE
+
+.TP
+.BR get_swayimg_positioning_left () 
+This function sets the variables, $x, $y, $img_w, and $img_h.
+$x, and $y, should represent pixels.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is left.
+.br
+This function takes 8 arguments:
+.RS
+.EX
+.I img_w
+.I img_h
+.I max_width
+.I max_height
+.I max_height
+.I term_x
+.I term_y
+.I col_px_width
+.I line_px_height
+.RE
+
+.TP
+.BR get_swayimg_positioning_right () 
+This function sets the variables, $x, $y, $img_w, and $img_h.
+$x, and $y, should represent pixels.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is right.
+.br
+This function takes 8 arguments:
+.RS
+.EX
+.I img_w
+.I img_h
+.I max_width
+.I max_height
+.I max_height
+.I term_x
+.I term_y
+.I col_px_width
+.I line_px_height
+.RE
+
+.TP
+.BR get_swayimg_positioning_up () 
+This function sets the variables, $x, $y, $img_w, and $img_h.
+$x, and $y, should represent pixels.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is up.
+.br
+This function takes 8 arguments:
+.RS
+.EX
+.I img_w
+.I img_h
+.I max_width
+.I max_height
+.I max_height
+.I term_x
+.I term_y
+.I col_px_width
+.I line_px_height
+.RE
+
+.TP
+.BR get_swayimg_positioning_down () 
+This function sets the variables, $x, $y, $img_w, and $img_h.
+$x, and $y, should represent pixels.
+.br
+These variables will be used to position and size the image in the fzf preview when $fzf_preview_side is down.
+.br
+This function takes 8 arguments:
+.RS
+.EX
+.I img_w
+.I img_h
+.I max_width
+.I max_height
+.I max_height
+.I term_x
+.I term_y
+.I col_px_width
+.I line_px_height
 .RE
 
 .TP
@@ -985,7 +1092,7 @@ This function takes 1 argument, and takes input from stdin
 .br
 1: The prompt to use.
 .br
-stdin: the items to chose from (separated by new lines)
+stdin: the items to choose from (separated by new lines)
 
 .TP
 .BR quick_menu_ext ()
@@ -997,19 +1104,19 @@ This function takes 1 argument, and takes input from stdin
 .br
 1: The prompt to use.
 .br
-stdin: the items to chose from (separated by new lines)
+stdin: the items to choose from (separated by new lines)
 
 .TP
 .BR quick_menu_scripting ()
 This function should do the same thing as quick_menu()
 .br
-This funtion is caleld when quick_menu() would be called, but when \-a, \-r, or \-A is enabled.
+This funtion is called when quick_menu() would be called, but when \-a, \-r, or \-A is enabled.
 .br
 This function takes 1 argument, and takes input from stdin
 .br
 1: The prompt to use.
 .br
-stdin: the items to chose from (separated by new lines)
+stdin: the items to choose from (separated by new lines)
 
 .RE
 
@@ -1027,7 +1134,7 @@ and
 .PP
 Modifier variables will be piped into a URL handler to allow for URL handlers to be written in any language.
 .br
-They will be piped in the order shown above seperated by spaces.
+They will be piped in the order shown above separated by spaces.
 
 .TP
 .BR multimedia_player ()
@@ -1065,7 +1172,7 @@ A custom format selection screen
 .br
 This function should print the final ytdl format to use.
 .br
-This function takes all urls as seperate arguments.
+This function takes all urls as separate arguments.
 
 .RE
 
@@ -1105,23 +1212,6 @@ Misc
 This function sends a notification for the videos that are about to be played.
 .br
 This function takes an unknown amount of urls as arguments.
-
-.TP
-.BR img_display_function ()
-This function displays the currently selected video's thumbnail in fzf.
-.br
-This function takes 3 arguments:
-.RS
-.TP
-.IR 1
-Path to the image to display
-.TP
-.IR 2
-Maximum width
-.TP
-.IR 3
-Maximum height
-.RE
 
 .TP
 .BR on_opt_parse ()
@@ -1171,6 +1261,17 @@ The raw optarg
 .RE
 
 .TP
+.BR on_post_set_vars () 
+This fnction gets called after all vars are set, and all opts are parsed.
+.br
+This function takes no arguments.
+
+.TP
+.BR on_post_set_vars_<ext_name> ()
+Replace ext_name with the name of an extension (with - replaced with _).
+This function is the same as \fBon_post_set_vars\fR
+
+.TP
 .BR on_search ()
 This function gets called each time a website is scraped.
 .br
@@ -1186,7 +1287,7 @@ This function takes 2 arguments:
 
 .TP
 .BR on_search_<search_query> ()
-This function gets called each time a website is scraped, if the current search matches <search_query>.
+This function gets called each time a website is scraped if the current search matches <search_query>.
 .br
 This function takes 1 argument.
 .RS
@@ -1203,7 +1304,7 @@ This function takes no arguments.
 
 .TP
 .BR handle_custom_keypresses ()
-This function gets called in the internal handle_keypress() function, This function should return 0 to not override the default handle_keypress() function.
+This function gets called in the internal handle_keypress() function. This function should return 0 to not override the default handle_keypress() function.
 .br
 This function takes 1 argument:
 .EX
@@ -1213,14 +1314,32 @@ This function takes 1 argument:
 .EE
 
 .TP
+.BR handle_custom_post_keypresses ()
+This function gets called in the internal handle_post_keypress() function, this function should return 0 to not override the default handle_post_keypress() function.
+.br
+The job of this function is to undo the changes of the last keypress.
+.br
+This function takes no arguments, it must get the keypress from $keypress_file
+
+.TP
 .BR handle_keypress_* ()
 The name of this function should replace the "*" with the name of the shortcut, eg: \fIalt_d\fR
 .br
 in addition replace any "\-" with "_".
 .br
-This function is called after handle_custom_keypresses() if it returned 0, and the shortcut is not a builtin shortcut.
+This function is called after handle_custom_keypresses() if it returned 0, and the shortcut is not a built-in shortcut.
 .br
 This function takes 0 arguments.
+
+.TP
+.BR handle_post_keypress_* ()
+The name of this function should replace the "*" with the name of the shortcut, eg: \fIalt_d\fR
+.br
+in addition replace any "\-" with "_".
+.br
+This function is called after handle_custom_post_keypresses() if it returned 0, and the shortcut is not a built-in shortcut.
+.br
+this function takes 0 arguments.
 
 .TP
 .BR handle_custom_action ()
@@ -1247,8 +1366,15 @@ exit
 .SH CUSTOM THUMBNAILS
 .PP
 Custom thumbnails are located in $YTFZF_CUSTOM_THUMBNAILS_DIR.
-The name of the image must be <video-id>.jpg
+The name of the image must be
+.I <video-id>.jpg
+.PP
 To see an example, make a search with \fIytfzf\fR and locate the \fIthumbnails\fR folder in $cache_dir/search
+.PP
+Custom thumbnails are going to try to be loaded before the official thumbnail.
+.br
+If a custom thumbnail, and the official thumbnail doesn't exist, ytfzf will try to use 
+.I $YTFZF_CUSTOM_THUMBNAILS_DIR/YTFZF:DEFUALT.jpg .
 
 .SH VIDEO JSON FORMAT
 .PP
@@ -1433,3 +1559,15 @@ side of the terminal to display the image (x, y, width, height already account f
 .br
 this will be either \fIup\fR \fIdown\fR \fIleft\fR \fIright\fR
 .RE
+
+.SH EXTENSIONS
+.PP
+Extensions are essentially extra config files that you can load in your own config file.
+.PP
+Extensions should either be in $YTFZF_EXTENSIONS_DIR or $YTFZF_SYSTEM_ADDON_DIR/extensions
+.PP
+An extension can do anything a config file can, this includes modifying the default utility functions in ytfzf (which could break the script)
+.PP
+To load an extension add
+.I "load_extension name-of-extension"
+to $YTFZF_CONFIG_FILE

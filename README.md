@@ -30,6 +30,7 @@
 * [`Install`](#Install)
 * [`Features`](#Features)
 * [`Examples`](#Examples)
+* [`Configuration`](#Configuration)
 * [`Todo`](#Todo)
 * [`Bugs`](#Bugs)
 * [`Credits`](#Credits)
@@ -66,6 +67,7 @@ There are only 2 required dependencies, however the rest require some configurat
 | [`w3m`](https://github.com/tats/w3m) (buggy)                                      | &#10060;         |
 | [`imv`](https://git.sr.ht/~exec64/imv)                                            | &#9989;          |
 | [`kitty`](https://github.com/kovidgoyal/kitty)                                    | &#9989;          |
+| [`swayimg`](https://github.com/artemsen/swayimg)                                  | only on `sway`   |
 
 # Install
 
@@ -84,6 +86,10 @@ sudo make install doc
 ```
 
 * If you wish to not install documentation (highly unrecommended) run `sudo make install` instead.
+
+* If you wish to install addons, run `sudo make addons`
+    * `YTFZF_SYSTEM_ADDONS_DIR` will point to `/usr/local/share/ytfzf/addons` even if you set `PREFIX` to something else
+    * If you use a different prefix, it would be smart to export `YTFZF_SYSTEM_ADDONS_DIR` to `$PREFIX/share/ytfzf/addons` in a shell startup file.
 
 * You may also install `ytfzf` through your package manager, as listed on the side.
 
@@ -106,6 +112,8 @@ To use a interface addon run `ytfzf --interface=<interface> ...`
 To use a url-handler addon run `ytfzf --url-handler=<handler> ...`
 
 To use a sort-name addon run `ytfzf --sort-name=<sort-name> ...`
+
+To use an extension addon run `ytfzf --ext=<extension> ...`
 
 ---
 
@@ -146,6 +154,17 @@ ytfzf -cO <search>
 ```
 
 ---
+
+# Configuration
+
+Everything that is an option can also be configured in `~/.config/ytfzf/conf.sh`.
+
+In addition, the video player and other things may be changed here
+
+Here is a [sample configuration](docs/conf.sh) (please dont use it)
+
+For more information, see `ytfzf(5)` which should be installed, if it's not see [the wiki](https://github.com/pystardust/ytfzf/wiki).
+
 ---
 
 # Bugs
@@ -162,3 +181,5 @@ ytfzf -cO <search>
 | Simonhughxyz  | [contributions](credits/simonhughxyz.md)  ||
 | Jac-Zac       | [contributions](credits/jac-zac.md)       ||
 | Mudskipper875 | [contributions](credits/mudskipper875.md) ||
+| Gardockt | [contributions](credits/gardockt.md)||
+| qoheniac | [contributions](credits/qoheniac.md)||

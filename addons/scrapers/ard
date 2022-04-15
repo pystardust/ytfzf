@@ -1,0 +1,45 @@
+#!/bin/sh
+
+_ard_get_thumbnail_width () {
+	case "$1" in
+		maxres) echo "4096" ;;		# 4K
+		maxresdefault) _ard_get_thumbnail_width "maxres" ;;
+		high) echo "1920" ;;		# Full HD
+		default) _ard_get_thumbnail_width "high" ;;
+		medium) echo "960" ;; 		# 540p
+		sddefault) _ard_get_thumbnail_width "medium" ;;
+		*) _ard_get_thumbnail_width "default" ;;
+	esac
+}
+
+_ard_correct_ytdl_pref () {
+	ytdl_pref="best"
+	[ $__is_fzf_preview -eq 0 ] && print_warning "ytdl_pref $1 ist not supported for ARD, fallback to best\n"
+}
+
+scrape_ard () {
+	search=$(echo "$1" | sed 's/ /+/g')
+    [ "$search" = ":help" ] && print_info "Search https://www.ardmediathek.de/\n" && return 100
+	output_json_file="$2"
+	search_url="https://api.ardmediathek.de/search-system/mediathek/ard/search/vods?query=$search&pageNumber=0&pageSize=$((20 * pages_to_scrape))"
+	_tmp_json="${session_temp_dir}/ard_search.json"
+	_thumbnail_width=$(_ard_get_thumbnail_width "$thumbnail_quality")
+	curl "$search_url" > "$_tmp_json"
+	jq '
+	def pad_left(n; num):
+		num | tostring |
+			if (n > length) then ((n - length) * "0") + (.) else . end
+		;
+	[.teasers[]|
+		{
+			scraper: "ard", 
+			ID: .id,
+			url: "https://www.ardmediathek.de/video/\(.id)",
+			title: .longTitle,
+			channel: .show.title,
+			thumbs: (.images.aspect16x9.src | gsub("{width}"; "'"$_thumbnail_width"'")), 
+			duration: "\(.duration / 60 | floor):\(pad_left(2; .duration % 60))",
+			date: "\(.broadcastedOn | fromdateiso8601 | strftime("%Y-%m-%d"))",
+			description: .show.synopsis,
+		}]' < "$_tmp_json" >> "$output_json_file"
+}

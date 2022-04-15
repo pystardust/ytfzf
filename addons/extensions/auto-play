@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+
+auto_play_handler () {
+    _url="$1"
+    $user_url_handler "$@"
+    case "$_url" in
+        */*) id="${_url##*=}" ;;
+        *) id="$_url" ;;
+    esac
+    #if we dont set the url handler back, it just uses multimedia_handler
+    tab="$(printf '\t')"
+    while :; do
+        link=$(url_handler="$user_url_handler" ytfzf --ext=auto-play --auto-play-opts="$auto_play_opts" -cR $auto_play_opts -L --search-again=0 --loop=0 "$id" | tr '\n' '\t')
+        id="${link%%$tab*}"
+        id="${id##*=}"
+        set -f
+        $user_url_handler $link
+    done
+}
+
+on_opt_parse_auto_play_help () {
+    print_info "
+Usage: ytfzf --ext=auto-play <search>
+    Options:
+        --auto-play-opts:                 opts to use for auto play, default: -a
+"
+    exit 0
+}
+
+on_opt_parse_auto_play_opts () {
+    auto_play_opts="$1"
+    return 1
+}
+
+on_post_set_vars_auto_play () {
+    : "${auto_play_opts=-a}"
+    user_url_handler=$url_handler
+    url_handler=auto_play_handler
+}
