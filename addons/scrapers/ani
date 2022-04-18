@@ -1,5 +1,7 @@
 #!/bin/sh
 
+submenu_opts="--ext=ani-url-handler"
+
 _ani_get_categories () {
     #stolen from pystardust/ani-cli
 	sed -n 's_^[[:space:]]*<a href="/category/\([^"]*\)" title="\([^"]*\)".*_\1_p' "$1"
