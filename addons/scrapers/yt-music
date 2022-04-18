@@ -1,0 +1,49 @@
+#!/bin/sh
+
+_yt_music_get_playlist_json () {
+    jq '..|.musicResponsiveListItemRenderer?|select(.!=null)|select(..|.musicResponsiveListItemFlexColumnRenderer?.text.runs|length == 5)
+        | {
+            title: .flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text,
+            duration: .flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[-1].text,
+            url: "https://music.youtube.com/playlist?list=\(.menu.menuRenderer.items[0].menuNavigationItemRenderer.navigationEndpoint.watchPlaylistEndpoint.playlistId)",
+            thumbs: .thumbnail.musicThumbnailRenderer.thumbnail.thumbnails[-1].url,
+            action: "scrape type=yt-music-playlist search=https://music.youtube.com/playlist?list=\(.menu.menuRenderer.items[0].menuNavigationItemRenderer.navigationEndpoint.watchPlaylistEndpoint.playlistId)",
+            ID: .menu.menuRenderer.items[0].menuNavigationItemRenderer.navigationEndpoint.watchPlaylistEndpoint.playlistId }' | jq '[inputs]'
+}
+
+_yt_music_get_song_json () {
+    jq '..|.musicResponsiveListItemRenderer?|select(.!=null)|select(..|.musicResponsiveListItemFlexColumnRenderer?.text.runs|length == 7)
+    | {
+        title: .flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text,
+        channel: .flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[2].text,
+        views: .flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[4].text,
+        duration: .flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[-1].text,
+        url: "https://music.youtube.com/watch?v=\(.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint.watchEndpoint.videoId)",
+        ID: .flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint.watchEndpoint.videoId,
+        thumbs: .thumbnail.musicThumbnailRenderer.thumbnail.thumbnails[-1].url}' | jq '[inputs]'
+}
+
+scrape_yt_music () {
+    search="$1"
+    output_json_file="$2"
+    _tmp_html="${session_temp_dir}/yt-music.html"
+    _tmp_json="${session_temp_dir}/yt-music.json"
+    url="https://music.youtube.com/search"
+    _get_request "$url" -G --data-urlencode "q=$search" > "$_tmp_html"
+
+    if [ -f $YTFZF_CUSTOM_SCRAPERS_DIR/yt-music-utils/convert-ascii-escape.pl ]; then
+        utils_path=$YTFZF_CUSTOM_SCRAPERS_DIR/yt-music-utils/convert-ascii-escape.pl 
+    elif [ -f "$YTFZF_SYSTEM_ADDON_DIR"/scrapers/yt-music-utils/convert-ascii-escape.pl ]; then
+        utils_path="$YTFZF_SYSTEM_ADDON_DIR"/scrapers/yt-music-utils/convert-ascii-escape.pl
+    else
+        print_error "The convert-ascii-escape.pl file could not be found\n"
+        exit 1
+    fi
+
+
+    sed -n "s/.*data: '\([^']*\)'.*/\1/p" < "$_tmp_html" | "$utils_path" > "$_tmp_json"
+    {
+        _yt_music_get_playlist_json < "$_tmp_json"
+        _yt_music_get_song_json < "$_tmp_json"
+    } > "$output_json_file"
+}
