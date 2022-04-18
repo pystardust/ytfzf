@@ -1346,6 +1346,11 @@ preview_stop () {
 			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
 }
+
+command_exists "on_no_thumbnail" || on_no_thumbnail () {
+    die 1 "\nno image found"
+}
+
 preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
@@ -1361,7 +1366,8 @@ preview_no_img (){
         kitty) kitty +kitten icat --clear --transfer-mode file ;;
         swayimg) killall swayimg 2> /dev/null; true ;; #we want this to be true so that the && at the bottom happens
 		*) "$thumbnail_viewer" "no-img" ;;
-	esac && die 1 "\nno image found" 
+	esac && do_an_event_function "on_no_thumbnail"
+
 }
 # ueberzug positioning{{{
 command_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left (){
@@ -1464,6 +1470,7 @@ preview_display_image () {
         thumb_path="$path"
         [ -f "${thumb_path}" ] && break
     done || preview_no_img "$thumbnail_viewer"
+    [ "$thumb_path" = "${YTFZF_CUSTOM_THUMBNAILS_DIR}/YTFZF:DEFAULT.jpg" ] && do_an_event_function "on_no_thumbnail"
 
     get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 	case $thumbnail_viewer in
