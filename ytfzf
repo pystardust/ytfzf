@@ -1512,15 +1512,15 @@ EOF
 		chafa)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-            chafa -s "$((width-4))x$height" "$thumb_path" ;;
+            chafa --format=symbols -s "$((width-4))x$height" "$thumb_path" ;;
 		chafa-16)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -c 240 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
+			chafa --format=symbols -c 240 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
 		chafa-tty)
 			printf '\n'
 			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa -c 16 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
+			chafa --format=symbols -c 16 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
 		catimg)
 			printf '\n'
 			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
