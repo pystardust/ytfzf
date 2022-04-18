@@ -1733,6 +1733,7 @@ parse_opt () {
 		q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; use_search_hist=1 ;;
 		pages) pages_to_scrape="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
+        ii|inv-instance) invidious_instance="$optarg" ;;
 		interface)
 			interface="$optarg"
 			# if we don't check which interface, itll try to source $YTFZF_CUSTOM_INTERFACES_DIR/{ext,scripting} which won't work
