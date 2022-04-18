@@ -1664,7 +1664,7 @@ submenu_handler () {
 
 	#the hist_file thing is to prevent watch_hist from being put in $session_cache_dir
 	set -f
-	__is_submenu=1 hist_file="$hist_file" cache_dir="${session_cache_dir}" $0 $submenu_opts --search-again=0 --keep-cache -cp "$final_submenu_json_file"
+	__is_submenu=1 hist_file="$hist_file" cache_dir="${session_cache_dir}" $0 --interface="$interface" $submenu_opts --search-again=0 --keep-cache -cp "$final_submenu_json_file"
 
 }
 

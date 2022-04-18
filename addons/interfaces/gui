@@ -10,6 +10,7 @@ gui_dialog () {
         : > "$css_file"
     fi
     MAIN_DIALOG="<window><vbox scrollable=\"true\" vscrollbar-policy=\"0\">"
+    download_thumbnails $(get_missing_thumbnails)
     while read -r line; do
         url="${line##*|}"
         _correct_json="$(jq -r --arg url "$url" '[.[]|select(.url==$url)]|unique_by(.ID)[0]' < "$video_json_file")"
@@ -21,6 +22,14 @@ gui_dialog () {
         scraper="$(get_video_json_attr "scraper")"
         duration="$(get_video_json_attr "duration")"
         description="$(get_video_json_attr "description" | sed 's/\\n/\n/g')"
+
+        unset IFS
+
+        for path in "${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg" "${thumb_dir}/${id}.jpg"  "${YTFZF_CUSTOM_THUMBNAILS_DIR}/YTFZF:DEFAULT.jpg"; do
+            thumb_path="$path"
+            [ -f "${thumb_path}" ] && break
+        done
+
         MAIN_DIALOG="$MAIN_DIALOG
         <hbox>
             <vbox>
@@ -41,12 +50,11 @@ gui_dialog () {
                 </button>
             </vbox>
             <pixmap name=\"Thumbnail\">
-                <input file>$thumb_dir/$id.jpg</input>
+                <width>400</width>
+                <input file>$thumb_path</input>
             </pixmap>
         </hbox>"
     done
-    unset IFS
-    download_thumbnails $(get_missing_thumbnails)
     MAIN_DIALOG="$MAIN_DIALOG<width>100</width><height>100</height></vbox></window>" gtkdialog --styles="$css_file"
 }
 
