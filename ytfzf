@@ -745,7 +745,7 @@ _concatinate_json_file () {
 	template="$1"
 	page_count=$2
 	_output_json_file="$3"
-	__cur_page=1
+	__cur_page=${4:-1}
 	set --
 	#this sets the arguments to the files in order for cat
 	while [ "$__cur_page" -le "$page_count" ]; do
@@ -826,7 +826,7 @@ scrape_invidious_search () {
 		_thread_started "$!"
 	done
 	wait
-	_concatinate_json_file "${session_temp_dir}/yt-search-" "$page_num" "$output_json_file"
+    _concatinate_json_file "${session_temp_dir}/yt-search-" "$_cur_page" "$output_json_file" "$pages_start"
 }
 
 scrape_invidious_video_recommended () {
