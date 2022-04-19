@@ -791,11 +791,13 @@ scrape_invidious_search () {
     [ "$page_query" = ":help" ] && print_info "Make a youtube search\n" && return 100
 	output_json_file=$2
 	pagetype=$3
-	page_num=$4
 
 	_cur_page=${pages_start:-1}
+
+    page_num=$((_cur_page+$4))
+
 	_start_series_of_threads
-	while [ ${_cur_page} -le $page_num ]; do
+    while [ ${_cur_page} -lt $page_num ]; do
 		{
 			_tmp_json="${session_temp_dir}/yt-search-$_cur_page.json"
 
