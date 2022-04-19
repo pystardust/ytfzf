@@ -15,7 +15,7 @@ _ani_get_thumbnails () {
 scrape_ani () {
     search="$1"
     print_info "If you like this, you should check out https://github.com/pystardust/ani-cli, as it is dedicated for anime!\nPlus that team does all the hard work\n"
-    [ "$search" = ":help" ] && print_info "Search gogoanime for an anime (currently broken)\n" && return 100
+    [ "$search" = ":help" ] && print_info "Search gogoanime for an anime\nYou can use the ep_start, and ep_max env variables to control which episodes to scrape" && return 100
     output_json_file="$2"
     search="$(printf "%s" "$search" | tr '[[:space:]]' '-')"
     #their url could move a lot

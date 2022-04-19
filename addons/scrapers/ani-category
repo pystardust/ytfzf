@@ -88,19 +88,20 @@ scrape_ani_category () {
     _tmp_html="${session_temp_dir}/ani-category.html"
     _get_request "$base_url/category/$search" > "$_tmp_html"
     episode_count="$(_ani_category_get_episodes "$_tmp_html")"
+    ep_max="${ep_max:-$episode_count}"
     command_exists "openssl" || die 3 "openssl is a required dependency for ani, please install it\n"
-    i=1
+    ep_start=${ep_start:-1}
     _start_series_of_threads
-    while [ $i -le "$episode_count" ]; do
+    while [ $ep_start -le "$ep_max" ]; do
 	{
-	    print_info "Scraping anime episode $i\n"
-	    _tmp_json="${session_temp_dir}/ani-category-$i.json.final"
+	    print_info "Scraping anime episode $ep_start\n"
+	    _tmp_json="${session_temp_dir}/ani-category-$ep_start.json.final"
 	    #stolen from pystardust/ani-cli
-	    dpage_link=$(_get_dpage_link "$search" "$i")
+	    dpage_link=$(_get_dpage_link "$search" "$ep_start")
 	    _get_video_link "$dpage_link"
-	    echo "[]" | jq --arg idx "$idx" --arg dpage "$dpage_link" --arg url "$video_url" --arg title "$search episode $i" '[{"url": $url, "title": $title, "ID": $title, "idx": $idx, "dpage": $dpage}]' > "$_tmp_json"
+	    echo "[]" | jq --arg idx "$idx" --arg dpage "$dpage_link" --arg url "$video_url" --arg title "$search episode $ep_start" '[{"url": $url, "title": $title, "ID": $title, "idx": $idx, "dpage": $dpage}]' > "$_tmp_json"
 	} &
-	: $((i+=1))
+	: $((ep_start+=1))
 	_thread_started "$!"
     done
     wait
