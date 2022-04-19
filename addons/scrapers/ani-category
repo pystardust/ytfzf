@@ -88,9 +88,10 @@ scrape_ani_category () {
     _tmp_html="${session_temp_dir}/ani-category.html"
     _get_request "$base_url/category/$search" > "$_tmp_html"
     episode_count="$(_ani_category_get_episodes "$_tmp_html")"
-    ep_max="${ep_max:-$episode_count}"
+    ep_start=${pages_start:-1}
+    [ "$pages_to_scrape" -eq 1 ] && ep_max="$episode_count" || ep_max="$((ep_start + pages_to_scrape))"
+    [ "$ep_max" -gt "$episode_count" ] && ep_max=$episode_count
     command_exists "openssl" || die 3 "openssl is a required dependency for ani, please install it\n"
-    ep_start=${ep_start:-1}
     _start_series_of_threads
     while [ $ep_start -le "$ep_max" ]; do
 	{

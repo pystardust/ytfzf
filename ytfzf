@@ -399,7 +399,7 @@ command_exists "downloader" || downloader () {
 : "${thumbnail_quality=high}"
 : ${sub_link_count:=2}
 : "${invidious_instance:=https://vid.puffyan.us}" "${yt_video_link_domain:=https://youtube.com}"
-: "${search_sort_by:=relevance}" "${search_upload_date=}" "${search_video_duration=}" "${search_result_type:=video}" "${search_result_features=}" "${search_region:=US}" ${pages_to_scrape:=1}
+: "${search_sort_by:=relevance}" "${search_upload_date=}" "${search_video_duration=}" "${search_result_type:=video}" "${search_result_features=}" "${search_region:=US}" ${pages_to_scrape:=1} ${pages_start:=1}
 : "${nsfw:=false}" ${odysee_video_search_count:=30}
 
 : "${multi_search:=0}"
@@ -793,7 +793,7 @@ scrape_invidious_search () {
 	pagetype=$3
 	page_num=$4
 
-	_cur_page=1
+	_cur_page=${pages_start:-1}
 	_start_series_of_threads
 	while [ ${_cur_page} -le $page_num ]; do
 		{
@@ -1739,6 +1739,7 @@ parse_opt () {
 		L) info_to_print="$info_to_print,L" ;;
 		q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; use_search_hist=1 ;;
 		pages) pages_to_scrape="$optarg" ;;
+        pages-start) pages_start="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
         ii|inv-instance) invidious_instance="$optarg" ;;
 		interface)
