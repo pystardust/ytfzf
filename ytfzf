@@ -753,7 +753,6 @@ _concatinate_json_file () {
 		__cur_page=$((__cur_page+1))
 	done
 	cat "$@" 2>/dev/null >> "$_output_json_file"
-
 }
 #}}}
 
@@ -826,7 +825,7 @@ scrape_invidious_search () {
 		_thread_started "$!"
 	done
 	wait
-    _concatinate_json_file "${session_temp_dir}/yt-search-" "$_cur_page" "$output_json_file" "$pages_start"
+    _concatinate_json_file "${session_temp_dir}/yt-search-" "$((_cur_page-1))" "$output_json_file" "$pages_start"
 }
 
 scrape_invidious_video_recommended () {
