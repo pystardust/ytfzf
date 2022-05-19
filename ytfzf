@@ -199,9 +199,9 @@ external_menu () {
 }
 
 search_prompt_menu () {
-	printf "Search\n>"
+	printf "Search\n> " > /dev/stderr
 	read -r _search
-	printf "\033[1A\033[K\r%s\n" "> $_search"
+	printf "\033[1A\033[K\r%s\n" "> $_search" > /dev/stderr > /dev/stderr
 }
 search_prompt_menu_ext () {
 	_search="$(printf '' | external_menu "Search: ")"
