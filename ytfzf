@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.3.1.beta-1"
+YTFZF_VERSION="2.3.1.beta-2"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1333,10 +1333,11 @@ preview_start () {
 			;;
 		mpv)
 			command_exists "socat" || die 3 "socat is not installed, and is required for the mpv image viewer\n"
-			commandd_exists "mpv" || die 3 "mpv is not installed\n"
+			command_exists "mpv" || die 3 "mpv is not installed\n"
 			export MPV_SOCKET="$session_temp_dir/mpv.socket"
-			rm -f "$MPV_SOCKET"
+			rm -f "$MPV_SOCKET" > /dev/null 2>&1
 			mpv --input-ipc-server="$MPV_SOCKET" --loop-file=inf --idle=yes > /dev/null 2>&1 &
+			export mpv_pid=$!
 			;;
 		*)
 			"$thumbnail_viewer" "start" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
@@ -1349,6 +1350,10 @@ preview_stop () {
 			exec 3>&- # close file descriptor 3, closing ueberzug
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|kitty) : ;;
+		mpv)
+		    kill "$mpv_pid" 
+		    rm "$MPV_SOCKET" > /dev/null 2>&1
+		    ;;
         swayimg) killall swayimg 2> /dev/null;;
 		imv) kill "$imv_pid" ;;
 		*)
@@ -1363,7 +1368,7 @@ command_exists "on_no_thumbnail" || on_no_thumbnail () {
 preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|imv) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|imv|mpv) : ;;
         ueberzug)
             { 
                 printf "{"
