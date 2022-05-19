@@ -1776,9 +1776,7 @@ parse_opt () {
 			case "$optarg" in
 				./*|../*|/*|~/*) command_exists "$optarg" && . "$optarg" ;;
 				*)
-					if command_exists "$optarg"; then
-						"$optarg"
-					elif [ -f "${YTFZF_SORT_NAMES_DIR}/${optarg}" ]; then
+					if [ -f "${YTFZF_SORT_NAMES_DIR}/${optarg}" ]; then
 						. "${YTFZF_SORT_NAMES_DIR}/${optarg}"
 					elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/sort-names/${optarg}" ]; then
 						. "${YTFZF_SYSTEM_ADDON_DIR}/sort-names/${optarg}"
