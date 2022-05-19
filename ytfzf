@@ -1334,9 +1334,10 @@ preview_start () {
 		mpv)
 			command_exists "socat" || die 3 "socat is not installed, and is required for the mpv image viewer\n"
 			command_exists "mpv" || die 3 "mpv is not installed\n"
+			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
 			export MPV_SOCKET="$session_temp_dir/mpv.socket"
 			rm -f "$MPV_SOCKET" > /dev/null 2>&1
-			mpv --input-ipc-server="$MPV_SOCKET" --loop-file=inf --idle=yes > /dev/null 2>&1 &
+			mpv --input-ipc-server="$MPV_SOCKET" --loop-file=inf --idle=yes "$thumb_dir/${first_img}.jpg" > /dev/null 2>&1 &
 			export mpv_pid=$!
 			;;
 		*)
