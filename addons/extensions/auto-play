@@ -2,7 +2,7 @@
 
 auto_play_handler () {
     _url="$1"
-    stop_code=1
+    stop_code=4
     $user_url_handler "$@"
     if [ $? -eq $stop_code ]; then return 0; fi
     case "$_url" in
