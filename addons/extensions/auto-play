@@ -2,7 +2,9 @@
 
 auto_play_handler () {
     _url="$1"
+    stop_code=1
     $user_url_handler "$@"
+    if [ $? -eq $stop_code ]; then return 0; fi
     case "$_url" in
         */*) id="${_url##*=}" ;;
         *) id="$_url" ;;
@@ -15,7 +17,7 @@ auto_play_handler () {
         id="${id##*=}"
         set -f
         $user_url_handler $link
-        if [ $? -eq 0 ]; then break; fi
+        if [ $? -eq $stop_code ]; then break; fi
     done
 }
 
