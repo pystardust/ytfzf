@@ -1315,6 +1315,7 @@ preview_start () {
 	case $thumbnail_viewer in
 		ueberzug)
 			# starts uberzug to this fifo
+			command_exists "ueberzug" || die 3 "ueberzug is not installed\n"
 			UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
@@ -1329,6 +1330,13 @@ preview_start () {
 			export imv_pid="$!"
 			#helps prevent imv seg fault
 			sleep 0.1
+			;;
+		mpv)
+			command_exists "socat" || die 3 "socat is not installed, and is required for the mpv image viewer\n"
+			commandd_exists "mpv" || die 3 "mpv is not installed\n"
+			export MPV_SOCKET="$session_temp_dir/mpv.socket"
+			rm -f "$MPV_SOCKET"
+			mpv --input-ipc-server="$MPV_SOCKET" --loop-file=inf --idle=yes > /dev/null 2>&1 &
 			;;
 		*)
 			"$thumbnail_viewer" "start" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
@@ -1476,7 +1484,6 @@ preview_display_image () {
     get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 	case $thumbnail_viewer in
 		ueberzug)
-			command_exists "ueberzug" || die 3 "ueberzug is not installed\n"
             {
                 printf "{"
                 printf '"%s": "%s",' \
@@ -1545,6 +1552,8 @@ EOF
 			imv-msg "$imv_pid" open "$thumb_path"
 			imv-msg "$imv_pid" next
 			;;
+		mpv)
+			echo "loadfile $thumb_path" | socat - "$MPV_SOCKET" ;;
         kitty)
             get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
             kitty +kitten icat --clear --transfer-mode file
@@ -1786,7 +1795,7 @@ parse_opt () {
 		thumb-viewer)
 			case "$optarg" in
 				#these are special cases, where they are not themselves commands
-				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|w3m|imv|ueberzug|kitty|swayimg) thumbnail_viewer="$optarg" ; true ;;
+				chafa-16|catimg-256|chafa|chafa-tty|catimg|catimg-256|w3m|imv|ueberzug|kitty|swayimg|mpv) thumbnail_viewer="$optarg" ; true ;;
 				./*|/*|../*|~/*) thumbnail_viewer="$optarg"; false ;;
 				*)
 					if [ -f "${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}" ]; then
