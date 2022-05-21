@@ -1186,6 +1186,13 @@ A custom format selection screen
 <name> should be the the wanted value of $format_selection_screen
 .br
 This function should print the final ytdl format to use.
+It should print it in the form of:
+.I "ytdl-pref=pref"
+With a leading and ending space
+.br
+This function may also print whether or not to be audio only in the form of:
+.I "is-audio-only=0|1"
+With a leading and ending space
 .br
 This function takes all urls as separate arguments.
 

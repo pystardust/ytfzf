@@ -120,8 +120,13 @@ command_exists () {
 
 get_key_value() {
 	value="${1##* ${2}=}"
-	printf "%s" "${value%% *}"
+	#this can be used similarly to how you use $REPLY in bash
+	KEY_VALUE="${value%% *}"
+	printf "%s" "$KEY_VALUE"
+	[ "$KEY_VALUE" ]
+	rv="$?"
 	unset value
+	return "$rv"
 }
 
 #capitalizes the first letter of a string
@@ -1693,13 +1698,15 @@ open_url_handler () {
 	[ -z "$*" ] && return 0
 
 	[ $show_formats -eq 1 ] && {
-    case "$format_selection_screen" in
-      normal) ytdl_pref="$(get_video_format "$1")" ;;
-      *) ytdl_pref="$(get_video_format_$format_selection_screen "$@")" ;;
-    esac
-  }
+	    case "$format_selection_screen" in
+		normal) data=$(get_video_format "$1") ;;
+		*) data="$(get_video_format_$format_selection_screen "$@")" ;;
+	    esac
+	    get_key_value "$data" "ytdl-pref" > /dev/null && ytdl_pref="$KEY_VALUE"
+	    get_key_value "$data" "is-audio-only" > /dev/null && is_audio_only="$KEY_VALUE"
+	}
 
-    unset IFS
+	unset IFS
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
@@ -1707,13 +1714,13 @@ open_url_handler () {
 }
 
 get_video_format_simple () {
-	# select format if flag given
-  formats=$(${ytdl_path} -F "$1") 
-  line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
-  quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | quick_menu_wrapper "video quality" | sed "s/p//g")
-  [ "$quality" = Audio ] && is_audio_only=1 && printf "%s" "bestaudio" ||
-    printf "%s" "bestvideo[height=?$quality][vcodec!=?vp9]+bestaudio/best"
-	unset max_quality quality
+    # select format if flag given
+    formats=$(${ytdl_path} -F "$1") 
+    line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
+    quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | quick_menu_wrapper "video quality" | sed "s/p//g")
+    [ "$quality" = Audio ] && printf " is-audio-only=1 " ||
+	printf " ytdl-pref=%s/%s/%s " "best[height=$quality]" "best[height<=?$quality]" "bestaudio"
+    unset max_quality quality
 }
 
 get_video_format(){
