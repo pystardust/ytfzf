@@ -564,7 +564,8 @@ scrape_subscriptions () {
 			$channel_scraper "$channel_url" "$_tmp_subfile" < /dev/null || return "$?"
 			if [ ${fancy_subs} -eq 1 ]; then
 				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].channel + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel)" }] + .[0:'"$sub_link_count"']' < "$_tmp_subfile"
-
+			else
+			    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile"
 			fi >> "$ytfzf_video_json_file"
 	    } &
 	    sleep $sleep_time
