@@ -310,7 +310,7 @@ Only works on the sway wayland compositor
 .RB $ w3mimgdisplay_path
 Path to w3mimgdisplay
 .br
-.IR defaut: " /usr/lib/w3m/w3mimgdisplay"
+.IR default: " /usr/lib/w3m/w3mimgdisplay"
 
 .TP
 .RB $ show_formats
@@ -366,7 +366,7 @@ Whether or not to sort scraped videos by date in the menu
 .TP
 .RB $ fancy_subs
 Whether or not to have a separator between each subscription
-.IR defualt: " 0"
+.IR default: " 0"
 
 .TP
 .RB $ fancy_subs_left
@@ -796,7 +796,7 @@ Path to youtube\-dl or a fork of youtube\-dl for downloading.
 .br
 If
 .I yt-dlp
-is installed that will be prefered over
+is installed that will be preferred over
 .I youtube-dl
 .br
 .IR default: " youtube\-dl"
@@ -1110,7 +1110,7 @@ stdin: the items to choose from (separated by new lines)
 .BR quick_menu_scripting ()
 This function should do the same thing as quick_menu()
 .br
-This funtion is called when quick_menu() would be called, but when \-a, \-r, or \-A is enabled.
+This function is called when quick_menu() would be called, but when \-a, \-r, or \-A is enabled.
 .br
 This function takes 1 argument, and takes input from stdin
 .br
@@ -1374,7 +1374,7 @@ To see an example, make a search with \fIytfzf\fR and locate the \fIthumbnails\f
 Custom thumbnails are going to try to be loaded before the official thumbnail.
 .br
 If a custom thumbnail, and the official thumbnail doesn't exist, ytfzf will try to use 
-.I $YTFZF_CUSTOM_THUMBNAILS_DIR/YTFZF:DEFUALT.jpg .
+.I $YTFZF_CUSTOM_THUMBNAILS_DIR/YTFZF:DEFAULT.jpg .
 
 .SH VIDEO JSON FORMAT
 .PP
@@ -1418,7 +1418,7 @@ Example JSON:
 .SH PLAYLISTS
 .PP
 A playlist is a json file in the format of VIDEO JSON FORMAT,
-To easily get the formated json for a video, run
+To easily get the formatted json for a video, run
 .I "ytfzf -I VJ <search"
 
 .SH SORT NAMES
