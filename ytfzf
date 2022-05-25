@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1481.1f6b2da"
+YTFZF_VERSION="git-1483.d36951a"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1673,10 +1673,15 @@ submenu_handler () {
 	(
 	    trap 'clean_up' EXIT
 	    trap 'exit' INT TERM HUP
+
 	    cache_dir="${session_cache_dir}"
+
 	    [ -f "$YTFZF_CONFIG_DIR/submenu-conf.sh" ] && . "$YTFZF_CONFIG_DIR/submenu-conf.sh"
+
 	    set -- $(eval echo "$submenu_opts") "$search"
+
 	    __is_submenu=1
+
 	    on_opt_parse_s () {
 		print_warning "-s is not supported in submenus\n"
 	    }
@@ -1701,8 +1706,12 @@ submenu_handler () {
 		    esac
 	    done
 
+	    source_scrapers
+
 	    search_again=0
+
 	    shift $((OPTIND-1))
+
 	    make_search "$*"
 	    until handle_empty_scrape; do 
 		case "$search_again" in
