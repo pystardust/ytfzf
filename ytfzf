@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1479.eed9a3b"
+YTFZF_VERSION="git-1480.52b98a4"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1665,12 +1665,14 @@ print_requested_info () {
 submenu_handler () {
 	search="$(get_key_value "$_submenu_actions" "search")"
 	__scrape="$(get_key_value "$_submenu_actions" "type")"
-	submenu_opts="-c $__scrape $submenu_opts"
+	old_submenu_opts="$submenu_opts"
+	submenu_opts="$submenu_scraping_opts -c $__scrape $submenu_opts"
 	url_handler="$old_url_handler"
 	(
 	    trap 'clean_up' EXIT
 	    trap 'exit' INT TERM HUP
 	    cache_dir="${session_cache_dir}"
+	    [ -f "$YTFZF_CONFIG_DIR/submenu-conf.sh" ] && . "$YTFZF_CONFIG_DIR/submenu-conf.sh"
 	    set -- $(eval echo "$submenu_opts") "$search"
 	    __is_submenu=1
 	    while getopts "ac:dfhlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
@@ -1708,6 +1710,7 @@ submenu_handler () {
 		    main
 	    done
 	)
+	submenu_opts="$old_submenu_opts"
 }
 
 open_url_handler () {
