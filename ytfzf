@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1480.52b98a4"
+YTFZF_VERSION="git-1481.1f6b2da"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1663,6 +1663,8 @@ print_requested_info () {
 }
 
 submenu_handler () {
+	#eat stdin and close it
+	cat > /dev/null
 	search="$(get_key_value "$_submenu_actions" "search")"
 	__scrape="$(get_key_value "$_submenu_actions" "type")"
 	old_submenu_opts="$submenu_opts"
@@ -1675,6 +1677,9 @@ submenu_handler () {
 	    [ -f "$YTFZF_CONFIG_DIR/submenu-conf.sh" ] && . "$YTFZF_CONFIG_DIR/submenu-conf.sh"
 	    set -- $(eval echo "$submenu_opts") "$search"
 	    __is_submenu=1
+	    on_opt_parse_s () {
+		print_warning "-s is not supported in submenus\n"
+	    }
 	    while getopts "ac:dfhlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
 		    case $OPT in
 			    U)
@@ -1696,19 +1701,15 @@ submenu_handler () {
 		    esac
 	    done
 
+	    search_again=0
 	    shift $((OPTIND-1))
 	    make_search "$*"
 	    until handle_empty_scrape; do 
 		case "$search_again" in
-		    0) die 4 ;;
-		    1) make_search ;;
+		    *) die 4 ;;
 		esac
 	    done
 	    main
-	    while [ $search_again -eq 1 ] ; do
-		    make_search ""
-		    main
-	    done
 	)
 	submenu_opts="$old_submenu_opts"
 }
