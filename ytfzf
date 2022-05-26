@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1483.d36951a"
+YTFZF_VERSION="git-1484.86ac4fb"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1560,7 +1560,7 @@ EOF
 			imv-msg "$imv_pid" next
 			;;
 		mpv)
-			echo "loadfile $thumb_path" | socat - "$MPV_SOCKET" ;;
+			echo "loadfile '$thumb_path'" | socat - "$MPV_SOCKET" ;;
         kitty)
             get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
             kitty +kitten icat --clear --transfer-mode file
