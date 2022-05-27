@@ -408,6 +408,9 @@ command_exists "downloader" || downloader () {
 
 : ${max_thread_count:=20}
 
+# When set to 1, instead of having to wait for thumbnails to download
+# The menu opens immediately while thumbnails download in the background
+: ${async_thumbnails:=0}
 
 # Option Checks {{{
 case "$long_opt_char" in
@@ -1300,8 +1303,9 @@ download_thumbnails () {
 	for line in "$@"; do
 		printf "url=\"%s\"\noutput=\"$thumb_dir/%s.jpg\"\n" "${line%%;*}" "${line##*;}"
 	done >> "$curl_config_file"
-	curl -fLZ -K "$curl_config_file"
-	[ $? -eq 2 ] && curl -fL -K "$curl_config_file"
+	[ "$async_thumbnails" -eq 1 ] && use_silent="s"
+	curl -${use_silent}fLZ -K "$curl_config_file"
+	[ $? -eq 2 ] && curl -${use_silent}fL -K "$curl_config_file"
 }
 
 get_video_json_attr () {
@@ -1610,7 +1614,10 @@ interface_thumbnails () {
 	
 	set -f
 	unset IFS
-	download_thumbnails $(get_missing_thumbnails)
+	case "$async_thumbnails" in
+	    0) download_thumbnails $(get_missing_thumbnails) ;;
+	    1) download_thumbnails $(get_missing_thumbnails) & ;;
+	esac
 
 	preview_start "$thumbnail_viewer"
 
@@ -1840,24 +1847,25 @@ parse_opt () {
 		disable-back) enable_back_button=${optarg:-0} ;;
 		skip-thumb-download) skip_thumb_download=${optarg:-1} ;;
 		multi-search) multi_search=${optarg:-1} ;;
-        format-selection) format_selection_screen=${optarg:-normal};;
-        format-sort) format_selection_sort="$optarg" ;;
-        ext) load_extension "$optarg" ;;
-        url-handler-opts) url_handler_opts="$optarg" ;;
-        list-addons) 
-            for path in "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_SORT_NAMES_DIR"\
-                "$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_EXTENSIONS_DIR"; do
-                ! [ -d "$path" ] && continue
-                printf "${c_bold}%s:${c_reset}\n" "user addon, ${path##*/}"
-                ls "$path"
-            done
-            echo ----------------
-            for path in $(ls -1 $YTFZF_SYSTEM_ADDON_DIR); do
-                printf "${c_bold}%s:${c_reset}\n" "system addon, ${path##*/}"
-                ls "$YTFZF_SYSTEM_ADDON_DIR/$path"
-            done
-            exit
-            ;;
+		format-selection) format_selection_screen=${optarg:-normal};;
+		format-sort) format_selection_sort="$optarg" ;;
+		ext) load_extension "$optarg" ;;
+		url-handler-opts) url_handler_opts="$optarg" ;;
+		list-addons) 
+		    for path in "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_SORT_NAMES_DIR"\
+			"$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_EXTENSIONS_DIR"; do
+			! [ -d "$path" ] && continue
+			printf "${c_bold}%s:${c_reset}\n" "user addon, ${path##*/}"
+			ls "$path"
+		    done
+		    echo ----------------
+		    for path in $(ls -1 $YTFZF_SYSTEM_ADDON_DIR); do
+			printf "${c_bold}%s:${c_reset}\n" "system addon, ${path##*/}"
+			ls "$YTFZF_SYSTEM_ADDON_DIR/$path"
+		    done
+		    exit
+		    ;;
+		async-thumbnails) async_thumbnails="${optarg:-1}" ;;
 		fancy-subs) 
 			fancy_subs=${optarg:-1} 
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
