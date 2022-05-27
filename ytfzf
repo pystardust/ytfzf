@@ -2083,7 +2083,7 @@ make_search () {
 	#only ask for search if it's empty and scrape isn't something like S or T
 	#this cannot be done inside handle_scraping, because otherwise init_files will get an empty search with search_again
 	is_asking_for_search_necessary && { search_prompt_menu_wrapper; [ -z "$_search" ] && exit 5; }
-	init_files "$_search"
+	init_files "$(printf "%s" "$_search" | sed 's/,/AND/g')"
 	init_multi_search "$_search"
 	set_save_filters
 	[ $enable_search_hist -eq 1 ] && [ -n "$_search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
