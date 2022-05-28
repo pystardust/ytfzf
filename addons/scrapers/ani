@@ -1,6 +1,6 @@
 #!/bin/sh
 
-submenu_opts="--ext=ani-url-handler"
+submenu_opts="$submenu_opts --ext=ani-url-handler"
 
 _ani_get_categories () {
     #stolen from pystardust/ani-cli

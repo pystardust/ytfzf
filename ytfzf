@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1484.86ac4fb"
+YTFZF_VERSION="git-1489.00c15ba"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1712,6 +1712,7 @@ submenu_handler () {
 				    parse_opt "${OPT}" "${OPTARG}" ;;
 		    esac
 	    done
+
 
 	    source_scrapers
 
