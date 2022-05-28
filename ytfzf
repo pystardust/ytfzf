@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.3.1.beta-2"
+YTFZF_VERSION="git-1484.86ac4fb"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1564,7 +1564,7 @@ EOF
 			imv-msg "$imv_pid" next
 			;;
 		mpv)
-			echo "loadfile $thumb_path" | socat - "$MPV_SOCKET" ;;
+			echo "loadfile '$thumb_path'" | socat - "$MPV_SOCKET" ;;
         kitty)
             get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
             kitty +kitten icat --clear --transfer-mode file
@@ -1670,26 +1670,64 @@ print_requested_info () {
 }
 
 submenu_handler () {
-	final_submenu_json_file="${session_temp_dir}/submenu.json"
-	#reset for future submenus
-	: > "$final_submenu_json_file"
+	#eat stdin and close it
+	cat > /dev/null
+	search="$(get_key_value "$_submenu_actions" "search")"
+	__scrape="$(get_key_value "$_submenu_actions" "type")"
+	old_submenu_opts="$submenu_opts"
+	submenu_opts="$submenu_scraping_opts -c $__scrape $submenu_opts"
+	url_handler="$old_url_handler"
+	(
+	    trap 'clean_up' EXIT
+	    trap 'exit' INT TERM HUP
 
-        [ $enable_back_button -eq 1 ] && printf "%s\n" '[{"title": "[BACK]", "ID": "BACK-BUTTON", "url": "back", "action": "back"}]' >> "$final_submenu_json_file"
+	    cache_dir="${session_cache_dir}"
 
-	unset IFS
-	while read -r line; do
-		#calls ytfzf to reduce code complexity
-		__is_scrape_for_submenu=1 cache_dir="${session_cache_dir}" $0 --info-exit $submenu_scraping_opts --search-again=0 \
-			-ac "$(get_key_value "$line" "type")" -IJ "$(get_key_value "$line" "search")" \
-			>> "$final_submenu_json_file"
-	done <<-EOF
-	$(printf "%s" "$_submenu_actions" | sed 1d)
-	EOF
+	    [ -f "$YTFZF_CONFIG_DIR/submenu-conf.sh" ] && . "$YTFZF_CONFIG_DIR/submenu-conf.sh"
 
-	#the hist_file thing is to prevent watch_hist from being put in $session_cache_dir
-	set -f
-	__is_submenu=1 hist_file="$hist_file" cache_dir="${session_cache_dir}" $0 --interface="$interface" $submenu_opts --search-again=0 --keep-cache -cp "$final_submenu_json_file"
+	    set -- $(eval echo "$submenu_opts") "$search"
 
+	    __is_submenu=1
+
+	    on_opt_parse_s () {
+		print_warning "-s is not supported in submenus\n"
+	    }
+	    while getopts "ac:dfhlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
+		    case $OPT in
+			    U)
+				    shift $((OPTIND-1))
+				    case $1 in
+					    preview_img)
+						    session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
+						    shift
+						    source_scrapers
+						    preview_img "$@"
+						    ;;
+				    esac
+				    exit 0
+				    ;;
+			    "$long_opt_char")
+				    parse_opt "${OPTARG%%=*}" "${OPTARG#*=}" ;;
+			    *)
+				    parse_opt "${OPT}" "${OPTARG}" ;;
+		    esac
+	    done
+
+	    source_scrapers
+
+	    search_again=0
+
+	    shift $((OPTIND-1))
+
+	    make_search "$*"
+	    until handle_empty_scrape; do 
+		case "$search_again" in
+		    *) die 4 ;;
+		esac
+	    done
+	    main
+	)
+	submenu_opts="$old_submenu_opts"
 }
 
 open_url_handler () {
@@ -1941,6 +1979,7 @@ handle_actions () {
 			back*) [ $__is_submenu -eq 1 ] && exit ;;
 			scrape*)
 				[ $enable_submenus -eq 0 ] && continue
+				old_url_handler="$url_handler"
 				url_handler=submenu_handler
 				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
 			do-nothing*) return 1 ;;
@@ -2138,8 +2177,8 @@ main() {
 main
 
 #doing this after the loop allows for -l and -s to coexist
-while [ $search_again -eq 1 ] ; do
 	clean_up
+while [ $search_again -eq 1 ] ; do
 	make_search ""
 	main
 done

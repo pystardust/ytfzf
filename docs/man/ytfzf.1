@@ -286,7 +286,8 @@ This can also be set in the config file with
 .BR submenu_opts .
 .TP
 .BR \-\-submenu\-scraping\-opts=opts
-The opts to use for scraping in the submenu.
+.B DEPRECATED "(use \-\-submenu\-opts instead)"
+Does the same thing as \-\-submenu\-opts.
 .br
 This can also be set in the config file with
 .BR submenu_scraping_opts .
@@ -645,6 +646,9 @@ The configuration file to use.
 The defualt is
 .I $YTFZF_CONFIG_DIR/conf.sh
 .TP
+.B $YTFZF_CONFIG_DIR/submenu-conf.sh
+The configuration file to use in submenus.
+.TP
 .B $YTFZF_SUBSCRIPTIONS_FILE
 The subscriptions file to use.
 The deafult is
@@ -754,9 +758,6 @@ A folder that contains files relating to the scraping of a selected result.
 .IR <submenu\-search>\-<submenu\-pid>
 Created when a submenu is opened (eg: when a channel/playlist is selected).
 .TP
-.IR submenu
-The folder to hold information about the submenu, all subitems are the same as the parent equivelent.
-.TP
 .IR thumbnails
 Stores the thumbnails for the instance (only with \-t).
 .TP
@@ -774,9 +775,6 @@ The json scraped from a website.
 .TP
 .IR menu_keypress
 The key pressed in fzf.
-.TP
-.IR submenu.json
-A temp json file used to store the video_json of links to be put into the submenu.
 .TP
 .IR ids
 The file that stores the id of each selected video.
