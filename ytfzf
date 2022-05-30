@@ -119,9 +119,15 @@ command_exists () {
 }
 
 get_key_value() {
-	value="${1##* ${2}=}"
-	printf "%s" "${value%% *}"
+	sep="${3:- }"
+	value="${1##*${sep}${2}=}"
+	#this can be used similarly to how you use $REPLY in bash
+	KEY_VALUE="${value%%${sep}*}"
+	printf "%s" "$KEY_VALUE"
+	[ "$KEY_VALUE" ]
+	rv="$?"
 	unset value
+	return "$rv"
 }
 
 #capitalizes the first letter of a string
@@ -1740,13 +1746,13 @@ open_url_handler () {
 	[ -z "$*" ] && return 0
 
 	[ $show_formats -eq 1 ] && {
-    case "$format_selection_screen" in
-      normal) ytdl_pref="$(get_video_format "$1")" ;;
-      *) ytdl_pref="$(get_video_format_$format_selection_screen "$@")" ;;
-    esac
-  }
+	    case "$format_selection_screen" in
+		normal) get_video_format "$1" ;;
+		*) get_video_format_$format_selection_screen "$@" ;;
+	    esac
+	}
 
-    unset IFS
+	unset IFS
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
@@ -1754,13 +1760,20 @@ open_url_handler () {
 }
 
 get_video_format_simple () {
-	# select format if flag given
-  formats=$(${ytdl_path} -F "$1") 
-  line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
-  quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | quick_menu_wrapper "video quality" | sed "s/p//g")
-  [ "$quality" = Audio ] && is_audio_only=1 && printf "%s" "bestaudio" ||
-    printf "%s" "bestvideo[height=?$quality][vcodec!=?vp9]+bestaudio/best"
-	unset max_quality quality
+    # select format if flag given
+    formats=$(${ytdl_path} -F "$1") 
+    line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
+    quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | quick_menu_wrapper "video quality" | sed "s/p//g")
+    if [ "$quality" = "Audio" ]; then
+	is_audio_only=1
+    elif printf "%s" "$formats" | grep -q "audio only"; then
+	video_format_no=$(printf "%s" "$formats" | grep -F "x$quality" | sed -n 1p)
+	video_format_no="${video_format_no%% *}"
+	ytdl_pref="${video_format_no}+bestaudio/bestaudio"
+    else
+	ytdl_pref="best[height=$quality]/best[height<=?$quality]/bestaudio"
+    fi
+    unset max_quality quality
 }
 
 get_video_format(){
@@ -1768,7 +1781,7 @@ get_video_format(){
   _audio_choices="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort" | grep 'audio only')"
   [ "$_audio_choices" ] && audio_pref="$(echo "$_audio_choices" | quick_menu_wrapper "Audio format: " | awk '{print $1}')"
   [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort"|  sed 's/\\033\[[[:digit:]]*m//g' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
-  printf "%s+%s/%s/%s" "$video_pref" "$audio_pref" "$video_pref" "$audio_pref"
+  ytdl_pref="${video_pref}+${audio_pref}/${video_pref}/${audio_pref}"
 }
 #}}}
 
