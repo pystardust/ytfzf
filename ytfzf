@@ -433,6 +433,7 @@ usage () {
         -d			Download the selected video(s)
         -m			Only play audio
         -f                      Select a video format before playing
+        -F <channel-url>        Get Atom feed URL of the channel
         -l                      Reopen the menu when the video stops playing
         -s                      After closing fzf make another search
         -q                      Use a search query from search history
@@ -603,6 +604,19 @@ scrape_youtube_channel () {
 
 	channel_name=$(_youtube_channel_name < "$_tmp_html" )
 	_youtube_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
+}
+
+scrape_youtube_channel_feed () {
+	[ -z "$1" ] && echo 'Specify channel URL!' && return 1
+	url="$(printf "%s" "$1" | sed -E "s_(https://)?www.youtube.com_${invidious_instance}_")"
+	real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p')"
+	[ -z "$real_path" ] && echo 'Invalid channel URL!' && return 1
+	channel_id="${real_path##*/}"
+	if [ "${channel_id%%C*}" = 'U' ]; then
+		echo "https://www.youtube.com/feeds/videos.xml?channel_id=$channel_id"
+	else
+		echo "Invalid channel URL!" && return 1
+	fi
 }
 # }}}
 
@@ -1718,6 +1732,7 @@ parse_opt () {
 		m|audio-only) is_audio_only=${optarg:-1};;
 		d|download) url_handler=downloader ;;
 		f|formats) show_formats=${optarg:-1} ;;
+		F|feed) scrape_youtube_channel_feed "$optarg"; exit "$?" ;;
 		H|history) scrape="history" ;;
 		x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
 		S|select) interface="scripting" && is_specific_select="1" && scripting_video_count="$optarg" ;;
@@ -1841,7 +1856,7 @@ parse_opt () {
 			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
 }
-while getopts "ac:dfhlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
+while getopts "ac:dfF:hlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			shift $((OPTIND-1))
