@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1500.cafb02e"
+YTFZF_VERSION="git-1502.f87f76e"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -120,9 +120,9 @@ command_exists () {
 
 get_key_value() {
 	sep="${3:- }"
-	value="${1##*${sep}${2}=}"
+	value="${1##*"${sep}""${2}"=}"
 	#this can be used similarly to how you use $REPLY in bash
-	KEY_VALUE="${value%%${sep}*}"
+	KEY_VALUE="${value%%"${sep}"*}"
 	printf "%s" "$KEY_VALUE"
 	[ "$KEY_VALUE" ]
 	rv="$?"
@@ -183,7 +183,7 @@ die () {
 }
 
 trim_url () {
-	while IFS= read _line;do
+	while IFS= read -r _line;do
 		printf '%s\n' "${_line##*|}"
 	done
 }
@@ -207,7 +207,7 @@ external_menu () {
 search_prompt_menu () {
 	printf "Search\n> " > /dev/stderr
 	read -r _search
-	printf "\033[1A\033[K\r%s\n" "> $_search" > /dev/stderr > /dev/stderr
+	printf "\033[1A\033[K\r%s\n" "> $_search" > /dev/stderr
 }
 search_prompt_menu_ext () {
 	_search="$(printf '' | external_menu "Search: ")"
@@ -231,15 +231,17 @@ search_prompt_menu_wrapper () {
 
 handle_playing_notifications (){
 	#if no notify-send push error to /dev/null
-	[ $# -le 1 ] && {
-		IFS="$tab_space"
-		while read -r id title; do
-			notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
-		done <<-EOF
-		$(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
-		EOF
-        unset IFS
-	} || { notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null; }
+	if [ "$#" -le 1 ]; then
+	    IFS="$tab_space"
+	    while read -r id title; do
+		    notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
+	    done <<-EOF
+	    $(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
+EOF
+	    unset IFS
+	else
+	    notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null
+	fi
 }
 
 parse_search_hist_file () {
@@ -313,9 +315,9 @@ done
 
 # menu options
 
-: ${enable_submenus:=1} ${submenu_opts=} ${submenu_scraping_opts=} "${enable_back_button:=1}"
+: "${enable_submenus:=1}" "${submenu_opts=}" "${submenu_scraping_opts=}" "${enable_back_button:=1}"
 
-: ${interface=}
+: "${interface=}"
 
 : ${fancy_subs:=0} "${fancy_subs_left=-------------}" "${fancy_subs_right="${fancy_subs_left}"}"
 
@@ -329,13 +331,13 @@ done
 : "${shortcut_binds:=Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}}"
 
 #interface design
-: ${show_thumbnails:=0} ${is_sort:=0} ${skip_thumb_download:=0} ${external_menu_len:=210}
+: "${show_thumbnails:=0}" "${is_sort:=0}" "${skip_thumb_download:=0}" "${external_menu_len:=210}"
 
-: ${is_loop:=0} ${search_again:=0}
+: "${is_loop:=0}" "${search_again:=0}"
 
 # Notifications
 
-: ${notify_playing:=0}
+: "${notify_playing:=0}"
 
 # urlhandlers
 #job of url handlers is:
@@ -381,20 +383,20 @@ command_exists "downloader" || downloader () {
 : "${hist_file:=$cache_dir/watch_hist}" "${search_hist_file:=$cache_dir/search_hist}"
 
 # history
-: ${enable_hist:=1} ${enable_search_hist:=1}
-: ${use_search_hist:=0}
+: "${enable_hist:=1}" "${enable_search_hist:=1}"
+: "${use_search_hist:=0}"
 
 # format options
 #variable for switching on sort (date)
-: ${is_detach:=0} ${is_audio_only:=0}
+: "${is_detach:=0}" "${is_audio_only:=0}"
 : "${url_handler:=multimedia_player}"
 : "${url_handler_opts=}"
 : ${info_to_print=} "${info_wait:=0}" ${info_wait_action=q}
 : "${video_pref:=bestvideo}" "${audio_pref:=bestaudio}"
-: ${show_formats:=0} "${format_selection_screen:=simple}" "${format_selection_sort:=height}"
+: "${show_formats:=0}" "${format_selection_screen:=simple}" "${format_selection_sort:=height}"
 
-: ${scripting_video_count:=1}
-: ${is_random_select:=0} ${is_auto_select:=0} ${is_specific_select:=0}
+: "${scripting_video_count:=1}"
+: "${is_random_select:=0}" "${is_auto_select:=0}" "${is_specific_select:=0}"
 
 # option parsing
 : "${long_opt_char:=-}"
@@ -403,20 +405,20 @@ command_exists "downloader" || downloader () {
 : "${scrape=youtube}"
 #this comes from invidious' api
 : "${thumbnail_quality=high}"
-: ${sub_link_count:=2}
+: "${sub_link_count:=2}"
 : "${invidious_instance:=https://vid.puffyan.us}" "${yt_video_link_domain:=https://youtube.com}"
 : "${search_sort_by:=relevance}" "${search_upload_date=}" "${search_video_duration=}" "${search_result_type:=video}" "${search_result_features=}" "${search_region:=US}" ${pages_to_scrape:=1} ${pages_start:=1}
-: "${nsfw:=false}" ${odysee_video_search_count:=30}
+: "${nsfw:=false}" "${odysee_video_search_count:=30}"
 
 : "${multi_search:=0}"
 
 : "${custom_scrape_search_exclude=}" "${scrape_search_exclude:= youtube-subscriptions S SI SL T youtube-trending H history ${custom_scrape_search_exclude} }"
 
-: ${max_thread_count:=20}
+: "${max_thread_count:=20}"
 
 # When set to 1, instead of having to wait for thumbnails to download
 # The menu opens immediately while thumbnails download in the background
-: ${async_thumbnails:=0}
+: "${async_thumbnails:=0}"
 
 # Option Checks {{{
 case "$long_opt_char" in
@@ -566,7 +568,7 @@ scrape_subscriptions () {
     #if _tmp_subfile does not have a unique name, weird things happen
     #must be _i because scrape_invidious_channel uses $i
     _i=0
-    while IFS= read channel_url || [ -n "$channel_url" ] ; do
+    while IFS= read -r channel_url || [ -n "$channel_url" ] ; do
 	    _i=$((_i+1))
 	    {
 			_tmp_subfile="${session_temp_dir}/channel-$_i"
@@ -852,7 +854,7 @@ scrape_invidious_video_recommended () {
 }
 
 scrape_invidious_trending () {
-	trending_tab=$(title_str $1)
+	trending_tab=$(title_str "$1")
     [ "$trending_tab" = ":help" ] && print_info "The search should be one of: Normal, Gaming, Music, News\n" && return 100
 	output_json_file=$2
 	print_info "Scraping YouTube (with $invidious_instance) trending (${trending_tab:-Normal})\n"
