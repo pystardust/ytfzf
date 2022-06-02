@@ -5,7 +5,8 @@ handle_link () {
     domain="${link#https://}"
     domain="${domain%%/*}"
     case "$domain" in
-	*youtube*)
+	#invidious list found here: https://docs.invidious.io/instances
+	*youtube*|*invidious*|vid.puffyan.us|yewtu.be|inv.riverside.rocks|yt.artemislena.eu|tube.cthd.icu)
 		link=$(_get_real_channel_link "$1")
 		final="https://www.youtube.com/feeds/videos.xml?channel_id=${link##*/}"
 		;;
@@ -40,7 +41,7 @@ example searches:
 	#i honestly don't even know how it's possible that non-printable characters end up here
 	final="$(printf "%s" "$final" | sed 's/[^[:print:]]//g')"
 	printf "%s\n" "$final"
-	_get_request "$final" -L --head --silent -f > /dev/null|| print_warning "Warning: $final $?, does not appear to be a real url\n"
+	_get_request "$final" -L --head --silent -f > /dev/null|| print_warning "Warning: $final, does not appear to be a real url\n"
     done
     exit 0
 }

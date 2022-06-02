@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1497.2b70ad6"
+YTFZF_VERSION="git-1499.d91c5b9"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -621,7 +621,7 @@ scrape_youtube_channel () {
 _get_real_channel_link () {
 	domain=${1#https://}
 	domain=${domain%%/*}
-	url=$(printf "%s" "$1" | sed -E "s_(https://)?www.youtube.com_${invidious_instance}_")
+	url=$(printf "%s" "$1" | sed -E "s_(https://)?(www\.)?youtube.com_${invidious_instance}_")
     real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p')"
 	#prints the origional url because it was correct
 	[ -z "$real_path" ] && printf "%s\n" "$1" && return 0
