@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1499.def83c4"
+YTFZF_VERSION="git-1500.cafb02e"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1891,8 +1891,7 @@ parse_opt () {
 			else die 2 "$optarg is not a url-handler\n"
 			fi ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
-		submenu-opts) submenu_opts="${optarg}" ;;
-		submenu-scraping-opts) submenu_scraping_opts="${optarg}" ;;
+		submenu-opts|submenu-scraping-opts) submenu_opts="${optarg}" ;;
 		nsfw)  nsfw="${optarg:-true}" ;;
 		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
 		#flip the bit
