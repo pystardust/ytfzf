@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1499.d91c5b9"
+YTFZF_VERSION="git-1499.def83c4"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1302,7 +1302,7 @@ EOF
 
 download_thumbnails () {
 	[ $skip_thumb_download -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
-	print_info 'Fetching thumbnails...\n'
+	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...\n'
 	curl_config_file="${session_temp_dir}/curl_config"
 	[ -z "$*" ] && return 0
 	: > "$curl_config_file"
