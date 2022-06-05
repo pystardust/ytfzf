@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1502.f87f76e"
+YTFZF_VERSION="git-1503.43b3d6d"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -53,7 +53,7 @@ do_an_event_function () {
 # Takes video json file as $1 and returns the selected video IDs to file $2
 video_info_text () {
 	#we can't just change the views line to %d because it needs to display the "|", and "|$views" is NaN
-	[ "${views#|}" -eq "${views#|}" ] 2>/dev/null && views="|$(printf "%s" "${views#|}" | add_commas)"
+	[ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
 	printf "%-${title_len}.${title_len}s\t" "$title"
 	printf "%-${channel_len}.${channel_len}s\t" "$channel"
 	printf "%-${dur_len}.${dur_len}s\t" "$duration"
@@ -184,7 +184,7 @@ die () {
 
 trim_url () {
 	while IFS= read -r _line;do
-		printf '%s\n' "${_line##*|}"
+		printf '%s\n' "${_line##*"|"}"
 	done
 }
 
@@ -1073,8 +1073,8 @@ scrape_next_page_comments () {
 
 command_exists "get_sort_by" || get_sort_by () {
 	line="$1"
-	date="${line%|*}"
-	date=${date##*|}
+	date="${line%"|"*}"
+	date=${date##*"|"}
 	#youtube specific
 	date=${date#*Streamed}
 	date=${date#*Premiered}
@@ -1590,7 +1590,7 @@ preview_img () {
 	thumbnail_viewer=$1
 	line=$2
 	video_json_file=$3
-	url=${line##*|}
+	url=${line##*"|"}
 
 	#make sure all variables are set{{{
 	_correct_json=$(jq -nr --arg url "$url" '[inputs[]|select(.url==$url)][0]' < "$video_json_file")
@@ -1635,7 +1635,7 @@ interface_thumbnails () {
 	#fzf_preview_side will get reset if we don't pass it in
 	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|join("\t")' < "$video_json_file" |
 	sort_video_data_fn |
-    SHELL="$(command -v sh)" fzf -m \
+	SHELL="$(command -v sh)" fzf -m \
 	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
 	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
 	trim_url > "$selected_id_file"
@@ -1745,7 +1745,7 @@ open_url_handler () {
 	set -f
 	IFS=' '
 	set -- $urls
-	[ -z "$*" ] && return 0
+	[ -z "$*" ] && print_info "No urls selected\n" && return 0
 
 	[ $show_formats -eq 1 ] && {
 	    case "$format_selection_screen" in
