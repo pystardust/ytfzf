@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1502.f87f76e"
+YTFZF_VERSION="git-1502.54f8635"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -35,6 +35,19 @@ c_bold="\033[1m"
 : "${__is_submenu:=0}" "${__is_scrape_for_submenu:=0}" "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
+
+mul_str () {
+    str=$1
+    by=$2
+    new_str="$str"
+    mul_str_i=1
+    while [ "$mul_str_i" -lt "$by" ]; do
+	new_str="${new_str}${str}"
+	mul_str_i=$((mul_str_i+1))
+    done
+    printf "%s" "$new_str"
+    unset mul_str_i new_str by str
+}
 
 remove_ansi_escapes () {
     sed -e 's/\[\([[:digit:]][[:digit:]]*\(;\|m\)\)*//g' -e 's/[^[:print:]]*//g'
@@ -79,6 +92,7 @@ detach_cmd () {
 
 source_scrapers () {
 	set -f
+	OLD_IFS=$IFS
 	IFS=","
 	for _scr in $scrape; do
 		if [ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$_scr" ]; then
@@ -88,7 +102,7 @@ source_scrapers () {
 		fi
 		[ $__is_fzf_preview -eq 0 ] && command_exists "on_startup_$_scr" && on_startup_$_scr
 	done
-	unset IFS
+	IFS=$OLD_IFS
 }
 
 add_commas () {
@@ -232,13 +246,14 @@ search_prompt_menu_wrapper () {
 handle_playing_notifications (){
 	#if no notify-send push error to /dev/null
 	if [ "$#" -le 1 ]; then
+	    OLD_IFS=$IFS
 	    IFS="$tab_space"
 	    while read -r id title; do
 		    notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
 	    done <<-EOF
 	    $(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
 EOF
-	    unset IFS
+	    IFS=$OLD_IFS
 	else
 	    notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null
 	fi
@@ -1653,26 +1668,27 @@ interface_thumbnails () {
 print_requested_info () {
 	url_list="$1"
 	set -f
+	OLD_IFS=$IFS
 	IFS=,
-	for request in $info_to_print; do
-		unset IFS
-		case "$request" in
-		    [Ll]|link)
-			    #cat is better here because a lot of urls could be selected
-			    cat "$url_list" ;;
-		    VJ|vj|video-json)
-			    while read -r line; do 
-				    jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file"; 
-			    done < "$url_list"  ;;
-		    [Jj]|json) jq < "$ytfzf_video_json_file" ;;
-		    [Ff]|format) printf "%s\n" "$ytdl_pref" ;;
-		    [Rr]|raw) 
-			    while read -r line; do
-				    jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file";
-			    done < "$url_list" ;;
-		esac
+	set -- $info_to_print
+	for request in "$@"; do
+	    case "$request" in
+		[Ll]|link)
+		    #cat is better here because a lot of urls could be selected
+		    cat "$url_list" ;;
+		VJ|vj|video-json)
+		    while read -r line; do 
+			jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file"; 
+		    done < "$url_list"  ;;
+		[Jj]|json) jq < "$ytfzf_video_json_file" ;;
+		[Ff]|format) printf "%s\n" "$ytdl_pref" ;;
+		[Rr]|raw) 
+		    while read -r line; do
+			jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file";
+		    done < "$url_list" ;;
+	    esac
 	done
-    unset IFS
+	IFS=$OLD_IFS
 	[ $info_wait -eq 1 ] && { print_info "quit (q), quit (override -l) (Q), open menu (c|m), play (enter): "; read -r info_wait_action; }
 	return 0
 }
@@ -1743,6 +1759,7 @@ open_url_handler () {
 	# isaudio, isdownload, ytdl_pref
 	urls="$(tr '\n' ' ' < "$1")"
 	set -f
+	OLD_IFS="$IFS"
 	IFS=' '
 	set -- $urls
 	[ -z "$*" ] && return 0
@@ -1754,7 +1771,7 @@ open_url_handler () {
 	    esac
 	}
 
-	unset IFS
+	IFS=$OLD_IFS
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
 
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
@@ -2016,12 +2033,13 @@ handle_actions () {
 #there has to be at least 1 set of backup variables because search_sort_by=${search_sort_by%%,*} will give incorrect filters when there are 3+ filters
 # multi {{{
 set_save_filters () {
+	OLD_IFS=$IFS
 	IFS=","
 	set -f -C
 	printf "%s\n" $search_sort_by > "${session_cache_dir}/sort-by.list"
 	printf "%s\n" $search_upload_date > "${session_cache_dir}/upload-date.list"
 	set +C
-	unset IFS
+	IFS=$OLD_IFS
 }
 manage_multi_filters () {
 	#if this is empty search_sort_by will be set to empty which isn't what we want
@@ -2030,10 +2048,11 @@ manage_multi_filters () {
 	#for custom scrapers
 }
 init_multi_search () {
+	OLD_IFS=$IFS
 	IFS=","
 	set -f
 	printf "%s\n" $1 > "${session_cache_dir}/searches.list"
-	unset IFS
+	IFS=$OLD_IFS
 }
 next_search (){
 	head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1
@@ -2099,22 +2118,27 @@ EOF
 }
 
 handle_scraping (){
-	_search="$1"
-	IFS=","
-	set -f
-	for curr_scrape in $scrape; do
-		__scrape_count=$((__scrape_count+1))
-		manage_multi_filters
-		[ $multi_search -eq 1 ] && _search="$(next_search)"
-        do_an_event_function "on_search" "$_search" "$curr_scrape"
-		command_exists "on_search_$_search" && on_search_$_search "$curr_scrape"
-		scrape_website "$curr_scrape" "$_search"
-		handle_scrape_error "$?"
-	done
-    rv="$?"
-    unset IFS
-    #:help search operator
-    [ "$rv" -eq 100 ] && return 100
+    _search="$1"
+    OLD_IFS=$IFS
+    IFS=","
+    set -f
+    _number_of_scrapes="$(printf "%s " $scrape | wc -w)"
+    #if there is only 1 scraper used, multi search is on, then multiple searches will be performed seperated by ,
+    if [ "$_number_of_scrapes" -eq 1 ] && [ "$multi_search" -eq 1 ]; then
+	_number_of_searches=$(printf "%s " $_search | wc -w)
+	scrape=$(mul_str "$scrape," "$_number_of_searches")
+    fi
+    for curr_scrape in $scrape; do
+	__scrape_count=$((__scrape_count+1))
+	manage_multi_filters
+	[ $multi_search -eq 1 ] && _search="$(next_search)"
+	do_an_event_function "on_search" "$_search" "$_scrape"
+	command_exists "on_search_$_search" && on_search_$_search "$_scrape"
+	scrape_website "$curr_scrape" "$_search"
+	rv="$?"
+    done
+    IFS=$OLD_IFS
+    return "$rv"
 }
 
 #check if nothing was scraped{{{
@@ -2149,7 +2173,8 @@ make_search () {
 	init_multi_search "$_search"
 	set_save_filters
 	[ $enable_search_hist -eq 1 ] && [ -n "$_search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
-	handle_scraping "$_search" "$_save_search"
+	handle_scraping "$_search"
+	handle_scrape_error "$?"
     #:help search operator
     [ "$?" -eq 100 ] && exit 0
 }
