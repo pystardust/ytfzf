@@ -1,6 +1,6 @@
 #!/bin/sh
 
-: "${YTFZF_INTERFACE_GUI_CSS:=$YTFZF_CONFIG_DIR/interface-gui.css}"
+: "${YTFZF_GUI_CSS:=$YTFZF_CONFIG_DIR/interface-gui.css}"
 
 gui_dialog () {
     css_file="${session_temp_dir}/gtk.css"
@@ -55,7 +55,7 @@ gui_dialog () {
             </pixmap>
         </hbox>"
     done
-    MAIN_DIALOG="$MAIN_DIALOG<width>100</width><height>100</height></vbox></window>" gtkdialog --styles="$css_file"
+    MAIN_DIALOG="$MAIN_DIALOG<width>500</width><height>500</height></vbox></window>" gtkdialog --styles="$css_file"
 }
 
 interface_gui () {
@@ -70,6 +70,6 @@ interface_gui () {
 }
 
 on_opt_parse_i_gui_help (){ 
-    print_info "YTFZF_INTERFACE_GUI_CSS is a file for custom css for the window\nselectors:\n#TitleText\n#ViewsText\n#DateText\n#DurationText\n#UrlButton\n#Thumbnail\n"
+    print_info "YTFZF_GUI_CSS is a file for custom css for the window\nselectors:\n#TitleText\n#ViewsText\n#DateText\n#DurationText\n#UrlButton\n#Thumbnail\n"
     exit 0
 }
