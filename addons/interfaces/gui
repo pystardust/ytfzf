@@ -55,7 +55,7 @@ gui_dialog () {
             </pixmap>
         </hbox>"
     done
-    MAIN_DIALOG="$MAIN_DIALOG<width>500</width><height>500</height></vbox></window>" gtkdialog --styles="$css_file"
+    MAIN_DIALOG="$MAIN_DIALOG<width>750</width><height>500</height></vbox></window>" gtkdialog --styles="$css_file"
 }
 
 interface_gui () {
