@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1503.11da325"
+YTFZF_VERSION="git-1504.8dce9eb"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -937,6 +937,20 @@ scrape_invidious_channel () {
 
 ## }}}
 
+## Ytfzf {{{
+scrape_multi () {
+    [ "$1" = ":help" ] && print_info "Perform multiple ytfzf calls and present them in 1 menu, a more powerful multi-scrape
+Eg:
+    ytfzf -cM search 1 :NEXT search 2 :NEXT -c O odysee search :NEXT --pages=3 3 pages of youtube
+" && return 100
+    while read -r params; do
+	eval YTFZF_CONFIG_FILE="/dev/null" ytfzf -IJ -a "$params" >> "$2"
+    done <<EOF
+$(printf "%s" "$1" | sed 's/  *:N\(EXT\)\?  */\n/g')
+EOF
+}
+## }}}
+
 ## Peertube {{{
 scrape_peertube () {
 	page_query=$1
@@ -1699,7 +1713,7 @@ submenu_handler () {
 	search="$(get_key_value "$_submenu_actions" "search")"
 	__scrape="$(get_key_value "$_submenu_actions" "type")"
 	old_submenu_opts="$submenu_opts"
-	submenu_opts="$submenu_scraping_opts -c $__scrape $submenu_opts"
+	submenu_opts="$submenu_scraping_opts -c${__scrape} $submenu_opts"
 	url_handler="$old_url_handler"
 	(
 	    trap 'clean_up' EXIT
@@ -2091,7 +2105,8 @@ scrape_website () {
 		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
 		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
 		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
-        video-recommended|R) scrape_invidious_video_recommended "$_search" "$ytfzf_video_json_file" ;;
+		video-recommended|R) scrape_invidious_video_recommended "$_search" "$ytfzf_video_json_file" ;;
+		M|multi) scrape_multi "$_search" "$ytfzf_video_json_file" ;;
 		url|U) 
 			printf "%s\n" "$_search" > "$ytfzf_selected_urls"
 			open_url_handler  "$ytfzf_selected_urls" ;;
