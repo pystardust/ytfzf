@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1510.a22d678"
+YTFZF_VERSION="git-1511.12e9f3e"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -246,13 +246,12 @@ search_prompt_menu_wrapper () {
 handle_playing_notifications (){
 	#if no notify-send push error to /dev/null
 	if [ "$#" -le 1 ]; then
-	    IFS="$tab_space"
+	    unset IFS
 	    while read -r id title; do
 		    notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
 	    done <<-EOF
 	    $(jq -r '.[]|select(.url=="'"$@"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
 EOF
-	    unset IFS
 	else
 	    notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null
 	fi
