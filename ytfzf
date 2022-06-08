@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1514.17ac13f"
+YTFZF_VERSION="git-1515.0b5c451"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2006,8 +2006,7 @@ init_files (){
 	ytfzf_selected_urls=$session_cache_dir/ids
 	ytfzf_video_json_file=$session_cache_dir/videos_json
 	keypress_file="${session_temp_dir}/menu_keypress"
-	: > "$ytfzf_video_json_file"
-	: > "$ytfzf_selected_urls"
+	: > "$ytfzf_video_json_file" 2> "$ytfzf_selected_urls" #this just creates 2 empty files
 	[ "$1" ] && printf "%s\n" "$1" > "${session_cache_dir}/searches.list"
 }
 
