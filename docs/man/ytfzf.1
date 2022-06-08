@@ -732,6 +732,7 @@ The structure of $cache_dir looks like this: (<> represents a placeholder, ? mea
 $cache_dir
 | \-\- watch_hist
 | \-\- <search>\-<pid>
+|  | \-\- searches.list
 |  | \-\- post-scrape
 |  | \-\- <submenu-search>-<submenu-pid>?
 |  | \-\- thumbnails?
@@ -748,6 +749,11 @@ $cache_dir
 .PP
 An explanation of each directory/file:
 .RS
+.TP
+.IR searches.lsit
+A list of all searches
+.br
+If \-\-multi\-search is enabled, each search is seperated by a new line
 .TP
 .IR watch_hist
 The watch history file.

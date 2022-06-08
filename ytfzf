@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1512.699a103"
+YTFZF_VERSION="git-1513.141c0f6"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2008,6 +2008,7 @@ init_files (){
 	keypress_file="${session_temp_dir}/menu_keypress"
 	: > "$ytfzf_video_json_file"
 	: > "$ytfzf_selected_urls"
+	[ "$1" ] && printf "%s\n" "$1" > "${session_cache_dir}/searches.list"
 }
 
 # }}}
@@ -2063,6 +2064,13 @@ init_multi_search () {
 	IFS=","
 	set -f
 	printf "%s\n" $1 > "${session_cache_dir}/searches.list"
+	#if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
+	if [ -z "${scrape#*,}" ] || [ "${scrape#*,}" = "$scrape" ]; then
+	    scr_name="${scrape}"
+	    while read -r _line; do
+		scrape="${scrape},${scr_name}" #this multiplies $scrape by the number of lines in the searches.list file, which == number of searches
+	    done < "${session_cache_dir}/searches.list"
+	fi
 	IFS=$OLD_IFS
 }
 next_search (){
@@ -2133,13 +2141,7 @@ handle_scraping (){
     _search="$1"
     OLD_IFS=$IFS
     IFS=","
-    set -f
-    _number_of_scrapes="$(printf "%s " $scrape | wc -w)"
     #if there is only 1 scraper used, multi search is on, then multiple searches will be performed seperated by ,
-    if [ "$_number_of_scrapes" -eq 1 ] && [ "$multi_search" -eq 1 ]; then
-	_number_of_searches=$(printf "%s " $_search | wc -w)
-	scrape=$(mul_str "$scrape," "$_number_of_searches")
-    fi
     for curr_scrape in $scrape; do
 	__scrape_count=$((__scrape_count+1))
 	manage_multi_filters
@@ -2182,13 +2184,13 @@ make_search () {
 	#this cannot be done inside handle_scraping, because otherwise init_files will get an empty search with search_again
 	is_asking_for_search_necessary && { search_prompt_menu_wrapper; [ -z "$_search" ] && exit 5; }
 	init_files "$(printf "%s" "$_search" | sed 's/,/AND/g')"
-	init_multi_search "$_search"
+	[ "$multi_search" -eq 1 ] && init_multi_search "$_search"
 	set_save_filters
 	[ $enable_search_hist -eq 1 ] && [ -n "$_search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 	handle_scraping "$_search"
 	handle_scrape_error "$?"
-    #:help search operator
-    [ "$?" -eq 100 ] && exit 0
+	#:help search operator
+	[ "$?" -eq 100 ] && exit 0
 }
 #}}}
 
