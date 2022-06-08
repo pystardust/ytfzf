@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1513.141c0f6"
+YTFZF_VERSION="git-1514.17ac13f"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2041,24 +2041,7 @@ handle_actions () {
 #}}}
 
 # scraping wrappers {{{
-#there are 2 sets of backup variables because of -s, total_search* gets used up in manage_multi_filters
-#there has to be at least 1 set of backup variables because search_sort_by=${search_sort_by%%,*} will give incorrect filters when there are 3+ filters
-# multi {{{
-set_save_filters () {
-	OLD_IFS=$IFS
-	IFS=","
-	set -f -C
-	printf "%s\n" $search_sort_by > "${session_cache_dir}/sort-by.list"
-	printf "%s\n" $search_upload_date > "${session_cache_dir}/upload-date.list"
-	set +C
-	IFS=$OLD_IFS
-}
-manage_multi_filters () {
-	#if this is empty search_sort_by will be set to empty which isn't what we want
-	search_sort_by=$(head -n "${__scrape_count}" "${session_cache_dir}/sort-by.list" | tail -n 1)
-	search_upload_date=$(head -n "${__scrape_count}" "${session_cache_dir}/upload-date.list" | tail -n 1)
-	#for custom scrapers
-}
+# multi search{{{
 init_multi_search () {
 	OLD_IFS=$IFS
 	IFS=","
@@ -2144,7 +2127,6 @@ handle_scraping (){
     #if there is only 1 scraper used, multi search is on, then multiple searches will be performed seperated by ,
     for curr_scrape in $scrape; do
 	__scrape_count=$((__scrape_count+1))
-	manage_multi_filters
 	[ $multi_search -eq 1 ] && _search="$(next_search)"
 	do_an_event_function "on_search" "$_search" "$_scrape"
 	command_exists "on_search_$_search" && on_search_$_search "$_scrape"
@@ -2185,7 +2167,6 @@ make_search () {
 	is_asking_for_search_necessary && { search_prompt_menu_wrapper; [ -z "$_search" ] && exit 5; }
 	init_files "$(printf "%s" "$_search" | sed 's/,/AND/g')"
 	[ "$multi_search" -eq 1 ] && init_multi_search "$_search"
-	set_save_filters
 	[ $enable_search_hist -eq 1 ] && [ -n "$_search" ] && [ $__is_submenu -eq 0 ] && [ $__is_fzf_preview -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 	handle_scraping "$_search"
 	handle_scrape_error "$?"
