@@ -2211,11 +2211,10 @@ main() {
 main
 
 #doing this after the loop allows for -l and -s to coexist
-clean_up
 while [ $search_again -eq 1 ] ; do
+	clean_up
 	make_search ""
 	main
-	clean_up
 done
 #}}}
 
