@@ -1185,6 +1185,28 @@ This function should set ytdl_pref
 .br
 This function takes all urls as separate arguments.
 
+.TP
+.BR close_url_handler_<name>
+<name> should be the name of the url handler with \- replaced with _.
+.br
+A function that happens after the url handler has finished playing.
+.br
+The point of this function is to clean up anything that the url handler did.
+
+.TP
+.BR after_close_url_handler
+A function that happens after the url handler has finished playing, and after 
+.BR close_url_handler_<name>
+has happened.
+.br
+If 
+.BR is_detach
+is
+.I 1
+this function may be called immediately after
+.BR url_handler
+opens.
+
 .RE
 
 .PP

@@ -1710,9 +1710,7 @@ submenu_handler () {
 	cat > /dev/null
 	search="$(get_key_value "$_submenu_actions" "search")"
 	__scrape="$(get_key_value "$_submenu_actions" "type")"
-	old_submenu_opts="$submenu_opts"
 	submenu_opts="$submenu_scraping_opts -c${__scrape} $submenu_opts"
-	url_handler="$old_url_handler"
 	(
 	    trap 'clean_up' EXIT
 	    trap 'exit' INT TERM HUP
@@ -1764,7 +1762,19 @@ submenu_handler () {
 	    done
 	    main
 	)
-	submenu_opts="$old_submenu_opts"
+}
+
+close_url_handler () {
+    case "$1" in
+	submenu_handler)
+	    url_handler="$old_url_handler"
+	    submenu_opts="$old_submenu_opts"
+	    ;;
+	*)
+	    fn_name="$(printf "%s" "$1" | tr '-' '_')"
+	    command_exists "close_url_handler_$fn_name" && close_url_handler_"$fn_name"
+	    do_an_event_function "after_close_url_handler" "$1" ;;
+    esac
 }
 
 open_url_handler () {
@@ -2023,6 +2033,7 @@ handle_actions () {
 			scrape*)
 				[ $enable_submenus -eq 0 ] && continue
 				old_url_handler="$url_handler"
+				old_submenu_opts="$submenu_opts"
 				url_handler=submenu_handler
 				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
 			do-nothing*) return 1 ;;
@@ -2204,6 +2215,7 @@ main() {
 				*) custom_info_wait_action_"$info_wait_action" ;;
 			esac
 		open_url_handler "$ytfzf_selected_urls"
+		close_url_handler "$url_handler"
 
 		[ $is_loop -eq 0 ] && break
 	done
