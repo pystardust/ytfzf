@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1532.f6242e8"
+YTFZF_VERSION="git-1533.bef26ec"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2095,21 +2095,28 @@ handle_actions () {
 
 #}}}
 
+set_scrape_count () {
+    OLD_IFS=$IFS
+    IFS=","
+    set -f
+    set -- $scrape
+    scrape_count="$#"
+    IFS=$OLD_IFS
+}
+
 # scraping wrappers {{{
 # multi search{{{
 init_multi_search () {
 	OLD_IFS=$IFS
-	IFS=","
+	IFS=,
 	set -f
-	printf "%s\n" $1 > "${session_cache_dir}/searches.list"
+	set -- $1
+	set_scrape_count
+	printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
 	#if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
-	if [ -z "${scrape#*,}" ] || [ "${scrape#*,}" = "$scrape" ]; then
-	    scr_name="${scrape}"
-	    while read -r _line; do
-		scrape="${scrape},${scr_name}" #this multiplies $scrape by the number of lines in the searches.list file, which == number of searches
-	    done < "${session_cache_dir}/searches.list"
+	if [ "$scrape_count" -lt "$#" ]; then
+	    scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/$scrape_count))")
 	fi
-	IFS=$OLD_IFS
 }
 next_search (){
 	head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1
