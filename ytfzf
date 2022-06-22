@@ -1711,7 +1711,6 @@ submenu_handler () {
 	search="$(get_key_value "$_submenu_actions" "search")"
 	__scrape="$(get_key_value "$_submenu_actions" "type")"
 	submenu_opts="$submenu_scraping_opts -c${__scrape} $submenu_opts"
-	notify-send "$submenu_opts"
 	#this needs to be here as well as close_url_handler because it will not happen inside this function if it's not here
 	url_handler="$old_url_handler"
 	(
