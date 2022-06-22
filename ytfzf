@@ -1722,7 +1722,8 @@ submenu_handler () {
 
 	    [ -f "$YTFZF_CONFIG_DIR/submenu-conf.sh" ] && . "$YTFZF_CONFIG_DIR/submenu-conf.sh"
 
-	    set -- $(eval echo "$submenu_opts") "$search"
+	    set -f
+	    set -- $submenu_opts "$search"
 
 	    __is_submenu=1
 
