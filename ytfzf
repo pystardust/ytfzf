@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.3.1.rc-1"
+YTFZF_VERSION="2.4.0.rc-1"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -27,9 +27,6 @@ c_cyan="\033[1;36m"
 c_reset="\033[0m"
 c_bold="\033[1m"
 #}}}
-
-# debugging
-: ${log_level:=2}
 
 #state variables
 : "${__is_submenu:=0}" "${__is_scrape_for_submenu:=0}" "${__is_fzf_preview:=0}"
@@ -317,40 +314,115 @@ done
 
 : "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
 
-[ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 #}}}
 
 # Custom Scrapers {{{
 : "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
 #}}}
+set_vars () {
+    check_exists="${1:-1}"
 
-: "${useragent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36}"
 
-# menu options
+    #save the ecurrent environment so that any user set variables will be saved
+    if [ "$check_exists" -eq 1 ]; then
+	tmp_env=/tmp/ytfzf-env
+	env > "$tmp_env"
+    fi
 
-: "${enable_submenus:=1}" "${submenu_opts=}" "${submenu_scraping_opts=}" "${enable_back_button:=1}"
+    gap_space="                                                                                                                   "
 
-: "${interface=}"
+    # debugging
+    log_level="2"
 
-: ${fancy_subs:=0} "${fancy_subs_left=-------------}" "${fancy_subs_right="${fancy_subs_left}"}"
+    # scraping
+    useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
 
-: "${fzf_preview_side:=left}" "${thumbnail_viewer:=ueberzug}"
+    # menu options
 
-: "${w3mimgdisplay_path:=/usr/lib/w3m/w3mimgdisplay}"
+    enable_submenus="1" submenu_opts="" submenu_scraping_opts="" enable_back_button="1"
+    keep_vars=0
 
-# shortcuts
-: "${download_shortcut:=alt-d}" "${video_shortcut:=alt-v}" "${audio_shortcut:=alt-m}" "${detach_shortcut:=alt-e}" "${print_link_shortcut:=alt-l}" "${show_formats_shortcut:=alt-f}" "${info_shortcut:=alt-i}" "${search_again_shortcut:=alt-s}" "${next_page_shortcut:=alt-p}"
-: "${custom_shortcut_binds=}"
-: "${shortcut_binds:=Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}}"
+    interface=""
 
-#interface design
-: "${show_thumbnails:=0}" "${is_sort:=0}" "${skip_thumb_download:=0}" "${external_menu_len:=210}"
+    fancy_subs="0" fancy_subs_left="-------------" fancy_subs_right="${fancy_subs_right=$fancy_subs_left}"
 
-: "${is_loop:=0}" "${search_again:=0}"
+    fzf_preview_side="left" thumbnail_viewer="ueberzug"
 
-# Notifications
+    w3mimgdisplay_path="/usr/lib/w3m/w3mimgdisplay"
 
-: "${notify_playing:=0}"
+    # shortcuts
+    download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s" next_page_shortcut="alt-p"
+    custom_shortcut_binds=""
+    shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds}"
+
+    #interface design
+    show_thumbnails="0" is_sort="0" skip_thumb_download="0" external_menu_len="210"
+
+    is_loop="0" search_again="0"
+
+    # Notifications
+
+    notify_playing="0"
+
+    # directories
+    cache_dir="${XDG_CACHE_HOME:-$HOME/.cache/ytfzf}" keep_cache="0"
+
+    # files
+    hist_file="$cache_dir/watch_hist" search_hist_file="$cache_dir/search_hist"
+
+    # history
+    enable_hist="1" enable_search_hist="1"
+    use_search_hist="0"
+
+    # format options
+    #variable for switching on sort (date)
+    is_detach="0" is_audio_only="0"
+    url_handler="multimedia_player"
+    url_handler_opts=""
+    info_to_print="" info_wait="0" info_wait_action="q"
+    video_pref="bestvideo" audio_pref="bestaudio"
+    show_formats="0" format_selection_screen="simple" format_selection_sort="height"
+
+    scripting_video_count="1"
+    is_random_select="0" is_auto_select="0" is_specific_select="0"
+
+    # option parsing
+    long_opt_char="-"
+
+    # scrape
+    scrape="youtube"
+    #this comes from invidious' api
+    thumbnail_quality="high"
+    sub_link_count="2"
+    invidious_instance="https://vid.puffyan.us" yt_video_link_domain="https://youtube.com"
+    search_sort_by="relevance" search_upload_date="" search_video_duration="" search_result_type="video" search_result_features="" search_region="US"
+    pages_to_scrape="1" pages_start="1"
+    nsfw="false" odysee_video_search_count="30"
+
+    multi_search="0"
+
+    custom_scrape_search_exclude="" scrape_search_exclude=" youtube-subscriptions S SI SL T youtube-trending H history ${custom_scrape_search_exclude} "
+
+    max_thread_count="20"
+
+    # When set to 1, instead of having to wait for thumbnails to download
+    # The menu opens immediately while thumbnails download in the background
+    async_thumbnails="0"
+
+    #read from environment to reset any variables to what the user set
+    if [ "$check_exists" -eq 1 ]; then
+	while read -r variable; do
+	    export "$variable"
+	done < "$tmp_env"
+	rm "$tmp_env"
+    fi
+    unset check_exists
+}
+
+set_vars "${check_vars_exists:-1}"
+
+[ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
+
 
 # urlhandlers
 #job of url handlers is:
@@ -388,51 +460,6 @@ command_exists "downloader" || downloader () {
 }
 
 [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
-
-# directories
-: "${cache_dir:=${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf}" "${keep_cache:=0}"
-
-# files
-: "${hist_file:=$cache_dir/watch_hist}" "${search_hist_file:=$cache_dir/search_hist}"
-
-# history
-: "${enable_hist:=1}" "${enable_search_hist:=1}"
-: "${use_search_hist:=0}"
-
-# format options
-#variable for switching on sort (date)
-: "${is_detach:=0}" "${is_audio_only:=0}"
-: "${url_handler:=multimedia_player}"
-: "${url_handler_opts=}"
-: ${info_to_print=} "${info_wait:=0}" ${info_wait_action=q}
-: "${video_pref:=bestvideo}" "${audio_pref:=bestaudio}"
-: "${show_formats:=0}" "${format_selection_screen:=simple}" "${format_selection_sort:=height}"
-
-: "${scripting_video_count:=1}"
-: "${is_random_select:=0}" "${is_auto_select:=0}" "${is_specific_select:=0}"
-
-# option parsing
-: "${long_opt_char:=-}"
-
-# scrape
-: "${scrape=youtube}"
-#this comes from invidious' api
-: "${thumbnail_quality=high}"
-: "${sub_link_count:=2}"
-: "${invidious_instance:=https://vid.puffyan.us}" "${yt_video_link_domain:=https://youtube.com}"
-: "${search_sort_by:=relevance}" "${search_upload_date=}" "${search_video_duration=}" "${search_result_type:=video}" "${search_result_features=}" "${search_region:=US}" ${pages_to_scrape:=1} ${pages_start:=1}
-: "${nsfw:=false}" "${odysee_video_search_count:=30}"
-
-: "${multi_search:=0}"
-
-: "${custom_scrape_search_exclude=}" "${scrape_search_exclude:= youtube-subscriptions S SI SL T youtube-trending H history ${custom_scrape_search_exclude} }"
-
-: "${max_thread_count:=20}"
-
-# When set to 1, instead of having to wait for thumbnails to download
-# The menu opens immediately while thumbnails download in the background
-: "${async_thumbnails:=0}"
-
 # Option Checks {{{
 case "$long_opt_char" in
         [a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric\n" ;;
@@ -444,7 +471,6 @@ esac
 new_line='
 '
 tab_space=$(printf '\t')
-: "${gap_space:=                                                                                                                   }"
 
 # }}}
 
@@ -942,7 +968,7 @@ Eg:
     ytfzf -cM search 1 :NEXT search 2 :NEXT -c O odysee search :NEXT --pages=3 3 pages of youtube
 " && return 100
     while read -r params; do
-	eval YTFZF_CONFIG_FILE="/dev/null" ytfzf -IJ -a "$params" >> "$2"
+	eval env check_vars_exists=0 YTFZF_CONFIG_FILE="/dev/null" $0 -IJ -a "$params" >> "$2"
     done <<EOF
 $(printf "%s" "$1" | sed 's/  *:N\(EXT\)\?  */\n/g')
 EOF
@@ -1708,9 +1734,10 @@ print_requested_info () {
 submenu_handler () {
 	#eat stdin and close it
 	cat > /dev/null
+	[ "$keep_vars" -eq 0 ] && set_vars 0
 	search="$(get_key_value "$_submenu_actions" "search")"
 	__scrape="$(get_key_value "$_submenu_actions" "type")"
-	submenu_opts="$submenu_scraping_opts -c${__scrape} $submenu_opts"
+	submenu_opts="$old_submenu_scraping_opts -c${__scrape} $old_submenu_opts"
 	#this needs to be here as well as close_url_handler because it will not happen inside this function if it's not here
 	url_handler="$old_url_handler"
 	(
@@ -1719,7 +1746,11 @@ submenu_handler () {
 
 	    cache_dir="${session_cache_dir}"
 
-	    [ -f "$YTFZF_CONFIG_DIR/submenu-conf.sh" ] && . "$YTFZF_CONFIG_DIR/submenu-conf.sh"
+	    if [ -f "$YTFZF_CONFIG_DIR/submenu-conf.sh" ]; then
+		. "$YTFZF_CONFIG_DIR/submenu-conf.sh"
+	    elif [ -f "$YTFZF_CONFIG_FILE" ]; then
+		. "$YTFZF_CONFIG_FILE"
+	    fi
 
 	    set -f
 	    set -- $submenu_opts "$search"
@@ -1766,6 +1797,7 @@ submenu_handler () {
 	    main
 	)
 	submenu_opts="$old_submenu_opts"
+	submenu_scraping_opts="$old_submenu_scraping_opts"
 }
 
 close_url_handler () {
@@ -1773,6 +1805,7 @@ close_url_handler () {
 	submenu_handler)
 	    url_handler="$old_url_handler"
 	    submenu_opts="$old_submenu_opts"
+	    submenu_scraping_opts="$old_submenu_scraping_opts"
 	    ;;
 	*)
 	    fn_name="$(printf "%s" "$1" | tr '-' '_')"
@@ -1936,6 +1969,7 @@ parse_opt () {
 			fi ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts|submenu-scraping-opts) submenu_opts="${optarg}" ;;
+		keep-vars) keep_vars="${optarg:-1}" ;;
 		nsfw)  nsfw="${optarg:-true}" ;;
 		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
 		#flip the bit
@@ -2038,6 +2072,7 @@ handle_actions () {
 				[ $enable_submenus -eq 0 ] && continue
 				old_url_handler="$url_handler"
 				old_submenu_opts="$submenu_opts"
+				old_submenu_scraping_opts="$submenu_scraping_opts"
 				url_handler=submenu_handler
 				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
 			do-nothing*) return 1 ;;
