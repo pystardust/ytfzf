@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1531.89eb3a6"
+YTFZF_VERSION="git-1532.f6242e8"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -967,10 +967,11 @@ scrape_multi () {
 Eg:
     ytfzf -cM search 1 :NEXT search 2 :NEXT -c O odysee search :NEXT --pages=3 3 pages of youtube
 " && return 100
+    output_json_file=$2
     set -f
     while read -r params; do
 	set -- $params
-	env check_vars_exists=0 YTFZF_CONFIG_FILE="/dev/null" $0 -IJ -a "$@" >> "$2"
+	env check_vars_exists=0 YTFZF_CONFIG_FILE="/dev/null" $0 -IJ -a "$@" >> "$output_json_file"
     done <<EOF
 $(printf "%s" "$1" | sed 's/  *:N\(EXT\)\?  */\n/g')
 EOF
