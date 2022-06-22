@@ -967,8 +967,10 @@ scrape_multi () {
 Eg:
     ytfzf -cM search 1 :NEXT search 2 :NEXT -c O odysee search :NEXT --pages=3 3 pages of youtube
 " && return 100
+    set -f
     while read -r params; do
-	eval env check_vars_exists=0 YTFZF_CONFIG_FILE="/dev/null" $0 -IJ -a "$params" >> "$2"
+	set -- $params
+	env check_vars_exists=0 YTFZF_CONFIG_FILE="/dev/null" $0 -IJ -a "$@" >> "$2"
     done <<EOF
 $(printf "%s" "$1" | sed 's/  *:N\(EXT\)\?  */\n/g')
 EOF
