@@ -279,6 +279,11 @@ Submenus are the menus that happen after a playlist or channel (currently only s
 This can also be set in the config file with
 .BR enable_submenus .
 .TP
+.BR \-\-keep\-vars
+Whether or not options passed into ytfzf also get passed into submenus.
+This can also be set in the config file with
+.BR keep_vars .
+.TP
 .BR \-\-submenu\-opts=opts
 The opts to use in the submenu.
 .br
@@ -651,9 +656,6 @@ The configuration file to use.
 The defualt is
 .I $YTFZF_CONFIG_DIR/conf.sh
 .TP
-.B $YTFZF_CONFIG_DIR/submenu-conf.sh
-The configuration file to use in submenus.
-.TP
 .B $YTFZF_SUBSCRIPTIONS_FILE
 The subscriptions file to use.
 The deafult is
@@ -711,7 +713,7 @@ the default is
 .SH FILES
 .TP
 .I ~/.config/ytfzf/conf.sh
-The configuration file
+The configuration file. If submenu-conf.sh does not exist, this will also be used as the config in submenus
 .TP
 .I ~/.config/ytfzf/submenu-conf.sh
 The submenu configuration file
