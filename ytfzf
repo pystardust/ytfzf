@@ -365,7 +365,7 @@ set_vars () {
     notify_playing="0"
 
     # directories
-    cache_dir="${XDG_CACHE_HOME:-$HOME/.cache/ytfzf}" keep_cache="0"
+    cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf" keep_cache="0"
 
     # files
     hist_file="$cache_dir/watch_hist" search_hist_file="$cache_dir/search_hist"
@@ -2043,6 +2043,9 @@ init_files (){
 	YTFZF_PID=$$
 	#$1 will be a search
 	SEARCH_PREFIX=$(printf "%s" "$1" | tr '/' '_' | tr -d "\"'")
+	if [ "$__is_submenu" -eq 1 ]; then
+	    SEARCH_PREFIX=$(jq -r --arg url "$1" '.[]|select(.url==$url).title' < "${cache_dir}/videos_json")
+	fi
 	#if no search is provided, use a fallback value of SCRAPE-$scrape
 	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
