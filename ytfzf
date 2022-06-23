@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1533.bef26ec"
+YTFZF_VERSION="git-1535.7bef6d3"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1841,12 +1841,11 @@ open_url_handler () {
 
 get_video_format_simple () {
     # select format if flag given
-    formats=$(${ytdl_path} -F "$1") 
-    line_number=$(printf "$formats" | grep -n '.*extension  resolution.*' | cut -d: -f1)
-    quality=$(printf "$formats \n1 2 xAudio" | awk -v lineno=$line_number 'FNR > lineno {print $3}' | sort -n |  awk -F"x" '{print $2 "p"}' | uniq | sed -e "s/Audiop/Audio/" -e "/^p$/d" | quick_menu_wrapper "video quality" | sed "s/p//g")
+    formats=$(${ytdl_path} -F "$1" | grep -v "storyboard") 
+    quality="$(printf "$formats" | grep -v "audio only" | sed -n '/^[[:digit:]]/s/.*[[:digit:]]\+x\([[:digit:]]\+\).*/\1p/p; 1i\Audio' | sort -n | uniq | quick_menu_wrapper "Video Quality" | sed "s/p//g")"
     if [ "$quality" = "Audio" ]; then
 	is_audio_only=1
-    elif printf "%s" "$formats" | grep -q "audio only"; then
+    elif expr "$formats" ":" ".*audio only" > /dev/null 2>&1; then
 	video_format_no=$(printf "%s" "$formats" | grep -F "x$quality" | sed -n 1p)
 	video_format_no="${video_format_no%% *}"
 	ytdl_pref="${video_format_no}+bestaudio/bestaudio"
@@ -2100,7 +2099,7 @@ set_scrape_count () {
     IFS=","
     set -f
     set -- $scrape
-    scrape_count="$#"
+    __total_scrape_count="$#"
     IFS=$OLD_IFS
 }
 
@@ -2114,8 +2113,8 @@ init_multi_search () {
 	set_scrape_count
 	printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
 	#if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
-	if [ "$scrape_count" -lt "$#" ]; then
-	    scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/$scrape_count))")
+	if [ "$__total_scrape_count" -lt "$#" ]; then
+	    scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/$__total_scrape_count))")
 	fi
 }
 next_search (){
