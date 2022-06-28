@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.4.0.rc-2"
+YTFZF_VERSION="2.4.0.rc-3"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1339,7 +1339,7 @@ get_missing_thumbnails () {
 	_tmp_id_list_file="${session_temp_dir}/all-ids.list"
 	_downloaded_ids_file="${session_temp_dir}/downloaded-ids.list"
 
-	jq -r '.[]|select(.thumbs!=null)|.ID' < "$video_json_file" | sort |uniq > $_tmp_id_list_file
+	jq -r '.[]|select(.thumbs!=null)|.ID' < "$video_json_file" | sort |uniq > "$_tmp_id_list_file"
 	ids="$(jq -r '.[]|select(.thumbs!=null)|.thumbs + ";" + .ID' < "$video_json_file")"
 	ls -1 "$thumb_dir" | sed 's/\..*//' | sort > "$_downloaded_ids_file"
 
@@ -1742,6 +1742,11 @@ submenu_handler () {
 	#this needs to be here as well as close_url_handler because it will not happen inside this function if it's not here
 	url_handler="$old_url_handler"
 	(
+	    #apparently this is not reset to 0 in bash, so we must do it manually
+	    OPTIND=0
+
+	    __is_submenu=1
+
 	    trap 'clean_up' EXIT
 	    trap 'exit' INT TERM HUP
 
@@ -1755,8 +1760,6 @@ submenu_handler () {
 
 	    set -f
 	    set -- $submenu_opts "$search"
-
-	    __is_submenu=1
 
 	    on_opt_parse_s () {
 		print_warning "-s is not supported in submenus\n"
@@ -1781,7 +1784,6 @@ submenu_handler () {
 				    parse_opt "${OPT}" "${OPTARG}" ;;
 		    esac
 	    done
-
 
 	    source_scrapers
 
