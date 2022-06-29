@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1541.1b3f0e0"
+YTFZF_VERSION="git-1541.47e9c38"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -295,12 +295,6 @@ load_extension () {
 # expansions where the variable is a string and globbing shouldn't happen should be surrounded by quotes
 # variables that cannot be empty should use := instead of just =
 
-# hard dependancy checks{{{
-for dep in jq curl; do
-	command_exists "$dep" || die 3 "$dep is a required dependency, please install it\n"
-done
-#}}}
-
 #configuration handling {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
 : "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
@@ -420,6 +414,12 @@ set_vars () {
 }
 
 set_vars "${check_vars_exists:-1}"
+
+# hard dependancy checks{{{
+for dep in jq curl; do
+	command_exists "$dep" || die 3 "$dep is a required dependency, please install it\n"
+done
+#}}}
 
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 
