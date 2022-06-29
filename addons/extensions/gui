@@ -19,7 +19,9 @@ vars=$(MAIN_DIALOG="
 
 while read -r line; do
     case "$line" in
-        search*) initial_search=${line#*=} ;;
+        search*) 
+            initial_search=$(printf "%s" "$line" | tr -d '"')
+            initial_search="${initial_search#*=}" ;;
         EXIT*) break ;;
     esac
 done <<EOF

@@ -172,6 +172,13 @@ Doesn't work with \fB\-D\fR or \fB\-H\fR.
 This can also be set in the config file with
 .BR show_thumbnails .
 .TP
+.BR \-\-async\-thumbnails
+Whether or not to download thumbnails asynchronously.
+.br
+Downloading asynchronously will open the menu before all thumbnails are downloaded.
+This can also be set in the config fil with
+.BR async_thumbnails .
+.TP
 .BR \-\-skip\-thumb\-download
 Whether or not to skip the thumbnail download.
 This is used if you want to not have thumbnails, or use custom thumbnails in $YTFZF_CUSTOM_THUMBNAILS_DIR.
@@ -219,7 +226,10 @@ catimg, catimg with 256 colors.
 Uses a workaround to get w3m to work in fzf, may take up a lot of cpu.
 .TP
 .IR imv
-Good with tiling window managers
+Good with tiling window managers.
+.TP
+.IR mpv
+Similar to imv.
 .TP
 .IR kitty
 For the kitty terminal.
@@ -272,6 +282,11 @@ Submenus are the menus that happen after a playlist or channel (currently only s
 This can also be set in the config file with
 .BR enable_submenus .
 .TP
+.BR \-\-keep\-vars
+Whether or not options passed into ytfzf also get passed into submenus.
+This can also be set in the config file with
+.BR keep_vars .
+.TP
 .BR \-\-submenu\-opts=opts
 The opts to use in the submenu.
 .br
@@ -279,7 +294,8 @@ This can also be set in the config file with
 .BR submenu_opts .
 .TP
 .BR \-\-submenu\-scraping\-opts=opts
-The opts to use for scraping in the submenu.
+.B DEPRECATED "(use \-\-submenu\-opts instead)"
+Does the same thing as \-\-submenu\-opts.
 .br
 This can also be set in the config file with
 .BR submenu_scraping_opts .
@@ -355,6 +371,11 @@ When this scrape is active the search query is the link to a playlist.
 Scrapes invidious' api to get youtube trending.
 .br
 When this scrape is active the search query is the tab of trending to scrape.
+.TP
+.IR M | multi
+Uses ytfzf recursively to scrape multiple things with multiple different options
+.br
+See \fIytfzf -c M :help\fR for more info
 .br
 Tabs:
 .RS
@@ -422,6 +443,11 @@ Currently, \-\-video\-duration, \-\-type, \-\-thumbnail\-quality, and \-\-featur
 Amount of pages to scrape on youtube/invidious, and the comments scraper.
 This can also be set in the config file with
 .BR pages_to_scrape .
+.TP
+.BI "\-\-pages-start=page"
+The page to start on.
+This can also be set in the config file with
+.BR pages_start .
 .TP
 .BI "\-\-max\-threads=amount"
 Amount of threads that can be used to scrape youtube search, playlists, and channels.
@@ -571,6 +597,9 @@ Supported by the scrapes youtube/Y and youtube-trending/T
 Miscelanious
 .RS
 .TP
+.BI "\-\-ii=instance", "\-\-invidious\-instance=instance"
+Use a different invidious instance.
+.TP
 .BI "\-\-channel\-link=link"
 Converts channel links from 'https://youtube.com/c/name' to 'https://youtube.com/channel/id'
 .TP
@@ -687,7 +716,7 @@ the default is
 .SH FILES
 .TP
 .I ~/.config/ytfzf/conf.sh
-The configuration file
+The configuration file. If submenu-conf.sh does not exist, this will also be used as the config in submenus
 .TP
 .I ~/.config/ytfzf/submenu-conf.sh
 The submenu configuration file
@@ -708,6 +737,7 @@ The structure of $cache_dir looks like this: (<> represents a placeholder, ? mea
 $cache_dir
 | \-\- watch_hist
 | \-\- <search>\-<pid>
+|  | \-\- searches.list
 |  | \-\- post-scrape
 |  | \-\- <submenu-search>-<submenu-pid>?
 |  | \-\- thumbnails?
@@ -725,6 +755,11 @@ $cache_dir
 An explanation of each directory/file:
 .RS
 .TP
+.IR searches.lsit
+A list of all searches
+.br
+If \-\-multi\-search is enabled, each search is seperated by a new line
+.TP
 .IR watch_hist
 The watch history file.
 .TP
@@ -738,9 +773,6 @@ A folder that contains files relating to the scraping of a selected result.
 .TP
 .IR <submenu\-search>\-<submenu\-pid>
 Created when a submenu is opened (eg: when a channel/playlist is selected).
-.TP
-.IR submenu
-The folder to hold information about the submenu, all subitems are the same as the parent equivelent.
 .TP
 .IR thumbnails
 Stores the thumbnails for the instance (only with \-t).
@@ -759,9 +791,6 @@ The json scraped from a website.
 .TP
 .IR menu_keypress
 The key pressed in fzf.
-.TP
-.IR submenu.json
-A temp json file used to store the video_json of links to be put into the submenu.
 .TP
 .IR ids
 The file that stores the id of each selected video.

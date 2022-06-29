@@ -46,20 +46,6 @@ For example:
 .EE
 .RE
 
-.SS scrape lists
-.PP
-A file that is a list of scrape types an searches, such as:
-.RS
-.EX
-.I youtube this is a search
-.EX
-.I odysee this is an odysee search
-.EE
-.RE
-.PP
-Just like subscriptions, scrape lists can have comments
-.RE
-
 .SS scrapers
 .PP
 A folder that contains executable files that scrape websites
@@ -190,6 +176,7 @@ quit regardless if loop is enabled or not.
 return to menu.
 .br
 .IR default: " q"
+.RE
 
 .TP
 .BR $ info_wait
@@ -294,8 +281,13 @@ Uses catimg with 256 colors
 Uses a workaround to get w3m to work in fzf, may take up a lot of cpu,
 make sure $w3mimgdisplay_path is set to the path to w3mimgdisplay
 .TP
+.IR mpv
+Uses the mpv player to display the images
+.br
+Works well with tiling window managers.
+.TP
 .IR imv
-Good with tiling window managers
+Similar to mpv, but is a dedicated image viewer
 .TP
 .IR kitty
 For the kitty terminal.
@@ -344,6 +336,10 @@ A submenu is a menu that appears after a playlist or channel is selected.
 .IR default: " 1"
 
 .TP
+.BR $ keep_vars
+Whether or not options passed into ytfzf also get passed into submenus
+
+.TP
 .RB $ enable_back_button
 Whether or not to enable back button in submenus.
 .IR default: " 1"
@@ -355,7 +351,8 @@ Options to use in submenus.
 
 .TP
 .RB $ submenu_scraping_opts
-Options to use for scraping for submenus.
+.B DEPRECATED "(use submenu_opts instead)"
+Does the same thing as $submenu_opts
 .IR default: ""
 
 .TP
@@ -382,6 +379,12 @@ The text to display on the right of the channel name when fancy_subs is 1.
 .RB $ show_thumbnails
 Whether or not to show thumbnails in fzf.
 .br
+.IR default: " 0"
+
+.BR $ async_thumbnails
+Whether or not to download thumbnails asynchronously.
+.br
+Downloading asynchronously will open the menu before all thumbnails are downloaded.
 .IR default: " 0"
 
 .TP
@@ -582,6 +585,8 @@ The search will be a path to a json file layed out as described in VIDEO JSON FO
 .TP
 .IR url ,
 .TP
+.IR M / multi ,
+.TP
 .IR comments
 .br
 .IR default: " youtube"
@@ -693,6 +698,12 @@ The instance of invidious to use.
 .TP
 .RB $ pages_to_scrape
 The amount of pages to scrape on youtube/invidious.
+.br
+.IR default: " 1"
+
+.TP
+.RB $ pages_start
+The starting page to scrape.
 .br
 .IR default: " 1"
 
@@ -917,6 +928,10 @@ This function takes no arguments, the relevant variables are listed here:
 .TP
 .BR thumbnail_video_info_text_<scraper> ()
 This function is the same as thumbnail_video_info_text() for the scraper specified.
+
+.TP
+.BR on_no_thumbnail ()
+This function is run when no thumbnail is found
 
 .TP
 .BR get_ueberzug_positioning_left ()
@@ -1170,9 +1185,31 @@ A custom format selection screen
 .br
 <name> should be the the wanted value of $format_selection_screen
 .br
-This function should print the final ytdl format to use.
+This function should set ytdl_pref
 .br
 This function takes all urls as separate arguments.
+
+.TP
+.BR close_url_handler_<name>
+<name> should be the name of the url handler with \- replaced with _.
+.br
+A function that happens after the url handler has finished playing.
+.br
+The point of this function is to clean up anything that the url handler did.
+
+.TP
+.BR after_close_url_handler
+A function that happens after the url handler has finished playing, and after 
+.BR close_url_handler_<name>
+has happened.
+.br
+If 
+.BR is_detach
+is
+.I 1
+this function may be called immediately after
+.BR url_handler
+opens.
 
 .RE
 
