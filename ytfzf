@@ -844,6 +844,11 @@ scrape_invidious_search () {
 
     page_num=$((_cur_page+$4))
 
+    case "$search_sort_by" in
+	upload_date) search_sort_by=date ;;
+	view_count) search_sort_by=views ;;
+    esac
+
 	_start_series_of_threads
     while [ ${_cur_page} -lt $page_num ]; do
 		{
@@ -854,7 +859,7 @@ scrape_invidious_search () {
 			_get_request "$invidious_instance/api/v1/search" \
 				-G --data-urlencode "q=$page_query" \
 				--data-urlencode "type=${search_result_type}" \
-				--data-urlencode "sort_by=${search_sort_by}" \
+				--data-urlencode "sort=${search_sort_by}" \
 				--data-urlencode "date=${search_upload_date}" \
 				--data-urlencode "duration=${search_video_duration}" \
 				--data-urlencode "features=${search_result_features}" \
