@@ -394,7 +394,7 @@ set_vars () {
     #this comes from invidious' api
     thumbnail_quality="high"
     sub_link_count="2"
-    invidious_instance="https://vid.puffyan.us" yt_video_link_domain="https://youtube.com"
+    invidious_instance="https://y.com.sb" yt_video_link_domain="https://youtube.com"
     search_sort_by="relevance" search_upload_date="" search_video_duration="" search_result_type="video" search_result_features="" search_region="US"
     pages_to_scrape="1" pages_start="1"
     nsfw="false" odysee_video_search_count="30"
