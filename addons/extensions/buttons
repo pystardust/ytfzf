@@ -3,6 +3,8 @@
 #shellcheck disable=SC2154
 #shellcheck disable=SC2034
 
+BUTTONS_old_url_handler=$url_handler
+
 post_scrape_buttons () {
     data="$(cat "$ytfzf_video_json_file")"
     echo \
@@ -14,21 +16,25 @@ post_scrape_buttons () {
 }
 
 handle_custom_action_set_download () {
-    is_download=$((is_download^1))
+    BUTTONS_old_url_handler=$url_handler
+    url_handler=downloader
     return 1 #continue
 }
 
 handle_custom_action_set_video () {
     is_audio_only=0
+    url_handler=$BUTTONS_old_url_handler
     return 1 #continue
 }
 
 handle_custom_action_set_audio () {
     is_audio_only=1
+    url_handler=$BUTTONS_old_url_handler
     return 1 #continue
 }
 
 handle_custom_action_set_detach () {
     is_detach=$((is_detach^1))
+    url_handler=$BUTTONS_old_url_handler
     return 1 #continue
 }
