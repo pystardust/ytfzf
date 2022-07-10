@@ -1,0 +1,34 @@
+#!/usr/bin/env sh
+
+#shellcheck disable=SC2154
+#shellcheck disable=SC2034
+
+post_scrape_buttons () {
+    data="$(cat "$ytfzf_video_json_file")"
+    echo \
+	'[{"ID": "DOWNLOAD", "title": "[DOWNLOAD]", "url": "download", "action": "set-download"}]' \
+	'[{"ID": "VIDEO", "title": "[VIDEO]", "url": "video", "action": "set-video"}]' \
+	'[{"ID": "AUDIO", "title": "[AUDIO]", "url": "audio", "action": "set-audio"}]' \
+	'[{"ID": "DETACH", "title": "[DETACH]", "url": "detach", "action": "set-detach"}]' \
+	"$data" > "$ytfzf_video_json_file"
+}
+
+handle_custom_action_set_download () {
+    is_download=$((is_download^1))
+    return 1 #continue
+}
+
+handle_custom_action_set_video () {
+    is_audio_only=0
+    return 1 #continue
+}
+
+handle_custom_action_set_audio () {
+    is_audio_only=1
+    return 1 #continue
+}
+
+handle_custom_action_set_detach () {
+    is_detach=$((is_detach^1))
+    return 1 #continue
+}

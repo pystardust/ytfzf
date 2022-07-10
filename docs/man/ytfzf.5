@@ -1251,6 +1251,14 @@ This function sends a notification for the videos that are about to be played.
 This function takes an unknown amount of urls as arguments.
 
 .TP
+.BR post_scrape()
+This function happens after all scraping is complete
+
+.TP
+.BR post_scrape_<extension-name>()
+Same as post_scrape() but for each extension
+
+.TP
 .BR on_opt_parse ()
 This function gets called after an option is parsed, and sets variables based the options passed into it.
 A non 0 exit code will override the default behavior of a specific option.

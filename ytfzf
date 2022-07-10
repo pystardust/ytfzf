@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1543.29f2710"
+YTFZF_VERSION="git-1544.aecfbfe"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -276,7 +276,7 @@ quick_menu_wrapper () {
 
 load_extension () {
     ext=$1
-    loaded_extensions="$loaded_extensions $(printf "%s" "$ext" | sed 's/[ -]/_/g')"
+    loaded_extensions="$loaded_extensions $(printf "%s" "${ext##*/}" | sed 's/[ -]/_/g')"
     loaded_extensions="${loaded_extensions# }"
     if [ -f "${YTFZF_EXTENSIONS_DIR}/${ext}" ]; then
 	#shellcheck disable=SC1090
@@ -2287,6 +2287,7 @@ make_search () {
 	[ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 	handle_scraping "$_search"
 	handle_scrape_error "$?"
+	do_an_event_function post_scrape
 	#:help search operator
 	[ "$?" -eq 100 ] && exit 0
 }
