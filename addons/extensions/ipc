@@ -1,0 +1,47 @@
+#!/usr/bin/env sh
+
+#shellcheck disable=SC2154
+#shellcheck disable=SC2034
+
+
+on_post_set_vars_ipc () {
+    old_interface=$interface
+    interface=ipc
+}
+
+open_ipc () {
+    ! [ -p "$ipc_file" ] && mkfifo "$ipc_file"
+}
+
+close_ipc () {
+    [ -p "$ipc_file" ] && rm "$ipc_file" && rm "${ipc_file}.out"
+}
+
+on_opt_parse_ipci () {
+    ipc_interface=$optarg
+}
+
+handle_ipc () {
+    while :; do
+	while read -r line; do
+	    if printf "%s" "$line" | grep -q '[!@#\$%\^&\*(\-\[\];:"'"'"',\./]'; then
+		echo "INVALID COMMAND" > "${ipc_file}.out"
+		break
+	    fi
+	    case "$line" in
+		(get*)
+		    eval "echo \$${line#get }" > "${ipc_file}.${line#get }" ;;
+		*) echo "INVALID COMMAND" > "${ipc_file}.out"
+	    esac
+	done < "$ipc_file"
+    done
+}
+
+interface_ipc () {
+    [ "$old_interface" = "ipc" ] && die 1 "You are doing something weird\n"
+    export ipc_file="$session_cache_dir/ipc"
+    open_ipc
+    handle_ipc &
+    $(printf "%s" "interface_$old_interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$@"
+    close_ipc
+}

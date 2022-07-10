@@ -8,33 +8,28 @@ BUTTONS_old_url_handler=$url_handler
 post_scrape_buttons () {
     data="$(cat "$ytfzf_video_json_file")"
     echo \
-	'[{"ID": "DOWNLOAD", "title": "[DOWNLOAD]", "url": "download", "action": "set-download"}]' \
-	'[{"ID": "VIDEO", "title": "[VIDEO]", "url": "video", "action": "set-video"}]' \
-	'[{"ID": "AUDIO", "title": "[AUDIO]", "url": "audio", "action": "set-audio"}]' \
-	'[{"ID": "DETACH", "title": "[DETACH]", "url": "detach", "action": "set-detach"}]' \
+	'[{"ID": "TOGGLE-DOWNLOAD", "date": "now", "title": "[TOGGLE DOWNLOADER]", "url": "download", "action": "set-download"}]' \
+	'[{"ID": "TOGGLE-AUDIO", "date": "now", "title": "[TOGGLE AUDIO ONLY]", "url": "audio", "action": "set-audio"}]' \
+	'[{"ID": "TOGGLE-DETACH", "date": "now", "title": "[TOGGLE DETACH]", "url": "detach", "action": "set-detach"}]' \
 	"$data" > "$ytfzf_video_json_file"
 }
 
 handle_custom_action_set_download () {
-    BUTTONS_old_url_handler=$url_handler
-    url_handler=downloader
-    return 1 #continue
-}
-
-handle_custom_action_set_video () {
-    is_audio_only=0
-    url_handler=$BUTTONS_old_url_handler
+    if [ "$url_handler" = "downloader" ]; then
+	BUTTONS_old_url_handler=$url_handler
+	url_handler=downloader
+    else
+	url_handler=$BUTTONS_old_url_handler
+    fi
     return 1 #continue
 }
 
 handle_custom_action_set_audio () {
-    is_audio_only=1
-    url_handler=$BUTTONS_old_url_handler
+    is_audio_only=$((is_audio_only^1))
     return 1 #continue
 }
 
 handle_custom_action_set_detach () {
     is_detach=$((is_detach^1))
-    url_handler=$BUTTONS_old_url_handler
     return 1 #continue
 }
