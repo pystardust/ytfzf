@@ -14,7 +14,7 @@ open_ipc () {
 }
 
 close_ipc () {
-    [ -p "$ipc_file" ] && rm "$ipc_file" && rm "${ipc_file}.out"
+    [ -p "$ipc_file" ] && rm -f "$ipc_file".*
 }
 
 on_opt_parse_ipci () {
