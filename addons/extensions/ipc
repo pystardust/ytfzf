@@ -14,6 +14,7 @@ open_ipc () {
 }
 
 close_ipc () {
+    kill "$(cat "$session_temp_dir/ipc__handle_ipc_id")"
     [ -p "$ipc_file" ] && rm -f "$ipc_file".*
 }
 
@@ -25,13 +26,14 @@ handle_ipc () {
     while :; do
 	while read -r line; do
 	    if printf "%s" "$line" | grep -q '[!@#\$%\^&\*(\-\[\];:"'"'"',\./]'; then
-		echo "INVALID COMMAND" > "${ipc_file}.out"
+		echo "INVALID COMMAND: \"$line\" CONTAINS WEIRD CHARS" > "${ipc_file}.out"
 		break
 	    fi
 	    case "$line" in
 		(get*)
 		    eval "echo \$${line#get }" > "${ipc_file}.${line#get }" ;;
-		*) echo "INVALID COMMAND" > "${ipc_file}.out"
+		*)
+		    echo "INVALID COMMAND: \"$line\"" > "${ipc_file}.out" ;;
 	    esac
 	done < "$ipc_file"
     done
@@ -42,6 +44,7 @@ interface_ipc () {
     export ipc_file="$session_cache_dir/ipc"
     open_ipc
     handle_ipc &
+    echo "$!" > "${session_temp_dir}/ipc__handle_ipc_id"
     $(printf "%s" "interface_$old_interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$@"
     close_ipc
 }
