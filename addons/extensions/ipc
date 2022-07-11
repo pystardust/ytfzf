@@ -9,6 +9,14 @@ on_post_set_vars_ipc () {
     interface=ipc
 }
 
+search_prompt_menu_ipc () {
+    interface=$old_interface search_prompt_menu_wrapper
+}
+
+quick_menu_ipc (){
+    interface=$old_interface quick_menu_wrapper
+}
+
 open_ipc () {
     ! [ -p "$ipc_file" ] && mkfifo "$ipc_file"
 }
