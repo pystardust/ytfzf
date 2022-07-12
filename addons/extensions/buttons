@@ -33,3 +33,7 @@ handle_custom_action_set_detach () {
     is_detach=$((is_detach^1))
     return 1 #continue
 }
+
+print_help_buttons () {
+    printf "%s\n" "Adds buttons that toggle audio_only, detach, etc..."
+}
