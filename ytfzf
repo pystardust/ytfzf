@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1550.d6862c8"
+YTFZF_VERSION="git-1551.9151142"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2036,9 +2036,9 @@ parse_opt () {
 		    done
 		    echo ----------------
 		    set +f
-		    for path in $(printf "%s\n" $YTFZF_SYSTEM_ADDON_DIR/*); do
+		    for path in $YTFZF_SYSTEM_ADDON_DIR/*; do
 			printf "${c_bold}%s:${c_reset}\n" "system addon, ${path##*/}"
-			ls "$YTFZF_SYSTEM_ADDON_DIR/$path"
+			ls "$path"
 		    done
 		    exit
 		    ;;
