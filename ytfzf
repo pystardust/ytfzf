@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1550.d6862c8"
+YTFZF_VERSION="git-1551.9151142"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -291,6 +291,78 @@ load_extension () {
     return $?
 }
 
+load_sort_name () {
+    _sort_name=$1
+    #shellcheck disable=SC1090
+    #shellcheck disable=SC2015
+    case "$_sort_name" in
+           ./*|../*|/*|~/*) command_exists "$_sort_name" && . "$_sort_name" ;;
+           *)
+                   if [ -f "${YTFZF_SORT_NAMES_DIR}/${_sort_name}" ]; then
+                           . "${YTFZF_SORT_NAMES_DIR}/${_sort_name}"
+                   elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/sort-names/${_sort_name}" ]; then
+                           . "${YTFZF_SYSTEM_ADDON_DIR}/sort-names/${_sort_name}"
+                   else false
+                   fi ;;
+    esac 
+    rv="$?"
+    unset "$_sort_name"
+    return "$rv"
+}
+
+load_url_handler () {
+    requested_url_handler=$1
+    if command_exists "$requested_url_handler"; then
+           url_handler="${requested_url_handler:-multimedia_player}"
+    elif [ -f "${YTFZF_URL_HANDLERS_DIR}/$requested_url_handler" ]; then
+           url_handler="${YTFZF_URL_HANDLERS_DIR}/$requested_url_handler"
+    elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/url-handlers/$requested_url_handler" ]; then
+           url_handler="${YTFZF_SYSTEM_ADDON_DIR}/url-handlers/$requested_url_handler"
+    else die 2 "$optarg is not a url-handler\n"
+    fi
+}
+
+load_interface () {
+    requested_interface="$1"
+    # if we don't check which interface, itll try to source $YTFZF_CUSTOM_INTERFACES_DIR/{ext,scripting} which won't work
+    #shellcheck disable=SC1090
+    case "$requested_interface" in
+           "ext"|"scripting"|"") interface=$requested_interface; true ;;
+           ./*|../*|/*|~/*) [ -f "$requested_interface" ] && . "$requested_interface" && interface="${requested_interface##*/}"; false ;; 
+           *) 
+                   if [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${requested_interface}" ]; then
+			interface=$requested_interface
+			. "$YTFZF_CUSTOM_INTERFACES_DIR/$requested_interface"
+                   elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/interfaces/${requested_interface}" ]; then
+			interface=$requested_interface
+			. "${YTFZF_SYSTEM_ADDON_DIR}/interfaces/${requested_interface}"
+			true
+                   fi ;;
+    esac
+    rv="$?"
+    unset requested_interface
+    return "$rv"
+}
+
+load_thumbnail_viewer () {
+    _thumbnail_viewer="$1"
+    case "$_thumbnail_viewer" in
+           #these are special cases, where they are not themselves commands
+           chafa-16|chafa|chafa-tty|catimg|catimg-256|w3m|imv|ueberzug|kitty|swayimg|mpv) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
+           ./*|/*|../*|~/*) thumbnail_viewer="$_thumbnail_viewer"; false ;;
+           *)
+                   if [ -f "${YTFZF_THUMBNAIL_VIEWERS_DIR}/${_thumbnail_viewer}" ]; then
+                           thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${_thumbnail_viewer}"
+                   else
+                           thumbnail_viewer="${YTFZF_SYSTEM_ADDON_DIR}/thumbnail-viewers/$_thumbnail_viewer"
+                   fi; false
+    esac
+    rv="$?"
+    unset _thumbnail_viewer
+    return $rv
+}
+
+
 # Traps {{{
 [ $__is_fzf_preview -eq 0 ] && trap 'clean_up' EXIT
 [ $__is_fzf_preview -eq 0 ] && trap 'exit' INT TERM HUP
@@ -526,6 +598,14 @@ usage () {
 
           See ytfzf(1) and ytfzf(5) for more information.
 "
+    unset IFS
+    set -f
+    for ext in $loaded_extensions; do
+	if command_exists "print_help_$ext"; then
+	    printf "\n----%s----\n" "$ext"
+	    print_help_$ext
+	fi
+    done
 }
 
 
@@ -1939,20 +2019,7 @@ parse_opt () {
         pages-start) pages_start="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
         ii|inv-instance) invidious_instance="$optarg" ;;
-		interface)
-			interface="$optarg"
-			# if we don't check which interface, itll try to source $YTFZF_CUSTOM_INTERFACES_DIR/{ext,scripting} which won't work
-			#shellcheck disable=SC1090
-			case "$interface" in
-				"ext"|"scripting"|"") : ;;
-				./*|../*|/*|~/*) [ -f "$interface" ] && . "$interface" && interface="${interface##*/}" ;; 
-				*) 
-					if [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ]; then
-						. "$YTFZF_CUSTOM_INTERFACES_DIR/$interface"
-					elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/interfaces/${interface}" ]; then
-						. "${YTFZF_SYSTEM_ADDON_DIR}/interfaces/${interface}"
-					fi ;;
-			esac || die 2 "$optarg is not an interface\n" ;;
+		interface) load_interface || die 2 "$optarg is not an interface\n" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
@@ -1960,19 +2027,7 @@ parse_opt () {
 		notify-playing) notify_playing="${optarg:-1}" ;;
 		#long-opt exclusives
 		sort) is_sort=${optarg:-1} ;;
-		sort-name)
-			#shellcheck disable=SC1090
-			#shellcheck disable=SC2015
-			case "$optarg" in
-				./*|../*|/*|~/*) command_exists "$optarg" && . "$optarg" ;;
-				*)
-					if [ -f "${YTFZF_SORT_NAMES_DIR}/${optarg}" ]; then
-						. "${YTFZF_SORT_NAMES_DIR}/${optarg}"
-					elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/sort-names/${optarg}" ]; then
-						. "${YTFZF_SYSTEM_ADDON_DIR}/sort-names/${optarg}"
-					else false
-					fi ;;
-			esac && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
+		sort-name) load_sort_name && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
 		video-pref) video_pref=$optarg ;;
     ytdl-pref) ytdl_pref=$optarg ;;
     audio-pref) audio_pref=$optarg ;;
@@ -1980,18 +2035,7 @@ parse_opt () {
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
 		preview-side) fzf_preview_side="${optarg}"; [ -z "$fzf_preview_side" ] && die 2 "no preview side given\n" ;;
-		thumb-viewer)
-			case "$optarg" in
-				#these are special cases, where they are not themselves commands
-				chafa-16|chafa|chafa-tty|catimg|catimg-256|w3m|imv|ueberzug|kitty|swayimg|mpv) thumbnail_viewer="$optarg" ; true ;;
-				./*|/*|../*|~/*) thumbnail_viewer="$optarg"; false ;;
-				*)
-					if [ -f "${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}" ]; then
-						thumbnail_viewer="${YTFZF_THUMBNAIL_VIEWERS_DIR}/${optarg}"
-					else
-						thumbnail_viewer="${YTFZF_SYSTEM_ADDON_DIR}/thumbnail-viewers/$optarg"
-					fi; false
-			esac || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n" ;;
+		thumb-viewer) load_thumbnail_viewer || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n" ;;
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
 		info-print-exit|info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
 		info-action) info_wait_action="$optarg" ;;
@@ -2005,15 +2049,7 @@ parse_opt () {
 		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
 		disable-submenus) enable_submenus="${optarg:-0}" ;;
 		thumbnail-quality) thumbnail_quality="$optarg" ;;
-		url-handler) 
-			if command_exists "$optarg"; then
-				url_handler="${optarg:-multimedia_player}"
-			elif [ -f "${YTFZF_URL_HANDLERS_DIR}/$optarg" ]; then
-				url_handler="${YTFZF_URL_HANDLERS_DIR}/$optarg"
-			elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/url-handlers/$optarg" ]; then
-				url_handler="${YTFZF_SYSTEM_ADDON_DIR}/url-handlers/$optarg"
-			else die 2 "$optarg is not a url-handler\n"
-			fi ;;
+		url-handler)  load_url_handler ;;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts|submenu-scraping-opts) submenu_opts="${optarg}" ;;
 		keep-vars) keep_vars="${optarg:-1}" ;;

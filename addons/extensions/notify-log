@@ -9,3 +9,7 @@ print_warning () {
 print_error () {
 	[ $log_level -ge 0 ] && notify-send -c ytfzf-error "$1"
 }
+
+print_help_notify_log () {
+    printf "%s\n" "Use notify-send instead of printf for logging"
+}

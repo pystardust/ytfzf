@@ -56,3 +56,10 @@ interface_ipc () {
     $(printf "%s" "interface_$old_interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$@"
     close_ipc
 }
+
+print_help_ipc() {
+    printf "%s\n" "Opens an ipc file to write to be able to read variables
+eg:
+echo 'get is_audio_only' > \$session_cache_dir/ipc
+cat \$session_cache_dir/ipc.is_audio_only"
+}
