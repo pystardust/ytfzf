@@ -4,32 +4,6 @@ command_exists "gtkdialog" || die 3 "gtkdialog (https://github.com/puppylinux-wo
 
 tab_space="$(printf '\t')"
 
-on_post_set_vars_gui (){
-    vars=$(MAIN_DIALOG="
-    <window>
-	<vbox>
-	    <entry>
-		<default>Search...</default>
-		<variable>search</variable>
-	    </entry>
-	    <button>
-		<label>Search!</label>
-	    </button>
-	</vbox>
-    </window>" gtkdialog)
-
-    while read -r line; do
-	case "$line" in
-	    search*) 
-		initial_search=$(printf "%s" "$line" | tr -d '"')
-		initial_search="${initial_search#*=}" ;;
-	    EXIT*) break ;;
-	esac
-    done <<EOF
-    $vars
-EOF
-}
-
 load_interface gui || die 2 "The gui interface addon could not be found\n"
 
 print_help_gui () {

@@ -9,7 +9,7 @@ gui_dialog () {
     else
         : > "$css_file"
     fi
-    MAIN_DIALOG="<window><vbox scrollable=\"true\" vscrollbar-policy=\"0\">"
+    export MAIN_DIALOG="<window><vbox scrollable=\"true\" vscrollbar-policy=\"0\">"
     download_thumbnails $(get_missing_thumbnails)
     while read -r line; do
         url="${line##*|}"
@@ -30,7 +30,7 @@ gui_dialog () {
             [ -f "${thumb_path}" ] && break
         done
 
-        MAIN_DIALOG="$MAIN_DIALOG
+        export MAIN_DIALOG="$MAIN_DIALOG
         <hbox>
             <vbox>
                 <text name=\"TitleText\">
@@ -55,7 +55,8 @@ gui_dialog () {
             </pixmap>
         </hbox>"
     done
-    MAIN_DIALOG="$MAIN_DIALOG<width>750</width><height>500</height></vbox></window>" gtkdialog --styles="$css_file"
+    export MAIN_DIALOG="$MAIN_DIALOG<width>750</width><height>500</height></vbox></window>"
+    MAIN_DIALOG=$MAIN_DIALOG gtkdialog --styles="$css_file"
 }
 
 interface_gui () {
@@ -72,4 +73,30 @@ interface_gui () {
 on_opt_parse_i_gui_help (){ 
     print_info "YTFZF_GUI_CSS is a file for custom css for the window\nselectors:\n#TitleText\n#ViewsText\n#DateText\n#DurationText\n#UrlButton\n#Thumbnail\n"
     exit 0
+}
+
+search_prompt_menu_gui () {
+    vars=$(MAIN_DIALOG="
+    <window>
+	<vbox>
+	    <entry>
+		<default>Search...</default>
+		<variable>search</variable>
+	    </entry>
+	    <button>
+		<label>Search!</label>
+	    </button>
+	</vbox>
+    </window>" gtkdialog)
+
+    while read -r line; do
+	case "$line" in
+	    search*) 
+		_search=$(printf "%s" "$line" | tr -d '"')
+		_search="${_search#*=}" ;;
+	    EXIT*) break ;;
+	esac
+    done <<EOF
+    $vars
+EOF
 }
