@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1562.46db984"
+YTFZF_VERSION="git-1563.a6d9447"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1902,18 +1902,6 @@ submenu_handler () {
 	    #shellcheck disable=2030
 	    while getopts "ac:dfhlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
 		    case $OPT in
-			    U)
-				    shift $((OPTIND-1))
-				    case $1 in
-					    preview_img)
-						    session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
-						    shift
-						    source_scrapers
-						    preview_img "$@"
-						    ;;
-				    esac
-				    exit 0
-				    ;;
 			    "$long_opt_char")
 				    parse_opt "${OPTARG%%=*}" "${OPTARG#*=}" ;;
 			    *)
