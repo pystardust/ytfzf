@@ -31,8 +31,9 @@
 * [`Features`](#Features)
 * [`Examples`](#Examples)
 * [`Configuration`](#Configuration)
-* [`Todo`](#Todo)
 * [`Bugs`](#Bugs)
+* [`Contributing`](#Contributing)
+* [`Todo`](#Todo)
 * [`Credits`](#Credits)
 
 ---
@@ -172,6 +173,10 @@ For more information, see `ytfzf(5)` which should be installed, if it's not see 
 
 * *dwm with swallow patch: Images don't render with ueberzug when looped (ie, option `-l`)*
 * *if thumbnails are not working `.Xauthority` might be causing it. Try deleting it and relogging into your computer.*
+
+# Contributing
+
+Feel free to contribute, and add your name to the credits, please use the development branch. For more information see [contributing](CONTRIBUTING.md)
 
 # Credits
 

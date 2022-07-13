@@ -7,3 +7,18 @@
 	* For example: `date -d` is used.
 
 * Feel free to give yourself a file in the `credits` folder, and add yourself to the table in the README :)
+
+
+# Shells
+
+A non-comprehensive list of shells to test the script with
+
+* bash
+* dash
+* ksh
+* bsd-ksh (on the aur this is the package oksh)
+* busybox sh
+* any other posix shells
+* zsh*
+
+*Technically zsh does not have to work because it's not posix compliant, but zsh should work at least some what.
