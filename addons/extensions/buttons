@@ -29,23 +29,23 @@ post_scrape_buttons () {
 
 handle_custom_action_set_download () {
     if ! [ "$url_handler" = "downloader" ]; then
-	data="$(jq '[.[]|select(.ID=="DOWNLOAD-ON") | {
+	data="$(jq '[.[]|select(.ID=="DOWNLOAD-ON") = {
 	    "ID": "DOWNLOAD-OFF",
 	    "date": "now",
 	    "title": "[SET DOWNLOAD OFF]",
 	    "url": "download",
 	    "action": "set-download"
-	}] + [.[]|del(select(.ID=="DOWNLOAD-ON"))]|[.[]|select(.!=null)]' < "$ytfzf_video_json_file")"
+	}]' < "$ytfzf_video_json_file")"
 	BUTTONS_old_url_handler=$url_handler
 	url_handler=downloader
     else
-	data="$(jq '[.[]|select(.ID=="DOWNLOAD-OFF") | {
+	data="$(jq '[.[]|select(.ID=="DOWNLOAD-OFF") = {
 	    "ID": "DOWNLOAD-ON",
 	    "date": "now",
 	    "title": "[SET DOWNLOAD ON]",
 	    "url": "download",
 	    "action": "set-download"
-	}] + [.[]|del(select(.ID=="DOWNLOAD-OFF"))]|[.[]|select(.!=null)]' < "$ytfzf_video_json_file")"
+	}]' < "$ytfzf_video_json_file")"
 	url_handler=$BUTTONS_old_url_handler
     fi
     echo "$data" > "$ytfzf_video_json_file"
@@ -56,13 +56,13 @@ handle_custom_action_set_audio () {
     old_state="$(bool_to_word $is_audio_only)"
     is_audio_only=$((is_audio_only^1))
     new_state="$(bool_to_word $is_audio_only)"
-    data="$(jq '[.[]|select(.ID=="AUDIO-'"$new_state"'") | {
+    data="$(jq '[.[]|select(.ID=="AUDIO-'"$new_state"'") = {
 	"ID": "AUDIO-'"$old_state"'",
 	"date": "now",
 	"title": "[SET AUDIO ONLY '"$old_state"']",
 	"url": "audio",
 	"action": "set-audio"
-    }] + [.[]|del(select(.ID=="AUDIO-'"$new_state"'"))]|[.[]|select(.!=null)]' < "$ytfzf_video_json_file")"
+    }]' < "$ytfzf_video_json_file")"
     echo "$data" > "$ytfzf_video_json_file"
     return 1 #continue
 }
@@ -71,13 +71,13 @@ handle_custom_action_set_detach () {
     old_state="$(bool_to_word $is_detach)"
     is_detach=$((is_detach^1))
     new_state="$(bool_to_word $is_detach)"
-    data="$(jq '[.[]|select(.ID=="DETACH-'"$new_state"'") | {
+    data="$(jq '[.[]|select(.ID=="DETACH-'"$new_state"'") = {
 	"ID": "DETACH-'"$old_state"'",
 	"date": "now",
 	"title": "[SET DETACH '"$old_state"']",
 	"url": "detach",
 	"action": "set-detach"
-    }] + [.[]|del(select(.ID=="DETACH-'"$new_state"'"))]|[.[]|select(.!=null)]' < "$ytfzf_video_json_file")"
+    }]' < "$ytfzf_video_json_file")"
     echo "$data" > "$ytfzf_video_json_file"
     return 1 #continue
 }
@@ -86,13 +86,13 @@ handle_custom_action_set_thumbnails () {
     old_state="$(bool_to_word $show_thumbnails)"
     show_thumbnails=$((show_thumbnails^1))
     new_state="$(bool_to_word $show_thumbnails)"
-    data="$(jq '[.[]|select(.ID=="THUMBNAILS-'"$new_state"'") | {
+    data="$(jq '[.[]|select(.ID=="THUMBNAILS-'"$new_state"'") = {
 	"ID": "THUMBNAILS-'"$old_state"'",
 	"date": "now",
 	"title": "[SET THUMBNAILS '"$old_state"']",
 	"url": "thumbnails",
 	"action": "set-thumbnails"
-    }] + [.[]|del(select(.ID=="THUMBNAILS-'"$new_state"'"))]|[.[]|select(.!=null)]' < "$ytfzf_video_json_file")"
+    }]' < "$ytfzf_video_json_file")"
     echo "$data" > "$ytfzf_video_json_file"
     return 1 #continue
 }
