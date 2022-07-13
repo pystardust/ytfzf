@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1565.88d19f0"
+YTFZF_VERSION="git-1565.04f9d8a"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -32,6 +32,22 @@ c_bold="\033[1m"
 : "${__is_submenu:=0}" "${__is_scrape_for_submenu:=0}" "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
+
+prepare_for_set_args () {
+    OLD_IFS=$IFS
+    [ "$1" = "" ] && unset IFS || IFS=$1
+    set -f
+}
+end_of_set_args (){
+    IFS=$OLD_IFS
+}
+
+modify_ifs () {
+    IFS=$1
+}
+end_modify_ifs (){
+    unset IFS
+}
 
 mul_str () {
     str=$1
@@ -88,9 +104,7 @@ detach_cmd () {
 }
 
 source_scrapers () {
-	set -f
-	OLD_IFS=$IFS
-	IFS=","
+	prepare_for_set_args ","
 	for _scr in $scrape; do
 		if [ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$_scr" ]; then
 			#shellcheck disable=SC1090
@@ -101,7 +115,7 @@ source_scrapers () {
 		fi
 		[ "$__is_fzf_preview" -eq 0 ] && command_exists "on_startup_$_scr" && "on_startup_$_scr"
 	done
-	IFS=$OLD_IFS
+	end_of_set_args
 }
 
 add_commas () {
@@ -1471,16 +1485,17 @@ get_missing_thumbnails () {
 
 	missing_ids="$(diff -u "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^+//p' | sed '1d')"
 
-	set -f
-    unset IFS
+	prepare_for_set_args
 	#shellcheck disable=2086
 	set -- $missing_ids
-	IFS="|"
+	end_of_set_args
+	modify_ifs "|"
 	search_grep="$*"
 	grep -E "(${search_grep:-${tab_space}})" <<EOF
 $ids
 EOF
-	unset IFS _tmp_id_list_file _downloaded_ids_file
+	end_modify_ifs
+	unset _tmp_id_list_file _downloaded_ids_file
 }
 
 download_thumbnails () {
@@ -1834,9 +1849,7 @@ interface_thumbnails () {
 # Player {{{
 print_requested_info () {
 	url_list="$1"
-	set -f
-	OLD_IFS=$IFS
-	IFS=,
+	prepare_for_set_args ","
 	set -- $info_to_print
 	for request in "$@"; do
 	    case "$request" in
@@ -1855,7 +1868,7 @@ print_requested_info () {
 		    done < "$url_list" ;;
 	    esac
 	done
-	IFS=$OLD_IFS
+	end_of_set_args
 	[ $info_wait -eq 1 ] && { print_info "quit (q), quit (override -l) (Q), open menu (c|m), play (enter): "; read -r info_wait_action; }
 	return 0
 }
@@ -1946,8 +1959,7 @@ close_url_handler () {
 open_url_handler () {
 	# isaudio, isdownload, ytdl_pref
 	urls="$(tr '\n' ' ' < "$1")"
-	set -f
-	IFS=' '
+	prepare_for_set_args ' '
 	#shellcheck disable=SC2086
 	set -- $urls
 	[ -z "$*" ] && print_info "No urls selected\n" && return 0
@@ -1965,6 +1977,7 @@ open_url_handler () {
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
 	#shellcheck disable=2031
 	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" "$is_fullscreen" "$url_handler_opts" | session_temp_dir="${session_temp_dir}" session_cache_dir="${session_cache_dir}" "$url_handler" "$@"
+	end_of_set_args
 }
 
 get_video_format_simple () {
@@ -2196,11 +2209,10 @@ handle_actions () {
 #}}}
 
 set_scrape_count () {
-    OLD_IFS=$IFS
-    IFS=","
-    set -f
+    prepare_for_set_args ","
     #shellcheck disable=SC2086
     set -- $scrape
+    end_of_set_args
     __total_scrape_count="$#"
     IFS=$OLD_IFS
 }
@@ -2208,11 +2220,10 @@ set_scrape_count () {
 # scraping wrappers {{{
 # multi search{{{
 init_multi_search () {
-	OLD_IFS=$IFS
-	IFS=,
-	set -f
+	prepare_for_set_args ","
 	#shellcheck disable=SC2086
 	set -- $1
+	end_of_set_args
 	set_scrape_count
 	printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
 	#if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
@@ -2286,8 +2297,7 @@ EOF
 
 handle_scraping (){
     _search="$1"
-    OLD_IFS=$IFS
-    IFS=","
+    prepare_for_set_args ","
     #if there is only 1 scraper used, multi search is on, then multiple searches will be performed seperated by ,
     for curr_scrape in $scrape; do
 	__scrape_count=$((__scrape_count+1))
@@ -2297,7 +2307,7 @@ handle_scraping (){
 	scrape_website "$curr_scrape" "$_search"
 	rv="$?"
     done
-    IFS=$OLD_IFS
+    end_of_set_args
     return "$rv"
 }
 
