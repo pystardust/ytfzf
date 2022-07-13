@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1552.ca6841d"
+YTFZF_VERSION="git-1560.93fb3a2"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -99,7 +99,7 @@ source_scrapers () {
 			#shellcheck disable=SC1090
 			. "${YTFZF_SYSTEM_ADDON_DIR}/scrapers/$_scr"
 		fi
-		[ $__is_fzf_preview -eq 0 ] && command_exists "on_startup_$_scr" && "on_startup_$_scr"
+		[ "$__is_fzf_preview" -eq 0 ] && command_exists "on_startup_$_scr" && "on_startup_$_scr"
 	done
 	IFS=$OLD_IFS
 }
@@ -500,12 +500,20 @@ END{
 ' < "$tmp_env")
 	while read -r variable; do
            [ -z "$variable" ] && continue
-           export "${variable#export }"
+	   variable="${variable#export }"
+	   var_name="${variable%%=*}"
+	   #some shells do have quotation marks around the value, and some don't, these 2 lines must be seperate
+	   var_val="${variable#*=}"
+	   #since export -p is gauranteed to be able to be copied into a shell and work as intended, any value taht starts with a quote, wil be surrounded by quotes even if that particular shell doesn't normally do that. TLDR: this will only remove unimportant quotes
+	   var_val="${variable#[\"\']}"
+	   #same goes for here
+	   var_val="${var_val%[\"\']}"
+	   export "$var_name"="${var_val}"
        done <<EOF
 $_vars
 EOF
     fi
-    unset check_exists _vars variable
+    unset check_exists _vars variable var_name var_val
 }
 
 set_vars "${check_vars_exists:-1}"
