@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1563.a6d9447"
+YTFZF_VERSION="git-1565.88d19f0"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1920,11 +1920,9 @@ submenu_handler () {
 		data="$(cat "$ytfzf_video_json_file")"
 		echo '[{"ID": "BACK-BUTTON", "title": "[BACK]", "url": "back", "action": "back"}]' "$data" > "$ytfzf_video_json_file"
 	    fi
-	    until handle_empty_scrape; do 
-		case "$search_again" in
-		    *) die 4 ;;
-		esac
-	    done
+
+	    handle_empty_scrape || die 4
+	    
 	    main
 	)
 	submenu_opts="$old_submenu_opts"
