@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1560.93fb3a2"
+YTFZF_VERSION="git-1560.b8b2d68"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -505,7 +505,7 @@ END{
 	   #some shells do have quotation marks around the value, and some don't, these 2 lines must be seperate
 	   var_val="${variable#*=}"
 	   #since export -p is gauranteed to be able to be copied into a shell and work as intended, any value taht starts with a quote, wil be surrounded by quotes even if that particular shell doesn't normally do that. TLDR: this will only remove unimportant quotes
-	   var_val="${variable#[\"\']}"
+	   var_val="${var_val#[\"\']}"
 	   #same goes for here
 	   var_val="${var_val%[\"\']}"
 	   export "$var_name"="${var_val}"
