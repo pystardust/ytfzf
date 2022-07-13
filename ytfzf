@@ -502,7 +502,7 @@ END{
            [ -z "$variable" ] && continue
            export "${variable#export }"
        done <<EOF
-$data
+$_vars
 EOF
     fi
     unset check_exists _vars variable
