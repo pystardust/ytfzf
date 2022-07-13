@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1567.4f7d898"
+YTFZF_VERSION="git-1568.c9c9f47"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1296,9 +1296,12 @@ add_to_hist () {
 	#id of the video to add to hist will be passed through stdin
 	#if multiple videos are selected, multiple ids will be present on multiple lines
 	json_file="$1"
+	urls="["
 	while read -r url; do
-		jq -r --arg url "${url% }" '[ .[]|select(.url==$url) ]'< "$json_file" | sed 's/\[\]//g'>> "$hist_file"
+	    urls="${urls}\"${url}\","
 	done
+	urls="${urls%,}]"
+	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' < "$json_file" | sed '/\[\]/d' >> "$hist_file"
 	unset url urls json_file
 }
 
