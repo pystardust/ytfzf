@@ -13,6 +13,7 @@ bool_to_word () {
 }
 
 post_scrape_buttons () {
+    [ "$enable_back_button" -eq 0 ] && return 0
     data="$(cat "$ytfzf_video_json_file")"
     [ "$is_audio_only" -eq 1 ] && toggle_audio_id=OFF || toggle_audio_id=ON
     [ "$url_handler" = "downloader" ] && toggle_download_id=OFF || toggle_download_id=ON
@@ -67,5 +68,5 @@ handle_custom_action_set_thumbnails () {
 }
 
 print_help_buttons () {
-    printf "%s\n" "Adds buttons that toggle audio_only, detach, etc..."
+    printf "%s\n" "Adds buttons that toggle audio_only, detach, etc..." "use --disable-back or set enable_back_button to 0 to disable this extension"
 }
