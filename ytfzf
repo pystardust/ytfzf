@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1561.be259b7"
+YTFZF_VERSION="git-1562.46db984"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2043,7 +2043,7 @@ parse_opt () {
         pages-start) pages_start="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
         ii|inv-instance) invidious_instance="$optarg" ;;
-		interface) load_interface || die 2 "$optarg is not an interface\n" ;;
+		interface) load_interface "$optarg" || die 2 "$optarg is not an interface\n" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
@@ -2051,7 +2051,7 @@ parse_opt () {
 		notify-playing) notify_playing="${optarg:-1}" ;;
 		#long-opt exclusives
 		sort) is_sort=${optarg:-1} ;;
-		sort-name) load_sort_name && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
+		sort-name) load_sort_name "$optarg" && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
 		video-pref) video_pref=$optarg ;;
     ytdl-pref) ytdl_pref=$optarg ;;
     audio-pref) audio_pref=$optarg ;;
@@ -2059,7 +2059,7 @@ parse_opt () {
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
 		preview-side) fzf_preview_side="${optarg}"; [ -z "$fzf_preview_side" ] && die 2 "no preview side given\n" ;;
-		thumb-viewer) load_thumbnail_viewer || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n" ;;
+		thumb-viewer) load_thumbnail_viewer "$optarg" || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n" ;;
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
 		info-print-exit|info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
 		info-action) info_wait_action="$optarg" ;;
@@ -2073,7 +2073,7 @@ parse_opt () {
 		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
 		disable-submenus) enable_submenus="${optarg:-0}" ;;
 		thumbnail-quality) thumbnail_quality="$optarg" ;;
-		url-handler)  load_url_handler ;;
+		url-handler)  load_url_handler "$optarg";;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts|submenu-scraping-opts) submenu_opts="${optarg}" ;;
 		keep-vars) keep_vars="${optarg:-1}" ;;
