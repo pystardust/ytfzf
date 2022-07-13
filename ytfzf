@@ -400,7 +400,7 @@ set_vars () {
     #save the ecurrent environment so that any user set variables will be saved
     if [ "$check_exists" -eq 1 ]; then
 	tmp_env=/tmp/ytfzf-env
-	env > "$tmp_env"
+	export -p > "$tmp_env"
     fi
 
     gap_space="                                                                                                                   "
@@ -484,12 +484,28 @@ set_vars () {
 
     #read from environment to reset any variables to what the user set
     if [ "$check_exists" -eq 1 ]; then
+       _vars=$(awk -F"\n" '
+BEGIN {
+    vars=""
+}
+/^[^"]+="/{
+    vars=vars "\n" $1
+}
+!/^[^"]+="/{
+    vars=vars "\t" $1
+}
+END{
+    print vars;
+}
+' < "$tmp_env")
 	while read -r variable; do
-	    export "${variable?}"
-	done < "$tmp_env"
-	rm "$tmp_env"
+           [ -z "$variable" ] && continue
+           export "${variable#export }"
+       done <<EOF
+$data
+EOF
     fi
-    unset check_exists
+    unset check_exists _vars variable
 }
 
 set_vars "${check_vars_exists:-1}"
