@@ -5,32 +5,53 @@
 
 BUTTONS_old_url_handler=$url_handler
 
+bool_to_word () {
+    case "$1" in
+	1) echo "ON" ;;
+	0) echo "OFF" ;;
+    esac
+}
+
 post_scrape_buttons () {
     data="$(cat "$ytfzf_video_json_file")"
+    [ "$is_audio_only" -eq 1 ] && toggle_audio_id=OFF || toggle_audio_id=ON
+    [ "$url_handler" = "downloader" ] && toggle_download_id=OFF || toggle_download_id=ON
+    [ "$is_detach" -eq "1" ] && toggle_detach_id=OFF || toggle_detach_id=ON
     echo \
-	'[{"ID": "TOGGLE-DOWNLOAD", "date": "now", "title": "[TOGGLE DOWNLOADER]", "url": "download", "action": "set-download"}]' \
-	'[{"ID": "TOGGLE-AUDIO", "date": "now", "title": "[TOGGLE AUDIO ONLY]", "url": "audio", "action": "set-audio"}]' \
-	'[{"ID": "TOGGLE-DETACH", "date": "now", "title": "[TOGGLE DETACH]", "url": "detach", "action": "set-detach"}]' \
+	'[{"ID": "DOWNLOAD-'"$toggle_download_id"'", "date": "now", "title": "['"DOWNLOAD $toggle_download_id"']", "url": "download", "action": "set-download"},' \
+	'{"ID": "AUDIO-'"$toggle_audio_id"'", "date": "now", "title": "[AUDIO ONLY '"$toggle_audio_id"']", "url": "audio", "action": "set-audio"},' \
+	'{"ID": "DETACH-'"$toggle_detach_id"'", "date": "now", "title": "[DETACH '"$toggle_detach_id"']", "url": "detach", "action": "set-detach"}]' \
 	"$data" > "$ytfzf_video_json_file"
 }
 
 handle_custom_action_set_download () {
-    if [ "$url_handler" = "downloader" ]; then
+    if ! [ "$url_handler" = "downloader" ]; then
+	data="$(jq '[{"ID": "DOWNLOAD-OFF", "date": "now", "title": "[DOWNLOAD OFF]", "url": "download", "action": "set-download"} + (.[]|del(select(.ID=="DOWNLOAD-ON")))]' < "$ytfzf_video_json_file")"
 	BUTTONS_old_url_handler=$url_handler
 	url_handler=downloader
     else
+	data="$(jq '[{"ID": "DOWNLOAD-ON", "date": "now", "title": "[DOWNLOAD ON]", "url": "download", "action": "set-download"} + (.[]|del(select(.ID=="DOWNLOAD-OFF")))]' < "$ytfzf_video_json_file")"
 	url_handler=$BUTTONS_old_url_handler
     fi
+    echo "$data" > "$ytfzf_video_json_file"
     return 1 #continue
 }
 
 handle_custom_action_set_audio () {
+    old_state="$(bool_to_word $is_audio_only)"
     is_audio_only=$((is_audio_only^1))
+    new_state="$(bool_to_word $is_audio_only)"
+    data="$(jq '[{"ID": "AUDIO-'"$old_state"'", "date": "now", "title": "[AUDIO ONLY '"$old_state"']", "url": "audio", "action": "set-audio"} + (.[]|del(select(.ID=="AUDIO-'"$new_state"'")))]' < "$ytfzf_video_json_file")"
+    echo "$data" > "$ytfzf_video_json_file"
     return 1 #continue
 }
 
 handle_custom_action_set_detach () {
+    old_state="$(bool_to_word $is_detach)"
     is_detach=$((is_detach^1))
+    new_state="$(bool_to_word $is_detach)"
+    data="$(jq '[{"ID": "DETACH-'"$old_state"'", "date": "now", "title": "[DETACH '"$old_state"']", "url": "detach", "action": "set-detach"} + (.[]|del(select(.ID=="DETACH-'"$new_state"'")))]' < "$ytfzf_video_json_file")"
+    echo "$data" > "$ytfzf_video_json_file"
     return 1 #continue
 }
 
