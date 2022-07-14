@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1571.143d486"
+YTFZF_VERSION="git-1572.4a609dd"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -29,7 +29,7 @@ c_bold="\033[1m"
 #}}}
 
 #state variables
-: "${__is_submenu:=0}" "${__is_scrape_for_submenu:=0}" "${__is_fzf_preview:=0}"
+: "${__is_submenu:=0}" "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
 
