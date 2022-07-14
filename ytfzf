@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1572.4a609dd"
+YTFZF_VERSION="git-1573.1e711c4"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1872,7 +1872,7 @@ print_requested_info () {
 	    esac
 	done
 	end_of_set_args
-	[ $info_wait -eq 1 ] && { print_info "quit (q), quit (override -l) (Q), open menu (c|m), play (enter): "; read -r info_wait_action; }
+	[ $info_wait -eq 1 ] && { info_wait_action=$(printf "%s\n" "quit [q]" "quit (override -l) [Q]" "open menu [c]" "play [enter]" | quick_menu_wrapper "Action?: " | sed -n 's/.*\[\([^\]]*\)\].*/\1/p' | sed 's/enter//'); }
 	return 0
 }
 
