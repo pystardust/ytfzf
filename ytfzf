@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1573.1e711c4"
+YTFZF_VERSION="git-1574.6c9f316"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -63,7 +63,7 @@ mul_str () {
 }
 
 remove_ansi_escapes () {
-    sed -e 's/\[\([[:digit:]][[:digit:]]*\(;\|m\)\)*//g' -e 's/[^[:print:]]*//g'
+    sed -e 's/[^[:print:]]\[\([[:digit:]][[:digit:]]*\(;\|m\)\)*//g'
 }
 
 do_an_event_function () {
