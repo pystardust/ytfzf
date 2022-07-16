@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1575.ee86cbe"
+YTFZF_VERSION="git-1576.88f0788"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2240,6 +2240,7 @@ next_search (){
 #}}}
 handle_scrape_error () {
 	case "$1" in
+		0) true ;;
 		1) print_info "$curr_scrape failed to load website\n" ;;
 		6) print_error "Website unresponsive (do you have internet?)\n" ;;
 		9) print_info "$curr_scrape does not have a configuration file\n" ;;
@@ -2253,6 +2254,7 @@ handle_scrape_error () {
         100) print_info "---------\n" && return 100;;
 		126) print_info "$curr_scrape does not have execute permissions\n" ;;
 		127) die 2 "invalid scraper: $curr_scrape\n" ;;
+		*) print_error "An error occured while scraping: $curr_scrape (scraper returned error: $1)\n" ;;
 	esac
 }
 
