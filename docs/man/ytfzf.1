@@ -750,8 +750,10 @@ $cache_dir
 |  |  | \-\- curl_config
 |  |  | \-\- <scrape>.html
 |  |  | \-\- <scrape>.json
+|  |  | \-\- <scrape>.json.final
 |  |  | \-\- menu_keypress
-|  |  | \-\- submenu.json?
+|  |  | \-\- all-ids.list
+|  |  | \-\- downloaded-ids.list
 |  | \-\- ids
 |  | \-\- videos_json
 .EE
@@ -794,8 +796,17 @@ For scrapers that need to scrape websites, this is the output of curl.
 .IR <scrape>.json
 The json scraped from a website.
 .TP
+.IR <scrape>.json.final
+The final json scraped from a website. (Is used when multiple threads are used for scraping)
+.TP
 .IR menu_keypress
 The key pressed in fzf.
+.TP
+.IR all-ids.json
+File that contains all scraped ids. Mainly to compare against downloaded-ids.json
+.TP
+.IR downloaded-ids.json
+File that contains which thumbnails have been downloaded
 .TP
 .IR ids
 The file that stores the id of each selected video.
