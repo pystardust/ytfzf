@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1577.665ce08"
+YTFZF_VERSION="git-1578.9c02c93"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2383,7 +2383,7 @@ main() {
 				Q) break  ;;
 				[MmCc]) continue ;;
 				'') : ;;
-				*) custom_info_wait_action_"$info_wait_action" ;;
+				*) if command_exists "custom_info_wait_action_$info_wait_action"; then custom_info_wait_action_"$info_wait_action"; else print_error "info_wait_action is set to $info_wait_action but custom_info_wait_action_$info_wait_action does not exist"; fi ;;
 			esac
 		open_url_handler "$ytfzf_selected_urls"
 		close_url_handler "$url_handler"
