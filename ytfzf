@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1576.88f0788"
+YTFZF_VERSION="git-1577.665ce08"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1218,9 +1218,8 @@ scrape_odysee () {
 # History{{{
 scrape_history () {
 	[ $enable_hist -eq 0 ] && print_info "enable_hist must be set to 1 for this option" && return 5
-	output_json_file="$2"
 	enable_hist=0 #enabling history while scrape is history causes issues
-	cp "$hist_file" "$output_json_file" 2>/dev/null
+	scrape_json_file "$hist_file" "$2"
 }
 
 scrape_json_file () {
