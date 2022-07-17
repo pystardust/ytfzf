@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1579.9b22a6c"
+YTFZF_VERSION="git-1580.5325e22"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -151,10 +151,9 @@ get_key_value() {
 	#this can be used similarly to how you use $REPLY in bash
 	KEY_VALUE="${value%%"${sep}"*}"
 	printf "%s" "$KEY_VALUE"
-	[ "$KEY_VALUE" ]
-	rv="$?"
 	unset value
-	return "$rv"
+	[ "$KEY_VALUE" ]
+	return "$?"
 }
 
 #capitalizes the first letter of a string
