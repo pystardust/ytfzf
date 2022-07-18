@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1581.e2d811e"
+YTFZF_VERSION="git-1582.cdfdfdf"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1890,9 +1890,6 @@ submenu_handler () {
 
 	    #shellcheck disable=2030
 	    export __is_submenu=1
-
-	    trap 'clean_up' EXIT
-	    trap 'exit' INT TERM HUP
 
 	    #shellcheck disable=2030
 	    cache_dir="${session_cache_dir}"
