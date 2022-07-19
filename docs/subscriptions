@@ -1,0 +1,5 @@
+#This is an example subscriptions file
+#this file should be in ~/.config/ytfzf for ytfzf to use it with the -cS or -cSI options
+
+https://www.youtube.com/channel/UC5UAwBUum7CPN5buc-_N1Fw           #The Linux Experiment
+https://invidious.snopyta.org/channel/UCl2mFZoRqjw_ELax4Yisf6w   #luis rossman
