@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1584.ea46c30"
+YTFZF_VERSION="git-1585.27a5338"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -32,6 +32,45 @@ c_bold="\033[1m"
 : "${__is_submenu:=0}" "${__is_fzf_preview:=0}"
 
 # Utility functions {{{
+
+download_thumbnails () {
+	[ $skip_thumb_download -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
+	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...\n'
+	curl_config_file="${session_temp_dir}/curl_config"
+	[ -z "$*" ] && return 0
+	: > "$curl_config_file"
+	for line in "$@"; do
+		printf "url=\"%s\"\noutput=\"$thumb_dir/%s.jpg\"\n" "${line%%;*}" "${line##*;}"
+	done >> "$curl_config_file"
+	[ "$async_thumbnails" -eq 1 ] && use_silent="s"
+	curl -${use_silent}fLZ -K "$curl_config_file"
+	[ $? -eq 2 ] && curl -${use_silent}fL -K "$curl_config_file"
+}
+
+get_missing_thumbnails () {
+	#this function could be done in a more pure-shell way, however it is extremely slow
+	_tmp_id_list_file="${session_temp_dir}/all-ids.list"
+	_downloaded_ids_file="${session_temp_dir}/downloaded-ids.list"
+
+	jq -r '.[]|select(.thumbs!=null)|.ID' < "$video_json_file" | sort |uniq > "$_tmp_id_list_file"
+	ids="$(jq -r '.[]|select(.thumbs!=null)|.thumbs + ";" + .ID' < "$video_json_file")"
+	find "$thumb_dir" -type f | sed -n 's/^.*\///; s/\.jpg$//; /^[^\/]*$/p' | sort > "$_downloaded_ids_file"
+
+	missing_ids="$(comm -3 "$_downloaded_ids_file" "$_tmp_id_list_file")"
+
+	prepare_for_set_args
+	#shellcheck disable=2086
+	set -- $missing_ids
+	end_of_set_args
+	modify_ifs "|"
+	search_grep="$*"
+	grep -E "(${search_grep:-${tab_space}})" <<EOF
+$ids
+EOF
+	end_modify_ifs
+	unset _tmp_id_list_file _downloaded_ids_file
+}
+
 
 prepare_for_set_args () {
     OLD_IFS=$IFS
@@ -1474,44 +1513,6 @@ interface_ext () {
 #}}}
 
 # Thumbnail Interface {{{
-
-get_missing_thumbnails () {
-	#this function could be done in a more pure-shell way, however it is extremely slow
-	_tmp_id_list_file="${session_temp_dir}/all-ids.list"
-	_downloaded_ids_file="${session_temp_dir}/downloaded-ids.list"
-
-	jq -r '.[]|select(.thumbs!=null)|.ID' < "$video_json_file" | sort |uniq > "$_tmp_id_list_file"
-	ids="$(jq -r '.[]|select(.thumbs!=null)|.thumbs + ";" + .ID' < "$video_json_file")"
-	find "$thumb_dir" -type f | sed -n 's/^.*\///; s/\.jpg$//; /^[^\/]*$/p' | sort > "$_downloaded_ids_file"
-
-	missing_ids="$(comm -3 "$_downloaded_ids_file" "$_tmp_id_list_file")"
-
-	prepare_for_set_args
-	#shellcheck disable=2086
-	set -- $missing_ids
-	end_of_set_args
-	modify_ifs "|"
-	search_grep="$*"
-	grep -E "(${search_grep:-${tab_space}})" <<EOF
-$ids
-EOF
-	end_modify_ifs
-	unset _tmp_id_list_file _downloaded_ids_file
-}
-
-download_thumbnails () {
-	[ $skip_thumb_download -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
-	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...\n'
-	curl_config_file="${session_temp_dir}/curl_config"
-	[ -z "$*" ] && return 0
-	: > "$curl_config_file"
-	for line in "$@"; do
-		printf "url=\"%s\"\noutput=\"$thumb_dir/%s.jpg\"\n" "${line%%;*}" "${line##*;}"
-	done >> "$curl_config_file"
-	[ "$async_thumbnails" -eq 1 ] && use_silent="s"
-	curl -${use_silent}fLZ -K "$curl_config_file"
-	[ $? -eq 2 ] && curl -${use_silent}fL -K "$curl_config_file"
-}
 
 get_video_json_attr () {
 	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^\n]*\)",*/\1/p' <<EOF | sed 's/\\\([\\"]\)/\1/g'
