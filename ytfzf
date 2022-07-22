@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="v2.4.1.rc-1"
+YTFZF_VERSION="git-1588.749905b"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1455,16 +1455,18 @@ interface_text () {
     [ -f "$keypress_file" ] && handle_post_keypress
 	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
 
-    command_exists "tput" || print_warning "command \"tput\" not found, defaulting to terminal width of 80 columns\n"
-    #shellcheck disable=SC2015
-    command_exists "column" && use_column=1 || { print_warning "command \"column\" not found, the menu may look very bad\n" && use_column=0; }
+	if command_exists "tput"; then
+	    TTY_COLS=$(tput cols 2> /dev/null)
+	else
+	    TTY_COLS=${COLUMNS:-80}
+	    command_exists "tput" || print_warning "command \"tput\" not found, defaulting to terminal width of $TTY_COLS columns\n"
+	fi
+	#shellcheck disable=SC2015
+	command_exists "column" && use_column=1 || { print_warning "command \"column\" not found, the menu may look very bad\n" && use_column=0; }
 
 	video_json_file=$1
 	selected_id_file=$2
 
-	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
-	TTY_COLS=$(tput cols)
-    TTY_COLS=${TTY_COLS:-80}
 	title_len=$((TTY_COLS/2))
 	channel_len=$((TTY_COLS/5))
 	dur_len=7
@@ -2038,9 +2040,9 @@ parse_opt () {
 		L) info_to_print="$info_to_print,L" ;;
 		q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; use_search_hist=1 ;;
 		pages) pages_to_scrape="$optarg" ;;
-        pages-start) pages_start="$optarg" ;;
+		pages-start) pages_start="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
-        ii|inv-instance) invidious_instance="$optarg" ;;
+		ii|inv-instance) invidious_instance="$optarg" ;;
 		interface) load_interface "$optarg" || die 2 "$optarg is not an interface\n" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
