@@ -124,8 +124,11 @@ To use an extension addon run `ytfzf --ext=<extension> ...`
 * Subscriptions
 * Thumbnails
 * Watch history
+* Search History
 * Downloading
 * Queueing multiple videos
+* Custom menus, and scrapers
+* Addon support
 
 ---
 
