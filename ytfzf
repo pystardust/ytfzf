@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1588.749905b"
+YTFZF_VERSION="git-1590.06155d7"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2181,12 +2181,14 @@ init_files (){
 #actions {{{
 #actions are attached to videos/items in the menu
 handle_actions () {
-	unset _submenu_actions
-	while read -r url; do
-		_action=$(jq -r --arg url "$url" '.[]|select(.url==$url).action' < "$ytfzf_video_json_file")
+	unset _submenu_actions IFS
+	actions=$(jq -r --arg urls "$(cat "$1")" '.[] | [.url, .action] as $data | if ( ($urls | split("\n" )) | contains([$data[0]]) ) == true then $data[1] else "" end' < "$ytfzf_video_json_file")
+	while read -r action; do
+		#this wil only be empty after all urls with actions have happened
+		[ -z "$action" ] && break
 		#shellcheck disable=SC2031
 		#shellcheck disable=SC2086
-		case "$_action" in
+		case "$action" in
 			back*) [ $__is_submenu -eq 1 ] && exit ;;
 			scrape*)
 				[ $enable_submenus -eq 0 ] && continue
@@ -2194,7 +2196,7 @@ handle_actions () {
 				old_submenu_opts="$submenu_opts"
 				old_submenu_scraping_opts="$submenu_scraping_opts"
 				url_handler=submenu_handler
-				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
+				_submenu_actions="${_submenu_actions}${new_line}${action}" ;;
 			do-nothing*) return 1 ;;
 			*) 
 				fn_name="handle_custom_action_$(printf "%s" "${_action%% *}" | tr '-' '_')"
@@ -2204,7 +2206,10 @@ handle_actions () {
 					handle_custom_action "$_action"
 				fi || return $? ;;
 		esac
-	done
+		break #TODO: allow multiple actions or at least let the action decide whether or not it can handle multiple actions
+	done <<EOF
+$actions
+EOF
 }
 
 #}}}
@@ -2368,7 +2373,7 @@ main() {
 	while :; do
 		#calls the interface
 		$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
-		handle_actions < "$ytfzf_selected_urls" || { [ "$?" -eq 2 ] || continue && break; }
+		handle_actions "$ytfzf_selected_urls" || { [ "$?" -eq 2 ] || continue && break; }
 
 		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
