@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1591.f1906a7"
+YTFZF_VERSION="git-1592.0d11d44"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -295,6 +295,7 @@ search_prompt_menu_wrapper () {
 		 $fn_name
 	 else search_prompt_menu_ext
 	 fi
+	[ "$search" ]
 }
 
 handle_playing_notifications (){
@@ -2348,7 +2349,7 @@ make_search () {
 	_search="$1"
 	#only ask for search if it's empty and scrape isn't something like S or T
 	#this cannot be done inside handle_scraping, because otherwise init_files will get an empty search with search_again
-	is_asking_for_search_necessary && { search_prompt_menu_wrapper; [ -z "$_search" ] && exit 5; }
+	is_asking_for_search_necessary && { search_prompt_menu_wrapper || die 5 "No search query\n"; }
 	init_files "$(printf "%s" "$_search" | sed 's/,/AND/g')"
 	[ "$multi_search" -eq 1 ] && init_multi_search "$_search"
 	#shellcheck disable=SC2031
