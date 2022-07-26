@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1590.68d749b"
+YTFZF_VERSION="git-1591.f1906a7"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -34,7 +34,7 @@ c_bold="\033[1m"
 # Utility functions {{{
 
 download_thumbnails () {
-	[ $skip_thumb_download -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
+	[ "$skip_thumb_download" -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
 	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...\n'
 	curl_config_file="${session_temp_dir}/curl_config"
 	[ -z "$*" ] && return 0
@@ -679,7 +679,7 @@ usage () {
     for ext in $loaded_extensions; do
 	if command_exists "print_help_$ext"; then
 	    printf "\n----%s----\n" "$ext"
-	    print_help_$ext
+	    "print_help_$ext"
 	fi
     done
 }
@@ -2051,7 +2051,9 @@ parse_opt () {
 		notify-playing) notify_playing="${optarg:-1}" ;;
 		#long-opt exclusives
 		sort) is_sort=${optarg:-1} ;;
-		sort-name) load_sort_name "$optarg" && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
+		sort-name)
+		    #shellcheck disable=SC2015
+		    load_sort_name "$optarg" && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
 		video-pref) video_pref=$optarg ;;
     ytdl-pref) ytdl_pref=$optarg ;;
     audio-pref) audio_pref=$optarg ;;
@@ -2096,7 +2098,7 @@ parse_opt () {
 		    done
 		    echo ----------------
 		    set +f
-		    for path in $YTFZF_SYSTEM_ADDON_DIR/*; do
+		    for path in "$YTFZF_SYSTEM_ADDON_DIR"/*; do
 			printf "${c_bold}%s:${c_reset}\n" "system addon, ${path##*/}"
 			ls "$path"
 		    done
@@ -2199,11 +2201,11 @@ handle_actions () {
 				_submenu_actions="${_submenu_actions}${new_line}${action}" ;;
 			do-nothing*) return 1 ;;
 			*) 
-				fn_name="handle_custom_action_$(printf "%s" "${_action%% *}" | tr '-' '_')"
+				fn_name="handle_custom_action_$(printf "%s" "${action%% *}" | tr '-' '_')"
 				if command_exists "$fn_name"; then
-					$fn_name "${_action#* }"
+					$fn_name "${action#* }"
 				elif command_exists "handle_custom_action"; then
-					handle_custom_action "$_action"
+					handle_custom_action "$action"
 				fi || return $? ;;
 		esac
 		break #TODO: allow multiple actions or at least let the action decide whether or not it can handle multiple actions
