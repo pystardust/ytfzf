@@ -652,6 +652,23 @@ Lists all addons and exits.
 The default behaviour of \fBytfzf\fR can be changed by modifying the config file.
 See \fBytfzf\fR(5) for more information.
 
+.SH EXIT CODES
+.TP
+.B 0
+Success
+.TP
+.B 1
+General error
+.TP
+.B 2
+Invalid \-\-option, option value, or configuration error.
+.TP
+.B 3
+Missing dependency
+.TP
+.B 5
+Empty search
+
 .SH ENVIRONMENT
 .TP
 .B $YTFZF_CONFIG_DIR
