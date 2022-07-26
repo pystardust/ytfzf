@@ -20,10 +20,8 @@ doc:
 
 install:
 	chmod 755 ${PROG}
-	cp ${PROG} ${PROG}.bak
 	mkdir -p ${DESTDIR}${BINDIR}
-	cp ${PROG}.bak ${DESTDIR}${BINDIR}/${PROG}
-	rm ${PROG}.bak
+	cp ${PROG} ${DESTDIR}${BINDIR}/${PROG}
 
 addons:
 	chmod 755 addons/*/*
