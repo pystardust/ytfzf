@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1595.86e63da"
+YTFZF_VERSION="git-1596.b92b9c1"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2185,10 +2185,9 @@ init_files (){
 #actions are attached to videos/items in the menu
 handle_actions () {
 	unset _submenu_actions IFS
-	actions=$(jq -r --arg urls "$(cat "$1")" '.[] | [.url, .action] as $data | if ( ($urls | split("\n" )) | contains([$data[0]]) ) == true then $data[1] else "" end' < "$ytfzf_video_json_file")
+	actions=$(jq -r --arg urls "$(cat "$1")" '.[] | [.url, .action] as $data | if ( ($urls | split("\n" )) | contains([$data[0]]) ) == true then $data[1] else "" end' < "$ytfzf_video_json_file" | sed '/^[[:space:]]*$/d')
 	while read -r action; do
 		#this wil only be empty after all urls with actions have happened
-		[ -z "$action" ] && break
 		#shellcheck disable=SC2031
 		#shellcheck disable=SC2086
 		case "$action" in
