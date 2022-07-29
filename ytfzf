@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1597.a324cc9"
+YTFZF_VERSION="git-1598.8bfcdf9"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -295,7 +295,7 @@ search_prompt_menu_wrapper () {
 		 $fn_name
 	 else search_prompt_menu_ext
 	 fi
-	[ "$search" ]
+	[ "$_search" ]
 }
 
 handle_playing_notifications (){
