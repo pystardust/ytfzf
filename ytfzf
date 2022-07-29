@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1598.8bfcdf9"
+YTFZF_VERSION="git-1600.434737e"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -401,7 +401,7 @@ load_thumbnail_viewer () {
     _thumbnail_viewer="$1"
     case "$_thumbnail_viewer" in
            #these are special cases, where they are not themselves commands
-           chafa-16|chafa|chafa-tty|catimg|catimg-256|w3m|imv|ueberzug|kitty|swayimg|mpv) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
+           chafa-16|chafa|chafa-tty|catimg|catimg-256|imv|ueberzug|kitty|swayimg|mpv) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
            ./*|/*|../*|~/*) thumbnail_viewer="$_thumbnail_viewer"; false ;;
            *)
                    if [ -f "${YTFZF_THUMBNAIL_VIEWERS_DIR}/${_thumbnail_viewer}" ]; then
@@ -474,8 +474,6 @@ set_vars () {
     fancy_subs="0" fancy_subs_left="-------------" fancy_subs_right="${fancy_subs_right=$fancy_subs_left}"
 
     fzf_preview_side="left" thumbnail_viewer="ueberzug"
-
-    w3mimgdisplay_path="/usr/lib/w3m/w3mimgdisplay"
 
     # shortcuts
     download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s" next_page_shortcut="alt-p"
@@ -1536,7 +1534,7 @@ preview_start () {
 			ueberzug layer --parser json < "$UEBERZUG_FIFO"  &
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|swayimg) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|swayimg) : ;;
     kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
 		imv)
 			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
@@ -1564,7 +1562,7 @@ preview_stop () {
 		ueberzug)
 			exec 3>&- # close file descriptor 3, closing ueberzug
 			;;
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|kitty) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|kitty) : ;;
 		mpv)
 		    kill "$mpv_pid" 
 		    rm "$MPV_SOCKET" > /dev/null 2>&1
@@ -1583,7 +1581,7 @@ command_exists "on_no_thumbnail" || on_no_thumbnail () {
 preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|imv|mpv) : ;;
+		chafa|chafa-16|chafa-tty|catimg|catimg-256|imv|mpv) : ;;
         ueberzug)
             { 
                 printf "{"
@@ -1764,10 +1762,6 @@ EOF
 			printf '\n'
 			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
 			catimg -c -w "$width" "$thumb_path" ;;
-		w3m)
-			while true; do
-				printf "%b\n%s;\n" "0;1;10;130;$((width*5));$((width*3));;;;;$thumb_path" 3 | $w3mimgdisplay_path
-			done ;;
 		imv) 
 			imv-msg "$imv_pid" open "$thumb_path"
 			imv-msg "$imv_pid" next
