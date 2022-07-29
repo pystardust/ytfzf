@@ -65,7 +65,6 @@ There are only 2 required dependencies, however the rest require some configurat
 | :--                                                                               | :--              |
 | [`chafa`](https://github.com/hpjansson/chafa)                                     | &#9989;          |
 | [`catimg`](https://github.com/posva/catimg)                                       | &#9989;          |
-| [`w3m`](https://github.com/tats/w3m) (buggy)                                      | &#10060;         |
 | [`imv`](https://git.sr.ht/~exec64/imv)                                            | &#9989;          |
 | [`mpv`](https://github.com/mpv-player/mpv)                                        | &#9989;          |
 | [`kitty`](https://github.com/kovidgoyal/kitty)                                    | &#9989;          |
