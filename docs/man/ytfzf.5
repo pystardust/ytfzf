@@ -821,6 +821,15 @@ The char to use for long opts.
 .br
 .IR default: " \-"
 
+.TP
+.RB $ YTFZF_CHECK_VARS_EXISTS
+Whether or not to check if variables in the environment already exist when setting default options.
+.br
+This option can not be set in the config, it must be set in your startup shell with export, or before running ytfzf such as:
+.I YTFZF_CHECK_VARS_EXISTS=0 ytfzf ...
+.br
+.IR default: 1
+
 .RE
 
 .PP

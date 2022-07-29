@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1600.a8f3b7d"
+YTFZF_VERSION="git-1601.780fa15"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -30,6 +30,8 @@ c_bold="\033[1m"
 
 #state variables
 : "${__is_submenu:=0}" "${__is_fzf_preview:=0}"
+
+: "${check_vars_exists:=${YTFZF_CHECK_VARS_EXISTS:-1}}"
 
 # Utility functions {{{
 
@@ -567,7 +569,7 @@ EOF
     unset check_exists _vars variable var_name var_val
 }
 
-set_vars "${check_vars_exists:-1}"
+set_vars "${check_vars_exists}"
 
 # hard dependancy checks{{{
 for dep in jq curl; do

@@ -760,14 +760,14 @@ The directory to store extensions
 the default is
 .I $YTFZF_CONFIG_DIR/extensions
 .TP
-.TP
 .B $YTFZF_SYSTEM_ADDON_DIR
 The directory to store system installed addons.
 The default may vary depending on how you installed ytfzf.
-.B $cache_dir
-The directory to store cache
-the default is
-.I "$XDG_CACHE_HOME/ytfzf (or $HOME/.cache/ytfzf)"
+.TP
+.B $YTFZF_CHECK_VARS_EXISTS
+Whether or not to check if variables are set in the environment before setting default values.
+The default is
+.I 1
 
 .SH FILES
 .TP
@@ -779,9 +779,6 @@ The submenu configuration file
 .TP
 .I ~/.config/ytfzf/subscriptions
 The subscriptions file.
-.TP
-.I ~/.cache/ytfzf/watch_hist
-Watch history (if $enable_hist is 1)
 
 .SH CACHE
 .PP
