@@ -649,6 +649,43 @@ Lists all addons and exits.
 The default behaviour of \fBytfzf\fR can be changed by modifying the config file.
 See \fBytfzf\fR(5) for more information.
 
+.SH ADDONS
+.PP
+There are a few types of addons,
+.br
+.B interfaces (\-\-interface)
+.br
+.B scrapers (\-c)
+.br
+.B sort-names (\-\-sort\-name)
+.br
+.B thumbnail-viewers (\-\-thumb\-viewer)
+.br
+.B url-handlers (\-\-url_handler)
+.br
+.B extensions (\-\-ext)
+
+.PP
+To install an addon, place the addon in
+.I $YTFZF_SYSTEM_ADDON_DIR/<addon-type>/addon-name
+.PP
+To use an addon, use one of the options listed above, or add
+.br
+.B load_interface <interface>
+.br
+.B scrape=<scraper>
+.br
+.B load_sort_name <sort-name>
+.br
+.B load_thumbnail_viewer <viewer>
+.br
+.B load_url_handler <url-handler>
+.br
+.B load_extension <ext>
+.br
+In your configuration file
+
+
 .SH EXIT CODES
 .TP
 .B 0
