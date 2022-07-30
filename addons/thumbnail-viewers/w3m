@@ -3,6 +3,7 @@
 w3mimgdisplay_path="${w3mimgdisplay_path:-/usr/lib/w3m/w3mimgdisplay}"
 
 action=$1 path=$2 width=$5
+
 view () {
     while :; do
 	printf "%b\n%s;\n" "0;1;10;130;$((width*5));$((width*3));;;;;$1" 3 | "$w3mimgdisplay_path"
