@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.4.1.rc-3"
+YTFZF_VERSION="2.4.1.rc-4"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -831,11 +831,10 @@ _get_real_channel_link () {
 	domain=${1#https://}
 	domain=${domain%%/*}
 	url=$(printf "%s" "$1" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
-    real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p')"
+	real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p' | sed 's/[\n\r]$//g')"
 	#prints the origional url because it was correct
 	[ -z "$real_path" ] && printf "%s\n" "$1" && return 0
-	#printf is not used because weird flushing? issues.
-	echo "https://${domain}${real_path}"
+	printf "%s\n" "https://${domain}${real_path}"
 }
 
 _get_channel_id () {
