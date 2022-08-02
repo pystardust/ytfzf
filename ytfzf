@@ -34,6 +34,13 @@ c_bold="\033[1m"
 : "${check_vars_exists:=${YTFZF_CHECK_VARS_EXISTS:-1}}"
 
 # Utility functions {{{
+
+run_interface () {
+    _interface="interface_${interface:-text}"
+    $(printf "%s" "$_interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
+    unset _interface
+}
+
 download_thumbnails () {
 	[ "$skip_thumb_download" -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
 	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...\n'
@@ -1416,7 +1423,7 @@ handle_keypress () {
 		"$search_again_shortcut")
 			clean_up
 			make_search ""
-			$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls" ;;
+			run_interface ;;
 		*)
 			_fn_name=handle_keypress_$(sed 's/-/_/g' <<-EOF
 							$keypress
@@ -2369,7 +2376,7 @@ done
 main() { 
 	while :; do
 		#calls the interface
-		$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
+		run_interface
 		handle_actions "$ytfzf_selected_urls" || { [ "$?" -eq 2 ] || continue && break; }
 
 		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
