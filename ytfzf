@@ -34,7 +34,6 @@ c_bold="\033[1m"
 : "${check_vars_exists:=${YTFZF_CHECK_VARS_EXISTS:-1}}"
 
 # Utility functions {{{
-
 download_thumbnails () {
 	[ "$skip_thumb_download" -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
 	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...\n'
@@ -722,6 +721,31 @@ _thread_started (){
 	[ $_thread_count -ge $max_thread_count ] && wait "$_latest_fork" && _thread_count=$(jobs -p | wc -l)
 }
 
+_get_real_channel_link () {
+	domain=${1#https://}
+	domain=${domain%%/*}
+	url=$(printf "%s" "$1" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+	real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p' | sed 's/[\n\r]$//g')"
+	#prints the origional url because it was correct
+	[ -z "$real_path" ] && printf "%s\n" "$1" && return 0
+	printf "%s\n" "https://${domain}${real_path}"
+}
+
+set_real_channel_url_and_id () {
+    _url="$1"
+    case "$_url" in
+	*/videos) : ;;
+	*) _url="${_url}/videos"
+    esac
+    _id="$(_get_channel_id "$_url")"
+    [ "$_id/videos" = "$_url" ] &&\
+	print_warning "$_url is not a scrapable link run:\n$0 --channel-link='$_url'\nto fix this warning\n" &&\
+	_url="$(_get_real_channel_link "$_url")" && _id="$(_get_channel_id "$_url")"
+    channel_url="$_url" channel_id="$_id"
+    unset _url _id
+}
+
+
 #}}}
 
 ## Youtube  {{{
@@ -803,15 +827,8 @@ scrape_youtube_channel () {
 	output_json_file="$2"
 	print_info "Scraping Youtube channel: $channel_url\n"
 
-	# Converting channel title page url to channel video url
-	case "$channel_url" in
-		*/videos) : ;;
-		*) channel_url="${channel_url}/videos"
-	esac
-	channel_id="$(_get_channel_id "$channel_url")"
-	[ "$channel_id/videos" = "$channel_url" ] &&\
-		print_warning "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
-		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
+
+	set_real_channel_url_and_id "$channel_url"
 
 	tmp_filename="channel-${channel_id}"
 	_tmp_html="${session_temp_dir}/${tmp_filename}.html"
@@ -827,16 +844,6 @@ scrape_youtube_channel () {
 
 ## Invidious {{{
 # invidious backend functions {{{
-_get_real_channel_link () {
-	domain=${1#https://}
-	domain=${domain%%/*}
-	url=$(printf "%s" "$1" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
-	real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p' | sed 's/[\n\r]$//g')"
-	#prints the origional url because it was correct
-	[ -z "$real_path" ] && printf "%s\n" "$1" && return 0
-	printf "%s\n" "https://${domain}${real_path}"
-}
-
 _get_channel_id () {
 	link="$1"
 	link="${link##*channel/}"
@@ -1091,14 +1098,7 @@ scrape_invidious_channel () {
 	page_num=${3:-1}
 
 	# Converting channel title page url to channel video url
-	case "$channel_url" in
-		*/videos) : ;;
-		*) channel_url="${channel_url}/videos"
-	esac
-	channel_id="$(_get_channel_id "$channel_url")"
-	[ "$channel_id/videos" = "$channel_url" ] &&\
-		print_warning "$channel_url is not a scrapable link run:\n$0 --channel-link='$channel_url'\nto fix this warning\n" &&\
-		channel_url="$(_get_real_channel_link "$channel_url")" && channel_id="$(_get_channel_id "$channel_url")"
+	set_real_channel_url_and_id "$channel_url"
 
 	tmp_file_name="channel-${channel_id}"
 	_tmp_html="${session_temp_dir}/${tmp_file_name}.html"
