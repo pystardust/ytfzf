@@ -1,10 +1,8 @@
 #!/bin/sh
 
 IFS="$(printf '\t')"
-read -r ytdl_pref is_audio_only is_detach video_pref audio_pref is_fullscreen url_handler_opts _
+read -r ytdl_pref is_audio_only is_detach video_pref audio_pref url_handler_opts _
 unset IFS
-
-[ "$is_fullscreen" -eq 1 ] && url_handler_opts="$url_handler_opts -f"
 
 set -f
 case "$is_detach" in

@@ -508,7 +508,7 @@ set_vars () {
 
     # format options
     #variable for switching on sort (date)
-    is_detach="0" is_audio_only="0" is_fullscreen="0"
+    is_detach="0" is_audio_only="0"
     url_handler="multimedia_player"
     url_handler_opts=""
     info_to_print="" info_wait="0" info_wait_action="q"
@@ -595,7 +595,6 @@ command_exists "video_player" || video_player () {
 	#this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
     [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
-    [ "$is_fullscreen" -eq 1 ] && url_handler_opts="$url_handler_opts --fullscreen"
     #shellcheck disable=SC2086
     $use_detach_cmd mpv --ytdl-format="$ytdl_pref" $url_handler_opts "$@"
 }
@@ -1980,7 +1979,7 @@ open_url_handler () {
 
 	#if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
 	#shellcheck disable=2031
-	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" "$is_fullscreen" "$url_handler_opts" | session_temp_dir="${session_temp_dir}" session_cache_dir="${session_cache_dir}" "$url_handler" "$@"
+	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" "$url_handler_opts" | session_temp_dir="${session_temp_dir}" session_cache_dir="${session_cache_dir}" "$url_handler" "$@"
 	end_of_set_args
 }
 
@@ -2026,7 +2025,6 @@ parse_opt () {
 		h|help) usage; exit 0 ;;
 		D|external-menu) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && interface='ext' ;;
 		m|audio-only) is_audio_only=${optarg:-1};;
-		fullscreen) is_fullscreen=${optarg:-1} ;;
 		d|download) url_handler=downloader ;;
 		f|formats) show_formats=${optarg:-1} ;;
 		H|history) scrape="history" ;;
