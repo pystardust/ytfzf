@@ -147,7 +147,7 @@ thumbnail_video_info_text () {
 }
 
 detach_cmd () {
-  nohup "$@" > "/dev/null" 2>&1 & 
+  nohup "$@" > "/dev/null" 2>&1 &
 }
 
 source_scrapers () {
@@ -365,7 +365,7 @@ load_sort_name () {
                            . "${YTFZF_SYSTEM_ADDON_DIR}/sort-names/${_sort_name}"
                    else false
                    fi ;;
-    esac 
+    esac
     rv="$?"
     unset "$_sort_name"
     return "$rv"
@@ -389,8 +389,8 @@ load_interface () {
     #shellcheck disable=SC1090
     case "$requested_interface" in
            "ext"|"scripting"|"") interface=$requested_interface; true ;;
-           ./*|../*|/*|~/*) [ -f "$requested_interface" ] && . "$requested_interface" && interface="${requested_interface##*/}"; false ;; 
-           *) 
+           ./*|../*|/*|~/*) [ -f "$requested_interface" ] && . "$requested_interface" && interface="${requested_interface##*/}"; false ;;
+           *)
                    if [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${requested_interface}" ]; then
 			interface=$requested_interface
 			. "$YTFZF_CUSTOM_INTERFACES_DIR/$requested_interface"
@@ -526,7 +526,7 @@ set_vars () {
     #this comes from invidious' api
     thumbnail_quality="high"
     sub_link_count="2"
-    invidious_instance="https://vid.puffyan.us" yt_video_link_domain="https://youtube.com"
+    invidious_instance="https://y.com.sb" yt_video_link_domain="https://youtube.com"
     search_sort_by="relevance" search_upload_date="" search_video_duration="" search_result_type="video" search_result_features="" search_region="US"
     pages_to_scrape="1" pages_start="1"
     nsfw="false" odysee_video_search_count="30"
@@ -1413,7 +1413,7 @@ handle_keypress () {
 		"$print_link_shortcut") _last_info_to_print="$info_to_print"; info_to_print="L" ;;
 		"$show_formats_shortcut") show_formats=1 ;;
 		"$info_shortcut") _last_info_to_print="$info_to_print"; info_to_print="VJ" ;;
-		"$next_page_shortcut") 
+		"$next_page_shortcut")
 			read -r url < "$selected_id_file"
 			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
 			"scrape_next_page_$hovered_scraper"
@@ -1571,7 +1571,7 @@ preview_stop () {
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|kitty) : ;;
 		mpv)
-		    kill "$mpv_pid" 
+		    kill "$mpv_pid"
 		    rm "$MPV_SOCKET" > /dev/null 2>&1
 		    ;;
         swayimg) killall swayimg 2> /dev/null;;
@@ -1590,7 +1590,7 @@ preview_no_img (){
 	case $thumbnail_viewer in
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|imv|mpv) : ;;
         ueberzug)
-            { 
+            {
                 printf "{"
                 printf "\"%s\": \"%s\"," "action" "remove" "identifier" "ytfzf"
                 printf '"%s": "%s"' "draw" "True"
@@ -1633,7 +1633,7 @@ command_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down 
 command_exists "get_swayimg_positioning_left" || get_swayimg_positioning_left () {
     #allows space for text
     y_gap=$((line_px_height*8))
-    
+
     #it's subtracting the gap between the border and the edge of terminal
     w_correct=$((max_width/2-2*col_px_width))
     h_correct=$((max_height-3*line_px_height-y_gap))
@@ -1769,7 +1769,7 @@ EOF
 			printf '\n'
 			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
 			catimg -c -w "$width" "$thumb_path" ;;
-		imv) 
+		imv)
 			imv-msg "$imv_pid" open "$thumb_path"
 			imv-msg "$imv_pid" next
 			;;
@@ -1779,7 +1779,7 @@ EOF
             get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
             kitty +kitten icat --clear --transfer-mode file
             kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" ;;
-		*) 
+		*)
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 			"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
 
@@ -1821,7 +1821,7 @@ interface_thumbnails () {
 	selected_id_file=$2
 
 	# Download thumbnails, only if they're not already downloaded
-	
+
 	set -f
 	unset IFS
 	#shellcheck disable=SC2046
@@ -1863,12 +1863,12 @@ print_requested_info () {
 		    #cat is better here because a lot of urls could be selected
 		    cat "$url_list" ;;
 		VJ|vj|video-json)
-		    while read -r line; do 
-			jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file"; 
+		    while read -r line; do
+			jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file";
 		    done < "$url_list"  ;;
 		[Jj]|json) jq < "$ytfzf_video_json_file" ;;
 		[Ff]|format) printf "%s\n" "$ytdl_pref" ;;
-		[Rr]|raw) 
+		[Rr]|raw)
 		    while read -r line; do
 			jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file";
 		    done < "$url_list" ;;
@@ -1938,7 +1938,7 @@ submenu_handler () {
 	    fi
 
 	    handle_empty_scrape || die 4
-	    
+
 	    main
 	)
 	submenu_opts="$old_submenu_opts"
@@ -1985,7 +1985,7 @@ open_url_handler () {
 
 get_video_format_simple () {
     # select format if flag given
-    formats=$(${ytdl_path} -F "$1" | grep -v "storyboard") 
+    formats=$(${ytdl_path} -F "$1" | grep -v "storyboard")
 	#shellcheck disable=2059
     quality="$(printf "$formats" | grep -v "audio only" | sed -n '/^[[:digit:]]/s/.*[[:digit:]]\+x\([[:digit:]]\+\).*/\1p/p; 1i\Audio' | sort -n | uniq | quick_menu_wrapper "Video Quality" | sed "s/p//g")"
     if [ "$quality" = "Audio" ]; then
@@ -2090,7 +2090,7 @@ parse_opt () {
 		format-sort) format_selection_sort="$optarg" ;;
 		ext) load_extension "$optarg" ;;
 		url-handler-opts) url_handler_opts="$optarg" ;;
-		list-addons) 
+		list-addons)
 		    for path in "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_SORT_NAMES_DIR"\
 			"$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_EXTENSIONS_DIR"; do
 			! [ -d "$path" ] && continue
@@ -2106,8 +2106,8 @@ parse_opt () {
 		    exit
 		    ;;
 		async-thumbnails) async_thumbnails="${optarg:-1}" ;;
-		fancy-subs) 
-			fancy_subs=${optarg:-1} 
+		fancy-subs)
+			fancy_subs=${optarg:-1}
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
 		*)
 			#shellcheck disable=SC2031
@@ -2200,7 +2200,7 @@ handle_actions () {
 				url_handler=submenu_handler
 				_submenu_actions="${_submenu_actions}${new_line}${action}" ;;
 			do-nothing*) return 1 ;;
-			*) 
+			*)
 				fn_name="handle_custom_action_$(printf "%s" "${action%% *}" | tr '-' '_')"
 				if command_exists "$fn_name"; then
 					$fn_name "${action#* }"
@@ -2280,7 +2280,7 @@ scrape_website () {
 		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
 		video-recommended|R) scrape_invidious_video_recommended "$_search" "$ytfzf_video_json_file" ;;
 		M|multi) scrape_multi "$_search" "$ytfzf_video_json_file" ;;
-		url|U) 
+		url|U)
 			printf "%s\n" "$_search" > "$ytfzf_selected_urls"
 			open_url_handler  "$ytfzf_selected_urls" ;;
                 *)
@@ -2364,14 +2364,14 @@ make_search () {
 # Main {{{
 
 make_search "$initial_search"
-until handle_empty_scrape; do 
+until handle_empty_scrape; do
     case "$search_again" in
         0) die 4 ;;
         1) make_search ;;
     esac
 done
 
-main() { 
+main() {
 	while :; do
 		#calls the interface
 		run_interface
