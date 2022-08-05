@@ -1150,7 +1150,7 @@ Eg:
     while read -r params; do
 	#shellcheck disable=SC2086
 	set -- $params
-	env check_vars_exists=0 YTFZF_CONFIG_FILE="/dev/null" "$0" -IJ -a "$@" >> "$output_json_file"
+	env check_vars_exists=0 YTFZF_CONFIG_FILE="/dev/null" "$0" --ii="$invidious_instance" -IJ -a "$@" >> "$output_json_file"
     done <<EOF
 $(printf "%s" "$1" | sed 's/  *:N\(EXT\)*  */\n/g')
 EOF
