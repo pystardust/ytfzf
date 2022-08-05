@@ -1458,7 +1458,8 @@ interface_scripting () {
 interface_text () {
 	command_exists "fzf" || die 3 "fzf not installed, cannot use the default menu\n"
     #if it doesn't exist, this menu has not opened yet, no need to revert the actions of the last keypress
-    [ -f "$keypress_file" ] && handle_post_keypress
+	[ -f "$keypress_file" ] && handle_post_keypress
+
 	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
 
 	if command_exists "tput"; then
@@ -1467,6 +1468,7 @@ interface_text () {
 	    TTY_COLS=${COLUMNS:-80}
 	    command_exists "tput" || print_warning "command \"tput\" not found, defaulting to terminal width of $TTY_COLS columns\n"
 	fi
+
 	#shellcheck disable=SC2015
 	command_exists "column" && use_column=1 || { print_warning "command \"column\" not found, the menu may look very bad\n" && use_column=0; }
 
@@ -2145,6 +2147,7 @@ do_an_event_function "on_post_set_vars"
 #Post opt scrape{{{
 : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
 : "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
+FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
 source_scrapers
 #}}}
 
