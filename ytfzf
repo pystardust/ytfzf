@@ -84,7 +84,7 @@ thumbnail_video_info_text () {
 }
 
 detach_cmd () {
-  nohup "$@" > "/dev/null" 2>&1 & 
+  nohup "$@" > "/dev/null" 2>&1 &
 }
 
 source_scrapers () {
@@ -1230,7 +1230,7 @@ handle_keypress () {
 		$print_link_shortcut) _last_info_to_print="$info_to_print"; info_to_print="L" ;;
 		$show_formats_shortcut) show_formats=1 ;;
 		$info_shortcut) _last_info_to_print="$info_to_print"; $info_to_print="VJ" ;;
-		$next_page_shortcut) 
+		$next_page_shortcut)
 			read -r url < "$selected_id_file"
 			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
 			scrape_next_page_$hovered_scraper
@@ -1419,7 +1419,7 @@ preview_stop () {
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|kitty) : ;;
 		mpv)
-		    kill "$mpv_pid" 
+		    kill "$mpv_pid"
 		    rm "$MPV_SOCKET" > /dev/null 2>&1
 		    ;;
         swayimg) killall swayimg 2> /dev/null;;
@@ -1438,7 +1438,7 @@ preview_no_img (){
 	case $thumbnail_viewer in
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|w3m|imv|mpv) : ;;
         ueberzug)
-            { 
+            {
                 printf "{"
                 printf "\"%s\": \"%s\"," "action" "remove" "identifier" "ytfzf"
                 printf '"%s": "%s"' "draw" "True"
@@ -1481,7 +1481,7 @@ command_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down 
 command_exists "get_swayimg_positioning_left" || get_swayimg_positioning_left () {
     #allows space for text
     y_gap=$((line_px_height*8))
-    
+
     #it's subtracting the gap between the border and the edge of terminal
     w_correct=$((max_width/2-2*col_px_width))
     h_correct=$((max_height-3*line_px_height-y_gap))
@@ -1621,7 +1621,7 @@ EOF
 			while true; do
 				printf "%b\n%s;\n" "0;1;10;130;$((width*5));$((width*3));;;;;$thumb_path" 3 | $w3mimgdisplay_path
 			done ;;
-		imv) 
+		imv)
 			imv-msg "$imv_pid" open "$thumb_path"
 			imv-msg "$imv_pid" next
 			;;
@@ -1631,7 +1631,7 @@ EOF
             get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
             kitty +kitten icat --clear --transfer-mode file
             kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" ;;
-		*) 
+		*)
 			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 			"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
 
@@ -1673,7 +1673,7 @@ interface_thumbnails () {
 	selected_id_file=$2
 
 	# Download thumbnails, only if they're not already downloaded
-	
+
 	set -f
 	unset IFS
 	case "$async_thumbnails" in
@@ -1716,12 +1716,12 @@ print_requested_info () {
 		    #cat is better here because a lot of urls could be selected
 		    cat "$url_list" ;;
 		VJ|vj|video-json)
-		    while read -r line; do 
-			jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file"; 
+		    while read -r line; do
+			jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file";
 		    done < "$url_list"  ;;
 		[Jj]|json) jq < "$ytfzf_video_json_file" ;;
 		[Ff]|format) printf "%s\n" "$ytdl_pref" ;;
-		[Rr]|raw) 
+		[Rr]|raw)
 		    while read -r line; do
 			jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file";
 		    done < "$url_list" ;;
@@ -1792,7 +1792,7 @@ submenu_handler () {
 	    shift $((OPTIND-1))
 
 	    make_search "$*"
-	    until handle_empty_scrape; do 
+	    until handle_empty_scrape; do
 		case "$search_again" in
 		    *) die 4 ;;
 		esac
@@ -1841,7 +1841,7 @@ open_url_handler () {
 
 get_video_format_simple () {
     # select format if flag given
-    formats=$(${ytdl_path} -F "$1" | grep -v "storyboard") 
+    formats=$(${ytdl_path} -F "$1" | grep -v "storyboard")
     quality="$(printf "$formats" | grep -v "audio only" | sed -n '/^[[:digit:]]/s/.*[[:digit:]]\+x\([[:digit:]]\+\).*/\1p/p; 1i\Audio' | sort -n | uniq | quick_menu_wrapper "Video Quality" | sed "s/p//g")"
     if [ "$quality" = "Audio" ]; then
 	is_audio_only=1
@@ -1902,8 +1902,8 @@ parse_opt () {
 			# if we don't check which interface, itll try to source $YTFZF_CUSTOM_INTERFACES_DIR/{ext,scripting} which won't work
 			case "$interface" in
 				"ext"|"scripting"|"") : ;;
-				./*|../*|/*|~/*) [ -f "$interface" ] && . "$interface" && interface="${interface##*/}" ;; 
-				*) 
+				./*|../*|/*|~/*) [ -f "$interface" ] && . "$interface" && interface="${interface##*/}" ;;
+				*)
 					if [ -f "${YTFZF_CUSTOM_INTERFACES_DIR}/${interface}" ]; then
 						. "$YTFZF_CUSTOM_INTERFACES_DIR/$interface"
 					elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/interfaces/${interface}" ]; then
@@ -1960,7 +1960,7 @@ parse_opt () {
 		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
 		disable-submenus) enable_submenus="${optarg:-0}" ;;
 		thumbnail-quality) thumbnail_quality="$optarg" ;;
-		url-handler) 
+		url-handler)
 			if command_exists "$optarg"; then
 				url_handler="${optarg:-multimedia_player}"
 			elif [ -f "${YTFZF_URL_HANDLERS_DIR}/$optarg" ]; then
@@ -1982,7 +1982,7 @@ parse_opt () {
 		format-sort) format_selection_sort="$optarg" ;;
 		ext) load_extension "$optarg" ;;
 		url-handler-opts) url_handler_opts="$optarg" ;;
-		list-addons) 
+		list-addons)
 		    for path in "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_SORT_NAMES_DIR"\
 			"$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_EXTENSIONS_DIR"; do
 			! [ -d "$path" ] && continue
@@ -1997,8 +1997,8 @@ parse_opt () {
 		    exit
 		    ;;
 		async-thumbnails) async_thumbnails="${optarg:-1}" ;;
-		fancy-subs) 
-			fancy_subs=${optarg:-1} 
+		fancy-subs)
+			fancy_subs=${optarg:-1}
 			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
 		*)
 			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
@@ -2081,7 +2081,7 @@ handle_actions () {
 				url_handler=submenu_handler
 				_submenu_actions="${_submenu_actions}${new_line}${_action}" ;;
 			do-nothing*) return 1 ;;
-			*) 
+			*)
 				fn_name="handle_custom_action_$(printf "%s" "${_action%% *}" | tr '-' '_')"
 				if command_exists "$fn_name"; then
 					$fn_name "${_action#* }"
@@ -2156,7 +2156,7 @@ scrape_website () {
 		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
 		video-recommended|R) scrape_invidious_video_recommended "$_search" "$ytfzf_video_json_file" ;;
 		M|multi) scrape_multi "$_search" "$ytfzf_video_json_file" ;;
-		url|U) 
+		url|U)
 			printf "%s\n" "$_search" > "$ytfzf_selected_urls"
 			open_url_handler  "$ytfzf_selected_urls" ;;
                 *)
@@ -2239,14 +2239,14 @@ make_search () {
 # Main {{{
 
 make_search "$initial_search"
-until handle_empty_scrape; do 
+until handle_empty_scrape; do
     case "$search_again" in
         0) die 4 ;;
         1) make_search ;;
     esac
 done
 
-main() { 
+main() {
 	while :; do
 		#calls the interface
 		$(printf "%s" "interface_$interface" | sed 's/-/_/g' | sed 's/^interface_$/interface_text/') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
