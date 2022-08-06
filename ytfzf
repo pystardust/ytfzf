@@ -664,8 +664,11 @@ usage () {
                   you can use multiple scrapers by separating each with a comma, eg: youtube,odysee
         -H                      alias for -c H
         -t			Show thumbnails
-        --thumb-viewer=viewer   The program to use for displaying thumbnails.
-        -D			Use an external menu
+        -T <viewer>             The program to use for displaying thumbnails.
+	-i <interface>          The interface to use (default: text)
+        -D			Alias for -i ext
+	-u <url handler>        The program to use for handling urls (deafult: multimedia_player)
+	-e <extention>          Load an extention
         -I <info>               Instead of playing the selected video(s), get information about them.
               Options can be separated with a comma, eg: L,R
                                 Options for info:
@@ -2053,7 +2056,7 @@ parse_opt () {
 		pages-start) pages_start="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
 		ii|inv-instance) invidious_instance="$optarg" ;;
-		interface) load_interface "$optarg" || die 2 "$optarg is not an interface\n" ;;
+		i|interface) load_interface "$optarg" || die 2 "$optarg is not an interface\n" ;;
 		c|scrape) scrape=$optarg ;;
 		scrape+) scrape="$scrape,$optarg" ;;
 		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
@@ -2071,7 +2074,7 @@ parse_opt () {
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
 		preview-side) fzf_preview_side="${optarg}"; [ -z "$fzf_preview_side" ] && die 2 "no preview side given\n" ;;
-		thumb-viewer) load_thumbnail_viewer "$optarg" || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n" ;;
+		T|thumb-viewer) load_thumbnail_viewer "$optarg" || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n" ;;
 		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
 		info-print-exit|info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
 		info-action) info_wait_action="$optarg" ;;
@@ -2085,7 +2088,7 @@ parse_opt () {
 		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
 		disable-submenus) enable_submenus="${optarg:-0}" ;;
 		thumbnail-quality) thumbnail_quality="$optarg" ;;
-		url-handler)  load_url_handler "$optarg";;
+		u|url-handler)  load_url_handler "$optarg";;
 		keep-cache) keep_cache="${optarg:-1}" ;;
 		submenu-opts|submenu-scraping-opts) submenu_opts="${optarg}" ;;
 		keep-vars) keep_vars="${optarg:-1}" ;;
@@ -2097,7 +2100,7 @@ parse_opt () {
 		multi-search) multi_search=${optarg:-1} ;;
 		format-selection) format_selection_screen=${optarg:-normal};;
 		format-sort) format_selection_sort="$optarg" ;;
-		ext) load_extension "$optarg" ;;
+		e|ext) load_extension "$optarg" ;;
 		url-handler-opts) url_handler_opts="$optarg" ;;
 		list-addons)
 		    for path in "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_SORT_NAMES_DIR"\
@@ -2123,7 +2126,7 @@ parse_opt () {
 			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
 }
-while getopts "ac:dfhlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
+while getopts "ac:defhilmn:qrstuxADHI:LS:TU${long_opt_char}:" OPT; do
 	case $OPT in
 		U)
 			#shellcheck disable=SC2031
