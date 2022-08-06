@@ -870,7 +870,7 @@ _get_invidious_thumb_quality_name () {
 _invidious_search_json_playlist () {
 	jq '[ .[] | select(.type=="playlist") |
 		{
-			scraper: "youtube_search",
+			scraper: "invidious_search",
 			ID: .playlistId,
 			url: "'"${yt_video_link_domain}"'/playlist?list=\(.playlistId)",
 			title: "[playlist] \(.title)",
@@ -885,7 +885,7 @@ _invidious_search_json_channel () {
 	jq '
 	[ .[] | select(.type=="channel") |
 		{
-			scraper: "youtube_search",
+			scraper: "invidious_search",
 			ID: .authorId,
 			url: "'"${yt_video_link_domain}"'/channel/\(.authorId)",
 			title: "[channel] \(.author)",
@@ -899,7 +899,7 @@ _invidious_search_json_channel () {
 _invidious_search_json_live () {
 	jq '[ .[] | select(.type=="video" and .liveNow==true) |
 		{
-			scraper: "youtube_search",
+			scraper: "invidious_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: "[live] \(.title)",
@@ -916,7 +916,7 @@ _invidious_search_json_videos () {
 		;
 	[ .[] | select(.type=="video" and .liveNow==false) |
 		{
-			scraper: "youtube_search",
+			scraper: "invidious_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
@@ -937,7 +937,7 @@ _invidious_search_json_generic () {
 		;
 	[ .[] |
 		{
-			scraper: "youtube_search",
+			scraper: "invidious_search",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
@@ -1017,13 +1017,13 @@ scrape_invidious_playlist () {
 }
 
 scrape_invidious_search () {
-	page_query=$1
+    page_query=$1
     [ "$page_query" = ":help" ] && print_info "Make a youtube search\n" && return 100
-	output_json_file=$2
+    output_json_file=$2
 
-	_cur_page=${pages_start:-1}
+    _ivs_cur_page=${pages_start:-1}
 
-    page_num=$((_cur_page+$4))
+    page_num=$((_ivs_cur_page+$4))
 
     #shellcheck disable=SC2209
     case "$search_sort_by" in
@@ -1032,11 +1032,11 @@ scrape_invidious_search () {
     esac
 
 	_start_series_of_threads
-    while [ ${_cur_page} -lt $page_num ]; do
+    while [ ${_ivs_cur_page} -lt $page_num ]; do
 		{
-			_tmp_json="${session_temp_dir}/yt-search-$_cur_page.json"
+			_tmp_json="${session_temp_dir}/yt-search-$_ivs_cur_page.json"
 
-			print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $_cur_page)\n"
+			print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $_ivs_cur_page)\n"
 
 			_get_request "$invidious_instance/api/v1/search" \
 				-G --data-urlencode "q=$page_query" \
@@ -1046,7 +1046,7 @@ scrape_invidious_search () {
 				--data-urlencode "duration=${search_video_duration}" \
 				--data-urlencode "features=${search_result_features}" \
 				--data-urlencode "region=${search_region}" \
-				--data-urlencode "page=${_cur_page}" > "$_tmp_json" || return "$?"
+				--data-urlencode "page=${_ivs_cur_page}" > "$_tmp_json" || return "$?"
 
 			_get_invidious_thumb_quality_name
 
@@ -1057,11 +1057,21 @@ scrape_invidious_search () {
 				_invidious_search_json_playlist < "$_tmp_json"
 			} >> "$_tmp_json.final"
 		} &
-		_cur_page=$((_cur_page+1))
+		_ivs_cur_page=$((_ivs_cur_page+1))
 		_thread_started "$!"
-	done
-	wait
-    _concatinate_json_file "${session_temp_dir}/yt-search-" "$((_cur_page-1))" "$output_json_file" "$pages_start"
+    done
+    #hangs for some reason when called frrom scrape_new_page_invidious_search
+    #probably cause it's a subprocess of ytfzf
+    case "$4" in
+	1) wait "$!" ;;
+	*) wait ;;
+    esac
+    _concatinate_json_file "${session_temp_dir}/yt-search-" "$((_ivs_cur_page-1))" "$output_json_file" "$pages_start"
+}
+
+scrape_next_page_invidious_search () {
+	#we can do this because _comment_file is overritten every time, meaning it will contain the latest scrape
+	pages_start="$_ivs_cur_page" scrape_invidious_search "$_search" "$video_json_file" "" "1"
 }
 
 scrape_invidious_video_recommended () {
@@ -1418,6 +1428,7 @@ handle_keypress () {
 			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
 			"scrape_next_page_$hovered_scraper"
 			unset hovered_scraper
+			return 3
 			;;
 		"$search_again_shortcut")
 			clean_up
@@ -1493,8 +1504,6 @@ interface_text () {
         { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
 		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
 		trim_url > "$selected_id_file"
-	#we can't do handle_keypress < "$keypress_file" because it leaves fd0 open which breaks $search_again_shortcut
-	handle_keypress "$(cat "$keypress_file")"
 }
 #}}}
 
@@ -1847,8 +1856,6 @@ interface_thumbnails () {
 
 	preview_stop "$thumbnail_viewer"
 
-	#we can't do handle_keypress < "$keypress_file" because it leaves fd0 open which breaks $search_again_shortcut
-	handle_keypress "$(cat "$keypress_file")"
 }
 #}}}
 
@@ -2378,6 +2385,7 @@ main() {
 	while :; do
 		#calls the interface
 		run_interface
+		handle_keypress "$(cat "$keypress_file")" || case "$?" in 2) break ;; 3) continue ;; esac
 		handle_actions "$ytfzf_selected_urls" || { [ "$?" -eq 2 ] || continue && break; }
 
 		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
