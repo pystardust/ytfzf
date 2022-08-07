@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1627.7dba8dc"
+YTFZF_VERSION="git-1628.0bf1cb0"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1416,7 +1416,7 @@ handle_post_keypress () {
 }
 
 handle_keypress () {
-	keypress="$1"
+	read -r keypress < "$1"
 	command_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
 	case "$keypress" in
 		"$download_shortcut") _last_url_handler=$url_handler; url_handler=downloader ;;
@@ -2388,7 +2388,7 @@ main() {
 	while :; do
 		#calls the interface
 		run_interface
-		handle_keypress "$(cat "$keypress_file")" || case "$?" in 2) break ;; 3) continue ;; esac
+		handle_keypress "$keypress_file" || case "$?" in 2) break ;; 3) continue ;; esac
 		handle_actions "$ytfzf_selected_urls" || { [ "$?" -eq 2 ] || continue && break; }
 
 		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
