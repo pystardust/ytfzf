@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1628.0bf1cb0"
+YTFZF_VERSION="git-1629.13f85c4"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1901,10 +1901,6 @@ submenu_handler () {
 	#this needs to be here as well as close_url_handler because it will not happen inside this function if it's not here
 	url_handler="$old_url_handler"
 	(
-	    #apparently this is not reset to 0 in bash, so we must do it manually
-	    #shellcheck disable=2030
-	    OPTIND=0
-
 	    #shellcheck disable=2030
 	    export __is_submenu=1
 
@@ -1927,15 +1923,8 @@ submenu_handler () {
 	    on_opt_parse_s () {
 		print_warning "-s is not supported in submenus\n"
 	    }
-	    #shellcheck disable=2030
-	    while getopts "ac:dfhlmn:qrstxADHI:LS:TU${long_opt_char}:" OPT; do
-		    case $OPT in
-			    "$long_opt_char")
-				    parse_opt "${OPTARG%%=*}" "${OPTARG#*=}" ;;
-			    *)
-				    parse_opt "${OPT}" "${OPTARG}" ;;
-		    esac
-	    done
+
+	    _getopts "$@"
 
 	    source_scrapers
 
@@ -2126,28 +2115,34 @@ parse_opt () {
 			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
 }
-while getopts "ac:defhilmn:qrstuxADHI:LS:TU${long_opt_char}:" OPT; do
-	case $OPT in
-		U)
-			#shellcheck disable=SC2031
-			shift $((OPTIND-1))
-			case $1 in
-				preview_img)
-					#shellcheck disable=SC2031
-					session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
-					shift
-					source_scrapers
-					preview_img "$@"
-					;;
-			esac
-			exit 0
-			;;
-		"$long_opt_char")
-			parse_opt "${OPTARG%%=*}" "${OPTARG#*=}" ;;
-		*)
-			parse_opt "${OPT}" "${OPTARG}" ;;
-	esac
-done
+
+_getopts () {
+    OPTIND=0
+    while getopts "${optstring:=ac:de:fhi:lmn:qrstu:xADHI:LS:T:U${long_opt_char}:}" OPT; do
+	    case $OPT in
+		    U)
+			    #shellcheck disable=SC2031
+			    shift $((OPTIND-1))
+			    case $1 in
+				    preview_img)
+					    #shellcheck disable=SC2031
+					    session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
+					    shift
+					    source_scrapers
+					    preview_img "$@"
+					    ;;
+			    esac
+			    exit 0
+			    ;;
+		    "$long_opt_char")
+			    parse_opt "${OPTARG%%=*}" "${OPTARG#*=}" ;;
+		    *)
+			    parse_opt "${OPT}" "${OPTARG}" ;;
+	    esac
+    done
+}
+
+_getopts "$@"
 #shellcheck disable=SC2031
 shift $((OPTIND-1))
 #}}}
