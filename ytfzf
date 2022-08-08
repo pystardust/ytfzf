@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1629.13f85c4"
+YTFZF_VERSION="git-1630.f167463"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -622,7 +622,7 @@ command_exists "downloader" || downloader () {
 	case $is_audio_only in
 	    0) $use_detach_cmd "${ytdl_path}" -f "${ytdl_pref}" $ytdl_opts "$@"	;;
 	    1) $use_detach_cmd "${ytdl_path}" -x -f "${audio_pref}" $ytdl_opts "$@" ;;
-	esac
+	esac && [ "$notify_playing" -eq 1 ] && notify-send -c ytfzf "Ytfzf Info" "Download complete"
 }
 
 [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
