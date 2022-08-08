@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1630.f167463"
+YTFZF_VERSION="git-1631.80989a0"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1158,12 +1158,25 @@ scrape_multi () {
 Eg:
     ytfzf -cM search 1 :NEXT search 2 :NEXT -c O odysee search :NEXT --pages=3 3 pages of youtube
 " && return 100
-    output_json_file=$2
+    PARENT_OUTPUT_JSON_FILE=$2
+    unset IFS
     set -f
     while read -r params; do
 	#shellcheck disable=SC2086
 	set -- $params
-	env check_vars_exists=0 YTFZF_CONFIG_FILE="/dev/null" "$0" --ii="$invidious_instance" -IJ -a "$@" >> "$output_json_file"
+	(
+	    set_vars 0
+	    on_opt_parse_s () {
+		print_warning "-s is not supported in submenus\n"
+	    }
+	    _getopts "$@"
+	    source_scrapers
+	    shift $((OPTIND-1))
+	    search_again=0
+	    make_search "$*"
+	    handle_empty_scrape || die 4
+	    cat "$ytfzf_video_json_file" >> "$PARENT_OUTPUT_JSON_FILE"
+	)
     done <<EOF
 $(printf "%s" "$1" | sed 's/  *:N\(EXT\)*  */\n/g')
 EOF
