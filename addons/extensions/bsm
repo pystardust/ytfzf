@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+[ -z "$BASH_VERSION" ] && {
+    die 3 "It appears you are not running bash\nMake sure /bin/sh points to the bash shell\n"
+}
+
+run_interface () {
+    _interface="interface_${interface:-text}"
+    ${_interface//-/_} "$ytfzf_video_json_file" "$ytfzf_selected_urls"
+    unset _interface
+}
+
+add_commas () {
+    read -r num
+    printf "%'d" "$num"
+    unset num
+}
+
+get_key_value () {
+    sep="${3:- }"
+    value="${1##*"${sep}""${2}"=}"
+    printf -v KEY_VALUE "%s" "${value%%"${sep}"*}"
+    unset value
+    [ "$KEY_VALUE" ]
+    return "$?"
+}
+
+title_str () {
+    printf "%s\n" "${1^}"
+}
+
+search_prompt_menu () {
+    #shellcheck disable=SC2154
+    parse_search_hist_file < "$search_hist_file" > "$search_hist_file.bash"
+    HISTFILE="$search_hist_file.bash"
+    printf "Search\n" > /dev/stderr
+    history -r
+    read -p "> " -er _search
+    _search="$(history -p "$_search")"
+    history -s "$_search"
+    history -a
+    printf "\033[1A\033[K\r%s\n" "> $_search" > /dev/stderr
+    rm "$HISTFILE"
+}
+
+search_prompt_menu_wrapper () {
+    fn_name=search_prompt_menu"${interface:+_${interface//-/_}}"
+    if command_exists "$fn_name"; then
+	$fn_name
+    else search_prompt_menu_ext
+    fi
+    [ "$_search" ]
+}
+
+quick_menu_wrapper () {
+    prompt="$1"
+    fn_name=quick_menu"${interface:+_${interface//-/_}}"
+    if command_exists "$fn_Name"; then
+	$fn_name "$prompt"
+    else quick_menu_ext "$prompt"
+    fi
+    unset fn_name
+}
