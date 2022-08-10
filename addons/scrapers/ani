@@ -9,7 +9,7 @@ _ani_get_categories () {
 _ani_get_thumbnails () {
 	category="$1"
     #stolen from pystardust/ani-cli
-    sed -n 's_^[[:space:]]*<img src="\(.*/\(cover\|images/anime/T\)/'"$category"'\.[^"]*\)" alt="[^"]*" />_\1_p' "$2"
+    sed -n 's_^[[:space:]]*<img src="\(.*/\(cover\|images\(/anime\(/T\)*\)*\)/'"$category"'\.[^"]*\)" alt="[^"]*" />_\1_p' "$2"
 }
 
 scrape_ani () {
