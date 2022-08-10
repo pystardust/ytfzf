@@ -20,6 +20,7 @@ get_key_value () {
     sep="${3:- }"
     value="${1##*"${sep}""${2}"=}"
     printf -v KEY_VALUE "%s" "${value%%"${sep}"*}"
+    printf "%s" "$KEY_VALUE"
     unset value
     [ "$KEY_VALUE" ]
     return "$?"
