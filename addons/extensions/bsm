@@ -57,7 +57,7 @@ search_prompt_menu_wrapper () {
 quick_menu_wrapper () {
     prompt="$1"
     fn_name=quick_menu"${interface:+_${interface//-/_}}"
-    if command_exists "$fn_Name"; then
+    if command_exists "$fn_name"; then
 	$fn_name "$prompt"
     else quick_menu_ext "$prompt"
     fi
