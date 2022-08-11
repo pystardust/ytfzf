@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1646.3cfaea4"
+YTFZF_VERSION="git-1655.bb93ef7"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2337,12 +2337,12 @@ handle_scrape_error () {
 is_asking_for_search_necessary () {
 	prepare_for_set_args ","
 	for _scr in $scrape; do
+	    end_of_set_args
 	    case "$scrape_search_exclude" in
 		*' '$_scr' '*) false ;;
 		*) return 0 ;;
 	    esac
 	done
-	end_of_set_args
 }
 
 handle_scraping (){
