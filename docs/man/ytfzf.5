@@ -767,10 +767,25 @@ Whether or not to keep track of search history
 .IR default: " 1"
 
 .TP
-.RB $ use_search_hist
-Whether or not to use search history instead of a search.
-.br
-.IR default: " 0"
+.RB $ search_source
+How to get the search query. The builtin values for this are:
+.RS
+.TP
+.RB args
+Use commandline arguments as the search (default)
+.TP
+.RB prompt
+Ask for a search via a prompt
+.TP
+.RB hist
+Use search history.
+.TP
+.RB next
+Used internally to use the next search in the list when \fBmulti_search\fR is enabled.
+.TP
+.RB fn-args
+Used internally to use the function arguments passed to the function as the source.
+.RE
 
 .TP
 .RB $ log_level
@@ -1247,6 +1262,13 @@ The search history file will be fed through stdin.
 Misc
 
 .RS
+
+.TP
+.BR get_search_from_<src>()
+If search_source is set to <src> this function will be called.
+This function is expected to set the variable \fB_search\fR to a search query.
+.br
+This functino takes no arguments.
 
 .TP
 .BR handle_playing_notifications()
