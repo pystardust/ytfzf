@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1640.73a7372"
+YTFZF_VERSION="git-1641.19b930c"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -803,7 +803,7 @@ scrape_subscriptions () {
     ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
 
     #shellcheck disable=SC2015
-    [ "$scrape_type" = "SI" ] && { channel_scraper="scrape_invidious_channel"; sleep_time=0.03; } || { channel_scraper="scrape_youtube_channel"; sleep_time=0.01; }
+    [ "$curr_scrape" = "SI" ] && { channel_scraper="scrape_invidious_channel"; sleep_time=0.03; } || { channel_scraper="scrape_youtube_channel"; sleep_time=0.01; }
 
     #if _tmp_subfile does not have a unique name, weird things happen
     #must be _i because scrape_invidious_channel uses $i
@@ -829,6 +829,9 @@ scrape_subscriptions () {
 	EOF
     wait
 }
+scrape_youtube_subscriptions (){ scrape_subscriptions "$@"; }
+scrape_SI (){ scrape_subscriptions "$@"; }
+scrape_S (){ scrape_subscriptions "$@"; }
 
 scrape_youtube_channel () {
 	channel_url="$1"
@@ -1018,6 +1021,7 @@ scrape_invidious_playlist () {
 	jq -s '. | flatten | sort_by(.ID) | unique_by(.ID)' < "$_full_playlist_json" >> "$output_json_file"
 
 }
+scrape_youtube_playlist (){ scrape_invidious_playlist "$@"; }
 
 scrape_invidious_search () {
     page_query=$1
@@ -1026,7 +1030,7 @@ scrape_invidious_search () {
 
     _ivs_cur_page=${pages_start:-1}
 
-    page_num=$((_ivs_cur_page+$4))
+    page_num=$((_ivs_cur_page + pages_to_scrape))
 
     #shellcheck disable=SC2209
     case "$search_sort_by" in
@@ -1049,7 +1053,7 @@ scrape_invidious_search () {
 				--data-urlencode "duration=${search_video_duration}" \
 				--data-urlencode "features=${search_result_features}" \
 				--data-urlencode "region=${search_region}" \
-				--data-urlencode "page=${_ivs_cur_page}" > "$_tmp_json" || return "$?"
+				--data-urlencode "page=${_ivs_cur_page}" > "$_tmp_json"
 
 			_get_invidious_thumb_quality_name
 
@@ -1072,9 +1076,12 @@ scrape_invidious_search () {
     _concatinate_json_file "${session_temp_dir}/yt-search-" "$((_ivs_cur_page-1))" "$output_json_file" "$pages_start"
 }
 
+scrape_youtube () { scrape_invidious_search "$@"; }
+scrape_Y () { scrape_invidious_search "$@"; }
+
 scrape_next_page_invidious_search () {
 	#we can do this because _comment_file is overritten every time, meaning it will contain the latest scrape
-	pages_start="$_ivs_cur_page" scrape_invidious_search "$_search" "$video_json_file" "" "1"
+	pages_to_scrape=1 pages_start="$_ivs_cur_page" scrape_invidious_search "$_search" "$video_json_file"
 }
 
 scrape_invidious_video_recommended () {
@@ -1089,6 +1096,8 @@ scrape_invidious_video_recommended () {
     _get_invidious_thumb_quality_name
     _invidious_search_json_generic < "$_tmp_json" >> "$output_json_file"
 }
+scrape_video_recommended () { scrape_invidious_video_recommended "$@"; }
+scrape_video_R () { scrape_invidious_video_recommended "$@"; }
 
 scrape_invidious_trending () {
 	trending_tab=$(title_str "$1")
@@ -1108,13 +1117,15 @@ scrape_invidious_trending () {
 
 	_invidious_search_json_videos < "$_tmp_json" >> "$output_json_file"
 }
+scrape_youtube_trending (){ scrape_invidious_trending "$@"; }
+scrape_T (){ scrape_invidious_trending "$@"; }
 
 scrape_invidious_channel () {
 	channel_url=$1
     [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\n" && return 100
 	output_json_file=$2
 	#default to one, because -cSI does not give a page count
-	page_num=${3:-1}
+	page_num=${pages_to_scrape:-1}
 
 	# Converting channel title page url to channel video url
 	set_real_channel_url_and_id "$channel_url"
@@ -1190,6 +1201,7 @@ EOF
     unset PARENT_invidious_instance PARENT_OUTPUT_JSON_FILE
     return 0
 }
+scrrape_M (){ scrape_multi "$@"; }
 ## }}}
 
 ## Peertube {{{
@@ -1224,6 +1236,7 @@ scrape_peertube () {
 		]' < "$_tmp_json" >> "$output_json_file"
 
 }
+scrape_P (){ scrape_peertube "$@"; }
 ## }}}
 
 ## Odysee {{{
@@ -1292,6 +1305,7 @@ scrape_odysee () {
 	]' < "$_tmp_json" >> "$output_json_file"
 
 }
+scrape_O (){ scrape_odysee "$@"; }
 ## }}}
 
 # History{{{
@@ -1300,12 +1314,15 @@ scrape_history () {
 	enable_hist=0 #enabling history while scrape is history causes issues
 	scrape_json_file "$hist_file" "$2"
 }
+scrape_H (){ scrape_history "$@"; }
 
 scrape_json_file () {
 	search="$1"
 	output_json_file="$2"
 	cp "$search" "$output_json_file" 2>/dev/null
 }
+scrape_playlist (){ scrape_json_file "$@"; }
+scrape_P (){ scrape_json_file "$@"; }
 #}}}
 
 # Comments{{{
@@ -1316,7 +1333,7 @@ scrape_comments () {
 		*/*) video_id="${video_id##*=}" ;;
 	esac
 	output_json_file="$2"
-	page_count="$3"
+	page_count="$pages_to_scrape"
 	_comment_file="${session_temp_dir}/comments-$video_id.tmp.json"
 	i=1
 	while [ "$i" -le "$page_count" ]; do
@@ -1334,6 +1351,15 @@ scrape_next_page_comments () {
 	#we can do this because _comment_file is overritten every time, meaning it will contain the latest scrape
 	scrape_comments "$_search" "$video_json_file" "1"
 }
+#}}}
+
+# url {{{
+scrape_url () {
+    printf "%s\n" "$1" > "$ytfzf_selected_urls"
+    open_url_handler  "$ytfzf_selected_urls"
+    printf '[{"ID": "%s", "title": "%s", "url": "%s"}]\n' "URL-${1##*/}" "$1" "$1" >> "$2"
+}
+scrape_U (){ scrape_url "$@"; }
 #}}}
 
 # }}}
@@ -2274,53 +2300,24 @@ next_search (){
 }
 #}}}
 handle_scrape_error () {
+	_scr="$2"
 	case "$1" in
 		0) true ;;
-		1) print_info "$curr_scrape failed to load website\n" ;;
-		6) print_error "Website unresponsive (do you have internet?)\n" ;;
-		9) print_info "$curr_scrape does not have a configuration file\n" ;;
+		1) print_info "$_scr failed to load website\n" ;;
+		6) print_error "Website ($_scr) unresponsive (do you have internet?)\n" ;;
+		9) print_info "$_scr does not have a configuration file\n" ;;
 	 	22)
-			case "$curr_scrape" in
+			case "$_scr" in
 				youtube|Y|youtube-trending|T)
-					print_error "There was an error scraping $curr_scrape ($invidious_instance)\nTry changing invidious instances\n" ;;
-				*) print_error "There was an error scraping $curr_scrape\n" ;;
+					print_error "There was an error scraping $_scr ($invidious_instance)\nTry changing invidious instances\n" ;;
+				*) print_error "There was an error scraping $_scr\n" ;;
 			esac ;;
         #:help search operator
         100) print_info "---------\n" && return 100;;
-		126) print_info "$curr_scrape does not have execute permissions\n" ;;
-		127) die 2 "invalid scraper: $curr_scrape\n" ;;
-		*) print_error "An error occured while scraping: $curr_scrape (scraper returned error: $1)\n" ;;
+		126) print_info "$_scr does not have execute permissions\n" ;;
+		127) die 2 "invalid scraper: $_scr\n" ;;
+		*) print_error "An error occured while scraping: $_scr (scraper returned error: $1)\n" ;;
 	esac
-}
-
-scrape_website () {
-	scrape_type="$1"
-	_search="$2"
-	case $scrape_type in
-		invidious-playlist|youtube-playlist) scrape_invidious_playlist "$_search" "$ytfzf_video_json_file" ;;
-		history|H) scrape_history "" "$ytfzf_video_json_file" ;;
-		playlist|p|json-file) scrape_json_file "$_search" "$ytfzf_video_json_file" ;;
-		invidious-channel) scrape_invidious_channel "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
-		youtube-channel) scrape_youtube_channel "$_search" "$ytfzf_video_json_file" ;;
-		youtube|Y) scrape_invidious_search  "$_search" "$ytfzf_video_json_file" "search" "$pages_to_scrape" || return "$?" ;;
-		youtube-trending|T) scrape_invidious_trending  "$_search" "$ytfzf_video_json_file" "trending";;
-		youtube-subscriptions|S|SI) scrape_subscriptions "$scrape_type" "$ytfzf_video_json_file" ;;
-		odysee|O) scrape_odysee "$_search" "$ytfzf_video_json_file" ;;
-		peertube|P) scrape_peertube "$_search" "$ytfzf_video_json_file" ;;
-		comments) scrape_comments "$_search" "$ytfzf_video_json_file" "$pages_to_scrape" ;;
-		video-recommended|R) scrape_invidious_video_recommended "$_search" "$ytfzf_video_json_file" ;;
-		M|multi) scrape_multi "$_search" "$ytfzf_video_json_file" ;;
-		url|U)
-			printf "%s\n" "$_search" > "$ytfzf_selected_urls"
-			open_url_handler  "$ytfzf_selected_urls" ;;
-                *)
-                        #custom scrapers {{{
-			"scrape_$(printf '%s' "$scrape_type" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file" || return "$?"
-                        #}}}
-	esac
-	rv="$?"
-	unset scrape_type
-	return $rv
 }
 
 is_asking_for_search_necessary () {
@@ -2344,11 +2341,10 @@ handle_scraping (){
 	[ "$multi_search" -eq 1 ] && _search="$(next_search)"
 	do_an_event_function "on_search" "$_search" "$curr_scrape"
 	command_exists "on_search_$_search" && "on_search_$_search" "$curr_scrape"
-	scrape_website "$curr_scrape" "$_search"
-	rv="$?"
+	"scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"
+	handle_scrape_error "$?" "$curr_scrape"
     done
     end_of_set_args
-    return "$rv"
 }
 
 #check if nothing was scraped{{{
@@ -2384,7 +2380,6 @@ make_search () {
 	#shellcheck disable=SC2031
 	[ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 	handle_scraping "$_search"
-	handle_scrape_error "$?"
 	do_an_event_function post_scrape
 	#:help search operator
 	[ "$?" -eq 100 ] && exit 0
