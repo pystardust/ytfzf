@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1642.f8ffc45"
+YTFZF_VERSION="git-1643.883411f"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1356,10 +1356,14 @@ scrape_next_page_comments () {
 # url {{{
 scrape_url () {
     printf "%s\n" "$1" > "$ytfzf_selected_urls"
-    open_url_handler  "$ytfzf_selected_urls"
-    printf '[{"ID": "%s", "title": "%s", "url": "%s"}]\n' "URL-${1##*/}" "$1" "$1" >> "$2"
+    open_url_handler "$ytfzf_selected_urls"
+    exit
 }
 scrape_U (){ scrape_url "$@"; }
+scrape_u (){
+    printf "%s\n" "$1" > "$ytfzf_selected_urls"
+    printf '[{"ID": "%s", "title": "%s", "url": "%s"}]\n' "URL-${1##*/}" "$1" "$1" >> "$2"
+}
 #}}}
 
 # }}}

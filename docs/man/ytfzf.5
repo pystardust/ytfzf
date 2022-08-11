@@ -579,7 +579,9 @@ The search will be a path to a json file layed out as described in VIDEO JSON FO
 .TP
 .IR history ,
 .TP
-.IR url ,
+.IR url/U ,
+.TP
+.IR u ,
 .TP
 .IR M / multi ,
 .TP
@@ -992,7 +994,7 @@ This function takes 2 arguments:
 .RE
 
 .TP
-.BR get_swayimg_positioning_left () 
+.BR get_swayimg_positioning_left ()
 This function sets the variables, $x, $y, $img_w, and $img_h.
 $x, and $y, should represent pixels.
 .br
@@ -1013,7 +1015,7 @@ This function takes 8 arguments:
 .RE
 
 .TP
-.BR get_swayimg_positioning_right () 
+.BR get_swayimg_positioning_right ()
 This function sets the variables, $x, $y, $img_w, and $img_h.
 $x, and $y, should represent pixels.
 .br
@@ -1034,7 +1036,7 @@ This function takes 8 arguments:
 .RE
 
 .TP
-.BR get_swayimg_positioning_up () 
+.BR get_swayimg_positioning_up ()
 This function sets the variables, $x, $y, $img_w, and $img_h.
 $x, and $y, should represent pixels.
 .br
@@ -1055,7 +1057,7 @@ This function takes 8 arguments:
 .RE
 
 .TP
-.BR get_swayimg_positioning_down () 
+.BR get_swayimg_positioning_down ()
 This function sets the variables, $x, $y, $img_w, and $img_h.
 $x, and $y, should represent pixels.
 .br
@@ -1201,11 +1203,11 @@ The point of this function is to clean up anything that the url handler did.
 
 .TP
 .BR after_close_url_handler
-A function that happens after the url handler has finished playing, and after 
+A function that happens after the url handler has finished playing, and after
 .BR close_url_handler_<name>
 has happened.
 .br
-If 
+If
 .BR is_detach
 is
 .I 1
@@ -1308,7 +1310,7 @@ The raw optarg
 .RE
 
 .TP
-.BR on_post_set_vars () 
+.BR on_post_set_vars ()
 This fnction gets called after all vars are set, and all opts are parsed.
 .br
 This function takes no arguments.
@@ -1420,7 +1422,7 @@ To see an example, make a search with \fIytfzf\fR and locate the \fIthumbnails\f
 .PP
 Custom thumbnails are going to try to be loaded before the official thumbnail.
 .br
-If a custom thumbnail, and the official thumbnail doesn't exist, ytfzf will try to use 
+If a custom thumbnail, and the official thumbnail doesn't exist, ytfzf will try to use
 .I $YTFZF_CUSTOM_THUMBNAILS_DIR/YTFZF:DEFAULT.jpg .
 
 .SH VIDEO JSON FORMAT
