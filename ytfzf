@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1645.e67c18e"
+YTFZF_VERSION="git-1646.4b60cd6"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1472,7 +1472,7 @@ handle_keypress () {
 		"$search_again_shortcut")
 			clean_up
 			initial_search="" init_and_make_search "" "$search_source"
-			run_interface ;;
+			return 3 ;;
 		*)
 			_fn_name=handle_keypress_$(sed 's/-/_/g' <<-EOF
 							$keypress
