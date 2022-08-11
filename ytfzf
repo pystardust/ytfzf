@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1642.5167f75"
+YTFZF_VERSION="git-1643.01c76a3"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -294,19 +294,21 @@ search_prompt_menu_scripting () {
 
 get_search_from_source () {
     source=$1
+    shift
     prepare_for_set_args ":"
     for src in $source; do
+	end_of_set_args
 	case "$src" in
 	    args) _search="$initial_search" ;;
 	    prompt) search_prompt_menu_wrapper ;;
 	    hist) _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)" ;;
 	    next) _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1) ;;
-	    fn-args) : ;;
-	    *) command_exists "get_search_from_$src" && get_search_from"$src" ;;
+	    fn-args) _search="$*" ;;
+	    *)
+		command_exists "get_search_from_$src" && get_search_from"$src" "$@" ;;
 	esac
 	[ "$_search" ] && break
     done
-    end_of_set_args
     [ "$_search" ]
 }
 
@@ -2188,6 +2190,7 @@ do_an_event_function "on_post_set_vars"
 : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
 : "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
 FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
+[ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
 source_scrapers
 #}}}
 
@@ -2388,7 +2391,6 @@ command_exists "handle_search_history" || handle_search_history () {
 
 make_search () {
 	_search="$1"
-	#shellcheck disable=SC2031
 	handle_scraping "$_search"
 	handle_scrape_error "$?"
 	do_an_event_function post_scrape
@@ -2404,6 +2406,7 @@ init_search () {
 	init_files "$_search"
 	set_scrape_count
 	[ "$multi_search" -eq 1 ] && init_multi_search "$_search"
+	#shellcheck disable=SC2031
 	[ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 }
 

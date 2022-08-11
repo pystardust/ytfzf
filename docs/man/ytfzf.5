@@ -765,10 +765,25 @@ Whether or not to keep track of search history
 .IR default: " 1"
 
 .TP
-.RB $ use_search_hist
-Whether or not to use search history instead of a search.
-.br
-.IR default: " 0"
+.RB $ search_source
+How to get the search query. The builtin values for this are:
+.RS
+.TP
+.RB args
+Use commandline arguments as the search (default)
+.TP
+.RB prompt
+Ask for a search via a prompt
+.TP
+.RB hist
+Use search history.
+.TP
+.RB next
+Used internally to use the next search in the list when \fBmulti_search\fR is enabled.
+.TP
+.RB fn-args
+Used internally to use the function arguments passed to the function as the source.
+.RE
 
 .TP
 .RB $ log_level
@@ -992,7 +1007,7 @@ This function takes 2 arguments:
 .RE
 
 .TP
-.BR get_swayimg_positioning_left () 
+.BR get_swayimg_positioning_left ()
 This function sets the variables, $x, $y, $img_w, and $img_h.
 $x, and $y, should represent pixels.
 .br
@@ -1013,7 +1028,7 @@ This function takes 8 arguments:
 .RE
 
 .TP
-.BR get_swayimg_positioning_right () 
+.BR get_swayimg_positioning_right ()
 This function sets the variables, $x, $y, $img_w, and $img_h.
 $x, and $y, should represent pixels.
 .br
@@ -1034,7 +1049,7 @@ This function takes 8 arguments:
 .RE
 
 .TP
-.BR get_swayimg_positioning_up () 
+.BR get_swayimg_positioning_up ()
 This function sets the variables, $x, $y, $img_w, and $img_h.
 $x, and $y, should represent pixels.
 .br
@@ -1055,7 +1070,7 @@ This function takes 8 arguments:
 .RE
 
 .TP
-.BR get_swayimg_positioning_down () 
+.BR get_swayimg_positioning_down ()
 This function sets the variables, $x, $y, $img_w, and $img_h.
 $x, and $y, should represent pixels.
 .br
@@ -1201,11 +1216,11 @@ The point of this function is to clean up anything that the url handler did.
 
 .TP
 .BR after_close_url_handler
-A function that happens after the url handler has finished playing, and after 
+A function that happens after the url handler has finished playing, and after
 .BR close_url_handler_<name>
 has happened.
 .br
-If 
+If
 .BR is_detach
 is
 .I 1
@@ -1245,6 +1260,13 @@ The search history file will be fed through stdin.
 Misc
 
 .RS
+
+.TP
+.BR get_search_from_<src>()
+If search_source is set to <src> this function will be called.
+This function is expected to set the variable \fB_search\fR to a search query.
+.br
+This functino takes no arguments.
 
 .TP
 .BR handle_playing_notifications()
@@ -1308,7 +1330,7 @@ The raw optarg
 .RE
 
 .TP
-.BR on_post_set_vars () 
+.BR on_post_set_vars ()
 This fnction gets called after all vars are set, and all opts are parsed.
 .br
 This function takes no arguments.
@@ -1420,7 +1442,7 @@ To see an example, make a search with \fIytfzf\fR and locate the \fIthumbnails\f
 .PP
 Custom thumbnails are going to try to be loaded before the official thumbnail.
 .br
-If a custom thumbnail, and the official thumbnail doesn't exist, ytfzf will try to use 
+If a custom thumbnail, and the official thumbnail doesn't exist, ytfzf will try to use
 .I $YTFZF_CUSTOM_THUMBNAILS_DIR/YTFZF:DEFAULT.jpg .
 
 .SH VIDEO JSON FORMAT

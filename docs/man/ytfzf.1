@@ -608,7 +608,27 @@ Converts channel links from 'https://youtube.com/c/name' to 'https://youtube.com
 .BR \-q
 Use search history instead of a search.
 This can also be set in the config file with
-.BR use_search_hist .
+.BR search_source=hist .
+.TP
+.BR \-\-search\-source
+The source to use for the search query. Valid values include:
+.RS
+.TP
+.RB args
+Use commandline arguments as the search (default)
+.TP
+.RB prompt
+Ask for a search via a prompt
+.TP
+.RB hist
+Use search history.
+.TP
+.RB next
+Used internally to use the next search in the list when \fBmulti_search\fR is enabled.
+.TP
+.RB fn-args
+Used internally to use the function arguments passed to the function as the source.
+.RE
 .TP
 .BR \-x ", " \-\-history\-clear=<search|watch>
 Clear search and watch history (if \-x or \-\-history\-clear is used)
