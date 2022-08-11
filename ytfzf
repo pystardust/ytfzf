@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1643.01c76a3"
+YTFZF_VERSION="git-1645.61136bf"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -305,7 +305,7 @@ get_search_from_source () {
 	    next) _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1) ;;
 	    fn-args) _search="$*" ;;
 	    *)
-		command_exists "get_search_from_$src" && get_search_from"$src" "$@" ;;
+		command_exists "get_search_from_$src" && get_search_from_"$src" "$@" ;;
 	esac
 	[ "$_search" ] && break
     done
