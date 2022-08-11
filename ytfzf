@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1640.73a7372"
+YTFZF_VERSION="git-1641.19b930c"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -292,18 +292,30 @@ search_prompt_menu_scripting () {
 	search_prompt_menu
 }
 
+get_search_from_source () {
+    source=$1
+    prepare_for_set_args ":"
+    for src in $source; do
+	case "$src" in
+	    args) _search="$initial_search" ;;
+	    prompt) search_prompt_menu_wrapper ;;
+	    hist) _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)" ;;
+	    next) _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1) ;;
+	    fn-args) : ;;
+	    *) command_exists "get_search_from_$src" && get_search_from"$src" ;;
+	esac
+	[ "$_search" ] && break
+    done
+    end_of_set_args
+    [ "$_search" ]
+}
+
 search_prompt_menu_wrapper () {
-	#the last sed is to set it to quick_menu if $interfce is "" (default)
-	[ "$use_search_hist" -eq 1 ] && { _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)"; return; }
 	 fn_name=search_prompt_menu"$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
-	 #we could do :
-	 # $fn_name 2>/dev/null || [ "$?" -eq 127 ] && search_prompt_menu_ext
-	 #however, if we do that, the user won't get their error messages from their script
 	 if command_exists "$fn_name"; then
 		 $fn_name
 	 else search_prompt_menu_ext
 	 fi
-	[ "$_search" ]
 }
 
 handle_playing_notifications (){
@@ -457,7 +469,6 @@ load_thumbnail_viewer () {
 set_vars () {
     check_exists="${1:-1}"
 
-
     #save the ecurrent environment so that any user set variables will be saved
     if [ "$check_exists" -eq 1 ]; then
 	tmp_env=/tmp/ytfzf-env
@@ -465,6 +476,8 @@ set_vars () {
     fi
 
     gap_space="                                                                                                                   "
+
+    search_source=args:prompt
 
     # debugging
     log_level="2"
@@ -504,7 +517,6 @@ set_vars () {
 
     # history
     enable_hist="1" enable_search_hist="1"
-    use_search_hist="0"
 
     # format options
     #variable for switching on sort (date)
@@ -1172,14 +1184,14 @@ Eg:
 	    invidious_instance="$PARENT_invidious_instance"
 	    cache_dir="$session_cache_dir"
 	    on_opt_parse_s () {
-		print_warning "-s is not supported in submenus\n"
+		print_warning "-s is not supported in multi search\n"
 	    }
 	    _getopts "$@"
 	    source_scrapers
 	    shift $((OPTIND-1))
 	    search_again=0
 	    unset IFS
-	    make_search "$*"
+	    init_and_make_search "$*" "fn-args"
 	    handle_empty_scrape || die 4
 	    cat "$ytfzf_video_json_file" >> "$PARENT_OUTPUT_JSON_FILE"
 	    clean_up
@@ -1457,7 +1469,7 @@ handle_keypress () {
 			;;
 		"$search_again_shortcut")
 			clean_up
-			make_search ""
+			initial_search="" init_and_make_search "" "$search_source"
 			run_interface ;;
 		*)
 			_fn_name=handle_keypress_$(sed 's/-/_/g' <<-EOF
@@ -1954,7 +1966,7 @@ submenu_handler () {
 
 	    shift $((OPTIND-1))
 
-	    make_search "$*"
+	    init_and_make_search "$*" "fn-args"
 	    if [ "$enable_back_button" -eq 1 ]; then
 		data="$(cat "$ytfzf_video_json_file")"
 		echo '[{"ID": "BACK-BUTTON", "title": "[BACK]", "url": "back", "action": "back"}]' "$data" > "$ytfzf_video_json_file"
@@ -2062,7 +2074,7 @@ parse_opt () {
 		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
 		version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
 		L) info_to_print="$info_to_print,L" ;;
-		q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; use_search_hist=1 ;;
+		q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; search_source="hist:$search_source" ;;
 		pages) pages_to_scrape="$optarg" ;;
 		pages-start) pages_start="$optarg" ;;
 		odysee-video-count) odysee_video_search_count="$optarg" ;;
@@ -2109,6 +2121,7 @@ parse_opt () {
 		disable-back) enable_back_button=${optarg:-0} ;;
 		skip-thumb-download) skip_thumb_download=${optarg:-1} ;;
 		multi-search) multi_search=${optarg:-1} ;;
+		search-source) search_source="${optarg:-args}" ;;
 		format-selection) format_selection_screen=${optarg:-normal};;
 		format-sort) format_selection_sort="$optarg" ;;
 		e|ext) load_extension "$optarg" ;;
@@ -2262,15 +2275,13 @@ init_multi_search () {
 	#shellcheck disable=SC2086
 	set -- $1
 	end_of_set_args
-	set_scrape_count
+	__total_search_count="$#"
 	printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
 	#if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
-	if [ "$__total_scrape_count" -lt "$#" ]; then
+	if [ "$__total_scrape_count" -lt "$__total_search_count" ]; then
 	    scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/__total_scrape_count))")
+	    set_scrape_count
 	fi
-}
-next_search (){
-	head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1
 }
 #}}}
 handle_scrape_error () {
@@ -2329,7 +2340,7 @@ $scrape
 EOF
 ) "
 	#for some reason using [ "$_search-" = "-" ] doesn't work, but the code below does
-	grep -Eqv "($_scr)" <<EOF && [ "${_search:--}" = "-" ] && return 0
+	grep -Eqv "($_scr)" <<EOF && return 0
 $scrape_search_exclude
 EOF
 	return 1
@@ -2339,9 +2350,10 @@ handle_scraping (){
     _search="$1"
     prepare_for_set_args ","
     #if there is only 1 scraper used, multi search is on, then multiple searches will be performed seperated by ,
+    __scrape_count=0
     for curr_scrape in $scrape; do
 	__scrape_count=$((__scrape_count+1))
-	[ "$multi_search" -eq 1 ] && _search="$(next_search)"
+	[ "$multi_search" -eq 1 ] && get_search_from_source "next"
 	do_an_event_function "on_search" "$_search" "$curr_scrape"
 	command_exists "on_search_$_search" && "on_search_$_search" "$curr_scrape"
 	scrape_website "$curr_scrape" "$_search"
@@ -2376,28 +2388,42 @@ command_exists "handle_search_history" || handle_search_history () {
 
 make_search () {
 	_search="$1"
-	#only ask for search if it's empty and scrape isn't something like S or T
-	#this cannot be done inside handle_scraping, because otherwise init_files will get an empty search with search_again
-	is_asking_for_search_necessary && { search_prompt_menu_wrapper || die 5 "No search query\n"; }
-	init_files "$(printf "%s" "$_search" | sed 's/,/AND/g')"
-	[ "$multi_search" -eq 1 ] && init_multi_search "$_search"
 	#shellcheck disable=SC2031
-	[ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 	handle_scraping "$_search"
 	handle_scrape_error "$?"
 	do_an_event_function post_scrape
 	#:help search operator
 	[ "$?" -eq 100 ] && exit 0
 }
+
+init_search () {
+	_search="$1"
+	_search_source="$2"
+	#only ask for search if scrape isn't something like S or T
+	is_asking_for_search_necessary && { get_search_from_source "$_search_source" "$_search" || die 5 "No search query\n"; }
+	init_files "$_search"
+	set_scrape_count
+	[ "$multi_search" -eq 1 ] && init_multi_search "$_search"
+	[ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
+}
+
+init_and_make_search () {
+	_search=$1
+	_search_source=$2
+	init_search "$_search" "$_search_source"
+	make_search "$_search" "$_search_source"
+}
+
 #}}}
 
 # Main {{{
 
-make_search "$initial_search"
+
+init_and_make_search "$initial_search" "$search_source"
 until handle_empty_scrape; do
     case "$search_again" in
         0) die 4 ;;
-        1) make_search ;;
+        1) init_and_make_search "" "$search_source" ;;
     esac
 done
 
@@ -2433,7 +2459,7 @@ main
 #doing this after the loop allows for -l and -s to coexist
 while [ "$search_again" -eq 1 ] ; do
 	clean_up
-	make_search ""
+	initial_search="" init_and_make_search "" "$search_source"
 	main
 done
 #}}}
