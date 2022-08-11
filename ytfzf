@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1641.19b930c"
+YTFZF_VERSION="git-1642.f8ffc45"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -533,7 +533,7 @@ set_vars () {
 
     multi_search="0"
 
-    custom_scrape_search_exclude="" scrape_search_exclude=" youtube-subscriptions S SI SL T youtube-trending H history ${custom_scrape_search_exclude} "
+    custom_scrape_search_exclude="" scrape_search_exclude=" youtube-subscriptions S SI SL T youtube-trending H history "
 
     max_thread_count="20"
 
@@ -2201,6 +2201,7 @@ do_an_event_function "on_post_set_vars"
 : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
 : "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
 FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
+scrape_search_exclude="${scrape_search_exclude}${custom_scrape_search_exclude} "
 source_scrapers
 #}}}
 
