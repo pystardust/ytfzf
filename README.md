@@ -106,15 +106,15 @@ You may also just copy the entire addon folder type, eg: `cp -r addons/thumbnail
 
 To use a scraper addon run `ytfzf -c <scraper> ...`
 
-To use a thumbnail-viewer addon run `ytfzf --thumb-viewer=<viewer> ...`
+To use a thumbnail-viewer addon run `ytfzf -T <viewer> ...`
 
-To use a interface addon run `ytfzf --interface=<interface> ...`
+To use a interface addon run `ytfzf -i <interface> ...`
 
-To use a url-handler addon run `ytfzf --url-handler=<handler> ...`
+To use a url-handler addon run `ytfzf -u <handler> ...`
 
 To use a sort-name addon run `ytfzf --sort-name=<sort-name> ...`
 
-To use an extension addon run `ytfzf --ext=<extension> ...`
+To use an extension addon run `ytfzf -e <extension> ...`
 
 ---
 
