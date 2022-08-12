@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1658.bb4d1b0"
+YTFZF_VERSION="git-1659.309edbd"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -278,29 +278,9 @@ info_wait_prompt () {
     printf "%s\n" "quit [q]" "quit (override -l) [Q]" "open menu [c]" "play [enter]"
     read -r info_wait_action
 }
-info_wait_prompt_ext () {
-    info_wait_prompt "$@"
-}
-info_wait_prompt_scripting () {
-    info_wait_prompt "$@"
-}
 
 display_text () {
     printf "%s\n" "$@"
-}
-display_text_ext (){
-    display_requested_info
-}
-display_text_scripting (){
-    display_requested_info
-}
-
-display_text_wrapper () {
-    generic_wrapper "display_text"
-}
-
-info_wait_prompt_wrapper () {
-    generic_wrapper "info_wait_prompt"
 }
 
 search_prompt_menu_wrapper () {
@@ -1987,7 +1967,7 @@ get_requested_info () {
 
 handle_info_wait_action () {
 	if [ "$info_wait" -eq 1 ]; then
-	    info_wait_prompt_wrapper
+	    info_wait_prompt
 	fi
 	case "$info_wait_action" in
 		#simulates old behavior of when alt-l or alt-i is pressed and -l is enabled
@@ -2488,7 +2468,7 @@ main() {
 		#shellcheck disable=SC2015
 		if [ "$info_to_print" ]; then
 		    data="$(get_requested_info "$ytfzf_selected_urls")"
-		    display_text_wrapper "$data"
+		    display_text "$data"
 		    handle_info_wait_action
 		    case "$?" in 3) continue ;; 2) break ;; esac
 		fi
