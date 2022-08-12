@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1657.97f9872"
+YTFZF_VERSION="git-1658.bb4d1b0"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -274,6 +274,57 @@ quick_menu_scripting () {
 	quick_menu "$1"
 }
 
+info_wait_prompt () {
+    printf "%s\n" "quit [q]" "quit (override -l) [Q]" "open menu [c]" "play [enter]"
+    read -r info_wait_action
+}
+info_wait_prompt_ext () {
+    info_wait_prompt "$@"
+}
+info_wait_prompt_scripting () {
+    info_wait_prompt "$@"
+}
+
+display_text () {
+    printf "%s\n" "$@"
+}
+display_text_ext (){
+    display_requested_info
+}
+display_text_scripting (){
+    display_requested_info
+}
+
+display_text_wrapper () {
+    generic_wrapper "display_text"
+}
+
+info_wait_prompt_wrapper () {
+    generic_wrapper "info_wait_prompt"
+}
+
+search_prompt_menu_wrapper () {
+    generic_wrapper "search_prompt_menu"
+}
+
+quick_menu_wrapper () {
+    generic_wrapper "quick_menu" "$1"
+}
+
+generic_wrapper () {
+    base_name=$1
+    shift
+    prepare_for_set_args ""
+    set -- "$@"
+    end_of_set_args
+    fn_name="$base_name""$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
+    if command_exists "$fn_name"; then
+	    $fn_name "$@"
+    else "$base_name"_ext "$@"
+    fi
+    unset fn_name
+}
+
 #the menu to use instead of fzf when -D is specified
 external_menu () {
 	#dmenu extremely laggy when showing tabs
@@ -310,13 +361,6 @@ get_search_from_source () {
     done
 }
 
-search_prompt_menu_wrapper () {
-	 fn_name=search_prompt_menu"$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
-	 if command_exists "$fn_name"; then
-		 $fn_name
-	 else search_prompt_menu_ext
-	 fi
-}
 
 handle_playing_notifications (){
 	#if no notify-send push error to /dev/null
@@ -336,16 +380,6 @@ parse_search_hist_file () {
 	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
 }
 
-
-quick_menu_wrapper () {
-	prompt="$1"
-	fn_name=quick_menu$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')
-	if command_exists "$fn_name"; then
-		$fn_name "$prompt"
-	else quick_menu_ext "$prompt"
-	fi
-	unset fn_name
-}
 
 load_extension () {
     ext=$1
@@ -1926,7 +1960,7 @@ interface_thumbnails () {
 #}}}
 
 # Player {{{
-print_requested_info () {
+get_requested_info () {
 	url_list="$1"
 	prepare_for_set_args ","
 	set -- $info_to_print
@@ -1948,8 +1982,23 @@ print_requested_info () {
 	    esac
 	done
 	end_of_set_args
-	[ $info_wait -eq 1 ] && { info_wait_action=$(printf "%s\n" "quit [q]" "quit (override -l) [Q]" "open menu [c]" "play [enter]" | quick_menu_wrapper "Action?: " | sed -n 's/.*\[\([^\]]*\)\].*/\1/p' | sed 's/enter//'); }
 	return 0
+}
+
+handle_info_wait_action () {
+	if [ "$info_wait" -eq 1 ]; then
+	    info_wait_prompt_wrapper
+	fi
+	case "$info_wait_action" in
+		#simulates old behavior of when alt-l or alt-i is pressed and -l is enabled
+		q) [ "$is_loop" -eq 1 ] && return 3 || return 2 ;;
+		Q) return 2  ;;
+		[MmCc]) return 3 ;;
+		'') return 0 ;;
+		*) if command_exists "custom_info_wait_action_$info_wait_action"; then custom_info_wait_action_"$info_wait_action"; else print_error "info_wait_action is set to $info_wait_action but custom_info_wait_action_$info_wait_action does not exist"; fi ;;
+	esac
+	return 0
+
 }
 
 submenu_handler () {
@@ -2247,7 +2296,7 @@ init_files (){
 	ytfzf_selected_urls=$session_cache_dir/ids
 	ytfzf_video_json_file=$session_cache_dir/videos_json
 	keypress_file="${session_temp_dir}/menu_keypress"
-	: > "$ytfzf_video_json_file" 2> "$ytfzf_selected_urls" #this just creates 2 empty files
+	: > "$ytfzf_video_json_file" 2> "$ytfzf_selected_urls" 3> "$keypress_file"
 	[ "$1" ] && printf "%s\n" "$1" > "${session_cache_dir}/searches.list"
 }
 
@@ -2437,14 +2486,12 @@ main() {
 		[ ! -s "$ytfzf_selected_urls" ] && break
 
 		#shellcheck disable=SC2015
-		[ "$info_to_print" ] && print_requested_info "$ytfzf_selected_urls" && case "$info_wait_action" in
-				#simulates old behavior of when alt-l or alt-i is pressed and -l is enabled
-				q) [ "$is_loop" -eq 1 ] && continue || break ;;
-				Q) break  ;;
-				[MmCc]) continue ;;
-				'') : ;;
-				*) if command_exists "custom_info_wait_action_$info_wait_action"; then custom_info_wait_action_"$info_wait_action"; else print_error "info_wait_action is set to $info_wait_action but custom_info_wait_action_$info_wait_action does not exist"; fi ;;
-			esac
+		if [ "$info_to_print" ]; then
+		    data="$(get_requested_info "$ytfzf_selected_urls")"
+		    display_text_wrapper "$data"
+		    handle_info_wait_action
+		    case "$?" in 3) continue ;; 2) break ;; esac
+		fi
 		open_url_handler "$ytfzf_selected_urls"
 		close_url_handler "$url_handler"
 
