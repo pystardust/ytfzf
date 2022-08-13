@@ -9,3 +9,7 @@ load_interface gui || die 2 "The gui interface addon could not be found\n"
 print_help_gui () {
     printf "%s\n" "Use a gui instead of tui as a menu"
 }
+
+on_clean_up_gui(){
+    rm -f "${session_temp_dir}/data.gui"
+}
