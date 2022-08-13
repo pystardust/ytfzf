@@ -16,8 +16,8 @@ gui_dialog () {
         _correct_json="$(jq -r --arg url "$url" '[.[]|select(.url==$url)]|unique_by(.ID)[0]' < "$video_json_file")"
         id="$(get_video_json_attr "ID")"
         title="$(get_video_json_attr "title")"
-        channel="$(get_video_json_attr "channel" | add_commas)"
-        views="$(get_video_json_attr "views")"
+        channel="$(get_video_json_attr "channel")"
+        views="$(get_video_json_attr "views" | add_commas)"
         date="$(get_video_json_attr "date")"
         scraper="$(get_video_json_attr "scraper")"
         duration="$(get_video_json_attr "duration")"
@@ -70,7 +70,7 @@ interface_gui () {
     done < "$selected_id_file"
 }
 
-on_opt_parse_i_gui_help (){ 
+on_opt_parse_i_gui_help (){
     print_info "YTFZF_GUI_CSS is a file for custom css for the window\nselectors:\n#TitleText\n#ViewsText\n#DateText\n#DurationText\n#UrlButton\n#Thumbnail\n"
     exit 0
 }
@@ -91,7 +91,7 @@ search_prompt_menu_gui () {
 
     while read -r line; do
 	case "$line" in
-	    search*) 
+	    search*)
 		_search=$(printf "%s" "$line" | tr -d '"')
 		_search="${_search#*=}" ;;
 	    EXIT*) break ;;
