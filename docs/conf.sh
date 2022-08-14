@@ -31,17 +31,12 @@
   #    esac
 #}
 
-#on_opt_parse () {
-#    opt="$1"
-#    arg="$2"
-#    case "$opt" in
-#	#-c
-#	c)
-#	    #when scraping subscriptions enable -l
-#	    #-cSI or -cS
-#	    case "$arg" in
-#		S|SI) is_loop=1 ;;
-#	    esac
+#on_opt_parse_c () {
+#    arg="$1"
+#    case "$arg" in
+#	#when scraping subscriptions enable -l
+#	#-cSI or -cS
+#	SI|S) is_loop=1 ;;
 #    esac
 #}
 #}}}
