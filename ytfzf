@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1664.8b16723"
+YTFZF_VERSION="git-1665.394b1eb"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2318,6 +2318,8 @@ EOF
 
 #}}}
 
+# scraping wrappers {{{
+
 set_scrape_count () {
     prepare_for_set_args ","
     #shellcheck disable=SC2086
@@ -2327,22 +2329,6 @@ set_scrape_count () {
     IFS=$OLD_IFS
 }
 
-# scraping wrappers {{{
-# multi search{{{
-init_multi_search () {
-	prepare_for_set_args ","
-	#shellcheck disable=SC2086
-	set -- $1
-	end_of_set_args
-	__total_search_count="$#"
-	printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
-	#if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
-	if [ "$__total_scrape_count" -lt "$__total_search_count" ]; then
-	    scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/__total_scrape_count))")
-	    set_scrape_count
-	fi
-}
-#}}}
 handle_scrape_error () {
 	_scr="$2"
 	case "$1" in
@@ -2362,17 +2348,6 @@ handle_scrape_error () {
 		127) die 2 "invalid scraper: $_scr\n" ;;
 		*) print_error "An error occured while scraping: $_scr (scraper returned error: $1)\n" ;;
 	esac
-}
-
-is_asking_for_search_necessary () {
-	prepare_for_set_args ","
-	for _scr in $scrape; do
-	    end_of_set_args
-	    case "$scrape_search_exclude" in
-		*' '$_scr' '*) false ;;
-		*) return 0 ;;
-	    esac
-	done
 }
 
 handle_scraping (){
@@ -2414,13 +2389,32 @@ command_exists "handle_search_history" || handle_search_history () {
 	printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
 }
 
-make_search () {
-	_search="$1"
-	handle_scraping "$_search"
-	do_an_event_function post_scrape
-	#:help search operator
-	[ "$?" -eq 100 ] && exit 0
+is_asking_for_search_necessary () {
+	prepare_for_set_args ","
+	for _scr in $scrape; do
+	    end_of_set_args
+	    case "$scrape_search_exclude" in
+		*' '$_scr' '*) false ;;
+		*) return 0 ;;
+	    esac
+	done
 }
+
+# multi search{{{
+init_multi_search () {
+	prepare_for_set_args ","
+	#shellcheck disable=SC2086
+	set -- $1
+	end_of_set_args
+	__total_search_count="$#"
+	printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
+	#if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
+	if [ "$__total_scrape_count" -lt "$__total_search_count" ]; then
+	    scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/__total_scrape_count))")
+	    set_scrape_count
+	fi
+}
+#}}}
 
 init_search () {
 	_search="$1"
@@ -2441,10 +2435,16 @@ init_and_make_search () {
 	make_search "$_search" "$_search_source"
 }
 
+make_search () {
+	_search="$1"
+	handle_scraping "$_search"
+	do_an_event_function post_scrape
+	#:help search operator
+	[ "$?" -eq 100 ] && exit 0
+}
 #}}}
 
 # Main {{{
-
 
 init_and_make_search "$initial_search" "$search_source"
 until handle_empty_scrape; do
