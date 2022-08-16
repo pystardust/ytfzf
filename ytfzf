@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1666.b5d3aae"
+YTFZF_VERSION="git-1667.3caf0a4"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -671,38 +671,38 @@ usage () {
 "Usage: ytfzf [OPTIONS...] <search-query>
     The search-query can also be read from stdin
     OPTIONS:
-        -h			Show this help text
-        -d			Download the selected video(s)
-        -m			Only play audio
+        -h                      Show this help text
+        -d                      Download the selected video(s)
+        -m                      Only play audio
         -f                      Select a video format before playing
         -l                      Reopen the menu when the video stops playing
         -s                      After closing fzf make another search
         -q                      Use a search query from search history
-        -L			Show the link of selected video(s)
+        -L                      Show the link of selected video(s)
         -a                      Automatically select the first video
         -r                      Automatically select a random video
         -A                      Select all videos
         -S <sed address>        Automatically selects a specific video based on a given sed address,
                                 see ytfzf(1) for more info.
         -n <video count>        The amount of videos to select with -a and -r
-        -c <scraper>       	The scraper to use,
-                  See ytfzf(1) for a list of builtin scrapers
-                  you can use multiple scrapers by separating each with a comma, eg: youtube,odysee
+        -c <scraper>            The scraper to use,
+                                    See ytfzf(1) for a list of builtin scrapers
+                                    you can use multiple scrapers by separating each with a comma, eg: youtube,odysee
         -H                      alias for -c H
-        -t			Show thumbnails
+        -t                      Show thumbnails
         -T <viewer>             The program to use for displaying thumbnails.
-	-i <interface>          The interface to use (default: text)
-        -D			Alias for -i ext
-	-u <url handler>        The program to use for handling urls (deafult: multimedia_player)
-	-e <extention>          Load an extention
+        -i <interface>          The interface to use (default: text)
+        -D                      Alias for -i ext
+        -u <url handler>        The program to use for handling urls (deafult: multimedia_player)
+        -e <extention>          Load an extention
         -I <info>               Instead of playing the selected video(s), get information about them.
-              Options can be separated with a comma, eg: L,R
-                                Options for info:
-                  L:         print the link of the video
-                  VJ:        print the json of the video
-                  J:         print the json of all videos shown in the search
-                  R:         print the data of the selected videos, as appears in the menu
-                  F:         print the selected video format
+                                    Options can be separated with a comma, eg: L,R
+                                    Options for info:
+                                      L:         print the link of the video
+                                      VJ:        print the json of the video
+                                      J:         print the json of all videos shown in the search
+                                      R:         print the data of the selected videos, as appears in the menu
+                                      F:         print the selected video format
         -x                       Clear search and watch history (use --history-clear=<search|watch> to specify 1)
         --disable-submenus       Whether or not to disable submenus, which are menus for things like playlists and channels
         --version                Get the current version
