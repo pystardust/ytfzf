@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1665.394b1eb"
+YTFZF_VERSION="git-1666.b5d3aae"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -472,13 +472,13 @@ load_thumbnail_viewer () {
 : "${YTFZF_URL_HANDLERS_DIR:=$YTFZF_CONFIG_DIR/url-handlers}"
 : "${YTFZF_CUSTOM_THUMBNAILS_DIR:=$YTFZF_CONFIG_DIR/thumbnails}"
 : "${YTFZF_EXTENSIONS_DIR:=$YTFZF_CONFIG_DIR/extensions}"
+: "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
 
 : "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
 
 #}}}
 
 # Custom Scrapers {{{
-: "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
 #}}}
 set_vars () {
     check_exists="${1:-1}"
@@ -1632,7 +1632,7 @@ preview_start () {
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|swayimg) : ;;
-    kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
+		kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
 		imv)
 			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
 			imv "$thumb_dir/${first_img}.jpg" &
@@ -1656,18 +1656,18 @@ preview_start () {
 preview_stop () {
 	thumbnail_viewer=$1
 	case $thumbnail_viewer in
-		ueberzug)
-			exec 3>&- # close file descriptor 3, closing ueberzug
-			;;
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|kitty) : ;;
-		mpv)
-		    kill "$mpv_pid"
-		    rm "$MPV_SOCKET" > /dev/null 2>&1
+	    ueberzug)
+		    exec 3>&- # close file descriptor 3, closing ueberzug
 		    ;;
-        swayimg) killall swayimg 2> /dev/null;;
-		imv) kill "$imv_pid" ;;
-		*)
-			"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
+	    chafa|chafa-16|chafa-tty|catimg|catimg-256|kitty) : ;;
+	    mpv)
+		kill "$mpv_pid"
+		rm "$MPV_SOCKET" > /dev/null 2>&1
+		;;
+	    swayimg) killall swayimg 2> /dev/null;;
+	    imv) kill "$imv_pid" ;;
+	    *)
+		"$thumbnail_viewer" "stop" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" 2>/dev/null ;;
 	esac
 }
 
@@ -1678,18 +1678,18 @@ command_exists "on_no_thumbnail" || on_no_thumbnail () {
 preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
-		chafa|chafa-16|chafa-tty|catimg|catimg-256|imv|mpv) : ;;
-        ueberzug)
-            {
-                printf "{"
-                printf "\"%s\": \"%s\"," "action" "remove" "identifier" "ytfzf"
-                printf '"%s": "%s"' "draw" "True"
-                printf "}\n"
-            } > "$UEBERZUG_FIFO"
-			;;
-        kitty) kitty +kitten icat --clear --transfer-mode file ;;
-        swayimg) killall swayimg 2> /dev/null; true ;; #we want this to be true so that the && at the bottom happens
-		*) "$thumbnail_viewer" "no-img" ;;
+	    chafa|chafa-16|chafa-tty|catimg|catimg-256|imv|mpv) : ;;
+	    ueberzug)
+		{
+		    printf "{"
+		    printf "\"%s\": \"%s\"," "action" "remove" "identifier" "ytfzf"
+		    printf '"%s": "%s"' "draw" "True"
+		    printf "}\n"
+		} > "$UEBERZUG_FIFO"
+			    ;;
+	    kitty) kitty +kitten icat --clear --transfer-mode file ;;
+	    swayimg) killall swayimg 2> /dev/null; true ;; #we want this to be true so that the && at the bottom happens
+	    *) "$thumbnail_viewer" "no-img" ;;
 	esac && do_an_event_function "on_no_thumbnail"
 
 }
@@ -1786,92 +1786,93 @@ get_ueberzug_positioning () {
 }
 #}}}
 preview_display_image () {
-	thumbnail_viewer=$1
-	id=$2
+    thumbnail_viewer=$1
+    id=$2
 
     for path in "${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg" "${thumb_dir}/${id}.jpg"  "${YTFZF_CUSTOM_THUMBNAILS_DIR}/YTFZF:DEFAULT.jpg"; do
         thumb_path="$path"
         [ -f "${thumb_path}" ] && break
     done || preview_no_img "$thumbnail_viewer"
+    #this is separate becuase, preview_no_img will not happen if thumb_path = YTFZF:DEFAULT, but on_no_thumbnail should still happen
     [ "$thumb_path" = "${YTFZF_CUSTOM_THUMBNAILS_DIR}/YTFZF:DEFAULT.jpg" ] && do_an_event_function "on_no_thumbnail"
 
     get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 	case $thumbnail_viewer in
-		ueberzug)
-            {
-                printf "{"
-                printf '"%s": "%s",' \
-                    'action' 'add' \
-                    'identifier' 'ytfzf' \
-                    'path' "$thumb_path" \
-                    'x' "$x" \
-                    'y' "$y" \
-                    'scaler' 'fit_contain' \
-                    'width' "$width"
-                printf '"%s": "%s"' 'height' "$height"
-                printf "}\n"
-            } > "$UEBERZUG_FIFO"
-			;;
-        swayimg)
-            command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n"
-            read -r x y w h term_pid <<-EOF
+	    ueberzug)
+		{
+		    printf "{"
+		    printf '"%s": "%s",' \
+			'action' 'add' \
+			'identifier' 'ytfzf' \
+			'path' "$thumb_path" \
+			'x' "$x" \
+			'y' "$y" \
+			'scaler' 'fit_contain' \
+			'width' "$width"
+		    printf '"%s": "%s"' 'height' "$height"
+		    printf "}\n"
+		} > "$UEBERZUG_FIFO"
+		;;
+	    swayimg)
+		command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n"
+		read -r x y w h term_pid <<-EOF
 $(swaymsg -t get_tree | jq -r '..|try select(.focused==true)|[.rect.x,.rect.y,.rect.width,.rect.height,.pid]|@tsv')
 EOF
-            focused_id=$(swaymsg -t get_tree| jq -r '.focus[0]')
-            read -r output_x output_y <<-EOF
+		focused_id=$(swaymsg -t get_tree| jq -r '.focus[0]')
+		read -r output_x output_y <<-EOF
 $(swaymsg -t get_tree | jq -r '..|try select(.type=="output" and .id=='"$focused_id"')|[.rect.x,.rect.y]|@tsv')
 EOF
-            #we're subtracting output_* to make sure swayimg places on correct monitor
-            x=$((x-output_x))
-            y=$((y-output_y))
-            TTY_COLS=$(tput cols)
-            TTY_LINES=$(tput lines)
-	    #shellcheck disable=SC2034
-            w_half=$((w/2)) h_half=$((h/2))
-            #how many pixels per col
-            col_px_width=$((w/TTY_COLS))
-            #how many pixels per line
-            line_px_height=$((h/TTY_LINES))
+		#we're subtracting output_* to make sure swayimg places on correct monitor
+		x=$((x-output_x))
+		y=$((y-output_y))
+		TTY_COLS=$(tput cols)
+		TTY_LINES=$(tput lines)
+		#shellcheck disable=SC2034
+		w_half=$((w/2)) h_half=$((h/2))
+		#how many pixels per col
+		col_px_width=$((w/TTY_COLS))
+		#how many pixels per line
+		line_px_height=$((h/TTY_LINES))
 
-            get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
-            swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path"  2> /dev/null >&2 &
-            sleep 0.1
-            swaymsg "[pid=\"$term_pid\"]" focus > /dev/null 2>&1
-            #without this there are weird flushing issues
-            echo ;;
-		chafa)
-			printf '\n'
-			command_exists "chafa" || die 3 "\nchafa is not installed\n"
+		get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
+		swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path"  2> /dev/null >&2 &
+		sleep 0.1
+		swaymsg "[pid=\"$term_pid\"]" focus > /dev/null 2>&1
+		#without this there are weird flushing issues
+		echo ;;
+	    chafa)
+		printf '\n'
+		command_exists "chafa" || die 3 "\nchafa is not installed\n"
             chafa --format=symbols -s "$((width-4))x$height" "$thumb_path" ;;
-		chafa-16)
-			printf '\n'
-			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa --format=symbols -c 240 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
-		chafa-tty)
-			printf '\n'
-			command_exists "chafa" || die 3 "\nchafa is not installed\n"
-			chafa --format=symbols -c 16 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
-		catimg)
-			printf '\n'
-			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
-			catimg -w "$width" "$thumb_path" ;;
-		catimg-256)
-			printf '\n'
-			command_exists "catimg" || die 3 "\ncatimg is not installed\n"
-			catimg -c -w "$width" "$thumb_path" ;;
-		imv)
-			imv-msg "$imv_pid" open "$thumb_path"
-			imv-msg "$imv_pid" next
-			;;
-		mpv)
-			echo "loadfile '$thumb_path'" | socat - "$MPV_SOCKET" ;;
-        kitty)
-            get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
-            kitty +kitten icat --clear --transfer-mode file
-            kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" ;;
-		*)
-			get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
-			"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
+	    chafa-16)
+		    printf '\n'
+		    command_exists "chafa" || die 3 "\nchafa is not installed\n"
+		    chafa --format=symbols -c 240 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
+	    chafa-tty)
+		    printf '\n'
+		    command_exists "chafa" || die 3 "\nchafa is not installed\n"
+		    chafa --format=symbols -c 16 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
+	    catimg)
+		    printf '\n'
+		    command_exists "catimg" || die 3 "\ncatimg is not installed\n"
+		    catimg -w "$width" "$thumb_path" ;;
+	    catimg-256)
+		    printf '\n'
+		    command_exists "catimg" || die 3 "\ncatimg is not installed\n"
+		    catimg -c -w "$width" "$thumb_path" ;;
+	    imv)
+		    imv-msg "$imv_pid" open "$thumb_path"
+		    imv-msg "$imv_pid" next
+		    ;;
+	    mpv)
+		    echo "loadfile '$thumb_path'" | socat - "$MPV_SOCKET" ;;
+	    kitty)
+		get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
+		kitty +kitten icat --clear --transfer-mode file
+		kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" ;;
+	    *)
+		get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
+		"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
 
 	esac
 }
@@ -1922,7 +1923,7 @@ interface_thumbnails () {
 
 	preview_start "$thumbnail_viewer"
 
-    unset IFS
+	unset IFS
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	#fzf_preview_side will get reset if we don't pass it in
@@ -2094,10 +2095,10 @@ get_video_format_simple () {
 
 get_video_format(){
 	#the sed gets rid of random information
-  _audio_choices="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort" | grep 'audio only')"
-  [ "$_audio_choices" ] && audio_pref="$(echo "$_audio_choices" | quick_menu_wrapper "Audio format: " | awk '{print $1}')"
-  [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort"|  sed 's/\\033\[[[:digit:]]*m//g' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
-  ytdl_pref="${video_pref}+${audio_pref}/${video_pref}/${audio_pref}"
+    _audio_choices="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort" | grep 'audio only')"
+    [ "$_audio_choices" ] && audio_pref="$(echo "$_audio_choices" | quick_menu_wrapper "Audio format: " | awk '{print $1}')"
+    [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort"|  sed 's/\\033\[[[:digit:]]*m//g' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
+    ytdl_pref="${video_pref}+${audio_pref}/${video_pref}/${audio_pref}"
 }
 #}}}
 
@@ -2148,8 +2149,8 @@ parse_opt () {
 		    #shellcheck disable=SC2015
 		    load_sort_name "$optarg" && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
 		video-pref) video_pref=$optarg ;;
-    ytdl-pref) ytdl_pref=$optarg ;;
-    audio-pref) audio_pref=$optarg ;;
+		ytdl-pref) ytdl_pref=$optarg ;;
+		audio-pref) audio_pref=$optarg ;;
 		detach) is_detach=${optarg:-1} ;;
 		ytdl-opts) ytdl_opts="$optarg" ;;
 		ytdl-path) ytdl_path="$optarg" ;;
@@ -2244,9 +2245,13 @@ do_an_event_function "on_post_set_vars"
 #Post opt scrape{{{
 : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
 : "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
+
 FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
+
 [ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
+
 scrape_search_exclude="${scrape_search_exclude}${custom_scrape_search_exclude} "
+
 source_scrapers
 #}}}
 
