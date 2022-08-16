@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1668.9d17f46"
+YTFZF_VERSION="git-1670.57257ce"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1944,28 +1944,25 @@ interface_thumbnails () {
 
 # Player {{{
 get_requested_info () {
-	url_list="$1"
-	prepare_for_set_args ","
-	set -- $info_to_print
-	for request in "$@"; do
-	    case "$request" in
-		[Ll]|link)
-		    #cat is better here because a lot of urls could be selected
-		    cat "$url_list" ;;
-		VJ|vj|video-json)
-		    while read -r line; do
-			jq '.[]|select(.url=="'"$line"'")' < "$ytfzf_video_json_file";
-		    done < "$url_list"  ;;
-		[Jj]|json) jq < "$ytfzf_video_json_file" ;;
-		[Ff]|format) printf "%s\n" "$ytdl_pref" ;;
-		[Rr]|raw)
-		    while read -r line; do
-			jq -r '.[]|select(.url=="'"$line"'")|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file";
-		    done < "$url_list" ;;
-	    esac
-	done
-	end_of_set_args
-	return 0
+    url_list="$1"
+    prepare_for_set_args ","
+    set -- $info_to_print
+    urls="[$(sed 's/^\(.*\)$/"\1",/' "$url_list")"
+    urls="${urls%,}]"
+    for request in "$@"; do
+        case "$request" in
+        [Ll]|link)
+            #cat is better here because a lot of urls could be selected
+            cat "$url_list" ;;
+        VJ|vj|video-json) jq  '(.[] | if( [.url] | inside('"$urls"')) then . else "" end)' < "$ytfzf_video_json_file" | jq -s '.' ;;
+        [Jj]|json) jq < "$ytfzf_video_json_file" ;;
+        [Ff]|format) printf "%s\n" "$ytdl_pref" ;;
+        [Rr]|raw)
+            jq -r '.[] | if( [.url] | inside('"$urls"')) then "\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)" else "" end' < "$ytfzf_video_json_file" | { command_exists "column" && column -s "$tab_space" -t; }
+        esac
+    done
+    end_of_set_args
+    return 0
 }
 
 handle_info_wait_action () {
