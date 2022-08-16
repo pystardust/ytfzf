@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1667.3caf0a4"
+YTFZF_VERSION="git-1668.9d17f46"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -603,7 +603,7 @@ EOF
 
 set_vars "${check_vars_exists}"
 
-# hard dependancy checks{{{
+# hard dependency checks{{{
 for dep in jq curl; do
 	command_exists "$dep" || die 3 "$dep is a required dependency, please install it\n"
 done
@@ -706,6 +706,7 @@ usage () {
         -x                       Clear search and watch history (use --history-clear=<search|watch> to specify 1)
         --disable-submenus       Whether or not to disable submenus, which are menus for things like playlists and channels
         --version                Get the current version
+        --version-all            Get the current version of ytfzf, and required dependencies
 
           See ytfzf(1) and ytfzf(5) for more information.
 "
@@ -2115,97 +2116,98 @@ parse_opt () {
 	#shellcheck disable=SC2031
 	command_exists "$fn_name" && { $fn_name "$optarg" "$OPT" "$OPTARG" || return 0; }
 	case $opt in
-		h|help) usage; exit 0 ;;
-		D|external-menu) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && interface='ext' ;;
-		m|audio-only) is_audio_only=${optarg:-1};;
-		d|download) url_handler=downloader ;;
-		f|formats) show_formats=${optarg:-1} ;;
-		H|history) scrape="history" ;;
-		x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
-		S|select) interface="scripting" && is_specific_select="1" && scripting_video_count="$optarg" ;;
-		a|auto-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
-		A|select-all) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && interface="scripting" && is_auto_select=${optarg:-1} && scripting_video_count='$' ;;
-		r|random-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && interface="scripting" && is_random_select=${optarg:-1} ;;
-		n|link-count) scripting_video_count=$optarg;;
-		l|loop) is_loop=${optarg:-1} ;;
-		s|search-again) search_again=${optarg:-1} ;;
-		t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
-		version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
-		L) info_to_print="$info_to_print,L" ;;
-		q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; search_source="hist:$search_source" ;;
-		pages) pages_to_scrape="$optarg" ;;
-		pages-start) pages_start="$optarg" ;;
-		odysee-video-count) odysee_video_search_count="$optarg" ;;
-		ii|inv-instance) invidious_instance="$optarg" ;;
-		i|interface) load_interface "$optarg" || die 2 "$optarg is not an interface\n" ;;
-		c|scrape) scrape=$optarg ;;
-		scrape+) scrape="$scrape,$optarg" ;;
-		scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
-		I) info_to_print=$optarg ;;
-		notify-playing) notify_playing="${optarg:-1}" ;;
-		#long-opt exclusives
-		sort) is_sort=${optarg:-1} ;;
-		sort-name)
-		    #shellcheck disable=SC2015
-		    load_sort_name "$optarg" && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
-		video-pref) video_pref=$optarg ;;
-		ytdl-pref) ytdl_pref=$optarg ;;
-		audio-pref) audio_pref=$optarg ;;
-		detach) is_detach=${optarg:-1} ;;
-		ytdl-opts) ytdl_opts="$optarg" ;;
-		ytdl-path) ytdl_path="$optarg" ;;
-		preview-side) fzf_preview_side="${optarg}"; [ -z "$fzf_preview_side" ] && die 2 "no preview side given\n" ;;
-		T|thumb-viewer) load_thumbnail_viewer "$optarg" || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n" ;;
-		force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
-		info-print-exit|info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
-		info-action) info_wait_action="$optarg" ;;
-		info-wait) info_wait="${optarg:-1}" ;;
-		sort-by) search_sort_by="$optarg" ;;
-		upload-date) search_upload_date="$optarg" ;;
-		video-duration) search_video_duration=$optarg ;;
-		type) search_result_type=$optarg ;;
-		features) search_result_features=$optarg ;;
-		region) search_region=$optarg ;;
-		channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
-		disable-submenus) enable_submenus="${optarg:-0}" ;;
-		thumbnail-quality) thumbnail_quality="$optarg" ;;
-		u|url-handler)  load_url_handler "$optarg";;
-		keep-cache) keep_cache="${optarg:-1}" ;;
-		submenu-opts|submenu-scraping-opts) submenu_opts="${optarg}" ;;
-		keep-vars) keep_vars="${optarg:-1}" ;;
-		nsfw)  nsfw="${optarg:-true}" ;;
-		max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
-		#flip the bit
-		disable-back) enable_back_button=${optarg:-0} ;;
-		skip-thumb-download) skip_thumb_download=${optarg:-1} ;;
-		multi-search) multi_search=${optarg:-1} ;;
-		search-source) search_source="${optarg:-args}" ;;
-		format-selection) format_selection_screen=${optarg:-normal};;
-		format-sort) format_selection_sort="$optarg" ;;
-		e|ext) load_extension "$optarg" ;;
-		url-handler-opts) url_handler_opts="$optarg" ;;
-		list-addons)
-		    for path in "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_SORT_NAMES_DIR"\
-			"$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_EXTENSIONS_DIR"; do
-			! [ -d "$path" ] && continue
-			printf "${c_bold}%s:${c_reset}\n" "user addon, ${path##*/}"
-			ls "$path"
-		    done
-		    echo ----------------
-		    set +f
-		    for path in "$YTFZF_SYSTEM_ADDON_DIR"/*; do
-			printf "${c_bold}%s:${c_reset}\n" "system addon, ${path##*/}"
-			ls "$path"
-		    done
-		    exit
-		    ;;
-		async-thumbnails) async_thumbnails="${optarg:-1}" ;;
-		fancy-subs)
-			fancy_subs=${optarg:-1}
-			[ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
-		*)
-			#shellcheck disable=SC2031
-			[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
+        h|help) usage; exit 0 ;;
+        D|external-menu) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && interface='ext' ;;
+        m|audio-only) is_audio_only=${optarg:-1};;
+        d|download) url_handler=downloader ;;
+        f|formats) show_formats=${optarg:-1} ;;
+        H|history) scrape="history" ;;
+        x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
+        S|select) interface="scripting" && is_specific_select="1" && scripting_video_count="$optarg" ;;
+        a|auto-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
+        A|select-all) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && interface="scripting" && is_auto_select=${optarg:-1} && scripting_video_count='$' ;;
+        r|random-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && interface="scripting" && is_random_select=${optarg:-1} ;;
+        n|link-count) scripting_video_count=$optarg;;
+        l|loop) is_loop=${optarg:-1} ;;
+        s|search-again) search_again=${optarg:-1} ;;
+        t|show-thumbnails) show_thumbnails=${optarg:-1} ;;
+        version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
+        version-all) printf -- '---\n%s: %s\n' "ytfzf" "$YTFZF_VERSION" "jq" "$(jq --version)" "curl" "$(curl --version)"; exit 0 ;;
+        L) info_to_print="$info_to_print,L" ;;
+        q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; search_source="hist:$search_source" ;;
+        pages) pages_to_scrape="$optarg" ;;
+        pages-start) pages_start="$optarg" ;;
+        odysee-video-count) odysee_video_search_count="$optarg" ;;
+        ii|inv-instance) invidious_instance="$optarg" ;;
+        i|interface) load_interface "$optarg" || die 2 "$optarg is not an interface\n" ;;
+        c|scrape) scrape=$optarg ;;
+        scrape+) scrape="$scrape,$optarg" ;;
+        scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
+        I) info_to_print=$optarg ;;
+        notify-playing) notify_playing="${optarg:-1}" ;;
+        #long-opt exclusives
+        sort) is_sort=${optarg:-1} ;;
+        sort-name)
+            #shellcheck disable=SC2015
+            load_sort_name "$optarg" && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
+        video-pref) video_pref=$optarg ;;
+        ytdl-pref) ytdl_pref=$optarg ;;
+        audio-pref) audio_pref=$optarg ;;
+        detach) is_detach=${optarg:-1} ;;
+        ytdl-opts) ytdl_opts="$optarg" ;;
+        ytdl-path) ytdl_path="$optarg" ;;
+        preview-side) fzf_preview_side="${optarg}"; [ -z "$fzf_preview_side" ] && die 2 "no preview side given\n" ;;
+        T|thumb-viewer) load_thumbnail_viewer "$optarg" || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer\n" ;;
+        force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
+        info-print-exit|info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
+        info-action) info_wait_action="$optarg" ;;
+        info-wait) info_wait="${optarg:-1}" ;;
+        sort-by) search_sort_by="$optarg" ;;
+        upload-date) search_upload_date="$optarg" ;;
+        video-duration) search_video_duration=$optarg ;;
+        type) search_result_type=$optarg ;;
+        features) search_result_features=$optarg ;;
+        region) search_region=$optarg ;;
+        channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
+        disable-submenus) enable_submenus="${optarg:-0}" ;;
+        thumbnail-quality) thumbnail_quality="$optarg" ;;
+        u|url-handler)  load_url_handler "$optarg";;
+        keep-cache) keep_cache="${optarg:-1}" ;;
+        submenu-opts|submenu-scraping-opts) submenu_opts="${optarg}" ;;
+        keep-vars) keep_vars="${optarg:-1}" ;;
+        nsfw)  nsfw="${optarg:-true}" ;;
+        max-threads|single-threaded) max_thread_count=${optarg:-1} ;;
+        #flip the bit
+        disable-back) enable_back_button=${optarg:-0} ;;
+        skip-thumb-download) skip_thumb_download=${optarg:-1} ;;
+        multi-search) multi_search=${optarg:-1} ;;
+        search-source) search_source="${optarg:-args}" ;;
+        format-selection) format_selection_screen=${optarg:-normal};;
+        format-sort) format_selection_sort="$optarg" ;;
+        e|ext) load_extension "$optarg" ;;
+        url-handler-opts) url_handler_opts="$optarg" ;;
+        list-addons)
+            for path in "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_SORT_NAMES_DIR"\
+            "$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_EXTENSIONS_DIR"; do
+            ! [ -d "$path" ] && continue
+            printf "${c_bold}%s:${c_reset}\n" "user addon, ${path##*/}"
+            ls "$path"
+            done
+            echo ----------------
+            set +f
+            for path in "$YTFZF_SYSTEM_ADDON_DIR"/*; do
+            printf "${c_bold}%s:${c_reset}\n" "system addon, ${path##*/}"
+            ls "$path"
+            done
+            exit
+            ;;
+        async-thumbnails) async_thumbnails="${optarg:-1}" ;;
+        fancy-subs)
+            fancy_subs=${optarg:-1}
+            [ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
+        *)
+            #shellcheck disable=SC2031
+            [ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
 	esac
 }
 
