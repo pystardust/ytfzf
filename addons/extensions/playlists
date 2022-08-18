@@ -1,0 +1,82 @@
+#!/bin/sh
+
+: "${PLAYLISTS_YTFZF_DIR:="${YTFZF_CONFIG_DIR:-"$HOME/.config/ytfzf"}"/playlists}"
+
+print_help_playlists () {
+    printf "%s" "This extension is intended to always be loaded in your config file, ie: add this line:
+
+    load_extension playlists
+
+Usage (if loaded):
+    --playlist=<name>               Plays the playlist named <name>.
+    --list-playlists                Lists all playlists and exists.
+    --list-titles=<name>            Lists the titles of all items in <name>.
+    --create-playlist=<name>        Create a playlist called <name> in \$PLAYLISTS_YTFZF_DIR
+    --del-playlist=<name>           Remove the playlist <name> from \$PLAYLISTS_YTFZF_DIR
+    --atp=<name>        Adds the selected result to the playlist <name>
+    --rfp=<name>   Opens playlist <name>, and any selected items will be removed."
+}
+
+
+on_opt_parse_playlist () {
+    scrape="playlist"
+    ! [ -f "${PLAYLISTS_YTFZF_DIR}/$1" ] && die 1 "playlist: \"$1\" does not exist\n"
+    initial_search="${PLAYLISTS_YTFZF_DIR}/$1"
+    return 1
+}
+
+on_opt_parse_create_playlist () {
+    _playlist_name=$1
+    _playlist_full_path="${PLAYLISTS_YTFZF_DIR}/${_playlist_name}"
+    [ -f "$_playlist_full_path" ] && die 1 "playlist: \"$_playlist_name\" already exists\n"
+    touch "$_playlist_full_path"
+    print_info "\"$_playlist_name\" created\n"
+    exit 0
+}
+
+on_opt_parse_del_playlist () {
+    _playlist_name="$1"
+    _playlist_full_path="${PLAYLISTS_YTFZF_DIR}/${_playlist_name}"
+    ! [ -f "$_playlist_full_path" ] && die 1 "playlist: \"$_playlist_name\" does not exist\n"
+    printf "%s [Y/n]: " "Are you sure you want to remove the playlist: \"$_playlist_name\"" >&2
+    read -r confirm
+    case "$confirm" in
+        [Nn]|[Nn][Oo]) die 1 "Playlist not removed\n"
+    esac
+    rm "$_playlist_full_path"
+    print_info "\"$_playlist_name\" removed\n"
+    exit 0
+}
+
+on_opt_parse_list_playlists () {
+    ls "${PLAYLISTS_YTFZF_DIR}"
+    exit 0
+}
+
+on_opt_parse_atp () {
+    _playlists_playlist_name=$1
+    load_url_handler atp
+    return 1
+}
+
+on_opt_parse_rfp () {
+    scrape="playlist"
+    ! [ -f "${PLAYLISTS_YTFZF_DIR}/$1" ] && die 1 "playlist: \"$1\" does not exist\n"
+    initial_search="${PLAYLISTS_YTFZF_DIR}/$1"
+    _playlists_playlist_name="$1"
+    _playlist_full_path="${PLAYLISTS_YTFZF_DIR}/${1}"
+    load_url_handler rfp
+    return 1
+}
+
+on_opt_parse_list_titles () {
+    _playlist_name="$1"
+    _playlist_full_path="${PLAYLISTS_YTFZF_DIR}/${_playlist_name}"
+    jq -s -r '.[]|.[]|.title' < "$_playlist_full_path"
+    exit 0
+}
+
+on_search_playlists () {
+    [ -z "$_playlists_playlist_name" ] && return 0
+    url_handler_opts="playlist_name=${PLAYLISTS_YTFZF_DIR}/${_playlists_playlist_name}$(printf '\033')ytfzf_data=$ytfzf_video_json_file"
+}

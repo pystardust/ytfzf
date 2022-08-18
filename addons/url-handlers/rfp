@@ -1,0 +1,19 @@
+#!/bin/sh
+
+read -r _ytdl_pref _is_audio_only _is_detach _video_pref _audio_pref url_handler_opts _
+
+ytfzf_video_json_file="${url_handler_opts##*ytfzf_data=}"
+
+playlist_name="${url_handler_opts%%"$(printf '\033')"*}"
+playlist_name="${playlist_name#playlist_name=}"
+
+old_data="$(cat "$playlist_name")"
+
+for url in "$@"; do
+    jq --arg url "$url" '[ .[] | select(.url != $url) ]' <<EOF
+$old_data
+EOF
+done | jq -s '.|flatten' > "$playlist_name"
+
+
+printf "%s\n" "$@" "has been removed from $playlist_name"

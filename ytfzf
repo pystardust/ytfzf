@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1671.f5c0c74"
+YTFZF_VERSION="git-1672.cb1bc5d"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -117,9 +117,11 @@ do_an_event_function () {
     event="$1"
     shift
     command_exists "$event" && $event "$@"
+    modify_ifs " "
     for ext in $loaded_extensions; do
         command_exists "${event}_$ext" && "${event}_$ext" "$@"
     done
+    end_modify_ifs
 }
 
 
@@ -485,8 +487,8 @@ set_vars () {
 
     #save the ecurrent environment so that any user set variables will be saved
     if [ "$check_exists" -eq 1 ]; then
-	tmp_env=/tmp/ytfzf-env
-	export -p > "$tmp_env"
+        tmp_env=/tmp/ytfzf-env
+        export -p > "$tmp_env"
     fi
 
     gap_space="                                                                                                                   "
@@ -1349,7 +1351,7 @@ scrape_json_file () {
 	cp "$search" "$output_json_file" 2>/dev/null
 }
 scrape_playlist (){ scrape_json_file "$@"; }
-scrape_P (){ scrape_json_file "$@"; }
+scrape_p (){ scrape_json_file "$@"; }
 #}}}
 
 # Comments{{{
@@ -1954,7 +1956,7 @@ get_requested_info () {
         [Ll]|link)
             #cat is better here because a lot of urls could be selected
             cat "$url_list" ;;
-        VJ|vj|video-json) jq  '(.[] | if( [.url] | inside('"$urls"')) then . else "" end)' < "$ytfzf_video_json_file" | jq -s '.' ;;
+        VJ|vj|video-json) jq  '(.[] | if( [.url] | inside('"$urls"')) then . else "" end)' < "$ytfzf_video_json_file" | jq -s '[ .[]|select(.!="") ]' ;;
         [Jj]|json) jq < "$ytfzf_video_json_file" ;;
         [Ff]|format) printf "%s\n" "$ytdl_pref" ;;
         [Rr]|raw)
