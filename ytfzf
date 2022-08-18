@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1670.57257ce"
+YTFZF_VERSION="git-1671.f5c0c74"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1958,7 +1958,9 @@ get_requested_info () {
         [Jj]|json) jq < "$ytfzf_video_json_file" ;;
         [Ff]|format) printf "%s\n" "$ytdl_pref" ;;
         [Rr]|raw)
-            jq -r '.[] | if( [.url] | inside('"$urls"')) then "\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)" else "" end' < "$ytfzf_video_json_file" | { command_exists "column" && column -s "$tab_space" -t; }
+            jq -r '.[] | if( [.url] | inside('"$urls"')) then "\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)" else "" end' < "$ytfzf_video_json_file" | { command_exists "column" && column -s "$tab_space" -t; } ;;
+        *)
+            command_exists "get_requested_info_$request" && "get_requested_info_$request"
         esac
     done
     end_of_set_args
