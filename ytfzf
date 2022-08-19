@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1672.cb1bc5d"
+YTFZF_VERSION="git-1673.bcb3a51"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -60,23 +60,20 @@ get_missing_thumbnails () {
 	_tmp_id_list_file="${session_temp_dir}/all-ids.list"
 	_downloaded_ids_file="${session_temp_dir}/downloaded-ids.list"
 
+    #gets all ids and writes them to file
 	jq -r '.[]|select(.thumbs!=null)|.ID' < "$video_json_file" | sort |uniq > "$_tmp_id_list_file"
-	ids="$(jq -r '.[]|select(.thumbs!=null)|.thumbs + ";" + .ID' < "$video_json_file")"
+    #gets thumb urls, and ids, and concatinates them such as: <thumbnail>;<id>
+    #essencially gets all downloaded thumbnail ids, by checking $thumb_dir and substituting out the \.jpg at the end
 	find "$thumb_dir" -type f | sed -n 's/^.*\///; s/\.jpg$//; /^[^\/]*$/p' | sort > "$_downloaded_ids_file"
 
-	missing_ids="$(comm -3 "$_downloaded_ids_file" "$_tmp_id_list_file")"
+    #Finds ids that appear in _tmp_id_list_file only
+    #shellcheck disable=SC2089
+    missing_ids="\"$(diff "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^> \(.*\)$/\1/p')\""
 
-	prepare_for_set_args
-	#shellcheck disable=2086
-	set -- $missing_ids
-	end_of_set_args
-	modify_ifs "|"
-	search_grep="$*"
-	grep -E "(${search_grep:-${tab_space}})" <<EOF
-$ids
-EOF
-	end_modify_ifs
-	unset _tmp_id_list_file _downloaded_ids_file
+    #formats missing ids into the format: <thumb-url>;<id>
+    jq --arg ids "$missing_ids" -r '.[]|select(.thumbs!=null)|select(.ID as $id | $ids | contains($id))|.thumbs + ";" + .ID' < "$video_json_file"
+
+	unset _tmp_id_list_file _downloaded_ids_file missing_ids
 }
 
 
