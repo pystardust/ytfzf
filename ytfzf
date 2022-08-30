@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.5.0.rc-1"
+YTFZF_VERSION="2.5.0.rc-2"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2264,6 +2264,7 @@ source_scrapers
 #$initial_search should be used before make_search is called
 #$_search should be used in make_search or after it's called and outisde of any scrapers themselves
 #$search should be used in a scraper: eg scrape_json_file
+unset IFS
 : "${initial_search:=$*}"
 #}}}
 
