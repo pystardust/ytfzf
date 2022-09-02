@@ -1159,11 +1159,48 @@ The prompt to use when \fBinfo_wait\fR is enabled.
 This function takes no arguments.
 
 .TP
+.BR info_wait_prompt_ext ()
+Same as \fBinfo_wait_prompt()\fR when \-D is used.
+.br
+This function takes no arguments.
+
+.TP
+.BR info_wait_prompt_scripting ()
+Same as \fBinfo_wait_prompt()\fR when \-S, \-a, or \-A is used.
+.br
+This function takes no arguments.
+
+.TP
+.BR info_wait_prompt_wrapper ()
+Call info_wait_prompt_<interface_name>
+.br
+This function takes no arguments.
+
+.TP
 .BR display_text ()
 Print text to stdandard out.
 .br
 This function takes an unlimited number of arguments to print.
 
+.TP
+.BR display_text_ext ()
+Print text to stdandard out.
+.br
+This function takes an unlimited number of arguments to print.
+.RE
+
+.TP
+.BR display_text_scripting ()
+Print text to stdandard out.
+.br
+This function takes an unlimited number of arguments to print.
+.RE
+
+.TP
+.BR display_text_wrapper ()
+Call display_text_<interface_name>
+.br
+This function takes an unlimited number of arguments to print.
 .RE
 
 .PP
