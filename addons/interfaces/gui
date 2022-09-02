@@ -2,7 +2,7 @@
 
 : "${YTFZF_GUI_CSS:=$YTFZF_CONFIG_DIR/interface-gui.css}"
 
-display_text () {
+display_text_gui () {
     echo "$*" > "${session_temp_dir}/data.gui"
     MAIN_DIALOG="
 <window>
@@ -15,7 +15,7 @@ display_text () {
     rm -f "${session_temp_dir}/data.gui"
 }
 
-info_wait_prompt () {
+info_wait_prompt_gui () {
     :
 }
 
