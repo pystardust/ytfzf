@@ -2387,13 +2387,14 @@ handle_scraping (){
     #if there is only 1 scraper used, multi search is on, then multiple searches will be performed seperated by ,
     __scrape_count=0
     for curr_scrape in $scrape; do
-	__scrape_count=$((__scrape_count+1))
-	[ "$multi_search" -eq 1 ] && get_search_from_source "next"
-	do_an_event_function "on_search" "$_search" "$curr_scrape"
-	command_exists "on_search_$_search" && "on_search_$_search" "$curr_scrape"
-	"scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"
-	handle_scrape_error "$?" "$curr_scrape"
+        __scrape_count=$((__scrape_count+1))
+        [ "$multi_search" -eq 1 ] && get_search_from_source "next"
+        do_an_event_function "on_search" "$_search" "$curr_scrape"
+        command_exists "on_search_$_search" && "on_search_$_search" "$curr_scrape"
+        "scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"
+        handle_scrape_error "$?" "$curr_scrape"
     done
+    [ "$?" -eq 100 ] && exit 0
     end_of_set_args
 }
 
@@ -2401,47 +2402,47 @@ handle_scraping (){
 handle_empty_scrape () {
     [ ! -s "$ytfzf_video_json_file" ] && print_error "Nothing was scraped\n" && return 1
 
-	#sometimes the file fils up with empty arrays, we have to check if that's the case
-	something_was_scraped=0
-	while read -r line; do
-		[ "$line" = "[]" ] && continue
-		something_was_scraped=1
-		#we can break if something was scraped, otherwise we are wasting time in the loop
-		break
-	done < "$ytfzf_video_json_file"
-	[ $something_was_scraped -eq 0 ] && print_error "Nothing was scraped\n" && return 1
+    #sometimes the file fils up with empty arrays, we have to check if that's the case
+    something_was_scraped=0
+    while read -r line; do
+        [ "$line" = "[]" ] && continue
+        something_was_scraped=1
+        #we can break if something was scraped, otherwise we are wasting time in the loop
+        break
+    done < "$ytfzf_video_json_file"
+    [ $something_was_scraped -eq 0 ] && print_error "Nothing was scraped\n" && return 1
     return 0
 }
 #}}}
 
 
 command_exists "handle_search_history" || handle_search_history () {
-	#search history
-	printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
+#search history
+printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
 }
 
 is_asking_for_search_necessary () {
-	prepare_for_set_args ","
-	for _scr in $scrape; do
-	    end_of_set_args
-	    case "$scrape_search_exclude" in
-		*' '$_scr' '*) false ;;
-		*) return 0 ;;
-	    esac
-	done
+    prepare_for_set_args ","
+    for _scr in $scrape; do
+        end_of_set_args
+        case "$scrape_search_exclude" in
+            *' '$_scr' '*) false ;;
+            *) return 0 ;;
+        esac
+    done
 }
 
 # multi search{{{
 init_multi_search () {
-	prepare_for_set_args ","
-	#shellcheck disable=SC2086
-	set -- $1
-	end_of_set_args
-	__total_search_count="$#"
-	printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
-	#if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
-	if [ "$__total_scrape_count" -lt "$__total_search_count" ]; then
-	    scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/__total_scrape_count))")
+    prepare_for_set_args ","
+    #shellcheck disable=SC2086
+    set -- $1
+    end_of_set_args
+    __total_search_count="$#"
+    printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
+    #if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
+    if [ "$__total_scrape_count" -lt "$__total_search_count" ]; then
+        scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/__total_scrape_count))")
 	    set_scrape_count
 	fi
 }
