@@ -572,28 +572,24 @@ set_vars () {
     thumbnail_quality="high"
     sub_link_count="2"
 
-    # URL for instance list sorted by type and health
-    instances_url="https://api.invidious.io/instances.json?sort_by=type,health" 
+    # URL for instance list sorted by type, health and api (ones without API do not work!)
+    instances_url="https://api.invidious.io/instances.json?sort_by=type,health,api" 
 
     # Cache location.
-    # TODO: decide on cache interval to avoid instances.json becoming stale
     instances_file="$cache_dir/instances.json"
 
-    # If file doesn't already exist, cURL and cache it.
+    # If file doesn't already exist (or if force-refresh is requested), cURL and cache it.
+    # TODO: implement `--refresh-inv-instances` to force-refresh this list
+    # TODO: + update docs
     [ ! -f "$instances_file" ] && curl -X GET -s "$instances_url" > "$instances_file"
  
     # The pipeline does the following:
     #   - Get top 10 instance URIs
-    #   - Trim out extra symbols produced by `jq`
-    #   - Remove empty lines
+    #   - Output these on individual lines
     #   - Shuffle the list
     #   - Choose the first entry
-    invidious_instance="$(jq -r 'map(.[1] | .uri) | .[0:10]' < "$instances_file" \
-                        | tr -d '[]," ' \
-                        | sed "/^$/d" \
-                        | shuf \
-                        | head -n1)"
-
+    invidious_instance=$(jq -r 'map(.[1] | .uri) | .[:10] | join("\n")' < "$instances_file" \
+                      | shuf | head -n 1)
 
     yt_video_link_domain="https://youtube.com"
     search_sort_by="relevance" search_upload_date="" search_video_duration="" search_result_type="video" search_result_features="" search_region="US"
