@@ -2288,7 +2288,8 @@ instances_url="https://api.invidious.io/instances.json?sort_by=type,health,api"
 # TODO: update docs
 [ ! -f "$instances_file" ] ||
     [ "$refresh_inv_instances" -eq 1 ] &&
-    curl -X GET -s "$instances_url" > "$instances_file"
+    echo "Fetching list of healthy invidious instances ..." &&
+    curl -X GET -sSfo "$instances_file" "$instances_url"
 
 # The pipeline does the following:
 #   - Get top 10 instance URIs
