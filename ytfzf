@@ -295,15 +295,15 @@ display_text_scripting () {
 }
 
 display_text_wrapper () {
-    generic_wrapper "display_text"
+    generic_wrapper "display_text" "$@"
 }
 
 info_wait_prompt_wrapper (){
-    generic_wrapper "info_wait_prompt"
+    generic_wrapper "info_wait_prompt" "$@"
 }
 
 search_prompt_menu_wrapper () {
-    generic_wrapper "search_prompt_menu"
+    generic_wrapper "search_prompt_menu" "$@"
 }
 
 quick_menu_wrapper () {
