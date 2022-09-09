@@ -2150,7 +2150,7 @@ parse_opt () {
         f|formats) show_formats=${optarg:-1} ;;
         H|history) scrape="history" ;;
         x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
-        S|select) interface="scripting" && is_specific_select="2" && scripting_video_count="$optarg" ;;
+        S|select) interface="scripting" && is_specific_select="1" && scripting_video_count="$optarg" ;;
         a|auto-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
         A|select-all) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && interface="scripting" && is_auto_select=${optarg:-1} && scripting_video_count='$' ;;
         r|random-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && interface="scripting" && is_random_select=${optarg:-1} ;;
