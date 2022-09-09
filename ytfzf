@@ -2278,7 +2278,7 @@ do_an_event_function "on_post_set_vars"
 instances_url="https://api.invidious.io/instances.json?sort_by=type,health,api"
 
 # Where do we put the list of healthy instances?
-instances_file="$cache_dir/instances.json"
+: "${instances_file:="$cache_dir/instances.json"}"
 
 # If file doesn't already exist (or if force-refresh is requested), cURL and cache it.
 # CHECK: implement check for force-request
