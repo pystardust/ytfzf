@@ -571,7 +571,11 @@ set_vars () {
     #this comes from invidious' api
     thumbnail_quality="high"
     sub_link_count="2"
-    invidious_instance="https://y.com.sb" yt_video_link_domain="https://youtube.com"
+
+    # default value for instance caching if flag not provided.
+    refresh_inv_instances=0
+
+    yt_video_link_domain="https://youtube.com"
     search_sort_by="relevance" search_upload_date="" search_video_duration="" search_result_type="video" search_result_features="" search_region="US"
     pages_to_scrape="1" pages_start="1"
     nsfw="false" odysee_video_search_count="30"
@@ -2162,6 +2166,7 @@ parse_opt () {
         pages-start) pages_start="$optarg" ;;
         odysee-video-count) odysee_video_search_count="$optarg" ;;
         ii|inv-instance) invidious_instance="$optarg" ;;
+        rii|refresh-inv-instances) refresh_inv_instances=1 ;;
         i|interface) load_interface "$optarg" || die 2 "$optarg is not an interface\n" ;;
         c|scrape) scrape=$optarg ;;
         scrape+) scrape="$scrape,$optarg" ;;
@@ -2270,6 +2275,28 @@ do_an_event_function "on_post_set_vars"
 #Post opt scrape{{{
 : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
 : "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
+
+# URL for instance list sorted by type, health and api (ones without API do not work!)
+instances_url="https://api.invidious.io/instances.json?sort_by=type,health,api"
+
+# Where do we put the list of healthy instances?
+: "${instances_file:="$cache_dir/instances.json"}"
+
+# If file doesn't already exist (or if force-refresh is requested), cURL and cache it.
+# CHECK: implement check for force-request
+# CHECK: added --refresh-inv-instances to optargs
+# TODO: update docs
+[ ! -f "$instances_file" ] ||
+    [ "$refresh_inv_instances" -eq 1 ] &&
+    print_info "Fetching list of healthy invidious instances ...\n" &&
+    curl -X GET -sSfo "$instances_file" "$instances_url"
+
+# The pipeline does the following:
+#   - Get top 10 instance URIs
+#   - Output these on individual lines
+#   - Shuffle the list
+#   - Choose the first entry
+: "${invidious_instance:=$(jq -r 'map(.[1] | .uri) | .[:10] | join("\n")' < "$instances_file" | shuf | head -n 1)}"
 
 FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
 
