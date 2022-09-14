@@ -2278,6 +2278,8 @@ do_an_event_function "on_post_set_vars"
 # files
 : "${hist_file:="$cache_dir/watch_hist"}" "${search_hist_file:="$cache_dir/search_hist"}"
 
+[ ! -d "$cache_dir" ] && mkdir -p "$cache_dir"
+
 # Where do we put the list of healthy instances?
 : "${instances_file:="$cache_dir/instances.json"}"
 
