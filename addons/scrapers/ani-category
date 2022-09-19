@@ -18,7 +18,7 @@ _decrypt_link() {
 _get_video_link () {
 	dpage_url="$1"
 	video_links=$(_decrypt_link "$dpage_url")
-	if printf '%s' "$video_links" | grep -q "mp4"; then 
+	if printf '%s' "$video_links" | grep -q "mp4"; then
 		video_url=$(printf "%s" "$video_links" | head -n 4 | tail -n 1)
 		idx=1
 	else
@@ -104,7 +104,7 @@ scrape_ani_category () {
 	    _get_video_link "$dpage_link"
 	    echo "[]" | jq --arg idx "$idx" --arg dpage "$dpage_link" --arg url "$video_url" --arg title "$search episode $ep_start" '[{"url": $url, "title": $title, "ID": $title, "idx": $idx, "dpage": $dpage}]' > "$_tmp_json"
 	} &
-	: $((ep_start+=1))
+	ep_start=$((ep_start+1))
 	_thread_started "$!"
     done
     wait
