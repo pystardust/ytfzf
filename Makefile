@@ -7,6 +7,8 @@ LICENSEDIR=${PREFIX}/share/licenses/ytfzf
 
 YTFZF_SYSTEM_ADDON_DIR=${PREFIX}/share/ytfzf/addons
 
+all:
+
 doc:
 	mkdir -p ${DESTDIR}${MANDIR}/man1
 	mkdir -p ${DESTDIR}${MANDIR}/man5
@@ -18,7 +20,7 @@ doc:
 	cp docs/conf.sh ${DESTDIR}${DOCDIR}
 	cp LICENSE ${DESTDIR}${LICENSEDIR}
 
-install:
+install: doc addons
 	chmod 755 ${PROG}
 	mkdir -p ${DESTDIR}${BINDIR}
 	cp ${PROG} ${DESTDIR}${BINDIR}/${PROG}
