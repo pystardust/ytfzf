@@ -1,3 +1,5 @@
+#!/bin/sh
+
 open_url_handler () {
     urls="$(tr '\n' ' ' < "$1")"
 
