@@ -48,7 +48,7 @@ choose_invidious_instance () {
     #   - Output these on individual lines
     #   - Shuffle the list
     #   - Choose the first entry
-    jq -r 'map(.[1] | .uri) | .[:10] | join("\n")' < "$instances_file" | shuf | head -n 1
+    jq -r '[.[]|select(.[1].api==true)|.[1].uri]|.[:10]|join("\n")' < "$instances_file" | shuf | head -n 1
 }
 
 run_interface () {
