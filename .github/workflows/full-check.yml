@@ -1,0 +1,37 @@
+name: full-check
+
+on: [push, pull_request]
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2.4.0
+    - name: install_dependencies
+      run: |
+        sudo apt install curl jq
+    - name: build
+      run: |
+        sudo make install
+        sudo make uninstall
+    - name: build_addons
+      run: |
+        sudo make addons
+        sudo make uninstall
+    - name: build_docs
+      run: |
+        sudo make docs
+        sudo make uninstall
+    - name: run_program_version
+      run: |
+        make install
+        ytfzf --version
+    - name: run_program_help
+      run: |
+        ytfzf -h
+    - name: run_program_odysee
+      run: |
+        ytfzf -rcO ytfzf
+    - name: run_program_youtube
+      run: |
+        ytfzf -rcY ytfzf
