@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="2.5.0"
+YTFZF_VERSION="git-1692.d5ff2ed"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1854,32 +1854,35 @@ preview_display_image () {
 		} > "$UEBERZUG_FIFO"
 		;;
 	    swayimg)
-		command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n"
-		read -r x y w h term_pid <<-EOF
+            _swayimg_pid_file="${session_temp_dir}/_swayimg.pid"
+            [ -f "$_swayimg_pid_file" ] && kill "$(cat "$_swayimg_pid_file")" 2> /dev/null
+            command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n"
+            read -r x y w h term_pid <<-EOF
 $(swaymsg -t get_tree | jq -r '..|try select(.focused==true)|[.rect.x,.rect.y,.rect.width,.rect.height,.pid]|@tsv')
 EOF
-		focused_id=$(swaymsg -t get_tree| jq -r '.focus[0]')
-		read -r output_x output_y <<-EOF
+            focused_id=$(swaymsg -t get_tree| jq -r '.focus[0]')
+            read -r output_x output_y <<-EOF
 $(swaymsg -t get_tree | jq -r '..|try select(.type=="output" and .id=='"$focused_id"')|[.rect.x,.rect.y]|@tsv')
 EOF
-		#we're subtracting output_* to make sure swayimg places on correct monitor
-		x=$((x-output_x))
-		y=$((y-output_y))
-		TTY_COLS=$(tput cols)
-		TTY_LINES=$(tput lines)
-		#shellcheck disable=SC2034
-		w_half=$((w/2)) h_half=$((h/2))
-		#how many pixels per col
-		col_px_width=$((w/TTY_COLS))
-		#how many pixels per line
-		line_px_height=$((h/TTY_LINES))
+            #we're subtracting output_* to make sure swayimg places on correct monitor
+            x=$((x-output_x))
+            y=$((y-output_y))
+            TTY_COLS=$(tput cols)
+            TTY_LINES=$(tput lines)
+            #shellcheck disable=SC2034
+            w_half=$((w/2)) h_half=$((h/2))
+            #how many pixels per col
+            col_px_width=$((w/TTY_COLS))
+            #how many pixels per line
+            line_px_height=$((h/TTY_LINES))
 
-		get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
-		swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path"  2> /dev/null >&2 &
-		sleep 0.1
-		swaymsg "[pid=\"$term_pid\"]" focus > /dev/null 2>&1
-		#without this there are weird flushing issues
-		echo ;;
+            get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
+            swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path"  2> /dev/null >&2 &
+            printf "%s" "$!" > "$_swayimg_pid_file"
+            sleep 0.1
+            swaymsg "[pid=\"$term_pid\"]" focus > /dev/null 2>&1
+            #without this there are weird flushing issues
+            echo ;;
 	    chafa)
 		printf '\n'
 		command_exists "chafa" || die 3 "\nchafa is not installed\n"
@@ -1970,7 +1973,7 @@ interface_thumbnails () {
 	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|join("\t")' < "$video_json_file" |
 	sort_video_data_fn |
 	SHELL="$(command -v sh)" fzf -m \
-	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
+	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
 	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
 	trim_url > "$selected_id_file"
 
@@ -2260,7 +2263,6 @@ _getopts () {
 			    case $1 in
 				    preview_img)
 					    #shellcheck disable=SC2031
-					    session_cache_dir=$cache_dir/$SEARCH_PREFIX-$YTFZF_PID
 					    shift
 					    source_scrapers
 					    preview_img "$@"
