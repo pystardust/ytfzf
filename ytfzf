@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1695.ef968e6"
+YTFZF_VERSION="git-1697.033cae7"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2423,7 +2423,7 @@ handle_scraping (){
     for curr_scrape in $scrape; do
         __scrape_count=$((__scrape_count+1))
         [ "$multi_search" -eq 1 ] && get_search_from_source "next"
-        do_an_event_function "on_search" "$_search" "$curr_scrape"
+        do_an_event_function "ext_on_search" "$_search" "$curr_scrape"
         command_exists "on_search_$_search" && "on_search_$_search" "$curr_scrape"
         "scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"
         handle_scrape_error "$?" "$curr_scrape"
