@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1697.b71429e"
+YTFZF_VERSION="git-1698.cd09e5e"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2036,12 +2036,15 @@ handle_info_wait_action () {
 submenu_handler () {
 	#eat stdin and close it
 	cat > /dev/null
+    old_interface="$interface"
 	[ "$keep_vars" -eq 0 ] && set_vars 0
 	search="$(get_key_value "$_submenu_actions" "search")"
 	__scrape="$(get_key_value "$_submenu_actions" "type")"
 	submenu_opts="$old_submenu_scraping_opts -c${__scrape} $old_submenu_opts"
 	#this needs to be here as well as close_url_handler because it will not happen inside this function if it's not here
 	url_handler="$old_url_handler"
+    interface="$old_interface"
+    unset old_interface
 	(
 	    #shellcheck disable=2030
 	    export __is_submenu=1
