@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1697.033cae7"
+YTFZF_VERSION="git-1697.b71429e"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1860,12 +1860,18 @@ preview_display_image () {
             _swayimg_pid_file="${session_temp_dir}/_swayimg.pid"
             [ -f "$_swayimg_pid_file" ] && kill "$(cat "$_swayimg_pid_file")" 2> /dev/null
             command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n"
-            read -r x y w h term_pid <<-EOF
-$(swaymsg -t get_tree | jq -r '..|try select(.focused==true)|[.rect.x,.rect.y,.rect.width,.rect.height,.pid]|@tsv')
-EOF
-            focused_id=$(swaymsg -t get_tree| jq -r '.focus[0]')
-            read -r output_x output_y <<-EOF
-$(swaymsg -t get_tree | jq -r '..|try select(.type=="output" and .id=='"$focused_id"')|[.rect.x,.rect.y]|@tsv')
+            #this jq call finds the id of the selected monitor and saves it as $focused_id
+            #then finds x, and y of the focused monitor and saves it as the var $d1
+            #then it finds the geometry of the focused window and saves it as the var $d2
+            #at the end it concatinates the two strings with a tab in the middle so that read can read it into 6 vars
+            read -r output_x output_y x y w h <<-EOF
+$(swaymsg -t get_tree | jq -r '. as $data |
+    .focus[0] as $focused_id |
+    ..| try select(.type=="output" and .id==$focused_id) |
+    [.rect.x,.rect.y] | @tsv as $d1 |
+    $data | .. | try select(.focused==true) |
+    [.rect.x,.rect.y,.rect.width,.rect.height] | @tsv as $d2 |
+    $d1 + "\t" + $d2')
 EOF
             #we're subtracting output_* to make sure swayimg places on correct monitor
             x=$((x-output_x))
@@ -1880,11 +1886,10 @@ EOF
             line_px_height=$((h/TTY_LINES))
 
             get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
+            swaymsg 'no_focus [app_id="swayimg_.*"]' > /dev/null 2>&1
             swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path"  2> /dev/null >&2 &
             printf "%s" "$!" > "$_swayimg_pid_file"
-            sleep 0.1
-            swaymsg "[pid=\"$term_pid\"]" focus > /dev/null 2>&1
-            #without this there are weird flushing issues
+            #without this there are weird flushing issues (maybe)
             echo ;;
 	    chafa)
 		printf '\n'
