@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1698.cd09e5e"
+YTFZF_VERSION="git-1699.5af0c73"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -795,13 +795,36 @@ _thread_started (){
 }
 
 _get_real_channel_link () {
-	domain=${1#https://}
-	domain=${domain%%/*}
-	url=$(printf "%s" "$1" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+    case "$1" in
+        https://*|*\.*)
+            domain=${1#https://}
+            domain=${domain%%/*}
+            url=$(printf "%s" "$1" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+            _get_real_channel_link_handle_empty_real_path () {
+                 printf "https://%s\n" "${1#https://}"
+            } ;;
+        [Uu][Cc]??????????????????????/videos|[Uu][Cc]??????????????????????|*channel/[Uu][Cc]??????????????????????|*channel/[Uu][Cc]??????????????????????/videos)
+            id="${1%/videos}"
+            id="${id##*channel/}"
+            print_warning "$1 appears to be a youtube id, which is hard to detect, please use a full channel url next time\n"
+            domain="youtube.com"
+            url=$(printf "https://youtube.com/channel/%s/videos" "$id" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+            _get_real_channel_link_handle_empty_real_path () {
+                printf "%s\n" "https://${domain}/channel/${id}/videos"
+            } ;;
+        *)
+            _get_real_channel_link_handle_empty_real_path(){
+                printf "$1\n"
+            } ;;
+    esac
+
 	real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p' | sed 's/[\n\r]$//g')"
 	#prints the origional url because it was correct
-	[ -z "$real_path" ] && printf "%s\n" "$1" && return 0
-	printf "%s\n" "https://${domain}${real_path}"
+    if [ -z "$real_path" ]; then
+        _get_real_channel_link_handle_empty_real_path "$1"
+        return 0
+    fi
+    printf "%s\n" "https://${domain}${real_path}"
 }
 
 set_real_channel_url_and_id () {
@@ -901,10 +924,11 @@ scrape_youtube_channel () {
 	channel_url="$1"
     [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\n" && return 100
 	output_json_file="$2"
-	print_info "Scraping Youtube channel: $channel_url\n"
 
 
 	set_real_channel_url_and_id "$channel_url"
+
+	print_info "Scraping Youtube channel: https://www.youtube.com/channel/${channel_id}/videos\n"
 
 	tmp_filename="channel-${channel_id}"
 	_tmp_html="${session_temp_dir}/${tmp_filename}.html"
@@ -2221,7 +2245,9 @@ parse_opt () {
         type) search_result_type=$optarg ;;
         features) search_result_features=$optarg ;;
         region) search_region=$optarg ;;
-        channel-link) _get_real_channel_link "$optarg"; exit 0 ;;
+        channel-link)
+            invidious_instance=$(get_invidious_instances | shuf | head -n 1)
+            _get_real_channel_link "$optarg"; exit 0 ;;
         available-inv-instances) get_invidious_instances; exit 0 ;;
         disable-submenus) enable_submenus="${optarg:-0}" ;;
         thumbnail-quality) thumbnail_quality="$optarg" ;;
