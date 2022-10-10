@@ -2,7 +2,7 @@
 
 #versioning system:
 #major.minor.bugs
-YTFZF_VERSION="git-1699.5af0c73"
+YTFZF_VERSION="git-1701.099ba9a"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -528,7 +528,7 @@ set_vars () {
     search_source=args:prompt
 
     # debugging
-    log_level="2"
+    log_level="2" thumbnail_debug_log="/dev/null"
 
     # scraping
     useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
@@ -1696,13 +1696,13 @@ preview_start () {
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
 			ueberzug layer --parser json < "$UEBERZUG_FIFO"  &
-			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
+			exec 3> "$UEBERZUG_FIFO" > "$thumbnail_debug_log" 2>&1 # to keep the fifo open
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|swayimg) : ;;
 		kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
 		imv)
 			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
-			imv "$thumb_dir/${first_img}.jpg" &
+			imv "$thumb_dir/${first_img}.jpg" > "$thumbnail_debug_log" 2>&1 &
 			export imv_pid="$!"
 			#helps prevent imv seg fault
 			sleep 0.1
@@ -1713,7 +1713,7 @@ preview_start () {
 			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
 			export MPV_SOCKET="$session_temp_dir/mpv.socket"
 			rm -f "$MPV_SOCKET" > /dev/null 2>&1
-			mpv --input-ipc-server="$MPV_SOCKET" --loop-file=inf --idle=yes "$thumb_dir/${first_img}.jpg" > /dev/null 2>&1 &
+			mpv --input-ipc-server="$MPV_SOCKET" --loop-file=inf --idle=yes "$thumb_dir/${first_img}.jpg" > "$thumbnail_debug_log" 2>&1 &
 			export mpv_pid=$!
 			;;
 		*)
@@ -1878,7 +1878,7 @@ preview_display_image () {
 			'width' "$width"
 		    printf '"%s": "%s"' 'height' "$height"
 		    printf "}\n"
-		} > "$UEBERZUG_FIFO"
+		} > "$UEBERZUG_FIFO" 2> "$thumbnail_debug_log"
 		;;
 	    swayimg)
             _swayimg_pid_file="${session_temp_dir}/_swayimg.pid"
@@ -1911,40 +1911,40 @@ EOF
 
             get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
             swaymsg 'no_focus [app_id="swayimg_.*"]' > /dev/null 2>&1
-            swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path"  2> /dev/null >&2 &
+            swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path"  2> "$thumbnail_debug_log" >&2 &
             printf "%s" "$!" > "$_swayimg_pid_file"
             #without this there are weird flushing issues (maybe)
             echo ;;
 	    chafa)
 		printf '\n'
 		command_exists "chafa" || die 3 "\nchafa is not installed\n"
-            chafa --format=symbols -s "$((width-4))x$height" "$thumb_path" ;;
+            chafa --format=symbols -s "$((width-4))x$height" "$thumb_path" 2> "$thumbnail_debug_log";;
 	    chafa-16)
 		    printf '\n'
 		    command_exists "chafa" || die 3 "\nchafa is not installed\n"
-		    chafa --format=symbols -c 240 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
+		    chafa --format=symbols -c 240 -s "$((width-2))x$((height-10))" "$thumb_path" 2> "$thumbnail_debug_log" ;;
 	    chafa-tty)
 		    printf '\n'
 		    command_exists "chafa" || die 3 "\nchafa is not installed\n"
-		    chafa --format=symbols -c 16 -s "$((width-2))x$((height-10))" "$thumb_path" ;;
+		    chafa --format=symbols -c 16 -s "$((width-2))x$((height-10))" "$thumb_path" "$thumbnail_debug_log" ;;
 	    catimg)
 		    printf '\n'
 		    command_exists "catimg" || die 3 "\ncatimg is not installed\n"
-		    catimg -w "$width" "$thumb_path" ;;
+		    catimg -w "$width" "$thumb_path" 2> "$thumbnail_debug_log" ;;
 	    catimg-256)
 		    printf '\n'
 		    command_exists "catimg" || die 3 "\ncatimg is not installed\n"
-		    catimg -c -w "$width" "$thumb_path" ;;
+		    catimg -c -w "$width" "$thumb_path" 2> "$thumbnail_debug_log" ;;
 	    imv)
-		    imv-msg "$imv_pid" open "$thumb_path"
-		    imv-msg "$imv_pid" next
+		    imv-msg "$imv_pid" open "$thumb_path" 2> "$thumbnail_debug_log" >&2
+		    imv-msg "$imv_pid" next 2> "$thumbnail_debug_log" >&2
 		    ;;
 	    mpv)
-		    echo "loadfile '$thumb_path'" | socat - "$MPV_SOCKET" ;;
+		    echo "loadfile '$thumb_path'" | socat - "$MPV_SOCKET" > "$thumbnail_debug_log" 2>&1 ;;
 	    kitty)
 		get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
-		kitty +kitten icat --clear --transfer-mode file
-		kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" ;;
+		kitty +kitten icat --clear --transfer-mode file > "$thumbnail_debug_log" 2>&1
+		kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" > "$thumbnail_debug_log" 2>&1 ;;
 	    *)
 		get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 		"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
@@ -2213,6 +2213,7 @@ parse_opt () {
         q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; search_source="hist:$search_source" ;;
         pages) pages_to_scrape="$optarg" ;;
         pages-start) pages_start="$optarg" ;;
+        thumbnail-log) thumbnail_debug_log="${optarg:-/dev/stderr}" ;;
         odysee-video-count) odysee_video_search_count="$optarg" ;;
         ii|inv-instance) invidious_instance="$optarg" ;;
         rii|refresh-inv-instances) refresh_inv_instances ;;
