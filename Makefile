@@ -4,10 +4,9 @@ BINDIR=${PREFIX}/bin
 DOCDIR=${PREFIX}/share/doc/ytfzf
 MANDIR=${PREFIX}/share/man
 LICENSEDIR=${PREFIX}/share/licenses/ytfzf
-
 YTFZF_SYSTEM_ADDON_DIR=${PREFIX}/share/ytfzf/addons
 
-all:
+all: install doc
 
 doc:
 	mkdir -p ${DESTDIR}${MANDIR}/man1
@@ -49,4 +48,4 @@ uninstall-old:
 	rm -f /usr/share/man/man1/ytfzf.1*
 	rm -f /usr/share/man/man5/ytfzf.5*
 
-.PHONY: install uninstall doc addons uninstall-old
+.PHONY: all install uninstall doc addons uninstall-old
