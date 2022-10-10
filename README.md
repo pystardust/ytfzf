@@ -33,7 +33,6 @@
 * [`Configuration`](#Configuration)
 * [`Bugs`](#Bugs)
 * [`Contributing`](#Contributing)
-* [`Todo`](#Todo)
 * [`Credits`](#Credits)
 
 ---
