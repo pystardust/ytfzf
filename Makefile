@@ -7,7 +7,11 @@ LICENSEDIR=${PREFIX}/share/licenses/ytfzf
 
 YTFZF_SYSTEM_ADDON_DIR=${PREFIX}/share/ytfzf/addons
 
+.DEFAULT_GOAL := default
+
 all:
+
+default: install doc
 
 doc:
 	mkdir -p ${DESTDIR}${MANDIR}/man1
