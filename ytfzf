@@ -219,8 +219,8 @@ get_key_value() {
 
 # capitalizes the first letter of a string
 title_str () {
-	printf "%s" "$1" | dd bs=1 count=1 conv=ucase 2>/dev/null
-	printf "%s\n" "${1#?}"
+		first_char="$(printf "%s"  "$1" | cut -c1 | tr '[:lower:]' '[:upper:]')"
+    printf "%s%s\n" "$first_char" "${1#?}"
 }
 
 # backup shuf function, as shuf is not posix
