@@ -53,4 +53,4 @@ uninstall-old:
 	rm -f /usr/share/man/man1/ytfzf.1*
 	rm -f /usr/share/man/man5/ytfzf.5*
 
-.PHONY: install uninstall doc addons uninstall-old
+.PHONY: all default install uninstall doc addons uninstall-old
