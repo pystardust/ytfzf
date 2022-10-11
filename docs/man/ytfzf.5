@@ -1751,3 +1751,355 @@ The current scrape type
 .BR post_scrape_<ext> ()
 Runs after scraping is complete.
 This function takes no arguments.
+
+.SH UTILITY FUNCTIONS
+.PP
+A utility function is any function that can be used in
+.I configuration files,
+.I extensions,
+.I thumbnail viweers,
+.I interfaces,
+.I search-names,
+
+.TP
+.BR refresh_inv_instances ()
+This function writes the response from "https://api.invidious.io/instances.json?sort_by=type,health,api" to $cache_dir/instacnes.json.
+This function takes no arguments.
+
+.TP
+.BR get_invidious_instances ()
+Ths function grabs invidious instances that have an api and prints them seperated by a new line.
+This function takes no arguments.
+
+.TP
+.BR run_interface ()
+Runs the function \fBinterface_<interface_name>\fR, and passes \fB$ytfzf_video_json_file\fR, and \fB$ytfzf_selected_urls\fR
+This function takes no arguments.
+
+.TP
+.BR download_thumbnails ()
+If \fB$skip_thumb_download\fR is 0, this function downloads thumbnails.
+This function takes an unlimited number of arguments formatted in the following way:
+.EX
+.I <url_name>;<id>
+.EE
+This function should download <url_name> and save it as <id>.jpg in the \fB$thumb_dir\fR folder.
+
+.TP
+.BR prepare_for_set_args ()
+This function sets the variable \fB$OLD_IFS\fR to \fB$IFS\fR, then sets \fB$IFS\fR to the first argument, lastly it runs \fBset -f\fR.
+This function takes one argument.
+.RS
+.TP
+.I 1
+The new \fBIFS\fR.
+.RE
+
+.TP
+.BR end_of_set_args ()
+This function sets \fBIFS\fR to \fBOLD_IFS\fR.
+This function takes no arguments.
+
+.TP
+.BR modify_ifs ()
+This function sets \fBIFS\fR to the first argument.
+This function takes one argument.
+.RS
+.TP
+.I 1
+The value to set \fBIFS\fR to.
+.RE
+
+.TP
+.BR end_modify_ifs ()
+This function unsets \fR$IFS\fB.
+This function takes no arguments.
+
+.TP
+.BR mul_str ()
+This function does string multiplication, then prints the result to stdout.
+This function takes two arguments.
+.RS
+.TP
+.I 1
+The string.
+
+.TP
+.I 2
+The amount to duplicate the string.
+.RE
+
+.TP
+.BR remove_ansi_escapes ()
+This function removes ansi escape sequences from a string passed to this function through stdin.
+This function then prints the final string to stdout.
+This function takes no arguments.
+
+.TP
+.BR do_an_event_function ()
+This function runs an event if it exists, then runs event_<ext> for every loaded extension \fB$loaded_extensions\fR, if they exist.
+This function takes an unlimited number of arguments.
+.RS
+.TP
+.I 1
+The name of the event.
+.TP
+.I ...
+The arguments to pass to event
+.RE
+
+.TP
+.BR detach_cmd ()
+This function detaches a command from the terminal.
+This function takes an unlimited number of arguments.
+.RS
+.TP
+.I 1
+The command to run
+.TP
+.I ...
+The arguments to pass to tthe command.
+.RE
+
+.TP
+.BR source_scrapers ()
+This function goes through each scraper listed in \fB$scrape\fR, and sources the appropriate file.
+After sourcing the file, it runs the \fBon_startup_<scrape>\fR function, if \fB$__is_fzf_preview\fR is \fI0\fB.
+This function checks the following locations for the file to source.
+.RS
+.TP
+.I \fB$YTFZF_CUSTOM_SCRAPERS_DIR\fR
+.TP
+.I \fB$YTFZF_SYSTEM_ADDON_DIR/scrapers\fR
+.RE\fB$YTFZF_CUSTOM_SCRAPERS_DIR\fR
+.TP
+.I \fB$YTFZF_SYSTEM_ADDON_DIR/scrapers\fR
+.RE
+
+.TP
+.BR add_commas ()
+This function adds commas to a number (in the standard english way).
+This function gets a number from stdin, and prints the result to stdout.
+This function takes no arguments.
+
+.TP
+.BR command_exists ()
+This function checks if a command exists.
+This function exits with status code \fI0\fR if it exists, and \fI1\fR if it does not.
+This function takes 1 argument.
+.RS
+.TP
+.I 1
+The command to check
+.RE
+
+.TP
+.BR get_key_value ()
+This function gets the value by a key in a key_value string.
+.br
+A key_value string is formatted in the following way:
+.EX
+<sep>key=value<sep>...
+where <sep> is argument 3, by default a space.
+.EE
+If there is only one key_value pair, there must still be <sep> on each side.
+.br
+After printing the value to stdout, this function sets the variable \fB$KEY_VALUE\fR to the value of the key.
+.br
+This function exits with status code \fI0\fR if the value is not empty, and \fI1\fR if it is epmty.
+.br
+This function takes three arguments.
+.RS
+.TP
+.I 1
+The key_value string.
+.TP
+.I 2
+The key to find the value for.
+.TP
+.I 3 (optional)
+The seperator that seperates each key_value pair.
+By default this is a space.
+.RE
+
+.TP
+.BR title_str ()
+Ths function capitalizes the first letter of a string, and prints it to stdout.
+This function takes one argument.
+.RS
+.TP
+.I 1
+The string to title.
+.RE
+
+.TP
+.BR shuf ()
+This function is only created if \fBshuf\fR is not installed.
+This function should act the same as the base functionality of \fBshuf\fR
+
+.TP
+.BR print_info ()
+This function prints information to stderr, if \fB$log_level\fR is greater than or equal to \fI2\fR.
+This function takes one argument.
+.RS
+.TP
+.I 1
+The text to print
+.RE
+
+.TP
+.BR print_warning ()
+This function prints a warning to stderr, if \fB$log_level\fR is greater than or equal to \fI1\fR.
+This function takes one argument.
+.RS
+.TP
+.I 1
+The text to print
+.RE
+
+.TP
+.BR print_error ()
+This function prints a warning to stderr, if \fB$log_level\fR is greater than or equal to \fI0\fR.
+This function takes one argument.
+.RS
+.TP
+.I 1
+The text to print
+.RE
+
+.TP
+.BR clean_up ()
+This function kills all \fBytfzf(1)\fR subprocesses, and removes \fB$session_cache_dir\fR if \fB$session_cache_dir\fR exists, and if \fB$keep_cache\fR equals \fI0\fB.
+.br
+Lastly, it runs the \fBon_clean_up\fR event.
+This function takes no arguments.
+
+.TP
+.BR is_relative_dir ()
+Checks if a string is a relative path.
+This function exits with status code \fI0\fR if it is relative, and \fI1\fR if it is not.
+This function takes one argument.
+.RS
+.TP
+.I 1
+The path to check
+.RE
+
+.TP
+.BR die ()
+This function runs \fBprint_error\fR with a string, then exits with a status code.
+This function takes two arguments.
+.RS
+.TP
+.I 1
+The exit status
+.TP
+.I 2
+The text to print with \fBprint_error\fR.
+.RE
+
+.TP
+.BR trim_url ()
+This function reads lines from stdin, and prints the url from them to stdout.
+The lines should be formatted in the following way:
+.EX
+text....|url
+.EE
+This function takes no arguments.
+
+.TP
+.BR get_search_from_source ()
+This function sets \fB_search\fR to a search depending on the source.
+This function takes an unlimited number of arguments.
+.RS
+.TP
+.I 1
+The source to get the search from.
+.TP
+.I ...
+The arguments to use as the search if \fB$1\fR is \fIfn-args\fR, or if \fB1\fR is not matched, ... is given to \fBget_search_from_<1>\fR.
+.RE
+
+.TP
+.BR load_extension ()
+This function adds an extension to the \fB$loaded_extensions\fR variable, and sources the extension.
+This function checks the following locations for the extension
+.EX
+.B $YTFZF_EXTENSIONS_DIR
+.B $YTFZF_SYSTEM_ADDON_DIR/extensions
+.B $PATH
+.EE
+This function exits with the same exit code as when the extension was loaded.
+This function takes one argument.
+.RS
+.TP
+.I 1
+The extension to load
+.RE
+
+.TP
+.BR load_sort_name ()
+This function loads a sort-name.
+This function checks the following locations for the sort-name.
+.EX
+.B $YTFZF_SORT_NAMES_DIR
+.B $YTFZF_SYSTEM_ADDON_DIR/sort-names
+.EE
+This function exits with status code \fI1\fR if the sort-name does not exist, otherwise it exits with the same status code as when the sort-nae was loaded.
+This function takes one argument.
+.RS
+.TP
+.I 1
+The sort-name to load
+.RE
+
+.TP
+.BR load_url_handler ()
+This function sets \fB$url_handler\fR to a url-handler.
+This function checks the following locations for the url-handler.
+.EX
+.B $PATH, and functions in config file
+.B $YTFZF_URL_HANDLERS_DIR
+.B $YTFZF_SYSTEM_ADDON_DIR/url-handlers
+If the url-handler does not exist, this function runs \fBdie\fR.
+This function takes one argument.
+.RS
+.TP
+.I 1
+The url-handler to load
+.RE
+
+.TP
+.BR load_interface ()
+This function sets \fB$interface\fR to an interface.
+If \fB$1\fR is equal to \fIext\fR, \fIscripting\fR, or "", \fB$interface\fR is set to \fB1\fR.
+This function checks the following locations for the interface.
+.EX
+.B $1
+.B $YTFZF_CUSTOM_INTERFACES_DIR
+.B $YTFZF_SYSTEM_ADDON_DIR/interfaces
+.EE
+This function takes one argument.
+.RS
+.TP
+.I 1
+The interface to load
+.RE
+
+.TP
+.BR load_thumbnail_viewer ()
+This function sets \fB$thumbnail_viewer\fR to a thumbnail-viewer.
+If \fB$i\fR is equal to a built-in thumbnail-viewer, \fB$thumbnail_viewer\fR is set to that.
+Otherwise, the following locations are checked.
+.EX
+.B $1
+.B $YTFZF_THUMBNAIL_VIEWERS_DIR
+.B $YTFZF_SYSTEM_ADDON_DIR
+.EE
+This function takes one argument.
+.RS
+.TP
+.I 1
+The thumbnail viewer to load
+.RE
+

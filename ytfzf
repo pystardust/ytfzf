@@ -2,7 +2,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1713.9771c20"
+YTFZF_VERSION="git-1714.a00261c"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -440,7 +440,7 @@ load_url_handler () {
 	for path in "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_SYSTEM_ADDON_DIR/url-handlers"; do
 	    [ -f "${path}/${requested_url_handler}" ] && url_handler="${path}/${requested_url_handler}" && return
 	done
-	die 2 "$optarg is not a url-handler\n"
+	die 2 "$1 is not a url-handler\n"
     fi
 }
 
