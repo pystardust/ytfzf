@@ -190,3 +190,5 @@ Feel free to contribute, and add your name to the credits, please use the develo
 | Mudskipper875 | [contributions](credits/mudskipper875.md) ||
 | Gardockt | [contributions](credits/gardockt.md)||
 | qoheniac | [contributions](credits/qoheniac.md)||
+| mathisto | [contributions](credits/mathisto.md)||
+
