@@ -1635,18 +1635,37 @@ interface_<name_of_interface> will take a path to the json file holding all data
 The second argument will be a path to a file to store the selected url in, separated by new lines.
 .PP
 Other functions the scraper may define:
+
 .TP
-.IR search_prompt_menu_<name_of_interface>
+.BR search_prompt_menu_<name_of_interface> ()
 This function should do the same thing as search_prompt_menu().
 This function takes no arguments.
 .br
 If this function is not defined, search_prompt_menu_ext() will be called instead.
+
 .TP
-.IR quick_menu_<name_of_interface>
+.BR quick_menu_<name_of_interface> ()
 This function should do the same thing as quick_menu().
 This function takes no arguments.
 .br
 If this function is not defined, quick_menu_ext() will be called instead.
+
+.TP
+.BR display_text_<name_of_interface> ()
+This function should display text in a way that is copy and pasteable.
+This function takes an unlimited number of arguments.
+.RS
+.TP
+.IR ...
+The text to display
+.RE
+
+.TP
+.BR info_wait_prompt_<name_of_interface> ()
+This function should ask the user to pick an \fBinfo_wait_action\fR option.
+It should then set the variable \fBinfo_wait_action\fR equal to the user's choice.
+This function takes no arguments.
+
 
 .SH THUMBNAIL VIEWERS
 Custom thumbnail viewers are programs in $YTFZF_THUMBNAIL_VIEWERS_DIR.
