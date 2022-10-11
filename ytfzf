@@ -219,8 +219,9 @@ get_key_value() {
 
 # capitalizes the first letter of a string
 title_str () {
-	printf "%s" "$1" | dd bs=1 count=1 conv=ucase 2>/dev/null
-	printf "%s\n" "${1#?}"
+		awk '{printf "%s%s\n", toupper(substr($1,0,1)), substr($1,2)}' <<EOF
+$1
+EOF
 }
 
 # backup shuf function, as shuf is not posix
