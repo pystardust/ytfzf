@@ -7,7 +7,11 @@ LICENSEDIR=${PREFIX}/share/licenses/ytfzf
 
 YTFZF_SYSTEM_ADDON_DIR=${PREFIX}/share/ytfzf/addons
 
+.DEFAULT_GOAL := default
+
 all:
+
+default: install doc
 
 doc:
 	mkdir -p ${DESTDIR}${MANDIR}/man1
@@ -49,4 +53,4 @@ uninstall-old:
 	rm -f /usr/share/man/man1/ytfzf.1*
 	rm -f /usr/share/man/man5/ytfzf.5*
 
-.PHONY: install uninstall doc addons uninstall-old
+.PHONY: all default install uninstall doc addons uninstall-old
