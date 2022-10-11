@@ -1393,10 +1393,6 @@ This function gets called after all vars are set, and all opts are parsed.
 .br
 This function takes no arguments.
 
-.TP
-.BR on_post_set_vars_<ext_name> ()
-Replace ext_name with the name of an extension (with - replaced with _).
-This function is the same as \fBon_post_set_vars\fR
 
 .TP
 .BR on_search ()
@@ -1698,3 +1694,41 @@ An extension can do anything a config file can, this includes modifying the defa
 To load an extension add
 .I "load_extension name-of-extension"
 to $YTFZF_CONFIG_FILE
+.PP
+Functions for extensions, where <ext> is replaced with the name of the extension, and all \- are replaced with _.
+
+.TP
+.BR on_clean_up_<ext> ()
+Runs when the script exits.
+This function takes no arguments.
+
+.TP
+.BR on_no_thumbnail_<ext> ()
+Runs when no thumbnail is found.
+This function takes no arguments.
+
+.TP
+.BR after_close_url_handler_<ext> ()
+Runs after the url handler is closed.
+This function takes no arguments.
+
+.TP
+.BR on_post_set_vars_<ext_name> ()
+Replace ext_name with the name of an extension (with - replaced with _).
+This function is the same as \fBon_post_set_vars\fR
+
+.TP ext_on_search_<ext> ()
+Runs for before the website is scraped, for every search query.
+This functon takes two arguments.
+.RS
+.TP
+.IR 1
+The current search
+.TP
+.IR 2
+The current scrape type
+.RE
+.TP
+.BR post_scrape_<ext> ()
+Runs after scraping is complete.
+This function takes no arguments.
