@@ -1306,19 +1306,44 @@ This function should parse the search history file, and print out each search se
 .br
 The search history file will be fed through stdin.
 
-.RE
-
-.PP
-Misc
-
-.RS
-
 .TP
 .BR get_search_from_<src>()
 If search_source is set to <src> this function will be called.
 This function is expected to set the variable \fB_search\fR to a search query.
 .br
 This function takes no arguments.
+
+.TP
+.BR on_search ()
+This function gets called each time a website is scraped.
+.br
+This function takes 2 arguments:
+.EX
+.I 1
+.ti +4
+    The search query
+.I 2
+.ti +4
+    The current scrape
+.EE
+
+.TP
+.BR on_search_<search_query> ()
+This function gets called each time a website is scraped if the current search matches <search_query>.
+.br
+This function takes 1 argument.
+.RS
+.TP
+.I 1
+The current scrape
+.RE
+
+.RE
+
+.PP
+Misc
+
+.RS
 
 .TP
 .BR get_requested_info_<name>()
@@ -1370,7 +1395,7 @@ This function takes 4 arguments:
 .EE
 
 .TP
-.BR on_opt_parse<opt_name> ()
+.BR on_opt_parse_<opt_name> ()
 This function gets called before an option is parsed.
 A non 0 exit code will override the default behavior of a specific option.
 .br
@@ -1393,31 +1418,6 @@ This function gets called after all vars are set, and all opts are parsed.
 .br
 This function takes no arguments.
 
-
-.TP
-.BR on_search ()
-This function gets called each time a website is scraped.
-.br
-This function takes 2 arguments:
-.EX
-.I 1
-.ti +4
-    The search query
-.I 2
-.ti +4
-    The current scrape
-.EE
-
-.TP
-.BR on_search_<search_query> ()
-This function gets called each time a website is scraped if the current search matches <search_query>.
-.br
-This function takes 1 argument.
-.RS
-.TP
-.I 1
-The current scrape
-.RE
 
 .TP
 .BR on_clean_up ()
