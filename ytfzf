@@ -1696,8 +1696,8 @@ preview_start () {
 			UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
-			ueberzug layer --parser json < "$UEBERZUG_FIFO"  &
-			exec 3> "$UEBERZUG_FIFO" > "$thumbnail_debug_log" 2>&1 # to keep the fifo open
+			ueberzug layer --parser json < "$UEBERZUG_FIFO"  > "$thumbnail_debug_log" 2>&1 &
+			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open 
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|swayimg) : ;;
 		kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
