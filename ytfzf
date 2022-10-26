@@ -2271,15 +2271,19 @@ parse_opt () {
         list-addons)
             for path in "$YTFZF_THUMBNAIL_VIEWERS_DIR" "$YTFZF_SORT_NAMES_DIR"\
             "$YTFZF_CUSTOM_INTERFACES_DIR" "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_EXTENSIONS_DIR"; do
-            ! [ -d "$path" ] && continue
-            printf "${c_bold}%s:${c_reset}\n" "user addon, ${path##*/}"
-            ls "$path"
+                ! [ -d "$path" ] && continue
+                printf "${c_bold}%s:${c_reset}\n" "user addon, ${path##*/}"
+                ls "$path"
             done
+
             echo ----------------
+
+            [ ! -d "$YTFZF_SYSTEM_ADDON_DIR" ] && exit
+
             set +f
             for path in "$YTFZF_SYSTEM_ADDON_DIR"/*; do
-            printf "${c_bold}%s:${c_reset}\n" "system addon, ${path##*/}"
-            ls "$path"
+                printf "${c_bold}%s:${c_reset}\n" "system addon, ${path##*/}"
+                ls "$path"
             done
             exit
             ;;
