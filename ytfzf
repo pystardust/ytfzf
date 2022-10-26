@@ -2,7 +2,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="2.5.2"
+YTFZF_VERSION="git-1723.6d31c01"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -219,8 +219,8 @@ get_key_value() {
 
 # capitalizes the first letter of a string
 title_str () {
-		awk '{printf "%s%s\n", toupper(substr($1,0,1)), substr($1,2)}' <<EOF
-$1
+		awk '{printf "%s%s\n", toupper(substr($1,0,1)), substr($1,2)}' <<-EOF
+    $1
 EOF
 }
 
@@ -628,8 +628,8 @@ END{
 	   # same goes for here
 	   var_val="${var_val%[\"\']}"
 	   export "$var_name"="${var_val}"
-       done <<EOF
-$_vars
+       done <<-EOF
+    $_vars
 EOF
     fi
     unset check_exists _vars variable var_name var_val
@@ -1284,8 +1284,8 @@ Eg:
 	    cat "$ytfzf_video_json_file" >> "$PARENT_OUTPUT_JSON_FILE"
 	    clean_up
 	)
-    done <<EOF
-$(printf "%s" "$1" | sed 's/ *:N\(EXT\)* */\n/g')
+    done <<-EOF
+    $(printf "%s" "$1" | sed 's/ *:N\(EXT\)* */\n/g')
 EOF
     unset PARENT_invidious_instance PARENT_OUTPUT_JSON_FILE
     return 0
@@ -1681,8 +1681,8 @@ interface_ext () {
 # Thumbnail Interface {{{
 
 get_video_json_attr () {
-	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^\n]*\)",*/\1/p' <<EOF | sed 's/\\\([\\"]\)/\1/g'
-$_correct_json
+	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^\n]*\)",*/\1/p' <<-EOF | sed 's/\\\([\\"]\)/\1/g'
+    $_correct_json
 EOF
 }
 
@@ -1890,13 +1890,13 @@ preview_display_image () {
             # then it finds the geometry of the focused window and saves it as the var $d2
             # at the end it concatinates the two strings with a tab in the middle so that read can read it into 6 vars
             read -r output_x output_y x y w h <<-EOF
-$(swaymsg -t get_tree | jq -r '. as $data |
-    .focus[0] as $focused_id |
-    ..| try select(.type=="output" and .id==$focused_id) |
-    [.rect.x,.rect.y] | @tsv as $d1 |
-    $data | .. | try select(.focused==true) |
-    [.rect.x,.rect.y,.rect.width,.rect.height] | @tsv as $d2 |
-    $d1 + "\t" + $d2')
+    $(swaymsg -t get_tree | jq -r '. as $data |
+        .focus[0] as $focused_id |
+        ..| try select(.type=="output" and .id==$focused_id) |
+        [.rect.x,.rect.y] | @tsv as $d1 |
+        $data | .. | try select(.focused==true) |
+        [.rect.x,.rect.y,.rect.width,.rect.height] | @tsv as $d2 |
+        $d1 + "\t" + $d2')
 EOF
             # we're subtracting output_* to make sure swayimg places on correct monitor
             x=$((x-output_x))
@@ -2416,8 +2416,8 @@ handle_actions () {
 				fi || return $? ;;
 		esac
 		break # TODO: allow multiple actions or at least let the action decide whether or not it can handle multiple actions
-	done <<EOF
-$actions
+	done <<-EOF
+    $actions
 EOF
 }
 
