@@ -248,7 +248,7 @@ clean_up () {
 	# clean up only as parent process
 	# kill ytfzf sub process{{{
 	# I think this needs to be written to a file because of sub-shells
-	jobs_file="${TMPDIR:-/tmp}/the-jobs-need-to-be-written-to-a-file.list"
+	jobs_file="${TMPDIR:-/tmp}/ytfzf-the-jobs-need-to-be-written-to-a-file.list"
 	jobs -p > "$jobs_file"
 	while read -r line; do
 		[ "$line" ] && kill "$line" 2> /dev/null
