@@ -2,7 +2,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1727.b08ff57"
+YTFZF_VERSION="git-1728.64759ec"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -783,6 +783,7 @@ _get_request () {
 		-H "User-Agent: $useragent" \
 		-H 'Accept-Language: en-US,en;q=0.9' \
 		--compressed
+
 }
 
 _start_series_of_threads () {
@@ -894,12 +895,18 @@ scrape_subscriptions () {
     [ "$curr_scrape" = "SI" ] && { channel_scraper="scrape_invidious_channel"; sleep_time=0.03; } || { channel_scraper="scrape_youtube_channel"; sleep_time=0.01; }
 
     # if _tmp_subfile does not have a unique name, weird things happen
-    # must be _i because scrape_invidious_channel uses $i
-    _i=0
-    while IFS= read -r channel_url || [ -n "$channel_url" ] ; do
-	    _i=$((_i+1))
+    __subfile_line=0
+    _start_series_of_threads
+    while IFS= read -r channel_url || [ -n "$channel_url" ]; do
+        channel_url="${channel_url%%#*}"
+        #trim whitespace
+        read -r channel_url <<-EOF
+        $channel_url
+EOF
+        [ -z "$channel_url" ] && continue
+	    __subfile_line=$((__subfile_line+1))
 	    {
-			_tmp_subfile="${session_temp_dir}/channel-$_i"
+			_tmp_subfile="${session_temp_dir}/channel-$__subfile_line"
 			$channel_scraper "$channel_url" "$_tmp_subfile" < /dev/null || return "$?"
 			if [ ${fancy_subs} -eq 1 ]; then
 				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].channel + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel)" }] + .[0:'"$sub_link_count"']' < "$_tmp_subfile"
@@ -907,15 +914,10 @@ scrape_subscriptions () {
 			    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile"
 			fi >> "$ytfzf_video_json_file"
 	    } &
+        _thread_started "$!"
 	    sleep $sleep_time
-    done <<- EOF
-	$(sed \
-		-e "s/#.*//" \
-		-e "/^[[:space:]]*$/d" \
-		-e "s/[[:space:]]*//g" \
-		"$YTFZF_SUBSCRIPTIONS_FILE" )
-	EOF
-    wait
+    done < "$YTFZF_SUBSCRIPTIONS_FILE"
+    wait 
 }
 scrape_youtube_subscriptions (){ scrape_subscriptions "$@"; }
 scrape_SI (){ scrape_subscriptions "$@"; }
