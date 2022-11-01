@@ -2,7 +2,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1729.9d74e47"
+YTFZF_VERSION="git-1729.6f0acb4"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -591,6 +591,7 @@ set_vars () {
     pages_to_scrape="1" pages_start="1"
     nsfw="false" odysee_video_search_count="30"
 
+
     multi_search="0"
 
     custom_scrape_search_exclude="" scrape_search_exclude=" youtube-subscriptions S SI SL T youtube-trending H history "
@@ -783,6 +784,7 @@ _get_request () {
 		-H "User-Agent: $useragent" \
 		-H 'Accept-Language: en-US,en;q=0.9' \
 		--compressed
+
 }
 
 _start_series_of_threads () {
@@ -871,17 +873,18 @@ _youtube_get_json (){
 
 _youtube_channel_json () {
 	channel_name=$1
-	jq '[ .contents | ..|.gridVideoRenderer? | select(. !=null) |
+    jq '[..|.richGridRenderer?|select(.!=null)|..|.contents?|select(.!=null)|..|.richItemRenderer?|select(.!=null) |
 	    {
 		scraper: "youtube_search",
-	    	ID: .videoId,
-		url: "'"$yt_video_link_domain"'/watch?v=\(.videoId)",
-		title: "\(if .title.simpleText then .title.simpleText else .title.runs[0].text end)",
+	    	ID: .content.videoRenderer.videoId,
+		url: "'"$yt_video_link_domain"'/watch?v=\(.content.videoRenderer.videoId)",
+		title: .content.videoRenderer.title.runs[0].text,
 	    	channel: "'"$channel_name"'",
-	    	thumbs: .thumbnail.thumbnails[0].url|sub("\\?.*";""),
-	    	duration:.thumbnailOverlays[0].thumbnailOverlayTimeStatusRenderer.text.simpleText,
-	    	views: .shortViewCountText.simpleText,
-	    	date: .publishedTimeText.simpleText,
+	    	thumbs: .content.videoRenderer.thumbnail.thumbnails[2].url|sub("\\?.*";""),
+	    	duration: .content.videoRenderer.lengthText.simpleText,
+            views: "\(.content.videoRenderer.lengthText.simpleText | split("views")[0])",
+	    	date: .content.videoRenderer.publishedTimeText.simpleText,
+            description: .content.videoRenderer.descriptionSnippet.runs[0].text
 	    }
 	]'
 }
@@ -894,28 +897,34 @@ scrape_subscriptions () {
     [ "$curr_scrape" = "SI" ] && { channel_scraper="scrape_invidious_channel"; sleep_time=0.03; } || { channel_scraper="scrape_youtube_channel"; sleep_time=0.01; }
 
     # if _tmp_subfile does not have a unique name, weird things happen
-    # must be _i because scrape_invidious_channel uses $i
-    _i=0
-    while IFS= read -r channel_url || [ -n "$channel_url" ] ; do
-	    _i=$((_i+1))
+    __subfile_line=-1
+    _start_series_of_threads
+    while IFS=""  read -r channel_url || [ -n "$channel_url" ]; do
+
+        __subfile_line=$((__subfile_line+1))
+
+        channel_url="${channel_url%%#*}"
+        #trim whitespace
+        read -r channel_url <<-EOF
+        $channel_url
+EOF
+        [ -z "$channel_url" ] && continue
+	    __subfile_line=$((__subfile_line+1))
 	    {
-			_tmp_subfile="${session_temp_dir}/channel-$_i"
+			_tmp_subfile="${session_temp_dir}/channel-$__subfile_line"
 			$channel_scraper "$channel_url" "$_tmp_subfile" < /dev/null || return "$?"
+            __new_data="$(jq '.[].scraper="subscriptions"' < "$_tmp_subfile")"
+            printf "%s\n" "$__new_data" > "$_tmp_subfile"
 			if [ ${fancy_subs} -eq 1 ]; then
 				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].channel + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel)" }] + .[0:'"$sub_link_count"']' < "$_tmp_subfile"
 			else
 			    jq '.[0:'"$sub_link_count"']' < "$_tmp_subfile"
 			fi >> "$ytfzf_video_json_file"
 	    } &
+        _thread_started "$!"
 	    sleep $sleep_time
-    done <<- EOF
-	$(sed \
-		-e "s/#.*//" \
-		-e "/^[[:space:]]*$/d" \
-		-e "s/[[:space:]]*//g" \
-		"$YTFZF_SUBSCRIPTIONS_FILE" )
-	EOF
-    wait
+    done < "$YTFZF_SUBSCRIPTIONS_FILE"
+    wait 
 }
 scrape_youtube_subscriptions (){ scrape_subscriptions "$@"; }
 scrape_SI (){ scrape_subscriptions "$@"; }
