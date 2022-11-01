@@ -2,7 +2,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1729.6f0acb4"
+YTFZF_VERSION="git-1732.59cd97d"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1773,25 +1773,24 @@ preview_no_img (){
 # ueberzug positioning{{{
 command_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left (){
 	width=$1
-	height=$(($2-10))
+	height=$(($2-__text_line_count+2))
 	x=2
-	y=10
+    y=$((__text_line_count+2))
 }
 command_exists "get_ueberzug_positioning_right" || get_ueberzug_positioning_right (){
+    get_ueberzug_positioning_left "$@"
 	width=$1
-	height=$(($2-10))
 	x=$(($1+6))
-	y=10
 }
 command_exists "get_ueberzug_positioning_up" || get_ueberzug_positioning_up (){
 	width=$1
-	height=$(($2-10))
+	height=$(($2-__text_line_count))
 	x=2
 	y=9
 }
 command_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down (){
 	width=$1
-	height=$(($2-10))
+	height=$(($2-__text_line_count))
 	#$2*2 goes to the bottom subtracts height, adds padding
 	y=$(($2*2-height+2))
 	x=2
@@ -1799,7 +1798,7 @@ command_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down 
 
 command_exists "get_swayimg_positioning_left" || get_swayimg_positioning_left () {
     # allows space for text
-    y_gap=$((line_px_height*8))
+    y_gap=$((line_px_height*(__text_line_count+3))) #the plus 3 just seems to work better
 
     # it's subtracting the gap between the border and the edge of terminal
     w_correct=$((max_width/2-2*col_px_width))
@@ -1817,7 +1816,7 @@ command_exists "get_swayimg_positioning_left" || get_swayimg_positioning_left ()
 command_exists "get_swayimg_positioning_right" || get_swayimg_positioning_right () {
     get_swayimg_positioning_left "$@"
     # after setting the positioning as if side was `left` set x to the correct place
-    x=$((term_x+w_half+col_px_width/2))
+    x=$((term_x+max_width-w_correct))
 }
 
 command_exists "get_swayimg_positioning_up" || get_swayimg_positioning_up () {
@@ -1826,7 +1825,7 @@ command_exists "get_swayimg_positioning_up" || get_swayimg_positioning_up () {
     h_correct=$((max_height-2*line_px_height))
 
     # offset from info text by 30 columns
-    x=$((term_x+30*col_px_width))
+    x=$((term_x+(max_width-w_correct)))
     # go down from the top by 2 lines
     y=$((term_y+2*line_px_height))
 
@@ -1836,7 +1835,7 @@ command_exists "get_swayimg_positioning_up" || get_swayimg_positioning_up () {
 }
 
 command_exists "get_swayimg_positioning_down" || get_swayimg_positioning_down () {
-get_swayimg_positioning_up "$@"
+    get_swayimg_positioning_up "$@"
     # after setting the positioning as if side was `up` set y to the correct place
     y=$((term_y+max_height/2+2*line_px_height))
 }
@@ -1918,7 +1917,6 @@ EOF
             col_px_width=$((w/TTY_COLS))
             # how many pixels per line
             line_px_height=$((h/TTY_LINES))
-
             get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
             swaymsg 'no_focus [app_id="swayimg_.*"]' > /dev/null 2>&1
             swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path"  2> "$thumbnail_debug_log" >&2 &
@@ -1979,14 +1977,21 @@ preview_img () {
 	date="$(get_video_json_attr "date")"
 	scraper="$(get_video_json_attr "scraper")"
 	duration="$(get_video_json_attr "duration")"
-	description="$(get_video_json_attr "description" | sed 's/\\n/\n/g')"
+    description="$(get_video_json_attr "description" | sed 's/\\n/\n/g' | fold -w $((FZF_PREVIEW_COLUMNS/2)))"
 #}}}
 
-	if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
+	__text=$(if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
 		thumbnail_video_info_text${scraper:+_$scraper}
 	else
 		thumbnail_video_info_text
-	fi
+    fi)
+
+    __text_line_count=$(wc -l <<-FF
+$__text
+FF
+)
+
+    echo "$__text"
 
 	preview_display_image "$thumbnail_viewer" "$id"
 }
@@ -2015,7 +2020,7 @@ interface_thumbnails () {
 	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|join("\t")' < "$video_json_file" |
 	sort_video_data_fn |
 	SHELL="$(command -v sh)" fzf -m \
-	--preview "__is_fzf_preview=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
+	--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
 	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
 	trim_url > "$selected_id_file"
 
