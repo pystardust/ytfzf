@@ -98,7 +98,7 @@ search_prompt_menu_gui () {
 	<vbox>
 	    <entry>
 		<default>Search...</default>
-		<variable>search</variable>
+		<variable>SEARCH</variable>
 	    </entry>
 	    <button>
 		<label>Search!</label>
@@ -108,12 +108,12 @@ search_prompt_menu_gui () {
 
     while read -r line; do
 	case "$line" in
-	    search*)
+	    *SEARCH*)
 		_search=$(printf "%s" "$line" | tr -d '"')
 		_search="${_search#*=}" ;;
 	    EXIT*) break ;;
 	esac
-    done <<EOF
+    done <<-EOF
     $vars
 EOF
 }
