@@ -8,7 +8,7 @@ __invidious_search_json_videos () {
 		;
 	[ .[] | select(.type=="shortVideo") |
 		{
-			scraper: "youtube_search",
+			scraper: "invidious_popular",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
@@ -38,10 +38,10 @@ scrape_invidious_popular(){
 	_get_invidious_thumb_quality_name
 
 	{
-	    _invidious_search_json_live < "$_tmp_json"
-	    __invidious_search_json_videos < "$_tmp_json"
-	    _invidious_search_json_channel < "$_tmp_json"
-	    _invidious_search_json_playlist < "$_tmp_json"
+	    _invidious_search_json_live < "$_tmp_json"| jq '[.[]|.scraper="invidious_popular"]'
+	    __invidious_search_json_videos "invidious_popular" < "$_tmp_json"
+	    _invidious_search_json_channel < "$_tmp_json" | jq '[ .[]|.scraper="invidious_popular" ]'
+	    _invidious_search_json_playlist < "$_tmp_json" | jq '[ .[]|.scraper="invidious_popular" ]'
 	} >> "$output_json_file"
 	i=$((i+1))
     done
