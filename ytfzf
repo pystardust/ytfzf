@@ -2,7 +2,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1735.7cff24c"
+YTFZF_VERSION="git-1736.75f6b30"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1057,6 +1057,7 @@ _invidious_search_json_live () {
 	]'
 }
 _invidious_search_json_videos () {
+    __scr="$1"
 	jq '
 	def pad_left(n; num):
 		num | tostring |
@@ -1064,7 +1065,7 @@ _invidious_search_json_videos () {
 		;
 	[ .[] | select(.type=="video" and .liveNow==false) |
 		{
-			scraper: "invidious_search",
+			scraper: "'"$__scr"'",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
@@ -1078,6 +1079,7 @@ _invidious_search_json_videos () {
 	]'
 }
 _invidious_search_json_generic () {
+    __scr="$1"
 	jq '
 	def pad_left(n; num):
 		num | tostring |
@@ -1085,7 +1087,7 @@ _invidious_search_json_generic () {
 		;
 	[ .[] |
 		{
-			scraper: "invidious_search",
+			scraper: "'"$__scr"'",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
@@ -1107,7 +1109,7 @@ _invidious_playlist_json () {
 		;
 	[ .videos | .[] |
 		{
-			scraper: "invidious_search",
+			scraper: "invidious_playlist",
 			ID: .videoId,
 			url: "'"${yt_video_link_domain}"'/watch?v=\(.videoId)",
 			title: .title,
@@ -1201,7 +1203,7 @@ scrape_invidious_search () {
 
 			{
 				_invidious_search_json_live < "$_tmp_json"
-				_invidious_search_json_videos < "$_tmp_json"
+				_invidious_search_json_videos "invidious_search" < "$_tmp_json"
 				_invidious_search_json_channel < "$_tmp_json"
 				_invidious_search_json_playlist < "$_tmp_json"
 			} >> "$_tmp_json.final"
@@ -1236,7 +1238,7 @@ scrape_invidious_video_recommended () {
     _tmp_json="${session_temp_dir}/invidious-video-recommended.json"
     _get_request "$invidious_instance/api/v1/videos/$video" | jq '.recommendedVideos' > "$_tmp_json"
     _get_invidious_thumb_quality_name
-    _invidious_search_json_generic < "$_tmp_json" >> "$output_json_file"
+    _invidious_search_json_generic "invidious_recommended" < "$_tmp_json" >> "$output_json_file"
 }
 scrape_video_recommended () { scrape_invidious_video_recommended "$@"; }
 scrape_video_R () { scrape_invidious_video_recommended "$@"; }
@@ -1257,7 +1259,7 @@ scrape_invidious_trending () {
 
 	_get_invidious_thumb_quality_name
 
-	_invidious_search_json_videos < "$_tmp_json" >> "$output_json_file"
+	_invidious_search_json_videos "invidious_trending" < "$_tmp_json" >> "$output_json_file"
 }
 scrape_youtube_trending (){ scrape_invidious_trending "$@"; }
 scrape_T (){ scrape_invidious_trending "$@"; }
@@ -1292,7 +1294,7 @@ scrape_invidious_channel () {
 			_get_invidious_thumb_quality_name
 
 			{
-				_invidious_search_json_videos < "$_tmp_json"
+				_invidious_search_json_videos "invidious_channel" < "$_tmp_json"
 				_invidious_search_json_live < "$_tmp_json"
 			} | jq 'select(.!=[])' >> "$_tmp_json.final"
 		} &
