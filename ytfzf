@@ -2,7 +2,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1733.69ce2a0"
+YTFZF_VERSION="git-1734.cf94dff"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -932,24 +932,45 @@ scrape_S (){ scrape_subscriptions "$@"; }
 
 scrape_youtube_channel () {
 	channel_url="$1"
-    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\n" && return 100
+    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\nYou can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:\nvideos\nstreams\n" && return 100
 	output_json_file="$2"
 
+    set -f
+    #shellcheck disable=2086
+    set -- $1
+    modifiers=""
+
+    # support the --features=live argument
+    case "$search_result_features" in
+        *live*) modifiers="streams" ;;
+    esac
+
+    unset IFS
+    for arg in "$@"; do
+        case "$arg" in
+            :playlists) print_warning "The playlists tab is currently unsupported\n" ;;
+            :videos|:streams) modifiers="$modifiers ${arg#:}" ;; #starts with a colon to have  consistency with the search operator syntax.
+            *) channel_url=$arg; break ;;
+        esac
+    done
 
 	set_real_channel_url_and_id "$channel_url"
 
-	print_info "Scraping Youtube channel: https://www.youtube.com/channel/${channel_id}/videos\n"
 
-	tmp_filename="channel-${channel_id}"
-	_tmp_html="${session_temp_dir}/${tmp_filename}.html"
-	_tmp_json="${session_temp_dir}/${tmp_filename}.json"
+    for mod in $modifiers; do
+        print_info "Scraping Youtube channel: https://www.youtube.com/channel/${channel_id}/$mod\n"
+        tmp_filename="channel-${channel_id}-$mod"
+        _tmp_html="${session_temp_dir}/${tmp_filename}.html"
+        _tmp_json="${session_temp_dir}/${tmp_filename}.json"
 
-	_get_request "https://www.youtube.com/channel/${channel_id}/videos" > "$_tmp_html"
-	_youtube_get_json < "$_tmp_html" > "$_tmp_json"
+        _get_request "https://www.youtube.com/channel/${channel_id}/$mod" > "$_tmp_html"
+        _youtube_get_json < "$_tmp_html" > "$_tmp_json"
 
-	channel_name=$(_youtube_channel_name < "$_tmp_html" )
-	_youtube_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
+        channel_name=$(_youtube_channel_name < "$_tmp_html" )
+        _youtube_channel_json "$channel_name" < "$_tmp_json"  >> "$output_json_file"
+    done
 }
+
 # }}}
 
 ## Invidious {{{
