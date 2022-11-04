@@ -2,7 +2,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1737.484bd3f"
+YTFZF_VERSION="git-1738.683f074"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -950,7 +950,7 @@ scrape_S (){ scrape_subscriptions "$@"; }
 
 scrape_youtube_channel () {
 	channel_url="$1"
-    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\nYou can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:\n:videos\n:streams\n:playlists\n" && return 100
+    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\nYou can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:\n:videos\n:streams\n:playlists\n:v, :s, and :p may also be used as a shorter version\n" && return 100
 	output_json_file="$2"
 
     set -f
@@ -967,6 +967,9 @@ scrape_youtube_channel () {
     for arg in "$@"; do
         case "$arg" in
             :videos|:streams|:playlists) modifiers="$modifiers ${arg#:}" ;; #starts with a colon to have  consistency with the search operator syntax.
+            :v) modifiers="$modifiers videos" ;;
+            :p) modifiers="$modifiers playlists" ;;
+            :s|:l) modifiers="$modifiers streams" ;;
             *) channel_url=$arg; break ;;
         esac
     done
