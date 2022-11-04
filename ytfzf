@@ -2,7 +2,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1738.683f074"
+YTFZF_VERSION="git-1739.731a054"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -34,6 +34,12 @@ c_bold="\033[1m"
 : "${check_vars_exists:=${YTFZF_CHECK_VARS_EXISTS:-1}}"
 
 # Utility functions {{{
+
+jq_pad_left='
+def pad_left(n; num):
+    num | tostring |
+        if (n > length) then ((n - length) * "0") + (.) else . end
+'
 
 refresh_inv_instances () {
     print_info "Fetching list of healthy invidious instances ...\n" &&
@@ -1062,9 +1068,7 @@ _invidious_search_json_live () {
 _invidious_search_json_videos () {
     __scr="$1"
 	jq '
-	def pad_left(n; num):
-		num | tostring |
-			if (n > length) then ((n - length) * "0") + (.) else . end
+    '"$jq_pad_left"'
 		;
 	[ .[] | select(.type=="video" and .liveNow==false) |
 		{
@@ -1084,9 +1088,7 @@ _invidious_search_json_videos () {
 _invidious_search_json_generic () {
     __scr="$1"
 	jq '
-	def pad_left(n; num):
-		num | tostring |
-			if (n > length) then ((n - length) * "0") + (.) else . end
+    '"$jq_pad_left"'
 		;
 	[ .[] |
 		{
@@ -1106,9 +1108,7 @@ _invidious_search_json_generic () {
 
 _invidious_playlist_json () {
 	jq '
-	def pad_left(n; num):
-		num | tostring |
-			if (n > length) then ((n - length) * "0") + (.) else . end
+    '"$jq_pad_left"'
 		;
 	[ .videos | .[] |
 		{
