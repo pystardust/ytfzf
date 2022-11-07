@@ -571,7 +571,7 @@ The currently supported options are:
 .TP
 .IR playlist/json-file ,
 .PP
-The search will be a path to a json file layed out as described in VIDEO JSON FORMAT
+The search will be a path to a json file laid out as described in VIDEO JSON FORMAT
 .TP
 .IR history ,
 .TP
@@ -1179,20 +1179,20 @@ This function takes no arguments.
 
 .TP
 .BR display_text ()
-Print text to stdandard out.
+Print text to standard out.
 .br
 This function takes an unlimited number of arguments to print.
 
 .TP
 .BR display_text_ext ()
-Print text to stdandard out.
+Print text to standard out.
 .br
 This function takes an unlimited number of arguments to print.
 .RE
 
 .TP
 .BR display_text_scripting ()
-Print text to stdandard out.
+Print text to standard out.
 .br
 This function takes an unlimited number of arguments to print.
 .RE
@@ -1736,9 +1736,10 @@ This function takes no arguments.
 Replace ext_name with the name of an extension (with - replaced with _).
 This function is the same as \fBon_post_set_vars\fR
 
-.TP ext_on_search_<ext> ()
+.TP
+.BR ext_on_search_<ext> ()
 Runs for before the website is scraped, for every search query.
-This functon takes two arguments.
+This function takes two arguments.
 .RS
 .TP
 .IR 1
@@ -1757,18 +1758,18 @@ This function takes no arguments.
 A utility function is any function that can be used in
 .I configuration files,
 .I extensions,
-.I thumbnail viweers,
+.I thumbnail viewers,
 .I interfaces,
 .I search-names,
 
 .TP
 .BR refresh_inv_instances ()
-This function writes the response from "https://api.invidious.io/instances.json?sort_by=type,health,api" to $cache_dir/instacnes.json.
+This function writes the response from "https://api.invidious.io/instances.json?sort_by=type,health,api" to $cache_dir/instances.json.
 This function takes no arguments.
 
 .TP
 .BR get_invidious_instances ()
-Ths function grabs invidious instances that have an api and prints them seperated by a new line.
+This function grabs invidious instances that have an api and prints them separated by a new line.
 This function takes no arguments.
 
 .TP
@@ -1858,7 +1859,7 @@ This function takes an unlimited number of arguments.
 The command to run
 .TP
 .I ...
-The arguments to pass to tthe command.
+The arguments to pass to the command.
 .RE
 
 .TP
@@ -1871,7 +1872,8 @@ This function checks the following locations for the file to source.
 .I \fB$YTFZF_CUSTOM_SCRAPERS_DIR\fR
 .TP
 .I \fB$YTFZF_SYSTEM_ADDON_DIR/scrapers\fR
-.RE\fB$YTFZF_CUSTOM_SCRAPERS_DIR\fR
+.TP
+.I \fB$YTFZF_CUSTOM_SCRAPERS_DIR\fR
 .TP
 .I \fB$YTFZF_SYSTEM_ADDON_DIR/scrapers\fR
 .RE
@@ -1906,7 +1908,7 @@ If there is only one key_value pair, there must still be <sep> on each side.
 .br
 After printing the value to stdout, this function sets the variable \fB$KEY_VALUE\fR to the value of the key.
 .br
-This function exits with status code \fI0\fR if the value is not empty, and \fI1\fR if it is epmty.
+This function exits with status code \fI0\fR if the value is not empty, and \fI1\fR if it is empty.
 .br
 This function takes three arguments.
 .RS
@@ -1918,13 +1920,13 @@ The key_value string.
 The key to find the value for.
 .TP
 .I 3 (optional)
-The seperator that seperates each key_value pair.
+The separator that separates each key_value pair.
 By default this is a space.
 .RE
 
 .TP
 .BR title_str ()
-Ths function capitalizes the first letter of a string, and prints it to stdout.
+This function capitalizes the first letter of a string, and prints it to stdout.
 This function takes one argument.
 .RS
 .TP
@@ -2045,7 +2047,7 @@ This function checks the following locations for the sort-name.
 .B $YTFZF_SORT_NAMES_DIR
 .B $YTFZF_SYSTEM_ADDON_DIR/sort-names
 .EE
-This function exits with status code \fI1\fR if the sort-name does not exist, otherwise it exits with the same status code as when the sort-nae was loaded.
+This function exits with status code \fI1\fR if the sort-name does not exist, otherwise it exits with the same status code as when the sort-name was loaded.
 This function takes one argument.
 .RS
 .TP
