@@ -1,8 +1,9 @@
 #!/usr/bin/env sh
+#
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1740.4b875dd"
+YTFZF_VERSION="git-1741.415cb22"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1152,8 +1153,8 @@ scrape_invidious_playlist () {
 	# used to put the full playlist in, to later remove duplicates
 	_full_playlist_json="${session_temp_dir}/full-playlist-$playlist_id.json"
 
-	_cur_page=1
-	while :; do
+	_cur_page=${pages_start:-1}
+    while [ "$_cur_page" -lt "$((pages_start+pages_to_scrape))" ]; do
 		_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id-$_cur_page.json"
 		_get_request "$invidious_instance/api/v1/playlists/$playlist_id" \
 		-G --data-urlencode "page=$_cur_page" > "$_tmp_json" || return "$?"
