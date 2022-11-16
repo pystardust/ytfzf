@@ -800,7 +800,7 @@ _get_real_channel_link () {
         https://*|*\.*)
             domain=${1#https://}
             domain=${domain%%/*}
-            url=$(printf "%s" "$1" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+            url=$(printf "%s" "$1" | sed 's/@/c\//' | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
             _get_real_channel_link_handle_empty_real_path () {
                  printf "https://%s\n" "${1#https://}"
             } ;;
