@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1744.48fe3bd"
+YTFZF_VERSION="git-1747.6250193"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -809,7 +809,7 @@ _get_real_channel_link () {
         https://*|*\.*)
             domain=${1#https://}
             domain=${domain%%/*}
-            url=$(printf "%s" "$1" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+            url=$(printf "%s" "$1" | sed 's/\/@\([^\/]\+\)/\/user\/\1/' | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
             _get_real_channel_link_handle_empty_real_path () {
                  printf "https://%s\n" "${1#https://}"
             } ;;
@@ -824,6 +824,9 @@ _get_real_channel_link () {
             _get_real_channel_link_handle_empty_real_path () {
                 printf "%s\n" "https://${domain}/channel/${id}/videos"
             } ;;
+        "@"*)
+            _get_real_channel_link "https://www.youtube.com/user/${1#"@"}"
+            return "$?" ;;
         *)
             _get_real_channel_link_handle_empty_real_path(){
                 printf "$1\n"
@@ -842,12 +845,11 @@ _get_real_channel_link () {
 set_real_channel_url_and_id () {
     _url="$1"
     case "$_url" in
-	*/videos|*/streams|*/playlists) : ;;
-	*) _url="${_url}/videos"
+        */videos|*/streams|*/playlists) url="${url%/*}" ;;
     esac
     _id="$(_get_channel_id "$_url")"
-    [ "$_id/videos" = "$_url" ] &&\
-	print_warning "$_url is not a scrapable link run:\n$0 --channel-link='$_url'\nto fix this warning\n" &&\
+    [ "$_id" = "$_url" ] &&\
+	print_warning "$_url is not a scrapable link run:\n$0 --channel-link='$_url'\nand use the result of that to fix this warning\n" &&\
 	_url="$(_get_real_channel_link "$_url")" && _id="$(_get_channel_id "$_url")"
     channel_url="$_url" channel_id="$_id"
     unset _url _id
