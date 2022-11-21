@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1748.493f598"
+YTFZF_VERSION="git-1749.7b5afb0"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1255,7 +1255,7 @@ scrape_invidious_video_recommended () {
     _invidious_search_json_generic "invidious_recommended" < "$_tmp_json" >> "$output_json_file"
 }
 scrape_video_recommended () { scrape_invidious_video_recommended "$@"; }
-scrape_video_R () { scrape_invidious_video_recommended "$@"; }
+scrape_R () { scrape_invidious_video_recommended "$@"; }
 
 scrape_invidious_trending () {
 	trending_tab=$(title_str "$1")
