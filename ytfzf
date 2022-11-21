@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1747.6250193"
+YTFZF_VERSION="git-1748.493f598"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -959,7 +959,7 @@ scrape_S (){ scrape_subscriptions "$@"; }
 
 scrape_youtube_channel () {
 	channel_url="$1"
-    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\nYou can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:\n:videos\n:streams\n:playlists\n:v, :s, and :p may also be used as a shorter version\n" && return 100
+    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\nYou can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:\n:videos\n:streams\n:playlists\n:v, :s, and :p may also be used as a shorter version\nYou may also use --type=live, --type=video, --type=playlist, or --type=all\n" && return 100
 	output_json_file="$2"
 
     set -f
@@ -970,6 +970,16 @@ scrape_youtube_channel () {
     # support the --features=live argument
     case "$search_result_features" in
         *live*) modifiers="streams" ;;
+        *video*) modifiers="$modifiers video" ;;
+        *playlist*) modifiers="$modifiers playlists" ;;
+    esac
+
+    #support --type=playlist, etc
+    case "$search_result_type" in
+        *video*) modifiers="$modifiers video" ;;
+        *playlist*) modifiers="$modifiers playlists" ;;
+        *live*) modifiers="$modifiers live" ;;
+        *all*) modifiers="live video playlists" ;;
     esac
 
     unset IFS
@@ -1156,7 +1166,7 @@ scrape_invidious_playlist () {
 	_full_playlist_json="${session_temp_dir}/full-playlist-$playlist_id.json"
 
 	_cur_page=${pages_start:-1}
-    pages_to_scrape=${pages_to_scrape:-1}
+    pages_to_scrape=${pages_to_scrape:-100}
     pages_start=${pages_start:-1}
     while [ "$_cur_page" -lt "$((pages_start+pages_to_scrape))" ]; do
 		_tmp_json="${session_temp_dir}/yt-playlist-$playlist_id-$_cur_page.json"
