@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1753.b7653eb"
+YTFZF_VERSION="git-1754.c349fa7"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -970,16 +970,16 @@ scrape_youtube_channel () {
     # support the --features=live argument
     case "$search_result_features" in
         *live*) modifiers="streams" ;;
-        *video*) modifiers="$modifiers video" ;;
+        *video*) modifiers="$modifiers videos" ;;
         *playlist*) modifiers="$modifiers playlists" ;;
     esac
 
     #support --type=playlist, etc
     case "$search_result_type" in
-        *video*) modifiers="$modifiers video" ;;
+        *video*) modifiers="$modifiers videos" ;;
         *playlist*) modifiers="$modifiers playlists" ;;
         *live*) modifiers="$modifiers live" ;;
-        *all*) modifiers="live video playlists" ;;
+        *all*) modifiers="live playlists videos" ;;
     esac
 
     unset IFS
@@ -996,7 +996,6 @@ scrape_youtube_channel () {
     [ -z "$modifiers" ] && modifiers="videos"
 
 	set_real_channel_url_and_id "$channel_url"
-
 
     for mod in $modifiers; do
         print_info "Scraping Youtube channel: https://www.youtube.com/channel/${channel_id}/$mod\n"
