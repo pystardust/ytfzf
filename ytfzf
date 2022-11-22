@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1751.9c9b03e"
+YTFZF_VERSION="git-1753.b7653eb"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -1484,9 +1484,9 @@ scrape_comments () {
 		*/*) video_id="${video_id##*=}" ;;
 	esac
 	output_json_file="$2"
-	page_count="$pages_to_scrape"
 	_comment_file="${session_temp_dir}/comments-$video_id.tmp.json"
-	i=1
+	i="${pages_start:-1}"
+    page_count="$((i+${pages_to_scrape:-1}))"
 	while [ "$i" -le "$page_count" ]; do
 		print_info "Scraping comments (pg: $i)\n"
 		_out_comment_file="${session_temp_dir}/comments-$i.json.final"
@@ -1643,9 +1643,12 @@ handle_keypress () {
 							$keypress
 						EOF
 						)
-			command_exists "$_fn_name" && $_fn_name ;;
+			command_exists "$_fn_name" && $_fn_name
+            rv="$?"
+            ;;
 	esac
 	unset keypress
+    return "${rv:-0}"
 }
 
 #}}}
