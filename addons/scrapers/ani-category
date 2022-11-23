@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 #stolen from pystardust/ani-cli
 _decrypt_link() {
