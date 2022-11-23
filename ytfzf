@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1754.c349fa7"
+YTFZF_VERSION="git-1754.bcefbc5"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -336,9 +336,6 @@ quick_menu_wrapper () {
 generic_wrapper () {
     base_name=$1
     shift
-    prepare_for_set_args ""
-    set -- "$@"
-    end_of_set_args
     fn_name="$base_name""$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
     if command_exists "$fn_name"; then
 	    $fn_name "$@"
