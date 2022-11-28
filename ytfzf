@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1756.456722e"
+YTFZF_VERSION="git-1757.0d043ca"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2613,16 +2613,16 @@ make_search () {
 
 # Main {{{
 
+init_and_make_search "$initial_search" "$search_source"
+until handle_empty_scrape; do
+    case "$search_again" in
+        0) die 4 ;;
+        1) init_and_make_search "" "$search_source" ;;
+    esac
+done
+
 
 main() {
-    init_and_make_search "$initial_search" "$search_source"
-    until handle_empty_scrape; do
-        case "$search_again" in
-            0) die 4 ;;
-            1) init_and_make_search "" "$search_source" ;;
-        esac
-    done
-
 	while :; do
 		# calls the interface
 		run_interface
