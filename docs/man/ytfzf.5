@@ -2125,3 +2125,18 @@ The url to send a request to
 .I ...
 Arguments to pass to \fBcurl(1)\fR
 .RE
+
+.TP
+.BR _get_real_channel_link ()
+This function converts a youtube channel link in the form of
+.EX
+.I @user
+.I https://www.youtube.com/user/<channel-name>
+.I https://www.youtube.com/c/<channel-name>
+.EE
+This function takes one argument.
+.RS
+.TP
+.I 1
+The link to convert
+.RE

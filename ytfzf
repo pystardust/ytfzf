@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1760.e782fe6"
+YTFZF_VERSION="git-1761.1b29cf8"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -130,6 +130,43 @@ end_modify_ifs (){
 # }}}
 
 #general util{{{
+_get_real_channel_link () {
+    case "$1" in
+        https://*|*\.*)
+            domain=${1#https://}
+            domain=${domain%%/*}
+            url=$(printf "%s" "$1" | sed 's/\/@\([^\/]\+\)/\/user\/\1/' | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+            _get_real_channel_link_handle_empty_real_path () {
+                 printf "https://%s\n" "${1#https://}"
+            } ;;
+        [Uu][Cc]??????????????????????/videos|[Uu][Cc]??????????????????????|*channel/[Uu][Cc]??????????????????????|*channel/[Uu][Cc]??????????????????????/videos)
+            id="${1%/videos}"
+            id="${id%/playlists}"
+            id="${id%/streams}"
+            id="${id##*channel/}"
+            print_warning "$1 appears to be a youtube id, which is hard to detect, please use a full channel url next time\n"
+            domain="youtube.com"
+            url=$(printf "https://youtube.com/channel/%s/videos" "$id" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+            _get_real_channel_link_handle_empty_real_path () {
+                printf "%s\n" "https://${domain}/channel/${id}/videos"
+            } ;;
+        "@"*)
+            _get_real_channel_link "https://www.youtube.com/user/${1#"@"}"
+            return "$?" ;;
+        *)
+            _get_real_channel_link_handle_empty_real_path(){
+                printf "$1\n"
+            } ;;
+    esac
+
+	real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p' | sed 's/[\n\r]$//g')"
+	# prints the origional url because it was correct
+    if [ -z "$real_path" ]; then
+        _get_real_channel_link_handle_empty_real_path "$1"
+        return 0
+    fi
+    printf "%s\n" "https://${domain}${real_path}"
+}
 trim_url () {
 	while IFS= read -r _line;do
 		printf '%s\n' "${_line##*"|"}"
@@ -586,8 +623,6 @@ parse_search_hist_file () {
 
 #}}}
 
-# Custom Scrapers {{{
-#}}}
 set_vars () {
     check_exists="${1:-1}"
 
@@ -797,7 +832,6 @@ usage () {
     done
 }
 
-
 # Scraping {{{
 # * a scraper function takes a search query as $1 and returns video json to file $2
 # * argument 3 and above are undefined and can be used for filters
@@ -824,43 +858,6 @@ _thread_started (){
 	[ $_thread_count -ge $max_thread_count ] && wait "$_latest_fork" && _thread_count=$(jobs -p | wc -l)
 }
 
-_get_real_channel_link () {
-    case "$1" in
-        https://*|*\.*)
-            domain=${1#https://}
-            domain=${domain%%/*}
-            url=$(printf "%s" "$1" | sed 's/\/@\([^\/]\+\)/\/user\/\1/' | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
-            _get_real_channel_link_handle_empty_real_path () {
-                 printf "https://%s\n" "${1#https://}"
-            } ;;
-        [Uu][Cc]??????????????????????/videos|[Uu][Cc]??????????????????????|*channel/[Uu][Cc]??????????????????????|*channel/[Uu][Cc]??????????????????????/videos)
-            id="${1%/videos}"
-            id="${id%/playlists}"
-            id="${id%/streams}"
-            id="${id##*channel/}"
-            print_warning "$1 appears to be a youtube id, which is hard to detect, please use a full channel url next time\n"
-            domain="youtube.com"
-            url=$(printf "https://youtube.com/channel/%s/videos" "$id" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
-            _get_real_channel_link_handle_empty_real_path () {
-                printf "%s\n" "https://${domain}/channel/${id}/videos"
-            } ;;
-        "@"*)
-            _get_real_channel_link "https://www.youtube.com/user/${1#"@"}"
-            return "$?" ;;
-        *)
-            _get_real_channel_link_handle_empty_real_path(){
-                printf "$1\n"
-            } ;;
-    esac
-
-	real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p' | sed 's/[\n\r]$//g')"
-	# prints the origional url because it was correct
-    if [ -z "$real_path" ]; then
-        _get_real_channel_link_handle_empty_real_path "$1"
-        return 0
-    fi
-    printf "%s\n" "https://${domain}${real_path}"
-}
 
 set_real_channel_url_and_id () {
     _url="$1"
