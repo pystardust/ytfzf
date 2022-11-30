@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1757.57be87c"
+YTFZF_VERSION="git-1759.7c14125"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -37,12 +37,16 @@ c_bold="\033[1m"
 
 # Utility functions {{{
 
+
+## Jq util{{{
 jq_pad_left='
 def pad_left(n; num):
     num | tostring |
         if (n > length) then ((n - length) * "0") + (.) else . end
 '
+# }}}
 
+# Invidious{{{
 refresh_inv_instances () {
     print_info "Fetching list of healthy invidious instances ...\n" &&
         curl -X GET -sSfo "$instances_file" "$instances_url"
@@ -57,13 +61,9 @@ get_invidious_instances () {
     #   - Choose the first entry
     jq -r '[.[]|select(.[1].api==true)|.[1].uri]|.[:10]|join("\n")' < "$instances_file"
 }
+# }}}
 
-run_interface () {
-    _interface="interface_${interface:-text}"
-    $(printf "%s" "$_interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
-    unset _interface
-}
-
+# General Scraping{{{
 download_thumbnails () {
 	[ "$skip_thumb_download" -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
 	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...\n'
@@ -98,8 +98,9 @@ get_missing_thumbnails () {
 
 	unset _tmp_id_list_file _downloaded_ids_file missing_ids
 }
+# }}}
 
-
+#arg/ifs manipulation{{{
 prepare_for_set_args () {
     OLD_IFS=$IFS
     [ "$1" = "" ] && unset IFS || IFS=$1
@@ -115,103 +116,24 @@ modify_ifs () {
 end_modify_ifs (){
     unset IFS
 }
+# }}}
 
-mul_str () {
-    str=$1
-    by=$2
-    new_str="$str"
-    mul_str_i=1
-    while [ "$mul_str_i" -lt "$by" ]; do
-	new_str="${new_str}${str}"
-	mul_str_i=$((mul_str_i+1))
-    done
-    printf "%s" "$new_str"
-    unset mul_str_i new_str by str
-}
-
-remove_ansi_escapes () {
-    sed -e 's/[[:cntrl:]]\[\([[:digit:]][[:digit:]]*\(;\|m\)\)*//g'
-}
-
-do_an_event_function () {
-    event="$1"
-    shift
-    command_exists "$event" && $event "$@"
-    modify_ifs " "
-    for ext in $loaded_extensions; do
-        command_exists "${event}_$ext" && "${event}_$ext" "$@"
-    done
-    end_modify_ifs
-}
-
-
-# Takes video json file as $1 and returns the selected video IDs to file $2
-video_info_text () {
-	# we can't just change the views line to %d because it needs to display the "|", and "|$views" is NaN
-	[ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
-	printf "%-${title_len}.${title_len}s\t" "$title"
-	printf "%-${channel_len}.${channel_len}s\t" "$channel"
-	printf "%-${dur_len}.${dur_len}s\t" "$duration"
-	printf "%-${view_len}.${view_len}s\t" "$views"
-	printf "%-${date_len}.${date_len}s\t" "$date"
-	printf "%s" "$url"
-	printf "\n"
-}
-
-thumbnail_video_info_text () {
-	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%s" "$views" | add_commas)"
-	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
-	[ -n "$channel" ] && printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
-	[ -n "$duration" ] && printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
-	[ -n "$views" ] && printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
-	[ -n "$date" ] && printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
-	[ -n "$description" ] && printf "\n ${c_blue}Description ${c_reset}: %s" "$(printf "%s" "$description" | sed 's/\\n/\n/g')"
-}
-
-detach_cmd () {
-  nohup "$@" > "/dev/null" 2>&1 &
-}
-
-source_scrapers () {
-	prepare_for_set_args ","
-	for _scr in $scrape; do
-		if [ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$_scr" ]; then
-			# shellcheck disable=SC1090
-			. "${YTFZF_CUSTOM_SCRAPERS_DIR}/$_scr"
-		elif [ -f "$YTFZF_SYSTEM_ADDON_DIR/scrapers/$_scr" ]; then
-			# shellcheck disable=SC1090
-			. "${YTFZF_SYSTEM_ADDON_DIR}/scrapers/$_scr"
-		fi
-		[ "$__is_fzf_preview" -eq 0 ] && command_exists "on_startup_$_scr" && "on_startup_$_scr"
+#general util{{{
+trim_url () {
+	while IFS= read -r _line;do
+		printf '%s\n' "${_line##*"|"}"
 	done
-	end_of_set_args
-}
-
-add_commas () {
-	awk '
-		{
-            for(i=0; i<length($1); i++){
-				if(i % 3 == 0 && i!=0){
-                    printf ","
-				}
-                printf "%s", substr($1, length($1) - i, 1)
-			}
-		}
-
-		END{
-            print ""
-		}' |
-        awk '
-            {
-                for (i=length($1); i>0; i--){
-                    printf "%s", substr($1, i, 1)
-                }
-            }
-        '
 }
 
 command_exists () {
 	command -v "$1" > /dev/null 2>&1
+}
+
+is_relative_dir () {
+	case "$1" in
+		../*|./*|~/*|/*) return 0 ;;
+	esac
+	return 1
 }
 
 get_key_value() {
@@ -237,56 +159,52 @@ command_exists "shuf" || shuf () {
 	awk -F'\n' 'BEGIN{srand()} {print rand() " " $0}' | sort -n | sed 's/[^ ]* //'
 }
 
-print_info () {
-	# information goes to stdout ( does not disturb show_link_only )
-	# shellcheck disable=2059
-	[ "$log_level" -ge 2 ] && printf -- "$1" >&2
-}
-print_warning () {
-	# shellcheck disable=2059
-	[ "$log_level" -ge 1 ] && printf -- "${c_yellow}${1}${c_reset}" >&2
-}
-print_error () {
-	# shellcheck disable=2059
-	[ "$log_level" -ge 0 ] && printf -- "${c_red}${1}${c_reset}" >&2
+add_commas () {
+	awk '
+		{
+            for(i=0; i<length($1); i++){
+				if(i % 3 == 0 && i!=0){
+                    printf ","
+				}
+                printf "%s", substr($1, length($1) - i, 1)
+			}
+		}
+
+		END{
+            print ""
+		}' |
+        awk '
+            {
+                for (i=length($1); i>0; i--){
+                    printf "%s", substr($1, i, 1)
+                }
+            }
+        '
 }
 
-clean_up () {
-	# print_info "cleaning up\n"
-	# clean up only as parent process
-	# kill ytfzf sub process{{{
-	# I think this needs to be written to a file because of sub-shells
-    jobs_file="${TMPDIR:-/tmp}/ytfzf-the-jobs-need-to-be-written-to-a-file-$(id -u).list"
-	jobs -p > "$jobs_file"
-	while read -r line; do
-		[ "$line" ] && kill "$line" 2> /dev/null
-	done < "$jobs_file"
-	#}}}
-	if [ $__is_fzf_preview -eq 0 ]; then
-		[ -d "$session_cache_dir" ] && [ "$keep_cache" -eq 0 ] && rm -r "$session_cache_dir"
-	fi
-    do_an_event_function on_clean_up
+mul_str () {
+    str=$1
+    by=$2
+    new_str="$str"
+    mul_str_i=1
+    while [ "$mul_str_i" -lt "$by" ]; do
+	new_str="${new_str}${str}"
+	mul_str_i=$((mul_str_i+1))
+    done
+    printf "%s" "$new_str"
+    unset mul_str_i new_str by str
 }
 
-is_relative_dir () {
-	case "$1" in
-		../*|./*|~/*|/*) return 0 ;;
-	esac
-	return 1
+detach_cmd () {
+  nohup "$@" > "/dev/null" 2>&1 &
 }
 
-die () {
-	_return_status=$1
-	print_error "$2"
-	exit "$_return_status"
+remove_ansi_escapes () {
+    sed -e 's/[[:cntrl:]]\[\([[:digit:]][[:digit:]]*\(;\|m\)\)*//g'
 }
+# }}}
 
-trim_url () {
-	while IFS= read -r _line;do
-		printf '%s\n' "${_line##*"|"}"
-	done
-}
-
+#Menu stuff{{{
 quick_menu () {
     fzf --ansi --reverse --prompt="$1"
 }
@@ -362,44 +280,63 @@ search_prompt_menu_ext () {
 search_prompt_menu_scripting () {
 	search_prompt_menu
 }
+run_interface () {
+    _interface="interface_${interface:-text}"
+    $(printf "%s" "$_interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
+    unset _interface
+}
 
-get_search_from_source () {
-    source=$1
+# Takes video json file as $1 and returns the selected video IDs to file $2
+video_info_text () {
+	# we can't just change the views line to %d because it needs to display the "|", and "|$views" is NaN
+	[ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
+	printf "%-${title_len}.${title_len}s\t" "$title"
+	printf "%-${channel_len}.${channel_len}s\t" "$channel"
+	printf "%-${dur_len}.${dur_len}s\t" "$duration"
+	printf "%-${view_len}.${view_len}s\t" "$views"
+	printf "%-${date_len}.${date_len}s\t" "$date"
+	printf "%s" "$url"
+	printf "\n"
+}
+
+thumbnail_video_info_text () {
+	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%s" "$views" | add_commas)"
+	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
+	[ -n "$channel" ] && printf "\n ${c_blue}Channel  ${c_green}%s" "$channel"
+	[ -n "$duration" ] && printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
+	[ -n "$views" ] && printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
+	[ -n "$date" ] && printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
+	[ -n "$description" ] && printf "\n ${c_blue}Description ${c_reset}: %s" "$(printf "%s" "$description" | sed 's/\\n/\n/g')"
+}
+# }}}
+
+# Extension stuff{{{
+
+do_an_event_function () {
+    event="$1"
     shift
-    prepare_for_set_args ":"
-    for src in $source; do
-        end_of_set_args
-        case "$src" in
-            args) _search="$initial_search" ;;
-            prompt) search_prompt_menu_wrapper ;;
-            hist) _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)" ;;
-            next) _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1) ;;
-            fn-args) _search="$*" ;;
-            *) command_exists "get_search_from_$src" && get_search_from_"$src" "$@" ;;
-        esac
-        [ "$_search" ] && break
+    command_exists "$event" && $event "$@"
+    modify_ifs " "
+    for ext in $loaded_extensions; do
+        command_exists "${event}_$ext" && "${event}_$ext" "$@"
     done
+    end_modify_ifs
 }
 
-
-handle_playing_notifications (){
-	# if no notify-send push error to /dev/null
-	if [ "$#" -le 1 ]; then
-	    unset IFS
-	    while read -r id title; do
-		    notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
-	    done <<-EOF
-	    $(jq -r '.[]|select(.url=="'"$*"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
-EOF
-	else
-	    notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null
-	fi
+source_scrapers () {
+	prepare_for_set_args ","
+	for _scr in $scrape; do
+		if [ -f "$YTFZF_CUSTOM_SCRAPERS_DIR/$_scr" ]; then
+			# shellcheck disable=SC1090
+			. "${YTFZF_CUSTOM_SCRAPERS_DIR}/$_scr"
+		elif [ -f "$YTFZF_SYSTEM_ADDON_DIR/scrapers/$_scr" ]; then
+			# shellcheck disable=SC1090
+			. "${YTFZF_SYSTEM_ADDON_DIR}/scrapers/$_scr"
+		fi
+		[ "$__is_fzf_preview" -eq 0 ] && command_exists "on_startup_$_scr" && "on_startup_$_scr"
+	done
+	end_of_set_args
 }
-
-parse_search_hist_file () {
-	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
-}
-
 
 load_extension () {
     ext=$1
@@ -488,8 +425,32 @@ load_thumbnail_viewer () {
     unset _thumbnail_viewer
     return $rv
 }
+#}}}
 
-# urlhandlers
+# Logging {{{
+print_info () {
+	# information goes to stdout ( does not disturb show_link_only )
+	# shellcheck disable=2059
+	[ "$log_level" -ge 2 ] && printf -- "$1" >&2
+}
+print_warning () {
+	# shellcheck disable=2059
+	[ "$log_level" -ge 1 ] && printf -- "${c_yellow}${1}${c_reset}" >&2
+}
+print_error () {
+	# shellcheck disable=2059
+	[ "$log_level" -ge 0 ] && printf -- "${c_red}${1}${c_reset}" >&2
+}
+
+die () {
+	_return_status=$1
+	print_error "$2"
+	exit "$_return_status"
+}
+
+#}}}
+
+# urlhandlers{{{
 # job of url handlers is:
 # handle the given urls, and take into account some requested attributes, eg: video_pref, and --detach
 # print what the handler is doing
@@ -528,6 +489,63 @@ downloader () {
 	    1) $use_detach_cmd "${ytdl_path}" -x -f "${audio_pref}" $ytdl_opts "$@" ;;
 	esac && [ "$notify_playing" -eq 1 ] && notify-send -c ytfzf "Ytfzf Info" "Download complete"
 }
+# }}}
+
+#Misc{{{
+clean_up () {
+	# print_info "cleaning up\n"
+	# clean up only as parent process
+	# kill ytfzf sub process{{{
+	# I think this needs to be written to a file because of sub-shells
+    jobs_file="${TMPDIR:-/tmp}/ytfzf-the-jobs-need-to-be-written-to-a-file-$(id -u).list"
+	jobs -p > "$jobs_file"
+	while read -r line; do
+		[ "$line" ] && kill "$line" 2> /dev/null
+	done < "$jobs_file"
+	#}}}
+	if [ $__is_fzf_preview -eq 0 ]; then
+		[ -d "$session_cache_dir" ] && [ "$keep_cache" -eq 0 ] && rm -r "$session_cache_dir"
+	fi
+    do_an_event_function on_clean_up
+}
+
+get_search_from_source () {
+    source=$1
+    shift
+    prepare_for_set_args ":"
+    for src in $source; do
+        end_of_set_args
+        case "$src" in
+            args) _search="$initial_search" ;;
+            prompt) search_prompt_menu_wrapper ;;
+            hist) _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)" ;;
+            next) _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1) ;;
+            fn-args) _search="$*" ;;
+            *) command_exists "get_search_from_$src" && get_search_from_"$src" "$@" ;;
+        esac
+        [ "$_search" ] && break
+    done
+}
+
+
+handle_playing_notifications (){
+	# if no notify-send push error to /dev/null
+	if [ "$#" -le 1 ]; then
+	    unset IFS
+	    while read -r id title; do
+		    notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
+	    done <<-EOF
+	    $(jq -r '.[]|select(.url=="'"$*"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
+EOF
+	else
+	    notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null
+	fi
+}
+
+parse_search_hist_file () {
+	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
+}
+# }}}
 
 # Traps {{{
 [ $__is_fzf_preview -eq 0 ] && trap 'clean_up' EXIT
