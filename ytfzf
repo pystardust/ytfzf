@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1765.226837f"
+YTFZF_VERSION="git-1766.067d8f6"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -632,11 +632,7 @@ downloader () {
 }
 # }}}
 
-#Misc{{{
-clean_up () {
-    do_an_event_function on_clean_up
-}
-
+# Searching {{{
 get_search_from_source () {
     source=$1
     shift
@@ -655,6 +651,19 @@ get_search_from_source () {
     done
 }
 
+parse_search_hist_file () {
+	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
+}
+
+handle_search_history () {
+    printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
+}
+# }}}
+
+#Misc{{{
+clean_up () {
+    do_an_event_function on_clean_up
+}
 
 handle_playing_notifications (){
 	# if no notify-send push error to /dev/null
@@ -668,10 +677,6 @@ EOF
 	else
 	    notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null
 	fi
-}
-
-parse_search_hist_file () {
-	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
 }
 # }}}
 
@@ -2443,9 +2448,6 @@ shift $((OPTIND-1))
 
 do_an_event_function "on_post_set_vars"
 
-# Post opt scrape{{{
-#}}}
-
 # Get search{{{
 #$initial_search should be used before make_search is called
 #$_search should be used in make_search or after it's called and outisde of any scrapers themselves
@@ -2582,10 +2584,6 @@ handle_empty_scrape () {
 #}}}
 
 
-command_exists "handle_search_history" || handle_search_history () {
-# search history
-printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
-}
 
 is_asking_for_search_necessary () {
     prepare_for_set_args ","
