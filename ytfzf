@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1757.0d043ca"
+YTFZF_VERSION="git-1757.57be87c"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -17,6 +17,7 @@ YTFZF_VERSION="git-1757.0d043ca"
 # 3: missing dependency
 # 4: scraping error
 # 5: empty search
+# *: Likely a curl error
 
 # colors {{{
 c_red="\033[1;31m"
@@ -488,6 +489,45 @@ load_thumbnail_viewer () {
     return $rv
 }
 
+# urlhandlers
+# job of url handlers is:
+# handle the given urls, and take into account some requested attributes, eg: video_pref, and --detach
+# print what the handler is doing
+video_player () {
+	# this function should not be set as the url_handler as it is part of multimedia_player
+	command_exists "mpv" || die 3 "mpv is not installed\n"
+    [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
+    # shellcheck disable=SC2086
+    $use_detach_cmd mpv --ytdl-format="$ytdl_pref" $url_handler_opts "$@"
+}
+
+audio_player () {
+	# this function should not be set as the url_handler as it is part of multimedia_player
+	command_exists "mpv" || die 3 "mpv is not installed\n"
+	# shellcheck disable=SC2086
+	case "$is_detach" in
+		0) mpv --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
+		1) detach_cmd mpv --force-window --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
+	esac
+}
+
+multimedia_player () {
+	# this function differentiates whether or not audio_only was requested
+	case "$is_audio_only" in
+		0) video_player "$@" ;;
+		1) audio_player "$@" ;;
+	esac
+}
+
+downloader () {
+	command_exists "${ytdl_path}" || die 3 "${ytdl_path} is not installed\n"
+    [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
+	# shellcheck disable=SC2086
+	case $is_audio_only in
+	    0) $use_detach_cmd "${ytdl_path}" -f "${ytdl_pref}" $ytdl_opts "$@"	;;
+	    1) $use_detach_cmd "${ytdl_path}" -x -f "${audio_pref}" $ytdl_opts "$@" ;;
+	esac && [ "$notify_playing" -eq 1 ] && notify-send -c ytfzf "Ytfzf Info" "Download complete"
+}
 
 # Traps {{{
 [ $__is_fzf_preview -eq 0 ] && trap 'clean_up' EXIT
@@ -606,6 +646,9 @@ set_vars () {
     # The menu opens immediately while thumbnails download in the background
     async_thumbnails="0"
 
+    #misc
+    instances_url="https://api.invidious.io/instances.json?sort_by=type,health,api"
+
     # read from environment to reset any variables to what the user set
     if [ "$check_exists" -eq 1 ]; then
        _vars=$(awk -F"\n" '
@@ -654,47 +697,9 @@ done
 # files, and const vars
 : "${hist_file:="$cache_dir/watch_hist"}" "${search_hist_file:="$cache_dir/search_hist"}" : "${instances_file:="$cache_dir/instances.json"}"
 
-instances_url="https://api.invidious.io/instances.json?sort_by=type,health,api"
-
-# urlhandlers
-# job of url handlers is:
-# handle the given urls, and take into account some requested attributes, eg: video_pref, and --detach
-# print what the handler is doing
-command_exists "video_player" || video_player () {
-	# this function should not be set as the url_handler as it is part of multimedia_player
-	command_exists "mpv" || die 3 "mpv is not installed\n"
-    [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
-    # shellcheck disable=SC2086
-    $use_detach_cmd mpv --ytdl-format="$ytdl_pref" $url_handler_opts "$@"
-}
-command_exists "audio_player" || audio_player () {
-	# this function should not be set as the url_handler as it is part of multimedia_player
-	command_exists "mpv" || die 3 "mpv is not installed\n"
-	# shellcheck disable=SC2086
-	case "$is_detach" in
-		0) mpv --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
-		1) detach_cmd mpv --force-window --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
-	esac
-}
-command_exists "multimedia_player" || multimedia_player () {
-	# this function differentiates whether or not audio_only was requested
-	case "$is_audio_only" in
-		0) video_player "$@" ;;
-		1) audio_player "$@" ;;
-	esac
-}
-
-command_exists "downloader" || downloader () {
-	command_exists "${ytdl_path}" || die 3 "${ytdl_path} is not installed\n"
-    [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
-	# shellcheck disable=SC2086
-	case $is_audio_only in
-	    0) $use_detach_cmd "${ytdl_path}" -f "${ytdl_pref}" $ytdl_opts "$@"	;;
-	    1) $use_detach_cmd "${ytdl_path}" -x -f "${audio_pref}" $ytdl_opts "$@" ;;
-	esac && [ "$notify_playing" -eq 1 ] && notify-send -c ytfzf "Ytfzf Info" "Download complete"
-}
 
 [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
+
 # Option Checks {{{
 case "$long_opt_char" in
         [a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric\n" ;;
