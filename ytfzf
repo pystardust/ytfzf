@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1759.7c14125"
+YTFZF_VERSION="git-1760.e782fe6"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -64,6 +64,17 @@ get_invidious_instances () {
 # }}}
 
 # General Scraping{{{
+_get_request () {
+	_base_url=$1
+	shift 1
+	# Get search query from youtube
+	curl -f "$_base_url" -s -L \
+		"$@" \
+		-H "User-Agent: $useragent" \
+		-H 'Accept-Language: en-US,en;q=0.9' \
+		--compressed
+}
+
 download_thumbnails () {
 	[ "$skip_thumb_download" -eq 1 ] && { print_info "Skipping thumbnail download\n"; return 0; }
 	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...\n'
@@ -802,17 +813,6 @@ usage () {
 #	thumbs channel duration views date description
 
 # Scraping backends {{{
-_get_request () {
-	_base_url=$1
-	shift 1
-	# Get search query from youtube
-	curl -f "$_base_url" -s -L \
-		"$@" \
-		-H "User-Agent: $useragent" \
-		-H 'Accept-Language: en-US,en;q=0.9' \
-		--compressed
-
-}
 
 _start_series_of_threads () {
 	_thread_count=0

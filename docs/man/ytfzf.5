@@ -2113,3 +2113,15 @@ This function takes one argument.
 The thumbnail viewer to load
 .RE
 
+.TP
+.BR _get_request ()
+This function sends a request to a server and prints the response.
+This funciton takes Unlimited arguments.
+.RS
+.TP
+.I 1
+The url to send a request to
+.TP
+.I ...
+Arguments to pass to \fBcurl(1)\fR
+.RE
