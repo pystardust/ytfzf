@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1764.0ea6f35"
+YTFZF_VERSION="git-1765.226837f"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2225,18 +2225,16 @@ submenu_handler () {
 	submenu_scraping_opts="$old_submenu_scraping_opts"
 }
 
+close_url_handler_submenu_handler () {
+    url_handler="$old_url_handler"
+    submenu_opts="$old_submenu_opts"
+    submenu_scraping_opts="$old_submenu_scraping_opts"
+}
+
 close_url_handler () {
-    case "$1" in
-	submenu_handler)
-	    url_handler="$old_url_handler"
-	    submenu_opts="$old_submenu_opts"
-	    submenu_scraping_opts="$old_submenu_scraping_opts"
-	    ;;
-	*)
-	    fn_name="$(printf "%s" "$1" | tr '-' '_')"
-	    command_exists "close_url_handler_$fn_name" && close_url_handler_"$fn_name"
-	    do_an_event_function "after_close_url_handler" "$1" ;;
-    esac
+    fn_name="$(printf "%s" "$1" | tr '-' '_')"
+    command_exists "close_url_handler_$fn_name" && close_url_handler_"$fn_name"
+    do_an_event_function "after_close_url_handler" "$1"
 }
 
 open_url_handler () {
