@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1763.445cc6d"
+YTFZF_VERSION="git-1764.0ea6f35"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -842,15 +842,6 @@ loaded_extensions="__ytfzf__"
 
 # files, and const vars
 : "${hist_file:="$cache_dir/watch_hist"}" "${search_hist_file:="$cache_dir/search_hist"}" : "${instances_file:="$cache_dir/instances.json"}"
-
-
-# Option Checks {{{
-case "$long_opt_char" in
-        [a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric\n" ;;
-	#? = 1 char, * = 1+ chars; ?* = 2+ chars
-	??*) die 2 "long_opt_char must be 1 char\n" ;;
-esac
-#}}}
 
 new_line='
 '
@@ -2416,7 +2407,14 @@ parse_opt () {
 }
 
 _getopts () {
+    case "$long_opt_char" in
+            [a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric\n" ;;
+        #? = 1 char, * = 1+ chars; ?* = 2+ chars
+        ??*) die 2 "long_opt_char must be 1 char\n" ;;
+    esac
+
     OPTIND=0
+
     while getopts "${optstring:=ac:de:fhi:lmn:qrstu:xADHI:LS:T:U${long_opt_char}:}" OPT; do
 	    case $OPT in
 		    U)
