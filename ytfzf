@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1761.0fd1ff0"
+YTFZF_VERSION="git-1762.abd0e2a"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -35,8 +35,53 @@ c_bold="\033[1m"
 
 : "${check_vars_exists:=${YTFZF_CHECK_VARS_EXISTS:-1}}"
 
-# Utility functions {{{
+# __ytfzf__ extension {{{
 
+on_clean_up___ytfzf__ () {
+	# print_info "cleaning up\n"
+	# clean up only as parent process
+	# kill ytfzf sub process{{{
+	# I think this needs to be written to a file because of sub-shells
+    jobs_file="${TMPDIR:-/tmp}/ytfzf-the-jobs-need-to-be-written-to-a-file-$(id -u).list"
+	jobs -p > "$jobs_file"
+	while read -r line; do
+		[ "$line" ] && kill "$line" 2> /dev/null
+	done < "$jobs_file"
+	#}}}
+	if [ $__is_fzf_preview -eq 0 ]; then
+		[ -d "$session_cache_dir" ] && [ "$keep_cache" -eq 0 ] && rm -r "$session_cache_dir"
+	fi
+}
+
+on_post_set_vars___ytfzf__ () {
+    [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
+
+    : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
+
+    : "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
+
+    [ ! -d "$cache_dir" ] && mkdir -p "$cache_dir"
+
+    # If file doesn't already exist (or if force-refresh is requested), cURL and cache it.
+    # CHECK: implement check for force-request
+    # CHECK: added --refresh-inv-instances to optargs
+    [ ! -f "$instances_file" ] && refresh_inv_instances
+
+    : "${invidious_instance:=$(get_invidious_instances | shuf | head -n 1)}"
+
+
+    FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
+
+    [ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
+
+    scrape_search_exclude="${scrape_search_exclude}${custom_scrape_search_exclude} "
+
+    source_scrapers
+}
+#}}}
+
+
+# Utility functions {{{
 
 ## Jq util{{{
 jq_pad_left='
@@ -361,31 +406,6 @@ thumbnail_video_info_text () {
 
 # Extension stuff{{{
 
-on_post_set_vars___ytfzf__ () {
-    [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
-
-    : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
-
-    : "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
-
-    [ ! -d "$cache_dir" ] && mkdir -p "$cache_dir"
-
-    # If file doesn't already exist (or if force-refresh is requested), cURL and cache it.
-    # CHECK: implement check for force-request
-    # CHECK: added --refresh-inv-instances to optargs
-    [ ! -f "$instances_file" ] && refresh_inv_instances
-
-    : "${invidious_instance:=$(get_invidious_instances | shuf | head -n 1)}"
-
-
-    FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
-
-    [ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
-
-    scrape_search_exclude="${scrape_search_exclude}${custom_scrape_search_exclude} "
-
-    source_scrapers
-}
 
 do_an_event_function () {
     event="$1"
@@ -568,19 +588,6 @@ downloader () {
 
 #Misc{{{
 clean_up () {
-	# print_info "cleaning up\n"
-	# clean up only as parent process
-	# kill ytfzf sub process{{{
-	# I think this needs to be written to a file because of sub-shells
-    jobs_file="${TMPDIR:-/tmp}/ytfzf-the-jobs-need-to-be-written-to-a-file-$(id -u).list"
-	jobs -p > "$jobs_file"
-	while read -r line; do
-		[ "$line" ] && kill "$line" 2> /dev/null
-	done < "$jobs_file"
-	#}}}
-	if [ $__is_fzf_preview -eq 0 ]; then
-		[ -d "$session_cache_dir" ] && [ "$keep_cache" -eq 0 ] && rm -r "$session_cache_dir"
-	fi
     do_an_event_function on_clean_up
 }
 
