@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1761.1b29cf8"
+YTFZF_VERSION="git-1761.0fd1ff0"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -167,6 +167,7 @@ _get_real_channel_link () {
     fi
     printf "%s\n" "https://${domain}${real_path}"
 }
+
 trim_url () {
 	while IFS= read -r _line;do
 		printf '%s\n' "${_line##*"|"}"
@@ -359,6 +360,32 @@ thumbnail_video_info_text () {
 # }}}
 
 # Extension stuff{{{
+
+on_post_set_vars___ytfzf__ () {
+    [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
+
+    : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
+
+    : "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
+
+    [ ! -d "$cache_dir" ] && mkdir -p "$cache_dir"
+
+    # If file doesn't already exist (or if force-refresh is requested), cURL and cache it.
+    # CHECK: implement check for force-request
+    # CHECK: added --refresh-inv-instances to optargs
+    [ ! -f "$instances_file" ] && refresh_inv_instances
+
+    : "${invidious_instance:=$(get_invidious_instances | shuf | head -n 1)}"
+
+
+    FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
+
+    [ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
+
+    scrape_search_exclude="${scrape_search_exclude}${custom_scrape_search_exclude} "
+
+    source_scrapers
+}
 
 do_an_event_function () {
     event="$1"
@@ -755,14 +782,14 @@ for dep in jq curl; do
 done
 #}}}
 
+loaded_extensions="__ytfzf__"
+
 # shellcheck disable=SC1090
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 
 # files, and const vars
 : "${hist_file:="$cache_dir/watch_hist"}" "${search_hist_file:="$cache_dir/search_hist"}" : "${instances_file:="$cache_dir/instances.json"}"
 
-
-[ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
 
 # Option Checks {{{
 case "$long_opt_char" in
@@ -2411,28 +2438,6 @@ shift $((OPTIND-1))
 do_an_event_function "on_post_set_vars"
 
 # Post opt scrape{{{
-: "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
-: "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
-
-
-
-[ ! -d "$cache_dir" ] && mkdir -p "$cache_dir"
-
-# If file doesn't already exist (or if force-refresh is requested), cURL and cache it.
-# CHECK: implement check for force-request
-# CHECK: added --refresh-inv-instances to optargs
-[ ! -f "$instances_file" ] && refresh_inv_instances
-
-: "${invidious_instance:=$(get_invidious_instances | shuf | head -n 1)}"
-
-
-FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
-
-[ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
-
-scrape_search_exclude="${scrape_search_exclude}${custom_scrape_search_exclude} "
-
-source_scrapers
 #}}}
 
 # Get search{{{
