@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1766.067d8f6"
+YTFZF_VERSION="git-1767.d99da47"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -34,6 +34,28 @@ c_bold="\033[1m"
 : "${__is_submenu:=0}" "${__is_fzf_preview:=0}"
 
 : "${check_vars_exists:=${YTFZF_CHECK_VARS_EXISTS:-1}}"
+
+# __ytfzf_multisearch__ extension {{{
+
+on_init_search___ytfzf_multisearch__ () {
+    prepare_for_set_args ","
+    # shellcheck disable=SC2086
+    set -- $1
+    end_of_set_args
+    __total_search_count="$#"
+    printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
+    # if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
+    if [ "$__total_scrape_count" -lt "$__total_search_count" ]; then
+        scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/__total_scrape_count))")
+	    set_scrape_count
+	fi
+}
+
+ext_on_search___ytfzf_multisearch__ () {
+    get_search_from_source "next"
+}
+
+# }}}
 
 # __ytfzf__ extension {{{
 
@@ -120,6 +142,8 @@ on_post_set_vars___ytfzf__ () {
     FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
 
     [ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
+
+    [ "$multi_search" -eq 1 ] && load_fake_extension "__ytfzf_multisearch__"
 
     scrape_search_exclude="${scrape_search_exclude}${custom_scrape_search_exclude} "
 
@@ -496,6 +520,12 @@ load_extension () {
     return $?
 }
 
+#for extensions succh as __ytfzf__
+load_fake_extension () {
+    loaded_extensions="${loaded_extensions} $1"
+    loaded_extensions="${loaded_extensions# }"
+}
+
 load_sort_name () {
     _sort_name=$1
     # shellcheck disable=SC1090
@@ -840,7 +870,7 @@ for dep in jq curl; do
 done
 #}}}
 
-loaded_extensions="__ytfzf__"
+load_fake_extension "__ytfzf__"
 
 # shellcheck disable=SC1090
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
@@ -2556,7 +2586,6 @@ handle_scraping (){
     __scrape_count=0
     for curr_scrape in $scrape; do
         __scrape_count=$((__scrape_count+1))
-        [ "$multi_search" -eq 1 ] && get_search_from_source "next"
         do_an_event_function "ext_on_search" "$_search" "$curr_scrape"
         command_exists "on_search_$_search" && "on_search_$_search" "$curr_scrape"
         "scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"
@@ -2583,8 +2612,6 @@ handle_empty_scrape () {
 }
 #}}}
 
-
-
 is_asking_for_search_necessary () {
     prepare_for_set_args ","
     for _scr in $scrape; do
@@ -2597,19 +2624,6 @@ is_asking_for_search_necessary () {
 }
 
 # multi search{{{
-init_multi_search () {
-    prepare_for_set_args ","
-    # shellcheck disable=SC2086
-    set -- $1
-    end_of_set_args
-    __total_search_count="$#"
-    printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
-    # if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
-    if [ "$__total_scrape_count" -lt "$__total_search_count" ]; then
-        scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/__total_scrape_count))")
-	    set_scrape_count
-	fi
-}
 #}}}
 
 init_search () {
@@ -2619,9 +2633,11 @@ init_search () {
 	is_asking_for_search_necessary && { get_search_from_source "$_search_source" "$_search" || die 5 "No search query\n"; }
 	init_files "$_search"
 	set_scrape_count
-	[ "$multi_search" -eq 1 ] && init_multi_search "$_search"
+
 	# shellcheck disable=SC2031
 	[ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
+
+    do_an_event_function "on_init_search" "$_search"
 }
 
 init_and_make_search () {

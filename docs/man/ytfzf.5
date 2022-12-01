@@ -1722,6 +1722,16 @@ To load an extension add
 .I "load_extension name-of-extension"
 to $YTFZF_CONFIG_FILE
 .PP
+There are two automatically loaded extensions,
+.I __ytfzf__
+and
+.I __ytfzf_multisearch__
+.br
+__ytfzf_multisearch__ is only loaded if
+.B $multi_search
+is
+.I 1
+.PP
 Functions for extensions, where <ext> is replaced with the name of the extension, and all \- are replaced with _.
 
 .TP
@@ -1756,10 +1766,21 @@ The current search
 .IR 2
 The current scrape type
 .RE
+
 .TP
 .BR post_scrape_<ext> ()
 Runs after scraping is complete.
 This function takes no arguments.
+
+.TP
+.BR on_init_search_<ext> ()
+Runs when the search is being initialized.
+This function takes one argument.
+.RS
+.TP
+.IR 1
+The search
+.RE
 
 .SH UTILITY FUNCTIONS
 .PP
