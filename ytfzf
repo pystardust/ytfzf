@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1767.d99da47"
+YTFZF_VERSION="git-1768.eb3e0c3"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -866,7 +866,7 @@ set_vars "${check_vars_exists}"
 
 # hard dependency checks{{{
 for dep in jq curl; do
-	command_exists "$dep" || die 3 "$dep is a required dependency, please install it\n"
+    command_exists "$dep" || die 3 "$dep is a required dependency, please install it\n"
 done
 #}}}
 
@@ -2691,15 +2691,16 @@ main() {
 
 		[ "$is_loop" -eq 0 ] && break
 	done
+
+    # doing this after the loop allows for -l and -s to coexist
+    while [ "$search_again" -eq 1 ] ; do
+        clean_up
+        initial_search=""
+        main
+    done
 }
 main
 
-# doing this after the loop allows for -l and -s to coexist
-while [ "$search_again" -eq 1 ] ; do
-	clean_up
-	initial_search=""
-	main
-done
 #}}}
 
 # vim: foldmethod=marker:shiftwidth=4:tabstop=4
