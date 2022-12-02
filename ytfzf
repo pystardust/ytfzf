@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1771.91c73e9"
+YTFZF_VERSION="git-1771.57a8673"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2210,7 +2210,7 @@ submenu_handler () {
 	[ "$keep_vars" -eq 0 ] && set_vars 0
 	search="$(get_key_value "$_submenu_actions" "search")"
 	__scrape="$(get_key_value "$_submenu_actions" "type")"
-	submenu_opts="$old_submenu_scraping_opts -c${__scrape} $old_submenu_opts"
+	submenu_opts="$old_submenu_scraping_opts $old_submenu_opts -c${__scrape}"
 	# this needs to be here as well as close_url_handler because it will not happen inside this function if it's not here
 	url_handler="$old_url_handler"
     interface="$old_interface"
