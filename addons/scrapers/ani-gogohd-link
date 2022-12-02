@@ -31,7 +31,7 @@ _ani_gogohd_generate_link () {
 			refr="https://fembed-hd.com/v/$fb_id"
 			[ -z "$fb_id" ] && return 0
 			result_links="$(curl -a "$useragent" -s -x post "https://fembed-hd.com/api/source/$fb_id" -h "x-requested-with:xmlhttprequest" |
-                sed -e 's/\\//g' -e 's/.*data"://' | tr "}" "\n" | sed -ne 's/.*file":"(.*)","label":"(.*)","type.*/\2>\1/p')" 
+                sed -e 's/\\//g' -e 's/.*data"://' | tr "}" "\n" | sed -n 's/.*file":"\(.*\)","label":"\(.*\)","type.*/\2>\1/p')" 
 
             _generate_json () {
                 json="["
@@ -47,21 +47,19 @@ eof
             } ;;
         *)
             command_exists "openssl" || die 3 "openssl is necessary for gogoanime scraping\n"
-			provider_name='gogoanime'
 			refr="https://gogohd.net/"
 			[ -z "$id" ] && return 0
-			secret_key=$(printf "%s" "$full_gogo_resp" | sed -n '2p' | tr -d "\n" | od -a n -t x1 | tr -d " |\n")
-			iv=$(printf "%s" "$resp" | sed -n '3p' | tr -d "\n" | od -a n -t x1 | tr -d " |\n")
-			second_key=$(printf "%s" "$resp" | sed -n '4p' | tr -d "\n" | od -a n -t x1 | tr -d " |\n")
-			token=$(printf "%s" "$resp" | head -1 | base64 -d | openssl enc -d -aes256 -k "$secret_key" -iv "$iv" | sed -ne 's/.*&(token.*)/\1/p')
-			ajax=$(printf '%s' "$id" | openssl enc -e -aes256 -k "$secret_key" -iv "$iv" -a)
-			data=$(curl -a "$useragent" -sl -h "x-requested-with:xmlhttprequest" "${gogohd_url}encrypt-ajax.php?id=${ajax}&alias=${id}&${token}" | sed -e 's/{"data":"//' -e 's/"}/\n/' -e 's/\\//g')
-			result_links="$(printf '%s' "$data" | base64 -d 2>/dev/null | openssl enc -d -aes256 -k "$second_key" -iv "$iv" 2>/dev/null |
-				tr -d \\\\ | sed -ne "s_.*file\":\"([^\"]*)\".*source.*_\1_p")"
-            _generate_json (){
-                echo "$result_links"
-            }
-            ;;
+            secret_key=$(printf "%s" "$full_gogo_resp" | sed -n '2p' | tr -d "\n" | od -A n -t x1 | tr -d " |\n")
+            iv=$(printf "%s" "$resp" | sed -n '3p' | tr -d "\n" | od -A n -t x1 | tr -d " |\n")
+            second_key=$(printf "%s" "$resp" | sed -n '4p' | tr -d "\n" | od -A n -t x1 | tr -d " |\n")
+            token=$(printf "%s" "$resp" | head -1 | base64 -d | openssl enc -d -aes256 -K "$secret_key" -iv "$iv" | sed -n 's/.*&\(token.*\)/\1/p')
+            ajax=$(printf '%s' "$id" | openssl enc -e -aes256 -K "$secret_key" -iv "$iv" -a)
+            data=$(curl -A "$useragent" -sL -H "X-Requested-With:XMLHttpRequest" "${gogohd_url}encrypt-ajax.php?id=${ajax}&alias=${id}&${token}" | sed -e 's/{"data":"//' -e 's/"}/\n/' -e 's/\\//g')
+            result_links="$(printf '%s' "$data" | base64 -d 2>/dev/null | openssl enc -d -aes256 -K "$second_key" -iv "$iv" 2>/dev/null |
+				tr -d \\\\ | sed -n "s_.*file\":\"\([^\"]*\)\".*source.*_\1_p")"
+            _generate_json () {
+                echo '[{"ID": "'"${title}-ani-gogohd"'", "title": "'"${title}"'", "scraper": "ani-gogohd-link", "url": "'"$result_links"'"}]'
+            } ;;
 
     esac
     [ -n "$result_links" ] && _generate_json
