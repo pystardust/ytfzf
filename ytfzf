@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1768.eb3e0c3"
+YTFZF_VERSION="git-1769.8e026a1"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -881,6 +881,7 @@ load_fake_extension "__ytfzf__"
 new_line='
 '
 tab_space=$(printf '\t')
+EOT="$(printf '\003')"
 
 # }}}
 
@@ -2150,7 +2151,7 @@ interface_thumbnails () {
 	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|join("\t")' < "$video_json_file" |
 	sort_video_data_fn |
 	SHELL="$(command -v sh)" fzf -m \
-	--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -U preview_img '$thumbnail_viewer' {} '$video_json_file'" \
+	--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -W \"preview_img"$EOT"$thumbnail_viewer"$EOT"$video_json_file"$EOT"{}\"" \
 	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
 	trim_url > "$selected_id_file"
 
@@ -2433,6 +2434,20 @@ parse_opt () {
         fancy-subs)
             fancy_subs=${optarg:-1}
             [ "$fancy_subs" -eq 1 ] && is_sort=0 ;;
+        W)
+            prepare_for_set_args "$EOT"
+            set -- $optarg
+            end_of_set_args
+            action="$1"
+            case "$action" in
+                preview_img)
+                    thumb_viewer="$2" video_json_file="$3"
+                    shift 3
+                    line="$*" line="${line#\'}" line="${line%\'}"
+                    source_scrapers
+                    preview_img "$thumb_viewer" "$line" "$video_json_file";;
+            esac
+            exit 0 ;;
         *)
             # shellcheck disable=SC2031
             [ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt\n";;
@@ -2448,21 +2463,8 @@ _getopts () {
 
     OPTIND=0
 
-    while getopts "${optstring:=ac:de:fhi:lmn:qrstu:xADHI:LS:T:U${long_opt_char}:}" OPT; do
+    while getopts "${optstring:=ac:de:fhi:lmn:qrstu:xADHI:LS:T:W:${long_opt_char}:}" OPT; do
 	    case $OPT in
-		    U)
-			    # shellcheck disable=SC2031
-			    shift $((OPTIND-1))
-			    case $1 in
-				    preview_img)
-					    # shellcheck disable=SC2031
-					    shift
-					    source_scrapers
-					    preview_img "$@"
-					    ;;
-			    esac
-			    exit 0
-			    ;;
 		    "$long_opt_char")
 			    parse_opt "${OPTARG%%=*}" "${OPTARG#*=}" ;;
 		    *)
