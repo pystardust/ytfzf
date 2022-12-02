@@ -24,7 +24,7 @@ scrape_ani_category () {
         id="$(printf "%s" "$url" | sed -n 's/.*title=\([^&]\+\).*/\1/p')"
         #this replaces all percents with \\x so that printf can convert them to real values
         title="$(echo -e "$(printf "%s" "$id" | sed 'y/+/-/; s/%/\\x/g')")"
-        json=''"${json}"'{"ID": "'"$id"'", "title": "'"$title"'", "url": "'"$url"'", "scraper": "ani-category", "action": "scrape type=ani-gogohd-link search='"$url"'"},'
+        json=''"${json}"'{"ID": "'"$title"'", "title": "'"$title"'", "url": "'"$url"'", "scraper": "ani-category", "action": "scrape type=ani-gogohd-link search='"$url"'"},'
     done < "${session_cache_dir}/ani-category-episodes.list"
     json="${json%,}]"
     printf "%s\n" "$json" >> "$output_json_file"
