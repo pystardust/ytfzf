@@ -108,8 +108,8 @@ This can also be set in the config file with
 .TP
 .BR \-u ", " \-\-url\-handler=handler
 The function/program to use as a url handler.
-This can also be set in the config file with
-.BR url_handler .
+This can also be set in the config file by adding
+.BR load_url_handler " <handler>" .
 .TP
 .BI \-I " option"
 Instead of playing the selected videos,
@@ -210,7 +210,7 @@ Options:
 This can also be changed in the config file with
 .BR fzf_preview_side .
 .TP
-.BR \-\-thumb\-viewer=program
+.BR \-T ", " \-\-thumb\-viewer=program
 Use program for displaying thumbnails.
 .br
 Built-in programs:
@@ -234,11 +234,16 @@ For the kitty terminal.
 .IR swayimg
 Only works on the sway wayland compositor.
 .TP
+.IR swayimg-hyprland
+Only works on the hyprland compositor.
+Uses swayimg to render an image.
+.TP
 .IR <custom>
 Additional viewers can be put into $YTFZF_THUMBNAIL_VIEWERS_DIR.
 .RE
-This can also be changed in the config file with
-.BR thumbnail_viewer .
+This can also be changed in the config file by adding
+.br
+.BR load_thumbnail_viewer " <viewer>" .
 .TP
 .BR \-D ", " \-\-external\-menu
 Use an external menu instead of fzf.
@@ -248,8 +253,8 @@ This can also be set in the config file with
 .TP
 .BR \-i ", " \-\-interface=interface
 Use a custom interface script, which would be in $YTFZF_CUSTOM_INTERFACES_DIR.
-This can also be set in the config file with
-.BR interface .
+This can also be set in the config file by adding
+.BR load_interface " <interface>" .
 .TP
 .BR \-\-sort
 Sorts videos (after scraping) by upload date.
@@ -537,7 +542,7 @@ The type of results to get.
 .IR all
 .RE
 .TP
-.BI \-T ", " \-\-thumbnail\-quality= quality
+.BI \-\-thumbnail\-quality= quality
 Select the quality of the thumbnails.
 Available options:
 .RS
@@ -682,17 +687,17 @@ See \fBytfzf\fR(5) for more information.
 .PP
 There are a few types of addons,
 .br
-.B interfaces (\-\-interface)
+.B interfaces (\-i, \-\-interface)
 .br
-.B scrapers (\-c)
+.B scrapers (\-c, \-\-scrape)
 .br
 .B sort-names (\-\-sort\-name)
 .br
-.B thumbnail-viewers (\-\-thumb\-viewer)
+.B thumbnail-viewers (\-T, \-\-thumb\-viewer)
 .br
-.B url-handlers (\-\-url_handler)
+.B url-handlers (\-u, \-\-url_handler)
 .br
-.B extensions (\-\-ext)
+.B extensions (\-e, \-\-ext)
 
 .PP
 To install an addon, place the addon in
@@ -814,6 +819,8 @@ The subscriptions file.
 Each instance of ytfzf has its own directory in $cache_dir.
 .br
 The structure of $cache_dir looks like this: (<> represents a placeholder, ? means optional)
+.br
+If an addon scraper is used, it may use undocumented files.
 .RS
 .EX
 $cache_dir
@@ -827,7 +834,7 @@ $cache_dir
 |  |  | \-\- curl_config
 |  |  | \-\- <scrape>.html
 |  |  | \-\- <scrape>.json
-|  |  | \-\- <scrape>.json.final
+|  |  | \-\- <scrape>.json.final?
 |  |  | \-\- menu_keypress
 |  |  | \-\- all-ids.list
 |  |  | \-\- downloaded-ids.list

@@ -1,0 +1,101 @@
+#!/bin/sh
+#
+
+
+_provider_number_to_name () {
+    case "$1" in
+        1) name="Animixplay" ;;
+        2) name="Xstreamcdn" ;;
+        *) name="Gogoanime" ;;
+    esac
+    echo "$name"
+}
+
+_ani_gogohd_generate_link () {
+    id="$1"
+    provider="$2"
+    full_gogo_resp="$3"
+    case "$provider" in
+        1)
+            refr="https://animixplay.to"
+            [ -z "$id" ] && return 0
+            command_exists "base64" || { pring_warning "base64 is not installed\n" && return 0; }
+            enc_id="$(printf "%s" "$id" | base64)"
+            ani_id="$(printf "%sLTXs3GrU8we9O%s", "$id" "$enc_id" | base64)"
+            result_links="$(_get_request "$refr/api/cW9${ani_id}"  -I | sed -nE 's_[L|l]ocation: https?://[^#]*#([^#]*).*_\1_p' | base64 -d)"
+            _generate_json () {
+                echo '[{"ID": "'"${title}-ani-gogohd"'", "title": "'"${title}"'", "scraper": "ani-gogohd-link", "url": "'"$result_links"'"}]'
+            } ;;
+        2)
+			fb_id=$(printf "%s" "$full_gogo_resp" | sed -n "s_.*fembed.*/v/__p")
+			refr="https://fembed-hd.com/v/$fb_id"
+			[ -z "$fb_id" ] && return 0
+			result_links="$(curl -a "$useragent" -s -x post "https://fembed-hd.com/api/source/$fb_id" -h "x-requested-with:xmlhttprequest" |
+                sed -e 's/\\//g' -e 's/.*data"://' | tr "}" "\n" | sed -n 's/.*file":"\(.*\)","label":"\(.*\)","type.*/\2>\1/p')" 
+
+            _generate_json () {
+                json="["
+                while read -r quality_and_url; do
+                    quality="${quality_and_url%%">"*}"
+                    url="${quality_and_url#*">"}"
+                    json=''"${json}"'{"id":"'"$id"'", "url": "'"$url"'", "title": "'"${title} (${quality})"'", "scraper": "ani-gogohd-link"},'
+                done <<-eof
+                    $result_links
+eof
+                json="${json%,}]"
+                echo "$json"
+            } ;;
+        *)
+            command_exists "openssl" || die 3 "openssl is necessary for gogoanime scraping\n"
+			refr="https://gogohd.net/"
+			[ -z "$id" ] && return 0
+            secret_key=$(printf "%s" "$full_gogo_resp" | sed -n '2p' | tr -d "\n" | od -A n -t x1 | tr -d " |\n")
+            iv=$(printf "%s" "$resp" | sed -n '3p' | tr -d "\n" | od -A n -t x1 | tr -d " |\n")
+            second_key=$(printf "%s" "$resp" | sed -n '4p' | tr -d "\n" | od -A n -t x1 | tr -d " |\n")
+            token=$(printf "%s" "$resp" | head -1 | base64 -d | openssl enc -d -aes256 -K "$secret_key" -iv "$iv" | sed -n 's/.*&\(token.*\)/\1/p')
+            ajax=$(printf '%s' "$id" | openssl enc -e -aes256 -K "$secret_key" -iv "$iv" -a)
+            data=$(curl -A "$useragent" -sL -H "X-Requested-With:XMLHttpRequest" "${gogohd_url}encrypt-ajax.php?id=${ajax}&alias=${id}&${token}" | sed -e 's/{"data":"//' -e 's/"}/\n/' -e 's/\\//g')
+            result_links="$(printf '%s' "$data" | base64 -d 2>/dev/null | openssl enc -d -aes256 -K "$second_key" -iv "$iv" 2>/dev/null |
+				tr -d \\\\ | sed -n "s_.*file\":\"\([^\"]*\)\".*source.*_\1_p")"
+            _generate_json () {
+                echo '[{"ID": "'"${title}-ani-gogohd"'", "title": "'"${title}"'", "scraper": "ani-gogohd-link", "url": "'"$result_links"'"}]'
+            } ;;
+
+    esac
+    [ -n "$result_links" ] && _generate_json
+}
+
+_supports_echo_e () {
+    _test_against="$EOT"
+    #if this is true, echo printed the correct char
+    [ "$(echo -e "\x3")" = "$_test_against" ]
+}
+
+
+scrape_ani_gogohd_link () {
+    _supports_echo_e || die 1 "Your shell does not support echo -e\n"
+    link="$1"
+    output_json_file="$2"
+    id="$(printf "%s" "$link" | sed -n 's/.*title=\([^&]\+\).*/\1/p')"
+    #this replaces all percents with \\x so that printf can convert them to real values
+    title="$(echo -e "$(printf "%s" "$id" | sed 'y/+/-/; s/%/\\x/g')")"
+    id="$(printf "%s" "$link" | sed -n 's/.*id=\([^&]*\).*/\1/p')"
+    gogohd_url="https://gogohd.net/"
+    resp=$(_get_request "${gogohd_url}streaming.php?id=$id" -l |
+		sed -n 's/.*class="container-\(.*\)">/\1/p ;
+			s/.*class="wrapper container-\(.*\)">/\1/p ;
+			s/.*class=".*videocontent-\(.*\)">/\1/p ;
+			s/.*data-value="\(.*\)">.*/\1/p ;
+            s/.*data-status="1".*data-video="\(.*\)">.*/\1/p')
+
+    provider=1
+    i=0
+    while [ "$i" -lt 3 ] && [ -z "$result_links" ]; do
+        print_info "Trying provider: $(_provider_number_to_name $provider)\n"
+        data="$(_ani_gogohd_generate_link "$id" "$provider" "$resp")"
+        [ -n "$data" ] && break
+        provider=$((provider % 3 + 1))
+        i=$((i+1))
+    done
+    printf "%s\n" "$data" >> "$output_json_file"
+}

@@ -1,112 +1,31 @@
 #!/bin/sh
+#
 
-#stolen from pystardust/ani-cli
-_decrypt_link() {
-    ajax_url="https://goload.pro/encrypt-ajax.php"
-	id=$(printf "%s" "$1" | sed -nE 's/.*id=(.*)&title.*/\1/p')
-	resp=$(curl -s "$1")
-	secret_key=$(printf "%s" "$resp" | sed -nE 's/.*class="container-(.*)">/\1/p' | tr -d "\n" | od -A n -t x1 | tr -d " |\n")
-	iv=$(printf "%s" "$resp" | sed -nE 's/.*class="wrapper container-(.*)">/\1/p' | tr -d "\n" | od -A n -t x1 | tr -d " |\n")
-	second_key=$(printf "%s" "$resp" | sed -nE 's/.*class=".*videocontent-(.*)">/\1/p' | tr -d "\n" | od -A n -t x1 | tr -d " |\n")
-	token=$(printf "%s" "$resp" | sed -nE 's/.*data-value="(.*)">.*/\1/p' | base64 -d | openssl enc -d -aes256 -K "$secret_key" -iv "$iv" | sed -nE 's/.*&(token.*)/\1/p')
-	ajax=$(printf '%s' "$id" | openssl enc -e -aes256 -K "$secret_key" -iv "$iv" | base64)
-	data=$(curl -s -H "X-Requested-With:XMLHttpRequest" "${ajax_url}?id=${ajax}&alias=${id}&${token}" | sed -e 's/{"data":"//' -e 's/"}/\n/' -e 's/\\//g')
-	printf '%s' "$data" | base64 -d | openssl enc -d -aes256 -K "$second_key" -iv "$iv" | sed -e 's/\].*/\]/' -e 's/\\//g' |
-		grep -Eo 'https:\/\/[-a-zA-Z0-9@:%._\+~#=][a-zA-Z0-9][-a-zA-Z0-9@:%_\+.~#?&\/\/=]*'
-}
-
-_get_video_link () {
-	dpage_url="$1"
-	video_links=$(_decrypt_link "$dpage_url")
-	if printf '%s' "$video_links" | grep -q "mp4"; then
-		video_url=$(printf "%s" "$video_links" | head -n 4 | tail -n 1)
-		idx=1
-	else
-		video_url="$video_links"
-		_get_video_quality_m3u8
-	fi
-
-}
-
-_get_video_quality_mp4() {
-	case $quality in
-		best)
-			video_url=$(printf '%s' "$1" | head -n 4 | tail -n 1) ;;
-		worst)
-			video_url=$(printf '%s' "$1" | head -n 1) ;;
-		*)
-			video_url=$(printf '%s' "$1" | grep -i "${quality}p" | head -n 1)
-			if [ -z "$video_url" ]; then
-				err "Current video quality is not available (defaulting to best quality)"
-				quality=best
-				video_url=$(printf '%s' "$1" | head -n 4 | tail -n 1)
-			fi
-			;;
-	esac
-	printf '%s' "$video_url"
-}
-
-_get_video_quality_m3u8() {
-	case $quality in
-		worst|360)
-			idx=2 ;;
-		480)
-			idx=3 ;;
-		720)
-			idx=4 ;;
-		1080|best)
-			idx=5 ;;
-		*)
-			idx=5 ;;
-	esac
-	printf '%s' "$video_url" | grep -qE "gogocdn.*m3u.*" && idx=$((idx-1))
-}
-
-#stolen from pystardust/ani-cli
-_ani_category_get_episodes () {
-    sed -n -E '
-		/^[[:space:]]*<a href="#" class="active" ep_start/{
-		s/.* '\''([0-9]*)'\'' ep_end = '\''([0-9]*)'\''.*/\2/p
-		q
-		}' "$1"
-}
-
-_get_dpage_link () {
-# get the download page url
-	anime_id="$1"
-	ep_no="$2"
-    curl -s "https://goload.pro/videos/${anime_id}-episode-${ep_no}" | sed -nE 's_^[[:space:]]*<iframe src="([^"]*)".*_\1_p' |
-	sed 's/^/https:/g'
+_supports_echo_e () {
+    _test_against="$EOT"
+    #if this is true, echo printed the correct char
+    [ "$(echo -e "\x3")" = "$_test_against" ]
 }
 
 scrape_ani_category () {
+    _supports_echo_e || die 1 "Your shell does not support echo -e\n"
     search="$1"
-    [ "$search" = ":help" ] && print_info "Search should be the specific anime to watch from gogoanime\n" && return 100
     output_json_file="$2"
-    #stolen from pystardust/ani-cli
-    base_url=$(curl -s -L -o /dev/null -w "%{url_effective}\n" https://gogoanime.cm)
-    _tmp_html="${session_temp_dir}/ani-category.html"
-    _get_request "$base_url/category/$search" > "$_tmp_html"
-    episode_count="$(_ani_category_get_episodes "$_tmp_html")"
-
-    ep_start=${pages_start:-1}
-    [ "$pages_to_scrape" -eq 1 ] && ep_max="$episode_count" || ep_max="$((ep_start + pages_to_scrape))"
-    [ "$ep_max" -gt "$episode_count" ] && ep_max=$episode_count
-
-    command_exists "openssl" || die 3 "openssl is a required dependency for ani, please install it\n"
-    _start_series_of_threads
-    while [ $ep_start -le "$ep_max" ]; do
-	{
-	    print_info "Scraping anime episode $ep_start\n"
-	    _tmp_json="${session_temp_dir}/ani-category-$ep_start.json.final"
-	    #stolen from pystardust/ani-cli
-	    dpage_link=$(_get_dpage_link "$search" "$ep_start")
-	    _get_video_link "$dpage_link"
-	    echo "[]" | jq --arg idx "$idx" --arg dpage "$dpage_link" --arg url "$video_url" --arg title "$search episode $ep_start" '[{"url": $url, "title": $title, "ID": $title, "idx": $idx, "dpage": $dpage}]' > "$_tmp_json"
-	} &
-	ep_start=$((ep_start+1))
-	_thread_started "$!"
-    done
-    wait
-    _concatinate_json_file "${session_temp_dir}/ani-category-" "$episode_count" "$output_json_file"
+    base_url='https://animixplay.to'
+    #This pipeline is mostly a copy paste from https://github.com/pystardust/ani-cli
+    #this pipeline does the following
+    #1: send request to the url with the search
+    #2: does some webscraping to get a list of links to gogohd.net
+    #3: lastly uses sed to prepend https: to the front of each link
+    #4: writes the whole thing to ${session_cache_dir}/ani-category-episodes.list
+    _get_request "$base_url/v1/${search}" | sed -n "s_.*epslistplace.*>\(.*\)</div>_\1_p" | tr ',' '\n' | sed -e '/extra/d' -e '/PV/d' | sed -n 's_".*":"\(.*\)".*_\1_p' | sed 's/\(.*\)/https:\1/' > "${session_cache_dir}/ani-category-episodes.list"
+    json="["
+    while read -r url; do
+        id="$(printf "%s" "$url" | sed -n 's/.*title=\([^&]\+\).*/\1/p')"
+        #this replaces all percents with \\x so that printf can convert them to real values
+        title="$(echo -e "$(printf "%s" "$id" | sed 'y/+/-/; s/%/\\x/g')")"
+        json=''"${json}"'{"ID": "'"$title"'", "title": "'"$title"'", "url": "'"$url"'", "scraper": "ani-category", "action": "scrape type=ani-gogohd-link search='"$url"'"},'
+    done < "${session_cache_dir}/ani-category-episodes.list"
+    json="${json%,}]"
+    printf "%s\n" "$json" >> "$output_json_file"
 }

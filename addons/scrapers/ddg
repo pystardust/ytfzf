@@ -5,7 +5,7 @@ scrape_ddg () {
         video_player|audio_player|downloader|multimedia_player) die 1 "It appears your url_handler is not a webbrowser" ;;
     esac
     search=$1
-    [ "$search" = ":help" ] && print_info "search ddg" && return 10
+    [ "$search" = ":help" ] && print_info "search ddg" && return 100
     command_exists "ddgr" || die 3 "ddgr is used to scrape duckduckgo"
     output_json_file="$2"
 

@@ -128,6 +128,8 @@ Whether or not to only play audio.
 .RB $ url_handler
 The function/programs to handle the selected videos
 .br
+It is recommended to not set this variable directly, but rather to use the command load_url_handler
+.br
 See URL handlers for a list of built-in url handlers
 .IR default: " multimedia_player"
 
@@ -220,6 +222,9 @@ Menu options
 .RB $ interface
 The interface/menu to use.
 .br
+It is recommended to not use this variable directly, instead use 
+.B load_interface "interface-name"
+.br
 Valid options.
 .RS
 .TP
@@ -261,6 +266,9 @@ Valid options:
 .RB $ thumbnail_viewer
 The program to display images for thumbnail previews
 .br
+It is recommended to not use this variable directly, instead use
+.B load_thumbnail_viewer "viewer"
+.br
 Valid options:
 .RS
 .TP
@@ -290,6 +298,10 @@ For the kitty terminal.
 .TP
 .IR swayimg
 Only works on the sway wayland compositor
+.TP
+.IR swayimg-hyprland
+Only works on the hyprland compositor.
+Uses swayimg to render images.
 .TP
 .IR default: " ueberzug"
 .RE
@@ -571,7 +583,7 @@ The currently supported options are:
 .TP
 .IR playlist/json-file ,
 .PP
-The search will be a path to a json file layed out as described in VIDEO JSON FORMAT
+The search will be a path to a json file laid out as described in VIDEO JSON FORMAT
 .TP
 .IR history ,
 .TP
@@ -1179,20 +1191,20 @@ This function takes no arguments.
 
 .TP
 .BR display_text ()
-Print text to stdandard out.
+Print text to standard out.
 .br
 This function takes an unlimited number of arguments to print.
 
 .TP
 .BR display_text_ext ()
-Print text to stdandard out.
+Print text to standard out.
 .br
 This function takes an unlimited number of arguments to print.
 .RE
 
 .TP
 .BR display_text_scripting ()
-Print text to stdandard out.
+Print text to standard out.
 .br
 This function takes an unlimited number of arguments to print.
 .RE
@@ -1714,6 +1726,16 @@ To load an extension add
 .I "load_extension name-of-extension"
 to $YTFZF_CONFIG_FILE
 .PP
+There are two automatically loaded extensions,
+.I __ytfzf__
+and
+.I __ytfzf_multisearch__
+.br
+__ytfzf_multisearch__ is only loaded if
+.B $multi_search
+is
+.I 1
+.PP
 Functions for extensions, where <ext> is replaced with the name of the extension, and all \- are replaced with _.
 
 .TP
@@ -1736,9 +1758,10 @@ This function takes no arguments.
 Replace ext_name with the name of an extension (with - replaced with _).
 This function is the same as \fBon_post_set_vars\fR
 
-.TP ext_on_search_<ext> ()
+.TP
+.BR ext_on_search_<ext> ()
 Runs for before the website is scraped, for every search query.
-This functon takes two arguments.
+This function takes two arguments.
 .RS
 .TP
 .IR 1
@@ -1747,28 +1770,39 @@ The current search
 .IR 2
 The current scrape type
 .RE
+
 .TP
 .BR post_scrape_<ext> ()
 Runs after scraping is complete.
 This function takes no arguments.
+
+.TP
+.BR on_init_search_<ext> ()
+Runs when the search is being initialized.
+This function takes one argument.
+.RS
+.TP
+.IR 1
+The search
+.RE
 
 .SH UTILITY FUNCTIONS
 .PP
 A utility function is any function that can be used in
 .I configuration files,
 .I extensions,
-.I thumbnail viweers,
+.I thumbnail viewers,
 .I interfaces,
 .I search-names,
 
 .TP
 .BR refresh_inv_instances ()
-This function writes the response from "https://api.invidious.io/instances.json?sort_by=type,health,api" to $cache_dir/instacnes.json.
+This function writes the response from "https://api.invidious.io/instances.json?sort_by=type,health,api" to $cache_dir/instances.json.
 This function takes no arguments.
 
 .TP
 .BR get_invidious_instances ()
-Ths function grabs invidious instances that have an api and prints them seperated by a new line.
+This function grabs invidious instances that have an api and prints them separated by a new line.
 This function takes no arguments.
 
 .TP
@@ -1858,7 +1892,7 @@ This function takes an unlimited number of arguments.
 The command to run
 .TP
 .I ...
-The arguments to pass to tthe command.
+The arguments to pass to the command.
 .RE
 
 .TP
@@ -1871,7 +1905,8 @@ This function checks the following locations for the file to source.
 .I \fB$YTFZF_CUSTOM_SCRAPERS_DIR\fR
 .TP
 .I \fB$YTFZF_SYSTEM_ADDON_DIR/scrapers\fR
-.RE\fB$YTFZF_CUSTOM_SCRAPERS_DIR\fR
+.TP
+.I \fB$YTFZF_CUSTOM_SCRAPERS_DIR\fR
 .TP
 .I \fB$YTFZF_SYSTEM_ADDON_DIR/scrapers\fR
 .RE
@@ -1906,7 +1941,7 @@ If there is only one key_value pair, there must still be <sep> on each side.
 .br
 After printing the value to stdout, this function sets the variable \fB$KEY_VALUE\fR to the value of the key.
 .br
-This function exits with status code \fI0\fR if the value is not empty, and \fI1\fR if it is epmty.
+This function exits with status code \fI0\fR if the value is not empty, and \fI1\fR if it is empty.
 .br
 This function takes three arguments.
 .RS
@@ -1918,13 +1953,13 @@ The key_value string.
 The key to find the value for.
 .TP
 .I 3 (optional)
-The seperator that seperates each key_value pair.
+The separator that separates each key_value pair.
 By default this is a space.
 .RE
 
 .TP
 .BR title_str ()
-Ths function capitalizes the first letter of a string, and prints it to stdout.
+This function capitalizes the first letter of a string, and prints it to stdout.
 This function takes one argument.
 .RS
 .TP
@@ -2045,7 +2080,7 @@ This function checks the following locations for the sort-name.
 .B $YTFZF_SORT_NAMES_DIR
 .B $YTFZF_SYSTEM_ADDON_DIR/sort-names
 .EE
-This function exits with status code \fI1\fR if the sort-name does not exist, otherwise it exits with the same status code as when the sort-nae was loaded.
+This function exits with status code \fI1\fR if the sort-name does not exist, otherwise it exits with the same status code as when the sort-name was loaded.
 This function takes one argument.
 .RS
 .TP
@@ -2103,3 +2138,30 @@ This function takes one argument.
 The thumbnail viewer to load
 .RE
 
+.TP
+.BR _get_request ()
+This function sends a request to a server and prints the response.
+This funciton takes Unlimited arguments.
+.RS
+.TP
+.I 1
+The url to send a request to
+.TP
+.I ...
+Arguments to pass to \fBcurl(1)\fR
+.RE
+
+.TP
+.BR _get_real_channel_link ()
+This function converts a youtube channel link in the form of
+.EX
+.I @user
+.I https://www.youtube.com/user/<channel-name>
+.I https://www.youtube.com/c/<channel-name>
+.EE
+This function takes one argument.
+.RS
+.TP
+.I 1
+The link to convert
+.RE
