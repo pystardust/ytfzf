@@ -1,6 +1,9 @@
 #!/bin/sh
 get_sort_by () {
-    echo "${1%%${tab_space}*}"
+	_video_json_line="$1"
+	title="${_video_json_line##*'"title":"'}"
+    title="${title%%\"*}"
+    printf "%s" "$title"
 }
 data_sort_fn () {
     sort

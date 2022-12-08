@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="2.5.3"
+YTFZF_VERSION="git-1783.cd72251"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -2185,8 +2185,8 @@ interface_thumbnails () {
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	# fzf_preview_side will get reset if we don't pass it in
     jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
-    jq -r '"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
 	sort_video_data_fn |
+    jq -r '"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
 	SHELL="$(command -v sh)" fzf -m \
 	--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -W \"preview_img"$EOT"$thumbnail_viewer"$EOT"$video_json_file"$EOT"{+f}\"" \
 	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
