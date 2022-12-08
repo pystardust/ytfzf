@@ -78,7 +78,7 @@ interface_gui () {
     video_json_file="$1"
     selected_id_file="$2"
     command_exists "gtkdialog" || die 3 "gtkdialog (https://github.com/puppylinux-woof-CE/gtkdialog) is required for the gui interface\n"
-	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
+    jq -r -c 'select(.!=[])|.[]' < "$video_json_file" |
         sort_video_data_fn | gui_dialog | sed -n -e 's/EXIT="\(.*\)"/\1/p' -e 's/[[:space:]]*//g' > "$selected_id_file"
     while read -r line; do
         [ "$line" = "abort" ] && exit 0
