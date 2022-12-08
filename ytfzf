@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1783.c128763"
+YTFZF_VERSION="git-1788.eec66f9"
 
 ############################
 #        CODE STYLE        #
@@ -495,6 +495,7 @@ run_interface () {
     unset _interface
 }
 
+#This function generates a series of lines that will be displayed in fzf, or some other interface
 #takes in a series of jsonl lines, each jsonl should follow the VIDEO JSON FORMAT
 video_info_text () {
     jq -r '[.title, .channel, .duration, .views, .date, .url]|join("\t|")' |
@@ -510,6 +511,8 @@ video_info_text () {
     done
 }
 
+# This is completely unrelated to video_info_text
+# It is used in preview_img for when text should appear in the preview in fzf
 thumbnail_video_info_text () {
 	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%s" "$views" | add_commas)"
 	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
@@ -1705,9 +1708,9 @@ scrape_u (){ printf '[{"ID": "%s", "title": "%s", "url": "%s"}]\n' "URL-${1##*/}
 
 #TODO: refactor sorting to not rely on video_info_text, and instead be based on json
 
-# Take a line as the first argument, a line will be in the following format
-    # title |channel |duration |views |date |url
+# Take a json line as the first argument, the line should follow VIDEO JSON FORMAT
 # This function should print the information from the line to sort by (or something else)
+# This specific implementation of get_sort_by prints the upload date in unix time
 command_exists "get_sort_by" || get_sort_by () {
 	_video_json_line="$1"
 	date="${_video_json_line##*'"date":"'}"
@@ -1724,7 +1727,6 @@ command_exists "data_sort_fn" || data_sort_fn () {
 }
 
 #This function reads all lines being piped in, and sorts them.
-#TODO: refactor to use json.
 sort_video_data_fn () {
 	if [ $is_sort -eq 1 ]; then
 		while IFS= read -r _video_json_line
