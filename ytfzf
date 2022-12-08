@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1783.cd72251"
+YTFZF_VERSION="git-1783.c128763"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -450,17 +450,19 @@ run_interface () {
     unset _interface
 }
 
-# Takes video json file as $1 and returns the selected video IDs to file $2
+#takes in a series of jsonl lines, each jsonl should follow the VIDEO JSON FORMAT
 video_info_text () {
-	# we can't just change the views line to %d because it needs to display the "|", and "|$views" is NaN
-	[ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
-	printf "%-${title_len}.${title_len}s\t" "$title"
-	printf "%-${channel_len}.${channel_len}s\t" "$channel"
-	printf "%-${dur_len}.${dur_len}s\t" "$duration"
-	printf "%-${view_len}.${view_len}s\t" "$views"
-	printf "%-${date_len}.${date_len}s\t" "$date"
-	printf "%s" "$url"
-	printf "\n"
+    jq -r '[.title, .channel, .duration, .views, .date, .url]|join("\t|")' |
+    while IFS=$tab_space read -r title channel duration views date url; do
+        [ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
+        printf "%-${title_len}.${title_len}s\t" "$title"
+        printf "%-${channel_len}.${channel_len}s\t" "$channel"
+        printf "%-${dur_len}.${dur_len}s\t" "$duration"
+        printf "%-${view_len}.${view_len}s\t" "$views"
+        printf "%-${date_len}.${date_len}s\t" "$date"
+        printf "%s" "$url"
+        printf "\n"
+    done
 }
 
 thumbnail_video_info_text () {
@@ -1784,11 +1786,7 @@ interface_text () {
 	# shellcheck disable=2015
     jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
 		sort_video_data_fn |
-        jq -r '"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
-		while IFS=$tab_space read -r title channel duration views date url
-		do
-			video_info_text
-		done |
+        video_info_text |
         { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
 		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
 		trim_url > "$selected_id_file"
@@ -1810,11 +1808,7 @@ interface_ext () {
 
     jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
 		sort_video_data_fn |
-        jq -r '"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
-		while IFS=$tab_space read -r title channel duration views date url
-		do
-			video_info_text
-		done |
+        video_info_text |
 		external_menu "Select video: " |
 		trim_url > "$selected_id_file"
 }
