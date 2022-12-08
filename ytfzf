@@ -1601,14 +1601,13 @@ scrape_u (){ printf '[{"ID": "%s", "title": "%s", "url": "%s"}]\n' "URL-${1##*/}
 # Sorting {{{
 
 command_exists "get_sort_by" || get_sort_by () {
-	line="$1"
-	date="${line%"|"*}"
-	date=${date##*"|"}
+	_video_json_line="$1"
+	date="${_video_json_line##*'"date":"'}"
+    date="${date%%\"*}"
 	# youtube specific
 	date=${date#*Streamed}
 	date=${date#*Premiered}
 	date -d "$date" '+%s' 2>/dev/null || date -f "$date" '+%s' 2> /dev/null || printf "null"
-	unset line
 }
 
 command_exists "data_sort_fn" || data_sort_fn () {
@@ -1617,11 +1616,11 @@ command_exists "data_sort_fn" || data_sort_fn () {
 
 sort_video_data_fn () {
 	if [ $is_sort -eq 1 ]; then
-		while IFS= read -r line
+		while IFS= read -r _video_json_line
 		do
 			# run the key function to get the value to sort by
-			get_sort_by "$line" | tr -d '\n'
-			printf "\t%s\n" "$line"
+			get_sort_by "$_video_json_line" | tr -d '\n'
+			printf "\t%s\n" "$_video_json_line"
 		done | data_sort_fn | cut -f2-
 	else
 		cat
@@ -1783,8 +1782,9 @@ interface_text () {
 	unset IFS
 
 	# shellcheck disable=2015
-	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
+    jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
 		sort_video_data_fn |
+        jq -r '"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
 		while IFS=$tab_space read -r title channel duration views date url
 		do
 			video_info_text
@@ -1808,8 +1808,9 @@ interface_ext () {
 	view_len=10
 	date_len=100
 
-	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
+    jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
 		sort_video_data_fn |
+        jq -r '"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
 		while IFS=$tab_space read -r title channel duration views date url
 		do
 			video_info_text
@@ -2183,7 +2184,8 @@ interface_thumbnails () {
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	# fzf_preview_side will get reset if we don't pass it in
-	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|join("\t")' < "$video_json_file" |
+    jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
+    jq -r '"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
 	sort_video_data_fn |
 	SHELL="$(command -v sh)" fzf -m \
 	--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -W \"preview_img"$EOT"$thumbnail_viewer"$EOT"$video_json_file"$EOT"{+f}\"" \
