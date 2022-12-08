@@ -811,7 +811,7 @@ The subscriptions file.
 
 .SH CACHE
 .PP
-Each instance of ytfzf has its own directory in $cache_dir.
+Each instance of ytfzf has its own directory in ${TMPDIR}/ytfzf (by default /tmp/ytfzf), of if $keep_cache is enabled, in $cache_dir
 .br
 The structure of $cache_dir looks like this: (<> represents a placeholder, ? means optional)
 .RS
