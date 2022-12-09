@@ -2534,7 +2534,16 @@ init_files (){
 	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
 	# shellcheck disable=SC2031
-	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+    if [ "$__is_submenu" -eq 1 ]; then
+        #if we are in a submenu, cache_dir will be the previous session_cache_dir
+        session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+    elif [ "$keep_cache" -eq 0 ]; then
+        #by default we should store in ${TMPDIR:-/tmp} to reduce io usage
+        session_cache_dir="${TMPDIR:-/tmp}/ytfzf/${SEARCH_PREFIX}-${YTFZF_PID}"
+    else
+        #if we want to keep the cache, use real cache dir
+        session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+    fi
 	session_temp_dir="${session_cache_dir}/tmp"
 	thumb_dir="${session_cache_dir}/thumbnails"
 	mkdir -p "$session_temp_dir" "$thumb_dir"
