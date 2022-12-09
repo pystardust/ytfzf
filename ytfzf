@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1785.357bead"
+YTFZF_VERSION="git-1787.3c3b1a8"
 
 # Scraping: query -> video json
 # User Interface: video json -> user selection -> ID
@@ -585,7 +585,7 @@ load_thumbnail_viewer () {
     _thumbnail_viewer="$1"
     case "$_thumbnail_viewer" in
            # these are special cases, where they are not themselves commands
-           chafa-16|chafa|chafa-tty|catimg|catimg-256|imv|ueberzug|kitty|swayimg|mpv) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
+           chafa-16|chafa|chafa-tty|catimg|catimg-256|imv|ueberzug|kitty|swayimg|mpv|foot) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
            swayimg-hyprland) print_warning "swayimg-hyprland thumbnail viewer may mess up any rules you have for swayimg\n"; thumbnail_viewer="$_thumbnail_viewer" ;;
            ./*|/*|../*|~/*) thumbnail_viewer="$_thumbnail_viewer"; false ;;
            *)
@@ -1836,6 +1836,8 @@ preview_start () {
 			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open 
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|swayimg|swayimg-hyprland) : ;;
+        foot)
+            export const_FOOT_PID_FILE="${session_temp_dir}/foot.pid" ;;
 		kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
 		imv)
 			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
@@ -1864,6 +1866,9 @@ preview_stop () {
 		    exec 3>&- # close file descriptor 3, closing ueberzug
 		    ;;
 	    chafa|chafa-16|chafa-tty|catimg|catimg-256|kitty) : ;;
+        foot)
+            kill "$(cat "$const_FOOT_PID_FILE")"
+            rm "$const_FOOT_PID_FILE" ;;
 	    mpv)
 		kill "$mpv_pid"
 		rm "$MPV_SOCKET" > /dev/null 2>&1
@@ -1882,7 +1887,7 @@ command_exists "on_no_thumbnail" || on_no_thumbnail () {
 preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
-	    chafa|chafa-16|chafa-tty|catimg|catimg-256|imv|mpv) : ;;
+	    chafa|chafa-16|chafa-tty|catimg|catimg-256|imv|mpv|foot) : ;;
 	    ueberzug)
 		{
 		    printf "{"
@@ -2016,6 +2021,11 @@ preview_display_image () {
 		    printf "}\n"
 		} > "$UEBERZUG_FIFO" 2> "$thumbnail_debug_log"
 		;;
+        foot)
+            kill $(cat "$const_FOOT_PID_FILE") > /dev/null 2>&1
+            foot --app-id='ytfzf-foot' -H -e img2sixel "$thumb_path" > /dev/null 2>&1 &
+            printf "%s\n" "$!" > "$const_FOOT_PID_FILE"
+            ;;
         swayimg-hyprland)
             command_exists "hyprctl" || die 3 "hyprctl is required for this thumbnail viewer\n"
             _swayimg_pid_file="${session_temp_dir}/_swayimg.pid"
