@@ -802,6 +802,13 @@ The default may vary depending on how you installed ytfzf.
 Whether or not to check if variables are set in the environment before setting default values.
 The default is
 .I 1
+.TP
+.B $YTFZF_TEMP_DIR
+The temporary directory
+The default is is
+.I $TMPDIR/ytfzf-$user-id.
+.br
+If $TMPDIR is not defined it will use /tmp
 
 .SH FILES
 .TP
@@ -816,9 +823,9 @@ The subscriptions file.
 
 .SH CACHE
 .PP
-Each instance of ytfzf has its own directory in ${TMPDIR}/ytfzf (by default /tmp/ytfzf), of if $keep_cache is enabled, in $cache_dir
+Each instance of ytfzf has its own directory in $YTFZF_TEMP_DIR, if $keep_cache is enabled, it uses $cache_dir instead.
 .br
-The structure of $cache_dir looks like this: (<> represents a placeholder, ? means optional)
+The structure of each instance folder looks like this: (<> represents a placeholder, ? means optional)
 .br
 If an addon scraper is used, it may use undocumented files.
 .RS
