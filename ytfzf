@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1790.23edeb7"
+YTFZF_VERSION="git-1796.29ee487"
 
 ############################
 #        CODE STYLE        #
@@ -25,7 +25,7 @@ YTFZF_VERSION="git-1790.23edeb7"
     # example: the search_source variable has the long opt equivelent of --search-source
 
 # Private variables should start with an _
-    # A major exception to this is the _search variable, which should be global, and should not be used as a local variable.
+    # A major exception to this is the _search variable, which is global, and should not be used as a local variable.
 
 ##################
 # FUNCTION NAMES #
@@ -489,7 +489,16 @@ search_prompt_menu_ext () {
 search_prompt_menu_scripting () {
 	search_prompt_menu
 }
+
 run_interface () {
+    if [ "$show_thumbnails" -eq 1 ]; then
+        prepare_for_set_args
+        case "$async_thumbnails" in
+            0) download_thumbnails $(get_missing_thumbnails) ;;
+            1) download_thumbnails $(get_missing_thumbnails) & ;;
+        esac
+        end_of_set_args
+    fi
     _interface="interface_${interface:-text}"
     $(printf "%s" "$_interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
     unset _interface
@@ -1787,15 +1796,7 @@ clear_hist () {
 
 # * If the interface uses shortcuts, it is responsible for calling handle_post_keypress if the $keypress_file exists.
 
-# * The interface should download and display thumbnails if thumbnails are enabled, and the interface supports it
-    # * (I am thinking of removing the download requirement as it should be the same for every interface)
-    # * The download code should look like this:
-        #   if [ "$show_thumbnails" -eq 1 ]; then
-        #       case "$async_thumbnails" in
-	    #           0) download_thumbnails $(get_missing_thumbnails) ;;
-	    #           1) download_thumbnails $(get_missing_thumbnails) & ;;
-	    #       esac
-        #   fi
+# * The interface should display thumbnails if thumbnails are enabled, and the interface supports it
 
 # * It is not required, but interfaces (especially tui interfaces) should use the output from the output from the video_info_text function to display the results.
 
@@ -2305,16 +2306,6 @@ interface_thumbnails () {
 	# Takes video json file and downloads the thumnails as ${ID}.png to thumb_dir
 	video_json_file=$1
 	selected_id_file=$2
-
-	# Download thumbnails, only if they're not already downloaded
-
-	set -f
-	unset IFS
-	# shellcheck disable=SC2046
-	case "$async_thumbnails" in
-	    0) download_thumbnails $(get_missing_thumbnails) ;;
-	    1) download_thumbnails $(get_missing_thumbnails) & ;;
-	esac
 
 	preview_start "$thumbnail_viewer"
 

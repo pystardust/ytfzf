@@ -25,7 +25,6 @@ gui_dialog () {
         : > "$css_file"
     fi
     export MAIN_DIALOG="<window><vbox scrollable=\"true\" vscrollbar-policy=\"0\">"
-    download_thumbnails $(get_missing_thumbnails)
     while read -r line; do
         url="${line##*|}"
         _correct_json="$(jq -r --arg url "$url" '[.[]|select(.url==$url)]|unique_by(.ID)[0]' < "$video_json_file")"
