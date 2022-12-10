@@ -3,7 +3,25 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1796.29ee487"
+YTFZF_VERSION="git-1797.5a074d4"
+
+#ENVIRONMENT VARIABLES {{{
+: "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
+: "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
+: "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
+: "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
+: "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
+: "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
+: "${YTFZF_URL_HANDLERS_DIR:=$YTFZF_CONFIG_DIR/url-handlers}"
+: "${YTFZF_CUSTOM_THUMBNAILS_DIR:=$YTFZF_CONFIG_DIR/thumbnails}"
+: "${YTFZF_EXTENSIONS_DIR:=$YTFZF_CONFIG_DIR/extensions}"
+: "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
+
+: "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
+
+: "${YTFZF_TEMP_DIR:="${TMPDIR:-/tmp}"/ytfzf-$(id -u)}"
+! [ -d "$YTFZF_TEMP_DIR" ] && mkdir -p "${YTFZF_TEMP_DIR}"
+#}}}
 
 ############################
 #        CODE STYLE        #
@@ -148,11 +166,12 @@ on_clean_up___ytfzf__ () {
 	# clean up only as parent process
 	# kill ytfzf sub process{{{
 	# I think this needs to be written to a file because of sub-shells
-    jobs_file="${TMPDIR:-/tmp}/ytfzf-the-jobs-need-to-be-written-to-a-file-$(id -u).list"
+    jobs_file="${YTFZF_TEMP_DIR}/the-jobs-need-to-be-written-to-a-file-$$.list"
 	jobs -p > "$jobs_file"
 	while read -r line; do
 		[ "$line" ] && kill "$line" 2> /dev/null
 	done < "$jobs_file"
+    rm "$jobs_file"
 	#}}}
 	if [ $__is_fzf_preview -eq 0 ]; then
 		[ -d "$session_cache_dir" ] && [ "$keep_cache" -eq 0 ] && rm -r "$session_cache_dir"
@@ -778,31 +797,12 @@ EOF
 
 # Global Variables and Start Up {{{
 
-# expansions where the variable is a string and globbing shouldn't happen should be surrounded by quotes
-# variables that cannot be empty should use := instead of just =
-
-# configuration handling {{{
-: "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
-: "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
-: "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
-: "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
-: "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
-: "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
-: "${YTFZF_URL_HANDLERS_DIR:=$YTFZF_CONFIG_DIR/url-handlers}"
-: "${YTFZF_CUSTOM_THUMBNAILS_DIR:=$YTFZF_CONFIG_DIR/thumbnails}"
-: "${YTFZF_EXTENSIONS_DIR:=$YTFZF_CONFIG_DIR/extensions}"
-: "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
-
-: "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
-
-#}}}
-
 set_vars () {
     check_exists="${1:-1}"
 
     # save the ecurrent environment so that any user set variables will be saved
     if [ "$check_exists" -eq 1 ]; then
-        tmp_env=/tmp/"ytfzf-env-$(id -u)"
+        tmp_env="${YTFZF_TEMP_DIR}/ytfzf-env-$$"
         export -p > "$tmp_env"
     fi
 
@@ -918,6 +918,7 @@ END{
     $_vars
 EOF
     fi
+    rm "$tmp_env"
     unset check_exists _vars variable var_name var_val
 }
 
@@ -2674,7 +2675,7 @@ init_files (){
         session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
     elif [ "$keep_cache" -eq 0 ]; then
         #by default we should store in ${TMPDIR:-/tmp} to reduce io usage
-        session_cache_dir="${TMPDIR:-/tmp}/ytfzf/${SEARCH_PREFIX}-${YTFZF_PID}"
+        session_cache_dir="${YTFZF_TEMP_DIR}/${SEARCH_PREFIX}-${YTFZF_PID}"
     else
         #if we want to keep the cache, use real cache dir
         session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
