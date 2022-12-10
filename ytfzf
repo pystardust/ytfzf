@@ -3,13 +3,46 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1788.8c584fa"
+YTFZF_VERSION="git-1790.23edeb7"
 
-# Scraping: query -> video json
-# User Interface: video json -> user selection -> ID
-# Player: ID -> video player
+############################
+#        CODE STYLE        #
+############################
 
-# error codes:
+##################
+# VARIABLE NAMES #
+##################
+
+# Starts with __ if it is a state variable thatt is allowed to be accessed globally.
+    # for example: __is_submenu is a state variable that keeps track of whether or not itt is a submenu
+    # another example: __scrape_count is the current scrape number
+   
+# Environment variables should be all caps, do not use full caps for constansts
+
+# Const variable should start with c_ or const_
+
+# Configuration variables should not start with any prefix, and should have a --long-opt equivelent with as close of a name as posisble to the variable
+    # example: the search_source variable has the long opt equivelent of --search-source
+
+# Private variables should start with an _
+    # A major exception to this is the _search variable, which should be global, and should not be used as a local variable.
+
+##################
+# FUNCTION NAMES #
+##################
+
+# Private functions should start with an _
+
+# All other functions that should be accessed globally should not start with an _
+    # A major exception to this is _get_request which is a global function
+
+# interface functions MUST start with interface_ in order to work properly
+# scraper functions MUST start with scrape_ in order to work properly
+
+############################
+#          ERRORS          #
+############################
+
 # 0: success
 # 1: general error
 # 2: invalid -opt or command argument, invalid argument for opt, configuration error
@@ -18,6 +51,10 @@ YTFZF_VERSION="git-1788.8c584fa"
 # 4: scraping error
 # 5: empty search
 # *: Likely a curl error
+
+############################
+#          CODE            #
+############################
 
 # colors {{{
 c_red="\033[1;31m"
@@ -152,6 +189,14 @@ on_post_set_vars___ytfzf__ () {
 #}}}
 
 # Utility functions {{{
+
+############################
+#    UTILITY FUNCTIONS     #
+############################
+
+# In order to be a utility function it must meet the following requirements:
+    # Does not have side effects
+    # Can be redefined by the user in an extension or config file
 
 ## Jq util{{{
 jq_pad_left='
@@ -450,6 +495,7 @@ run_interface () {
     unset _interface
 }
 
+#This function generates a series of lines that will be displayed in fzf, or some other interface
 #takes in a series of jsonl lines, each jsonl should follow the VIDEO JSON FORMAT
 video_info_text () {
     jq -r '[.title, .channel, .duration, .views, .date, .url]|join("\t|")' |
@@ -465,6 +511,8 @@ video_info_text () {
     done
 }
 
+# This is completely unrelated to video_info_text
+# It is used in preview_img for when text should appear in the preview in fzf
 thumbnail_video_info_text () {
 	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%s" "$views" | add_commas)"
 	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
@@ -712,13 +760,12 @@ EOF
 	fi
 }
 # }}}
+# }}}
 
 # Traps {{{
 [ $__is_fzf_preview -eq 0 ] && trap 'clean_up' EXIT
 [ $__is_fzf_preview -eq 0 ] && trap 'exit' INT TERM HUP
 #}}}
-
-# }}}
 
 # Global Variables and Start Up {{{
 
@@ -900,18 +947,65 @@ usage () {
 }
 
 # Scraping {{{
-# * a scraper function takes a search query as $1 and returns video json to file $2
-# * argument 3 and above are undefined and can be used for filters
-# * return codes:
-#            5 : scrape is disabled
-#            6 : no response from site (matches curl)
-#            22: error scraping site (matches curl)
 
-# Json keys:
-#	Needed:
-#	ID url title
-#	Optional:
-#	thumbs channel duration views date description
+############################
+#         SCRAPERS         #
+############################
+
+#############
+# ARGUMENTS #
+#############
+
+# Scrapers take 2 arguments:
+    # 1: the search query (do not store in a variable called $_search, it is preferable to use $search, $c_search, or $const_search)
+        # Do not use the global $_search variable directly as $1 may be different.
+    # 2: the file to write the finished json to (the standard name for this variable is $output_json_file)
+
+#############
+#   FILES   #
+#############
+
+# Store all temp files in $session_temp_dir with a name prefix that matches the scraper name.
+    # Even better all temp files can be in $session_temp_dir/$scrape_name, no name prefix required.
+
+##############
+# EXIT CODES #
+##############
+
+# 0: success
+# 1: failed to load website, or general error
+# 100: :help search query
+#----curl errors-----
+# Even if not using curl, return these values.
+# 6: Unresponsive website
+# 22: General request error
+
+####################
+# RESPONSIBILITIES #
+####################
+
+# Scrapers are responsible for the following
+
+# * If the search query is exactly: ":help", it should:
+    # 1. print a little information on what the scraper does, and how to use it
+    # 2. return 100
+
+# * All other search words starting with : may be treated as special operators, you can do anything you want with them.
+    # * Currently :help is the only standard operator.
+
+# * Lastly the scraper should create a json and store it in $2
+    # The required keys are:
+        # ID (string): (a unique identifier for the video can be anything really)
+        # url (string): the url that will be opened when the video is selected.
+        # title (string): The tittle of the video.
+    # Optional keys include:
+        # thumbs (string): Link to a thumbnail (no, "thumbs" is not a typo)
+        # channel (string): The author of the video (Should be human readable)
+        # duration (string): Length of the video (Should be human readable)
+        # views (string): view count
+        # date (string): The upload date (should be human readable).
+        # action (string): An action that should be read by the handle_actions function when the video is selected.
+            # For information on how to format an action, see the handle_actions function.
 
 # Scraping backends {{{
 
@@ -1602,6 +1696,21 @@ scrape_u (){ printf '[{"ID": "%s", "title": "%s", "url": "%s"}]\n' "URL-${1##*/}
 
 # Sorting {{{
 
+############################
+#         SORTING          #
+############################
+
+# There is a 2 step soring process.
+    # 1. the get_sort_by function is called
+    # 2. the data_sort_fn function is called
+# The result of those 2 steps is then printed to stdout.
+
+
+#TODO: refactor sorting to not rely on video_info_text, and instead be based on json
+
+# Take a json line as the first argument, the line should follow VIDEO JSON FORMAT
+# This function should print the information from the line to sort by (or something else)
+# This specific implementation of get_sort_by prints the upload date in unix time
 command_exists "get_sort_by" || get_sort_by () {
 	_video_json_line="$1"
 	date="${_video_json_line##*'"date":"'}"
@@ -1612,10 +1721,12 @@ command_exists "get_sort_by" || get_sort_by () {
 	date -d "$date" '+%s' 2>/dev/null || date -f "$date" '+%s' 2> /dev/null || printf "null"
 }
 
+# This function sorts the data being piped into it.
 command_exists "data_sort_fn" || data_sort_fn () {
 	sort -nr
 }
 
+#This function reads all lines being piped in, and sorts them.
 sort_video_data_fn () {
 	if [ $is_sort -eq 1 ]; then
 		while IFS= read -r _video_json_line
@@ -1658,6 +1769,40 @@ clear_hist () {
 #}}}
 
 # User Interface {{{
+
+############################
+#        INTERFACES        #
+############################
+
+# The interface takes 2 arguments
+# 1: The video json file to read from
+    # The json file will be in the VIDEO JSON FORMAT (see ytfzf(5)) for more information
+# 2: The url file to write to
+    # each url should be seperated by a new line when written to the url file.
+
+# Interfaces are responsible for the following:
+
+# * Checking if the menu it wants to use is installed.
+    # * Example: interface_text checks if fzf is installed and exits with code 3 if it can't.
+
+# * If the interface uses shortcuts, it is responsible for calling handle_post_keypress if the $keypress_file exists.
+
+# * The interface should download and display thumbnails if thumbnails are enabled, and the interface supports it
+    # * (I am thinking of removing the download requirement as it should be the same for every interface)
+    # * The download code should look like this:
+        #   if [ "$show_thumbnails" -eq 1 ]; then
+        #       case "$async_thumbnails" in
+	    #           0) download_thumbnails $(get_missing_thumbnails) ;;
+	    #           1) download_thumbnails $(get_missing_thumbnails) & ;;
+	    #       esac
+        #   fi
+
+# * It is not required, but interfaces (especially tui interfaces) should use the output from the output from the video_info_text function to display the results.
+
+# * Lastly, if a key, or key combination was pressed (and the interface supports it), it should be written to $keypress_file.
+    # * $keypress_file will be used *after* the interface is closed, If the interface does not function in a way similar to fzf do not use this file for shortcuts.
+    # * When handling keypresses manually, it is preferrable to use the keybinds listed in $shortcut_binds,
+        # * For example, the download shortcut to check against should be $download_shortcut
 
 # Keypresses {{{
 set_keypress () {
@@ -1734,7 +1879,6 @@ handle_keypress () {
 }
 
 #}}}
-
 
 command_exists "thumbnail_video_info_text_comments" || thumbnail_video_info_text_comments () {
 	[ -n "$title" ] && printf "${c_bold}%s\n${c_reset}" "$title"
@@ -2234,7 +2378,7 @@ handle_info_wait_action () {
 
 }
 
-submenu_handler () {
+nubmenu_handler () {
 	# eat stdin and close it
 	cat > /dev/null
     old_interface="$interface"
@@ -2557,6 +2701,19 @@ init_files (){
 # }}}
 
 # actions {{{
+
+############################
+#         ACTIONS          #
+############################
+
+# Actions happen after a video is selected, and after the keypresses are handled
+
+# Actions are formatted in the following way
+    # action-name data...
+# for the scrape action, data must be formatted in the following way,
+# For custom actions, data can be formatted in any way
+    # scrape search=search-in-one-word type=scraper
+
 # actions are attached to videos/items in the menu
 handle_actions () {
 	unset _submenu_actions IFS
@@ -2709,7 +2866,6 @@ until handle_empty_scrape; do
         1) init_and_make_search "" "$search_source" ;;
     esac
 done
-
 
 main() {
 	while :; do
