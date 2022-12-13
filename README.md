@@ -57,17 +57,18 @@ There are only 2 required dependencies, however the rest require some configurat
 * [`dmenu`](https://tools.suckless.org/dmenu/) (only if using the -D option)
 * [`ueberzug`](https://github.com/seebye/ueberzug) (if using thumbnails (-t) on x11)
     * If on wayland, or you do not want `ueberzug`, see the alternatives [below](#Alternative-Thumbnail-Viewers).
-    * To use an alternative include `--thumb-viewer=<alternative>` in the command when running ytfzf
+    * To use an alternative include `-T <alternative>` in the command when running ytfzf
 
 ### Alternative Thumbnail Viewers
-| Program                                                                           | Wayland Support  |
-| :--                                                                               | :--              |
-| [`chafa`](https://github.com/hpjansson/chafa)                                     | &#9989;          |
-| [`catimg`](https://github.com/posva/catimg)                                       | &#9989;          |
-| [`imv`](https://git.sr.ht/~exec64/imv)                                            | &#9989;          |
-| [`mpv`](https://github.com/mpv-player/mpv)                                        | &#9989;          |
-| [`kitty`](https://github.com/kovidgoyal/kitty)                                    | &#9989;          |
-| [`swayimg`](https://github.com/artemsen/swayimg)                                  | only on `sway`   |
+| Program                                                                           | Wayland Support      |
+| :--                                                                               | :--                  |
+| [`chafa`](https://github.com/hpjansson/chafa)                                     | &#9989;              |
+| [`catimg`](https://github.com/posva/catimg)                                       | &#9989;              |
+| [`imv`](https://git.sr.ht/~exec64/imv)                                            | &#9989;              |
+| [`mpv`](https://github.com/mpv-player/mpv)                                        | &#9989;              |
+| [`kitty`](https://github.com/kovidgoyal/kitty)                                    | &#9989;              |
+| [`swayimg`](https://github.com/artemsen/swayimg)                                  | only on `sway`       |
+| [`swayimg`](https://github.com/artemsen/swayimg) (-T swayimg-hyprland)            | only on `hyprland`   |
 
 # Install
 
