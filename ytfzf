@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1801.cd39473"
+YTFZF_VERSION="git-1804.f4760c2"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -274,7 +274,7 @@ get_missing_thumbnails () {
 	_downloaded_ids_file="${session_temp_dir}/downloaded-ids.list"
 
     # gets all ids and writes them to file
-	jq -r '.[]|select(.thumbs!=null)|.ID' < "$video_json_file" | sort |uniq > "$_tmp_id_list_file"
+	jq -r '.[]|select(.thumbs!=null)|.ID' < "$ytfzf_video_json_file" | sort |uniq > "$_tmp_id_list_file"
     # gets thumb urls, and ids, and concatinates them such as: <thumbnail>;<id>
     # essencially gets all downloaded thumbnail ids, by checking $thumb_dir and substituting out the \.jpg at the end
 	find "$thumb_dir" -type f | sed -n 's/^.*\///; s/\.jpg$//; /^[^\/]*$/p' | sort > "$_downloaded_ids_file"
@@ -284,7 +284,7 @@ get_missing_thumbnails () {
     missing_ids="\"$(diff "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^[>+] *\(.*\)$/\1/p')\""
 
     # formats missing ids into the format: <thumb-url>;<id>
-    jq --arg ids "$missing_ids" -r '.[]|select(.thumbs!=null)|select(.ID as $id | $ids | contains($id))|.thumbs + ";" + .ID' < "$video_json_file"
+    jq --arg ids "$missing_ids" -r '.[]|select(.thumbs!=null)|select(.ID as $id | $ids | contains($id))|.thumbs + ";" + .ID' < "$ytfzf_video_json_file"
 
 	unset _tmp_id_list_file _downloaded_ids_file missing_ids
 }
@@ -2608,13 +2608,13 @@ parse_opt () {
             action="$1"
             case "$action" in
                 preview_img)
-                    thumb_viewer="$2" video_json_file="$3"
+                    thumb_viewer="$2" ytfzf_video_json_file="$3"
                     shift 3
                     line_file="$*"
                     read -r line < "$line_file"
                     line="${line#\'}" line="${line%\'}"
                     source_scrapers
-                    preview_img "$thumb_viewer" "$line" "$video_json_file";;
+                    preview_img "$thumb_viewer" "$line" "$ytfzf_video_json_file";;
             esac
             exit 0 ;;
         *)
