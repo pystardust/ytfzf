@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1804.f4760c2"
+YTFZF_VERSION="git-1805.ae8aadc"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2370,7 +2370,7 @@ handle_info_wait_action () {
 
 }
 
-nubmenu_handler () {
+submenu_handler () {
 	# eat stdin and close it
 	cat > /dev/null
     old_interface="$interface"
