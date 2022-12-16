@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1807.82df2b8"
+YTFZF_VERSION="git-1808.5f617bf"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -19,9 +19,21 @@ YTFZF_VERSION="git-1807.82df2b8"
 
 : "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
 
+
 : "${YTFZF_TEMP_DIR:="${TMPDIR:-/tmp}"/ytfzf-$(id -u)}"
+
+: "${YTFZF_LOGFILE:="/dev/stderr"}" > "${YTFZF_LOGFILE:="/dev/stderr"}"
+
 ! [ -d "$YTFZF_TEMP_DIR" ] && mkdir -p "${YTFZF_TEMP_DIR}"
 #}}}
+
+############################
+#        DEBUGGING         #
+############################
+
+# There are only a couple tooling methods that I know of for debugging (other than printing stuff everywhere)
+# set log_level to 3, and set YTFZF_LOGFILE=./some-file.log
+# set -x may also be used.
 
 ############################
 #        CODE STYLE        #
@@ -485,8 +497,11 @@ generic_wrapper () {
     shift
     fn_name="$base_name""$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
     if command_exists "$fn_name"; then
+        print_debug "[INTERFACE]: Running menu function: $fn_name\n"
 	    $fn_name "$@"
-    else "$base_name"_ext "$@"
+    else
+        print_debug "[INTERFACE]: Menu function $fn_name did not exist, falling back to ${base_name}_ext\n"
+        "$base_name"_ext "$@"
     fi
     unset fn_name
 }
@@ -519,6 +534,9 @@ run_interface () {
         end_of_set_args
     fi
     _interface="interface_${interface:-text}"
+
+    print_debug "[INTERFACE]: Running interface: $_interface\n"
+
     $(printf "%s" "$_interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
     unset _interface
 }
@@ -558,10 +576,12 @@ thumbnail_video_info_text () {
 do_an_event_function () {
     event="$1"
     shift
+    print_debug "[EVENT]: doing event: $event\n"
     command_exists "$event" && $event "$@"
     modify_ifs " "
     for ext in $loaded_extensions; do
-        command_exists "${event}_$ext" && "${event}_$ext" "$@"
+        
+        command_exists "${event}_$ext" && print_debug "[EVENT]: $ext running $event\n"  && "${event}_$ext" "$@"
     done
     end_modify_ifs
 }
@@ -577,6 +597,7 @@ source_scrapers () {
 			. "${YTFZF_SYSTEM_ADDON_DIR}/scrapers/$_scr"
 		fi
 		[ "$__is_fzf_preview" -eq 0 ] && command_exists "on_startup_$_scr" && "on_startup_$_scr"
+        print_debug "[LOADING]: Loaded scraper: $_scr\n"
 	done
 	end_of_set_args
 }
@@ -595,7 +616,12 @@ load_extension () {
 	# shellcheck disable=SC1090
         . "$ext"
     fi
-    return $?
+
+    rv="$?"
+
+    print_debug "[LOADING]: loaded extension: ${ext} with exit code: ${rv}\n"
+
+    return $rv
 }
 
 #for extensions succh as __ytfzf__
@@ -620,6 +646,7 @@ load_sort_name () {
     esac
     rv="$?"
     unset "$_sort_name"
+    print_debug "[LOADING]: loaded sort name: ${_sort_name} with exit code: ${rv}\n"
     return "$rv"
 }
 
@@ -633,6 +660,7 @@ load_url_handler () {
 	done
 	die 2 "$1 is not a url-handler\n"
     fi
+    print_debug "[LOADING]: loaded url handler: ${requested_url_handler}\n"
 }
 
 load_interface () {
@@ -654,6 +682,7 @@ load_interface () {
     esac
     rv="$?"
     unset requested_interface
+    print_debug "[LOADING]: loaded interface: ${requested_interface}\n"
     return "$rv"
 }
 
@@ -672,24 +701,31 @@ load_thumbnail_viewer () {
                    fi; false
     esac
     rv="$?"
+    print_debug "[LOADING]: loaded thumbnail viewer: ${_thumbnail_viewer}\n"
     unset _thumbnail_viewer
     return $rv
 }
 #}}}
 
 # Logging {{{
+
+print_debug () {
+    [ "$log_level" -ge 3 ] && printf -- "${c_blue}[DEBUG]${c_reset}: $1" >> "$YTFZF_LOGFILE"
+    return 0
+}
+
 print_info () {
 	# information goes to stdout ( does not disturb show_link_only )
 	# shellcheck disable=2059
-	[ "$log_level" -ge 2 ] && printf -- "$1" >&2
+	[ "$log_level" -ge 2 ] && printf -- "$1" >> "$YTFZF_LOGFILE"
 }
 print_warning () {
 	# shellcheck disable=2059
-	[ "$log_level" -ge 1 ] && printf -- "${c_yellow}${1}${c_reset}" >&2
+	[ "$log_level" -ge 1 ] && printf -- "${c_yellow}[WARNING]${c_reset}: ${c_yellow}${1}${c_reset}" >> "$YTFZF_LOGFILE"
 }
 print_error () {
 	# shellcheck disable=2059
-	[ "$log_level" -ge 0 ] && printf -- "${c_red}${1}${c_reset}" >&2
+	[ "$log_level" -ge 0 ] && printf -- "${c_red}[ERROR]${c_reset}: ${c_red}${1}${c_reset}" >> "$YTFZF_LOGFILE"
 }
 
 die () {
@@ -1753,6 +1789,7 @@ sort_video_data_fn () {
 
 # History Management {{{
 add_to_hist () {
+    print_debug "[WATCH HIST]: adding to file $hist_file\n"
 	# id of the video to add to hist will be passed through stdin
 	# if multiple videos are selected, multiple ids will be present on multiple lines
 	json_file="$1"
@@ -1847,6 +1884,9 @@ handle_post_keypress () {
 
 handle_keypress () {
 	read -r keypress < "$1"
+
+    print_debug "[KEYPRESS]: handling keypress: $keypress\n"
+
 	command_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
 	case "$keypress" in
 		"$download_shortcut") _last_url_handler=$url_handler; url_handler=downloader ;;
@@ -2022,7 +2062,7 @@ preview_stop () {
 }
 
 command_exists "on_no_thumbnail" || on_no_thumbnail () {
-    die 1 "\nno image found"
+    die 1 "No image"
 }
 
 preview_no_img (){
@@ -2437,6 +2477,7 @@ close_url_handler_submenu_handler () {
 close_url_handler () {
     fn_name="$(printf "%s" "$1" | tr '-' '_')"
     command_exists "close_url_handler_$fn_name" && close_url_handler_"$fn_name"
+    print_debug "[URL HANDLER]: Closing url handler: ${c_blue}${1}${c_reset} with function: ${c_bold}close_url_handler_${fn_name}${c_reset}\n"
     do_an_event_function "after_close_url_handler" "$1"
 }
 
@@ -2457,6 +2498,8 @@ open_url_handler () {
 
 	unset IFS
 	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
+
+    print_debug "[URL HANDLER]: Opening links: ${c_bold}${urls}${c_reset} with ${c_blue}${url_handler}${c_reset}\n"
 
 	# if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
 	# shellcheck disable=2031
@@ -2497,6 +2540,7 @@ parse_opt () {
 	# for some reason optarg may equal opt intentionally,
 	# this checks the unmodified optarg, which will only be equal if there is no = sign
 	[ "$opt" = "$OPTARG" ] && optarg=""
+    print_debug "[OPTIONS]: Parsing opt: $opt=$optarg\n"
 	# shellcheck disable=SC2031
 	command_exists "on_opt_parse" && { on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG" || return 0; }
 	fn_name="on_opt_parse_$(printf "%s" "$opt" | tr '-' '_')"
@@ -2711,6 +2755,8 @@ handle_actions () {
 	unset _submenu_actions IFS
 	actions=$(jq -r --arg urls "$(cat "$1")" '.[] | [.url, .action] as $data | if ( ($urls | split("\n" )) | index($data[0]) and $data[1] != null ) == true then $data[1] else "" end' < "$ytfzf_video_json_file" | sed '/^[[:space:]]*$/d')
 	while read -r action; do
+        print_debug "[ACTION]: handling action: $action\n"
+
 		# this wil only be empty after all urls with actions have happened
 		# shellcheck disable=SC2031
 		# shellcheck disable=SC2086
@@ -2822,6 +2868,9 @@ is_asking_for_search_necessary () {
 init_search () {
 	_search="$1"
 	_search_source="$2"
+
+    print_debug "[SEARCH]: initializing search with search: $_search, and sources: $_search_source\n"
+
 	# only ask for search if scrape isn't something like S or T
 	is_asking_for_search_necessary && { get_search_from_source "$_search_source" "$_search" || die 5 "No search query\n"; }
 	init_files "$_search"
