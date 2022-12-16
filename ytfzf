@@ -3,7 +3,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1806.f5d8156"
+YTFZF_VERSION="git-1807.82df2b8"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1962,7 +1962,7 @@ interface_ext () {
 
 # Thumbnail Interface {{{
 
-get_video_json_attr () {
+_get_video_json_attr () {
 	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^\n]*\)",*/\1/p' <<-EOF | sed 's/\\\([\\"]\)/\1/g'
     $_correct_json
 EOF
@@ -2277,28 +2277,28 @@ preview_img () {
 
 	# make sure all variables are set{{{
 	_correct_json=$(jq -nr --arg url "$url" '[inputs[]|select(.url==$url)][0]' < "$video_json_file")
-	id="$(get_video_json_attr "ID")"
-	title="$(get_video_json_attr "title")"
-	channel="$(get_video_json_attr "channel")"
-	views="$(get_video_json_attr "views")"
-	date="$(get_video_json_attr "date")"
-	scraper="$(get_video_json_attr "scraper")"
-	duration="$(get_video_json_attr "duration")"
-    description="$(get_video_json_attr "description" | sed 's/\\n/\n/g' | fold -w $((FZF_PREVIEW_COLUMNS/2)))"
+	id="$(_get_video_json_attr "ID")"
+	title="$(_get_video_json_attr "title")"
+	channel="$(_get_video_json_attr "channel")"
+	views="$(_get_video_json_attr "views")"
+	date="$(_get_video_json_attr "date")"
+	scraper="$(_get_video_json_attr "scraper")"
+	duration="$(_get_video_json_attr "duration")"
+    description="$(_get_video_json_attr "description" | sed 's/\\n/\n/g' | fold -w $((FZF_PREVIEW_COLUMNS/2)))"
 #}}}
 
-	__text=$(if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
+	_const_text=$(if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
 		thumbnail_video_info_text${scraper:+_$scraper}
 	else
 		thumbnail_video_info_text
     fi)
 
     __text_line_count=$(wc -l <<-EOF
-    $__text
+    $_const_text
 EOF
 )
 
-    echo "$__text"
+    echo "$_const_text"
 
 	preview_display_image "$thumbnail_viewer" "$id"
 }
