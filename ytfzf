@@ -1,9 +1,12 @@
 #!/usr/bin/env sh
 #
 
+# state variables
+: "${__is_submenu:=0}" "${__is_fzf_preview:=0}"
+
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1810.81c5c5f"
+YTFZF_VERSION="git-1811.d8175ca"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -22,7 +25,9 @@ YTFZF_VERSION="git-1810.81c5c5f"
 
 : "${YTFZF_TEMP_DIR:="${TMPDIR:-/tmp}"/ytfzf-$(id -u)}"
 
-: "${YTFZF_LOGFILE:="/dev/stderr"}" > "${YTFZF_LOGFILE:="/dev/stderr"}"
+: "${YTFZF_LOGFILE:="/dev/stderr"}"
+
+[ "${YTFZF_LOGFILE}" != "/dev/stderr" ] && printf "[%s]\n==============\nSubmenu: %d\nFzf Preview: %d\n==============\n" "$(date)" "$__is_submenu" "$__is_fzf_preview" >> "${YTFZF_LOGFILE}"
 
 ! [ -d "$YTFZF_TEMP_DIR" ] && mkdir -p "${YTFZF_TEMP_DIR}"
 #}}}
@@ -97,8 +102,6 @@ c_reset="\033[0m"
 c_bold="\033[1m"
 #}}}
 
-# state variables
-: "${__is_submenu:=0}" "${__is_fzf_preview:=0}"
 
 : "${check_vars_exists:=${YTFZF_CHECK_VARS_EXISTS:-1}}"
 
@@ -216,6 +219,10 @@ on_post_set_vars___ytfzf__ () {
     scrape_search_exclude="${scrape_search_exclude}${custom_scrape_search_exclude} "
 
     source_scrapers
+
+    print_debug "\n=============\nVARIABLE DUMP\n=============\n"
+    print_debug "$(export -p)\n"
+    print_debug "\n============\nEND VAR DUMP\n============\n"
 }
 #}}}
 
@@ -709,24 +716,47 @@ load_thumbnail_viewer () {
 
 # Logging {{{
 
-print_debug () {
-    [ "$log_level" -ge 3 ] && printf -- "${c_blue}[DEBUG]${c_reset}: $1" >> "$YTFZF_LOGFILE"
-    return 0
-}
+#write to stderr if the logfile is that
+if [ "$YTFZF_LOGFILE" = "/dev/stderr" ]; then
+    print_debug () {
+        [ "$log_level" -ge 3 ] && printf -- "${c_blue}[DEBUG]${c_reset}: $1" >&2
+        return 0
+    }
+    print_info () {
+        # information goes to stdout ( does not disturb show_link_only )
+        # shellcheck disable=2059
+        [ "$log_level" -ge 2 ] && printf -- "$1" >&2
+    }
+    print_warning () {
+        # shellcheck disable=2059
+        [ "$log_level" -ge 1 ] && printf -- "${c_yellow}[WARNING]${c_reset}: ${c_yellow}${1}${c_reset}" >&2
+    }
+    print_error () {
+        # shellcheck disable=2059
+        [ "$log_level" -ge 0 ] && printf -- "${c_red}[ERROR]${c_reset}: ${c_red}${1}${c_reset}" >&2
+    }
+#Otherwise do a bit of magic to remove ansi escape sequences, print to stderr, and to the log file
+else
+    print_debug () {
+        [ "$log_level" -ge 3 ] && printf -- "[DEBUG]: $1" | remove_ansi_escapes | tee -a "$YTFZF_LOGFILE" >&2
+        return 0
+    }
+    print_info () {
+        # information goes to stdout ( does not disturb show_link_only )
+        # shellcheck disable=2059
+        [ "$log_level" -ge 2 ] && printf -- "$1" | remove_ansi_escapes | tee -a "$YTFZF_LOGFILE" >&2
+    }
+    print_warning () {
+        # shellcheck disable=2059
+        [ "$log_level" -ge 1 ] && printf -- "[WARNING]: ${1}" | remove_ansi_escapes | tee -a "$YTFZF_LOGFILE" >&2
+    }
+    print_error () {
+        # shellcheck disable=2059
+        [ "$log_level" -ge 0 ] && printf -- "[ERROR]: ${1}" | remove_ansi_escapes | tee -a "$YTFZF_LOGFILE" >&2
+    }
+fi
+    
 
-print_info () {
-	# information goes to stdout ( does not disturb show_link_only )
-	# shellcheck disable=2059
-	[ "$log_level" -ge 2 ] && printf -- "$1" >> "$YTFZF_LOGFILE"
-}
-print_warning () {
-	# shellcheck disable=2059
-	[ "$log_level" -ge 1 ] && printf -- "${c_yellow}[WARNING]${c_reset}: ${c_yellow}${1}${c_reset}" >> "$YTFZF_LOGFILE"
-}
-print_error () {
-	# shellcheck disable=2059
-	[ "$log_level" -ge 0 ] && printf -- "${c_red}[ERROR]${c_reset}: ${c_red}${1}${c_reset}" >> "$YTFZF_LOGFILE"
-}
 
 die () {
 	_return_status=$1
@@ -2063,7 +2093,7 @@ preview_stop () {
 }
 
 command_exists "on_no_thumbnail" || on_no_thumbnail () {
-    die 1 "No image"
+    die 1 "No image\n"
 }
 
 preview_no_img (){
