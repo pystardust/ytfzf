@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1811.5367ab8"
+YTFZF_VERSION="git-1814.5f6f33b"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -969,22 +969,22 @@ END{
     print vars;
 }
 ' < "$tmp_env")
-	while read -r variable; do
-           [ -z "$variable" ] && continue
-	   variable="${variable#export }"
-	   var_name="${variable%%=*}"
-	   # some shells do have quotation marks around the value, and some don't, these 2 lines must be seperate
-	   var_val="${variable#*=}"
-	   # since export -p is gauranteed to be able to be copied into a shell and work as intended, any value taht starts with a quote, wil be surrounded by quotes even if that particular shell doesn't normally do that. TLDR: this will only remove unimportant quotes
-	   var_val="${var_val#[\"\']}"
-	   # same goes for here
-	   var_val="${var_val%[\"\']}"
-	   export "$var_name"="${var_val}"
-       done <<-EOF
+        while read -r variable; do
+            [ -z "$variable" ] && continue
+            variable="${variable#export }"
+            var_name="${variable%%=*}"
+            # some shells do have quotation marks around the value, and some don't, these 2 lines must be seperate
+            var_val="${variable#*=}"
+            # since export -p is gauranteed to be able to be copied into a shell and work as intended, any value taht starts with a quote, wil be surrounded by quotes even if that particular shell doesn't normally do that. TLDR: this will only remove unimportant quotes
+            var_val="${var_val#[\"\']}"
+            # same goes for here
+            var_val="${var_val%[\"\']}"
+            export "$var_name"="${var_val}"
+        done <<-EOF
     $_vars
 EOF
+        rm "$tmp_env"
     fi
-    rm "$tmp_env"
     unset check_exists _vars variable var_name var_val
 }
 
