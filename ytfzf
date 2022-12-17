@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1812.c98099a"
+YTFZF_VERSION="git-1811.5367ab8"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -969,22 +969,22 @@ END{
     print vars;
 }
 ' < "$tmp_env")
-        while read -r variable; do
-               [ -z "$variable" ] && continue
-           variable="${variable#export }"
-           var_name="${variable%%=*}"
-           # some shells do have quotation marks around the value, and some don't, these 2 lines must be seperate
-           var_val="${variable#*=}"
-           # since export -p is gauranteed to be able to be copied into a shell and work as intended, any value taht starts with a quote, wil be surrounded by quotes even if that particular shell doesn't normally do that. TLDR: this will only remove unimportant quotes
-           var_val="${var_val#[\"\']}"
-           # same goes for here
-           var_val="${var_val%[\"\']}"
-           export "$var_name"="${var_val}"
-        done <<-EOF
+	while read -r variable; do
+           [ -z "$variable" ] && continue
+	   variable="${variable#export }"
+	   var_name="${variable%%=*}"
+	   # some shells do have quotation marks around the value, and some don't, these 2 lines must be seperate
+	   var_val="${variable#*=}"
+	   # since export -p is gauranteed to be able to be copied into a shell and work as intended, any value taht starts with a quote, wil be surrounded by quotes even if that particular shell doesn't normally do that. TLDR: this will only remove unimportant quotes
+	   var_val="${var_val#[\"\']}"
+	   # same goes for here
+	   var_val="${var_val%[\"\']}"
+	   export "$var_name"="${var_val}"
+       done <<-EOF
     $_vars
 EOF
-        rm "$tmp_env"
     fi
+    rm "$tmp_env"
     unset check_exists _vars variable var_name var_val
 }
 
@@ -2485,13 +2485,13 @@ submenu_handler () {
 
 	    shift $((OPTIND-1))
 
-        load_fake_extension "__ytfzf_submenu__"
-
+	    init_and_make_search "$*" "fn-args"
 	    if [ "$enable_back_button" -eq 1 ]; then
-            on_init_search__ytfzf_submenu__ () {
-                printf '[{"ID": "BACK-BUTTON", "title": "[BACK]", "url": "back", "action": "back"}]\n' > "$ytfzf_video_json_file"
-            }
-        fi
+		data="$(cat "$ytfzf_video_json_file")"
+		echo '[{"ID": "BACK-BUTTON", "title": "[BACK]", "url": "back", "action": "back"}]' "$data" > "$ytfzf_video_json_file"
+	    fi
+
+	    handle_empty_scrape || die 4
 
 	    main
 	)
@@ -2946,15 +2946,15 @@ make_search () {
 
 # Main {{{
 
-main() {
-    init_and_make_search "$initial_search" "$search_source"
-    until handle_empty_scrape; do
-        case "$search_again" in
-            0) die 4 ;;
-            1) init_and_make_search "" "$search_source" ;;
-        esac
-    done
+init_and_make_search "$initial_search" "$search_source"
+until handle_empty_scrape; do
+    case "$search_again" in
+        0) die 4 ;;
+        1) init_and_make_search "" "$search_source" ;;
+    esac
+done
 
+main() {
 	while :; do
 		# calls the interface
 		run_interface
@@ -2985,13 +2985,11 @@ main() {
     # doing this after the loop allows for -l and -s to coexist
     while [ "$search_again" -eq 1 ] ; do
         clean_up
-        initial_search=""
-        return 1
+        init_and_make_search "" "prompt"
+        main
     done
-    return 0
 }
-
-until main; do :; done
+main
 #}}}
 
 # vim: foldmethod=marker:shiftwidth=4:tabstop=4
