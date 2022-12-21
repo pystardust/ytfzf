@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1815.b06f1da"
+YTFZF_VERSION="git-1817.a94e66e"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"

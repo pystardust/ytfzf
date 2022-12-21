@@ -1,0 +1,32 @@
+#!/bin/sh
+
+on_startup_pictures () {
+    scrape_search_exclude="${scrape_search_exclude} pictures "
+}
+
+thumbnail_video_info_text_pictures () {
+    size="$(_get_video_json_attr "size")"
+    creation="$(_get_video_json_attr "creation")"
+
+    [ "$title" ] && printf "\n ${c_cyan}%s (INODE: %s)" "$title" "$id"
+    [ "$creation" ] && printf "\n ${c_blue}Created: %s" "$creation"
+    printf "${c_clear}"
+}
+
+scrape_pictures () {
+    search="${1:-"${XDG_PICTURES_HOME:-"$HOME/Pictures"}"}"
+    [ "$search" = ":help" ] && printf "%s\n" "Display your pictures folder, or folder if a search is gven\nuse :w as the search to search possible wallpaper folders" && return 100
+    output_json_file="${2}"
+    : "${YTFZF_PICTURES_WALLPAPER_PATH:="/usr/share/wallpapers:/usr/share/backgrounds:$HOME/.local/share/wallpapers:$HOME/.local/share/backgrounds"}"
+    case "$search" in
+        :wall|:wallpapers|:w|:wallpaper)
+            prepare_for_set_args ":"
+            for path in $YTFZF_PICTURES_WALLPAPER_PATH; do
+                [ -d "$path" ] && find "${path}" -type f -printf '{"ID": "%i", "size": "%s", "title": "%p", "thumbs": "file://%p", "url": "file://%p", "creation": "%Bc", "scraper": "pictures"}\n' | jq '. as $data | $data + {"url": "\($data.url|gsub(" ";"%20"))", "thumbs": "\($data.url|gsub(" ";"%20"))"}' | jq -s >> "$output_json_file"
+            done
+            end_of_set_args
+            return 0
+    esac
+
+    find "${search}" -type f -printf '{"ID": "%i", "size": "%s", "title": "%p", "thumbs": "file://%p", "url": "file://%p", "creation": "%Bc", "scraper": "pictures"}\n' | jq '. as $data | $data + {"url": "\($data.url|gsub(" ";"%20"))", "thumbs": "\($data.url|gsub(" ";"%20"))"}' | jq -s >> "$output_json_file"
+}
