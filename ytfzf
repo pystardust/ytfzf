@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1817.a94e66e"
+YTFZF_VERSION="git-1817.571a077"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2469,9 +2469,10 @@ submenu_handler () {
 		. "$YTFZF_CONFIG_FILE"
 	    fi
 
-	    set -f
+        prepare_for_set_args
 	    # shellcheck disable=2086
 	    set -- $submenu_opts "$search"
+        end_of_set_args
 
 	    on_opt_parse_s () {
 		print_warning "-s is not supported in submenus\n"
