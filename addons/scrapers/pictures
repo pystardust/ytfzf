@@ -8,9 +8,15 @@ thumbnail_video_info_text_pictures () {
     size="$(_get_video_json_attr "size")"
     creation="$(_get_video_json_attr "creation")"
 
-    [ "$title" ] && printf "\n ${c_cyan}%s (INODE: %s)" "$title" "$id"
-    [ "$creation" ] && printf "\n ${c_blue}Created: %s" "$creation"
-    printf "${c_clear}"
+    [ "$title" ] && printf "\n ${c_cyan}%s (INODE: %s)${c_clear}" "$title" "$id"
+    [ "$creation" ] && printf "\n ${c_blue}Created: %s${c_clear}" "$creation"
+
+    {
+        ffprobe_wh="$(ffprobe -of json -show_frames "${title}" 2>/dev/null | jq -r '.[][0] | "\(.width) \(.height)"')"
+        width="${ffprobe_wh% *}"
+        height="${ffprobe_wh#* }"
+        printf "\n ${c_yellow}%sx%s${c_clear}" "${width}" "${height}"
+    } &
 }
 
 scrape_pictures () {
