@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1818.1493c81"
+YTFZF_VERSION="git-1819.a3fcd94"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -123,6 +123,10 @@ on_init_search___ytfzf_multisearch__ () {
 
 ext_on_search___ytfzf_multisearch__ () {
     get_search_from_source "next"
+}
+
+get_search_from_next (){
+    _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1)
 }
 
 # }}}
@@ -818,7 +822,6 @@ get_search_from_source () {
             args) _search="$initial_search" ;;
             prompt) search_prompt_menu_wrapper ;;
             hist) _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)" ;;
-            next) _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1) ;;
             fn-args) _search="$*" ;;
             *) command_exists "get_search_from_$src" && get_search_from_"$src" "$@" ;;
         esac
