@@ -1279,10 +1279,10 @@ This function should set ytdl_pref
 This function takes all urls as separate arguments.
 
 .TP
-.BR on_open_url_handler_<name>()
-<name> should be the name of the extension this is running from.
-.br
+.BR on_open_url_handler_<ext>()
 This function is run when \fBopen_url_handler\fR is called, but before the url handler is actually opened.
+.br
+This function takes an unlimited number of arguments, each argument is a url that was opened.
 
 
 .TP
@@ -1294,7 +1294,7 @@ A function that happens after the url handler has finished playing.
 The point of this function is to clean up anything that the url handler did.
 
 .TP
-.BR after_close_url_handler
+.BR after_close_url_handler_<ext>
 A function that happens after the url handler has finished playing, and after
 .BR close_url_handler_<name>
 has happened.
