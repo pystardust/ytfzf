@@ -1279,6 +1279,13 @@ This function should set ytdl_pref
 This function takes all urls as separate arguments.
 
 .TP
+.BR on_open_url_handler_<name>()
+<name> should be the name of the extension this is running from.
+.br
+This function is run when \fBopen_url_handler\fR is called, but before the url handler is actually opened.
+
+
+.TP
 .BR close_url_handler_<name>
 <name> should be the name of the url handler with \- replaced with _.
 .br

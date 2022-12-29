@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1820.4158c9c"
+YTFZF_VERSION="git-1821.aa6fe23"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -178,6 +178,24 @@ print_help___ytfzf__ () {
 
           See ytfzf(1) and ytfzf(5) for more information.
 "
+}
+
+handle_playing_notifications (){
+	# if no notify-send push error to /dev/null
+	if [ "$#" -le 1 ]; then
+	    unset IFS
+	    while read -r id title; do
+		    notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
+	    done <<-EOF
+	    $(jq -r '.[]|select(.url=="'"$*"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
+EOF
+	else
+	    notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null
+	fi
+}
+
+on_open_url_handler___ytfzf__ () {
+    [ "$notify_playing" -eq 1 ] && handle_playing_notifications "$@"
 }
 
 on_clean_up___ytfzf__ () {
@@ -843,19 +861,6 @@ clean_up () {
     do_an_event_function on_clean_up
 }
 
-handle_playing_notifications (){
-	# if no notify-send push error to /dev/null
-	if [ "$#" -le 1 ]; then
-	    unset IFS
-	    while read -r id title; do
-		    notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
-	    done <<-EOF
-	    $(jq -r '.[]|select(.url=="'"$*"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
-EOF
-	else
-	    notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null
-	fi
-}
 # }}}
 # }}}
 
@@ -2526,7 +2531,7 @@ open_url_handler () {
 	[ -z "$*" ] && print_info "No urls selected\n" && return 0
     end_of_set_args
 
-	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
+    do_an_event_function "on_open_url_handler" "$@"
 
     print_debug "[URL HANDLER]: Opening links: ${c_bold}${urls}${c_reset} with ${c_blue}${url_handler}${c_reset}\n"
 
