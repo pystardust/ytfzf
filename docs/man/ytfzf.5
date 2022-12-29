@@ -852,6 +852,14 @@ The char to use for long opts.
 .IR default: " \-"
 
 .TP
+.RB $ optstring
+The string of options to use for the \fBgetopts\fR function.
+.br
+It is highly unrecommended to change this variable, unless you know what you are doing.
+.br
+.IR default: " ac:de:fhi:lmn:qrstu:xADHI:LS:T:W:\fI$long_opt_char\fR:"
+
+.TP
 .RB $ YTFZF_CHECK_VARS_EXISTS
 Whether or not to check if variables in the environment already exist when setting default options.
 .br
