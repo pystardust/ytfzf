@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1823.74addb6"
+YTFZF_VERSION="git-1824.8bcae1b"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -229,7 +229,7 @@ on_post_set_vars___ytfzf__ () {
     # CHECK: added --refresh-inv-instances to optargs
     [ ! -f "$instances_file" ] && refresh_inv_instances
 
-    : "${invidious_instance:=$(get_invidious_instances | shuf | head -n 1)}"
+    : "${invidious_instance:=$(get_random_invidious_instance)}"
 
 
     FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
@@ -269,17 +269,19 @@ def pad_left(n; num):
 # Invidious{{{
 refresh_inv_instances () {
     print_info "Fetching list of healthy invidious instances ...\n" &&
-        curl -X GET -sSfo "$instances_file" "$instances_url"
+        # The pipeline does the following:
+        #   - Fetches the avaiable invidious instances
+        #   - Gets the one where the api is public
+        #   - Puts them in a list
+        curl -X GET -sSf "$instances_url" | jq -r '[.[]|select(.[1].api==true)|.[1].uri]|join("\n")' > "$instances_file"
 }
 
 get_invidious_instances () {
-    # URL for instance list sorted by type, health and api (ones without API do not work!)
-    # The pipeline does the following:
-    #   - Get top 10 instance URIs
-    #   - Output these on individual lines
-    #   - Shuffle the list
-    #   - Choose the first entry
-    jq -r '[.[]|select(.[1].api==true)|.[1].uri]|.[:10]|join("\n")' < "$instances_file"
+    cat "$instances_file"
+}
+
+get_random_invidious_instance () {
+    shuf "$instances_file" | head -n 1
 }
 # }}}
 
@@ -1010,7 +1012,7 @@ load_fake_extension "__ytfzf__"
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 
 # files, and const vars
-: "${hist_file:="$cache_dir/watch_hist"}" "${search_hist_file:="$cache_dir/search_hist"}" : "${instances_file:="$cache_dir/instances.json"}"
+: "${hist_file:="$cache_dir/watch_hist"}" "${search_hist_file:="$cache_dir/search_hist"}" : "${instances_file:="$cache_dir/instancesV2.json"}"
 
 new_line='
 '
@@ -2657,7 +2659,7 @@ parse_opt () {
         features) search_result_features=$optarg ;;
         region) search_region=$optarg ;;
         channel-link)
-            invidious_instance=$(get_invidious_instances | shuf | head -n 1)
+            invidious_instance=$(get_random_invidious_instance)
             _get_real_channel_link "$optarg"; exit 0 ;;
         available-inv-instances) get_invidious_instances; exit 0 ;;
         disable-submenus) enable_submenus="${optarg:-0}" ;;
