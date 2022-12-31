@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1824.8bcae1b"
+YTFZF_VERSION="git-1825.8809b84"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -21,7 +21,6 @@ YTFZF_VERSION="git-1824.8bcae1b"
 : "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
 
 : "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
-
 
 : "${YTFZF_TEMP_DIR:="${TMPDIR:-/tmp}"/ytfzf-$(id -u)}"
 
@@ -101,7 +100,6 @@ c_cyan="\033[1;36m"
 c_reset="\033[0m"
 c_bold="\033[1m"
 #}}}
-
 
 : "${check_vars_exists:=${YTFZF_CHECK_VARS_EXISTS:-1}}"
 
@@ -230,7 +228,6 @@ on_post_set_vars___ytfzf__ () {
     [ ! -f "$instances_file" ] && refresh_inv_instances
 
     : "${invidious_instance:=$(get_random_invidious_instance)}"
-
 
     FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
 
@@ -603,7 +600,6 @@ thumbnail_video_info_text () {
 
 # Extension stuff{{{
 
-
 do_an_event_function () {
     event="$1"
     shift
@@ -780,8 +776,6 @@ else
     }
 fi
     
-
-
 die () {
 	_return_status=$1
 	print_error "$2"
@@ -919,7 +913,6 @@ set_vars () {
     # directories
     cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf" keep_cache="0"
 
-
     # history
     enable_hist="1" enable_search_hist="1"
 
@@ -948,7 +941,6 @@ set_vars () {
     search_sort_by="relevance" search_upload_date="" search_video_duration="" search_result_type="video" search_result_features="" search_region="US"
     pages_to_scrape="" pages_start=""
     nsfw="false" odysee_video_search_count="30"
-
 
     multi_search="0"
 
@@ -1105,7 +1097,6 @@ _thread_started (){
 	[ $_thread_count -ge $max_thread_count ] && wait "$_latest_fork" && _thread_count=$(jobs -p | wc -l)
 }
 
-
 set_real_channel_url_and_id () {
     _url="$1"
     case "$_url" in
@@ -1118,7 +1109,6 @@ set_real_channel_url_and_id () {
     channel_url="$_url" channel_id="$_id"
     unset _url _id
 }
-
 
 #}}}
 
@@ -1791,7 +1781,6 @@ scrape_u (){ printf '[{"ID": "%s", "title": "%s", "url": "%s"}]\n' "URL-${1##*/}
     # 1. the get_sort_by function is called
     # 2. the data_sort_fn function is called
 # The result of those 2 steps is then printed to stdout.
-
 
 #TODO: refactor sorting to not rely on video_info_text, and instead be based on json
 
