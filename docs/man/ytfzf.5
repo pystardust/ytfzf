@@ -1607,6 +1607,10 @@ This function is effectively the same as thumbnail_video_info_text().
 .RS
 .PP
 This function shall scrape more videos from <scraper>.
+.br
+In order for this function to be called properly with alt-p, or ctrl-p, the page it left off on must be written to ${session_cache_dir}/<scraper>-current-page.
+.br
+Where scraper is the name of the scraper with _ instead of \-
 .PP
 <scraper> should be the name put in the "scraper" attribute in VIDEO JSON FORMAT
 .PP

@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1832.af45edb"
+YTFZF_VERSION="git-1833.fe6c523"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1586,6 +1586,7 @@ scrape_invidious_search () {
 	*) wait ;;
     esac
     _concatinate_json_file "${session_temp_dir}/yt-search-" "$((_ivs_cur_page-1))" "$output_json_file" "$pages_start"
+    printf "%s\n" "$_ivs_cur_page" > "${session_temp_dir}/invidious_search-current-page"
 }
 
 scrape_youtube () { scrape_invidious_search "$@"; }
@@ -1593,7 +1594,7 @@ scrape_Y () { scrape_invidious_search "$@"; }
 
 scrape_next_page_invidious_search () {
 	# we can do this because _comment_file is overritten every time, meaning it will contain the latest scrape
-	pages_to_scrape=1 pages_start="$_ivs_cur_page" scrape_invidious_search "$_search" "$video_json_file"
+     scrape_invidious_search "$_search" "$video_json_file"
 }
 
 scrape_invidious_video_recommended () {
@@ -1844,11 +1845,12 @@ scrape_comments () {
 		jq --arg continuation "$continuation" '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": "'"$yt_video_link_domain"'/watch?v='"$video_id"'&lc=\(.commentId)", "action": "do-nothing", "thumbs": .authorThumbnails[2].url, "continuation": $continuation} ]' < "$_comment_file"  >>  "$output_json_file"
 		i=$((i+1))
 	done
+    printf "%s\n" "$i" > "${session_temp_dir}/comments-current-page"
 }
 
 scrape_next_page_comments () {
 	# we can do this because _comment_file is overritten every time, meaning it will contain the latest scrape
-	scrape_comments "$_search" "$video_json_file" "1"
+	scrape_comments "$_search" "$video_json_file"
 }
 #}}}
 
@@ -2011,6 +2013,8 @@ handle_keypress () {
 		"$next_page_shortcut")
 			read -r url < "$selected_id_file"
 			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
+            pages_to_scrape="$(sed -n 's/^pages_to_scrape=\(.*\)/\1/p' "$session_cache_dir/environment")"
+            pages_start="$(cat "${session_temp_dir}/${hovered_scraper}-current-page")"
 			"scrape_next_page_$hovered_scraper"
 			unset hovered_scraper
 			return 3
@@ -2473,6 +2477,7 @@ interface_thumbnails () {
         jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
         SHELL="$(command -v sh)" fzf -m \
             --preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"preview_img"$EOT"{f}\"" \
+            --bind "ctrl-p:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
             --preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
         trim_url > "$selected_id_file"
 
@@ -2682,6 +2687,31 @@ preview_img <ytfzf-line-format>:
         session_cache_dir set to the ytfzf process instance's cache dir"
 }
 
+internal_action_next_page () {
+    shift
+
+    read -r line < "$*"
+    url="${line##*"|"}"
+
+    ytfzf_video_json_file="$(sed -n 's/^ytfzf_video_json_file=\(.*\)/\1/p' "$session_cache_dir/environment")"
+    ytfzf_video_json_file="${ytfzf_video_json_file#[\"\']}"
+    ytfzf_video_json_file="${ytfzf_video_json_file%[\"\']}"
+
+    video_json_file="$ytfzf_video_json_file"
+
+    hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
+
+    if command_exists "scrape_next_page_$hovered_scraper"; then
+        _search="$(cat "${session_cache_dir}/searches.list")"
+        pages_to_scrape="$(sed -n 's/^pages_to_scrape=\(.*\)/\1/p' "$session_cache_dir/environment")"
+        pages_start="$(cat "${session_temp_dir}/${hovered_scraper}-current-page")"
+        scrape_next_page_"$hovered_scraper"
+    fi
+    jq -c -r 'select(.!=[])|.[]' < "$ytfzf_video_json_file" |
+        sort_video_data_fn |
+        jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"'
+}
+
 internal_action_preview_img () {
     shift
 
@@ -2866,15 +2896,18 @@ unset IFS
 # files {{{
 init_files (){
 	YTFZF_PID=$$
+
 	#$1 will be a search
 	SEARCH_PREFIX=$(printf "%s" "$1" | tr '/' '_' | tr -d "\"'")
 	# shellcheck disable=SC2031
 	if [ "$__is_submenu" -eq 1 ]; then
 	    SEARCH_PREFIX=$(jq -r --arg url "$1" '.[]|select(.url==$url).title' < "${cache_dir}/videos_json")
 	fi
+
 	# if no search is provided, use a fallback value of SCRAPE-$scrape
 	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
+
 	# shellcheck disable=SC2031
     if [ "$__is_submenu" -eq 1 ]; then
         #if we are in a submenu, cache_dir will be the previous session_cache_dir
@@ -2886,13 +2919,20 @@ init_files (){
         #if we want to keep the cache, use real cache dir
         session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
     fi
+
 	session_temp_dir="${session_cache_dir}/tmp"
+
 	thumb_dir="${session_cache_dir}/thumbnails"
-	mkdir -p "$session_temp_dir" "$thumb_dir"
+
 	ytfzf_selected_urls=$session_cache_dir/ids
 	ytfzf_video_json_file=$session_cache_dir/videos_json
+
+	mkdir -p "$session_temp_dir" "$thumb_dir"
+
 	keypress_file="${session_temp_dir}/menu_keypress"
+
 	: > "$ytfzf_video_json_file" 2> "$ytfzf_selected_urls" 3> "$keypress_file"
+
 	[ "$1" ] && printf "%s\n" "$1" > "${session_cache_dir}/searches.list"
 }
 
