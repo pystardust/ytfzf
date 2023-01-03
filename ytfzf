@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1825.8809b84"
+YTFZF_VERSION="git-1827.5aea736"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -213,6 +213,12 @@ on_clean_up___ytfzf__ () {
 	fi
 }
 
+on_load_fake_extension___ytfzf__ () {
+    #this needs to be here, because it modifies stuff for _getopts
+    #also no harm done because enable_hist cannot be set to true with an --option
+    load_fake_extension "__ytfzf_history__"
+}
+
 on_post_set_vars___ytfzf__ () {
     [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
 
@@ -244,6 +250,59 @@ on_post_set_vars___ytfzf__ () {
     print_debug "\n============\nEND VAR DUMP\n============\n"
 }
 #}}}
+
+# __ytfzf_history__ extension {{{
+on_load_fake_extension___ytfzf_history__ () {
+    if [ "$enable_hist" -eq 0 ]; then
+        on_opt_parse_history () {
+            die 1 "enable_hist must be set to 1 for -H/--history\n"
+        }
+        on_opt_parse_H () {
+            on_opt_parse_history "$@"
+        }
+    else
+        : "${hist_file:="$cache_dir/watch_hist"}" 
+
+        on_opt_parse_history () {
+            scrape=history
+        }
+        on_opt_parse_H () {
+            scrape=history
+        }
+    fi
+}
+
+on_open_url_handler___ytfzf_history__ () {
+    add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
+}
+
+add_to_hist () {
+    print_debug "[WATCH HIST]: adding to file $hist_file\n"
+	# id of the video to add to hist will be passed through stdin
+	# if multiple videos are selected, multiple ids will be present on multiple lines
+	json_file="$1"
+	urls="["
+	while read -r url; do
+	    urls="${urls}\"${url}\","
+	done
+	urls="${urls%,}]"
+	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' < "$json_file" | sed '/\[\]/d' >> "$hist_file"
+	unset url urls json_file
+}
+
+scrape_history () {
+	enable_hist=0 # enabling history while scrape is history causes issues
+	scrape_json_file "$hist_file" "$2"
+}
+scrape_H (){ scrape_history "$@"; }
+
+on_init_search___ytfzf_history__ () {
+    #these options should only exist if history is enabled
+    [ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
+}
+
+
+# }}}
 
 # Utility functions {{{
 
@@ -655,6 +714,9 @@ load_extension () {
 load_fake_extension () {
     loaded_extensions="${loaded_extensions} $1"
     loaded_extensions="${loaded_extensions# }"
+
+    command_exists "on_load_fake_extension_$1" && on_load_fake_extension_"$1"
+    print_debug "[LOADING]: fake extension: $1 loaded"
 }
 
 load_sort_name () {
@@ -846,10 +908,10 @@ get_search_from_source () {
 parse_search_hist_file () {
 	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
 }
-
 handle_search_history () {
     printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
 }
+
 # }}}
 
 #Misc{{{
@@ -998,13 +1060,13 @@ for dep in jq curl; do
 done
 #}}}
 
-load_fake_extension "__ytfzf__"
-
 # shellcheck disable=SC1090
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 
+load_fake_extension "__ytfzf__"
+
 # files, and const vars
-: "${hist_file:="$cache_dir/watch_hist"}" "${search_hist_file:="$cache_dir/search_hist"}" : "${instances_file:="$cache_dir/instancesV2.json"}"
+: "${search_hist_file:="$cache_dir/search_hist"}" : "${instances_file:="$cache_dir/instancesV2.json"}"
 
 new_line='
 '
@@ -1712,13 +1774,7 @@ scrape_odysee () {
 scrape_O (){ scrape_odysee "$@"; }
 ## }}}
 
-# History{{{
-scrape_history () {
-	[ $enable_hist -eq 0 ] && print_info "enable_hist must be set to 1 for this option" && return 5
-	enable_hist=0 # enabling history while scrape is history causes issues
-	scrape_json_file "$hist_file" "$2"
-}
-scrape_H (){ scrape_history "$@"; }
+# ytfzf json format{{{
 
 scrape_json_file () {
 	search="$1"
@@ -1818,19 +1874,6 @@ sort_video_data_fn () {
 #}}}
 
 # History Management {{{
-add_to_hist () {
-    print_debug "[WATCH HIST]: adding to file $hist_file\n"
-	# id of the video to add to hist will be passed through stdin
-	# if multiple videos are selected, multiple ids will be present on multiple lines
-	json_file="$1"
-	urls="["
-	while read -r url; do
-	    urls="${urls}\"${url}\","
-	done
-	urls="${urls%,}]"
-	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' < "$json_file" | sed '/\[\]/d' >> "$hist_file"
-	unset url urls json_file
-}
 
 clear_hist () {
 	case "$1" in
@@ -2598,7 +2641,6 @@ parse_opt () {
         m|audio-only) is_audio_only=${optarg:-1};;
         d|download) url_handler=downloader ;;
         f|formats) show_formats=${optarg:-1} ;;
-        H|history) scrape="history" ;;
         x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
         S|select) interface="scripting" && is_specific_select="1" && scripting_video_count="$optarg" ;;
         a|auto-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
@@ -2923,7 +2965,6 @@ init_search () {
 	set_scrape_count
 
 	# shellcheck disable=SC2031
-	[ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 
     do_an_event_function "on_init_search" "$_search"
 }
@@ -2961,7 +3002,6 @@ main() {
 		handle_keypress "$keypress_file" || case "$?" in 2) break ;; 3) continue ;; esac
 		handle_actions "$ytfzf_selected_urls" || { [ "$?" -eq 2 ] || continue && break; }
 
-		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 
 		# nothing below needs to happen if  this is empty (causes bugs when this is not here)
 		[ ! -s "$ytfzf_selected_urls" ] && break
