@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1828.9a8e499"
+YTFZF_VERSION="git-1829.b7a9d91"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2040,8 +2040,10 @@ interface_scripting () {
 	selected_id_file=$2
 	# shellcheck disable=SC2194
 	case 1 in
-		"$is_auto_select") jq -r ".[].url"  < "$video_json_file" | sed -n "1,$scripting_video_count"p  ;;
-		"$is_random_select") jq -r ".[].url"  < "$video_json_file"  | shuf  | sed -n "1,$scripting_video_count"p ;;
+        #sed is faster than jq, lets use it
+        #this sed command finds `"url": "some-url"`, and prints all urls then selects the first $scripting_video_count urls.
+        "$is_auto_select") sed -n 's/[[:space:]]*"url":[[:space:]]*"\([^"]\+\)",*$/\1/p' | sed -n "1,${scripting_video_count}p" ;;
+		"$is_random_select") sed -n 's/[[:space:]]*"url":[[:space:]]*"\([^"]\+\)",*$/\1/p' | shuf  | sed -n "1,$scripting_video_count"p ;;
 		"$is_specific_select") jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file" | sed -n "$scripting_video_count"p | trim_url ;;
 	esac > "$selected_id_file"
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
