@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1829.b7a9d91"
+YTFZF_VERSION="git-1830.660c820"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2775,6 +2775,18 @@ parse_opt () {
             end_of_set_args
             action="$1"
             case "$action" in
+                help)
+                    printf "%s\n" "Usage: ytfzf -W [help|preview_img]<EOT>[args...]
+An action followed by \\003 (ascii: EOT) followed by args which are seperated by \\003.
+Actions:
+help:
+    Prints usage on -W
+preview_img<EOT><thumb_viewer><EOT><video_json_file>:
+    The following variables must be set
+        session_temp_dir set to the ytfzf process instance's temp dir
+        session_cache_dir set to the ytfzf process instance's cache dir
+        scrape the scrapers used for finding results
+        thumb_dir the place where the result thumbnails are stored" ;;
                 preview_img)
                     thumb_viewer="$2" ytfzf_video_json_file="$3"
                     shift 3
