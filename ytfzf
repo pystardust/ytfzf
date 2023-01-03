@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1827.5aea736"
+YTFZF_VERSION="git-1828.7db1f49"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -103,32 +103,6 @@ c_bold="\033[1m"
 
 : "${check_vars_exists:=${YTFZF_CHECK_VARS_EXISTS:-1}}"
 
-# __ytfzf_multisearch__ extension {{{
-
-on_init_search___ytfzf_multisearch__ () {
-    prepare_for_set_args ","
-    # shellcheck disable=SC2086
-    set -- $1
-    end_of_set_args
-    __total_search_count="$#"
-    printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
-    # if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
-    if [ "$__total_scrape_count" -lt "$__total_search_count" ]; then
-        scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/__total_scrape_count))")
-	    set_scrape_count
-	fi
-}
-
-ext_on_search___ytfzf_multisearch__ () {
-    get_search_from_source "next"
-}
-
-get_search_from_next (){
-    _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1)
-}
-
-# }}}
-
 # __ytfzf__ extension {{{
 
 print_help___ytfzf__ () {
@@ -214,9 +188,12 @@ on_clean_up___ytfzf__ () {
 }
 
 on_load_fake_extension___ytfzf__ () {
-    #this needs to be here, because it modifies stuff for _getopts
+    #these need to be here, because it modifies stuff for _getopts
     #also no harm done because enable_hist cannot be set to true with an --option
+
+    #do not check if hist is enabled, because on_load_fake_extension___ytfzf_history__ does that
     load_fake_extension "__ytfzf_history__"
+    load_fake_extension "__ytfzf_search_history__"
 }
 
 on_post_set_vars___ytfzf__ () {
@@ -237,7 +214,6 @@ on_post_set_vars___ytfzf__ () {
 
     FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
 
-    [ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
 
     [ "$multi_search" -eq 1 ] && load_fake_extension "__ytfzf_multisearch__"
 
@@ -250,6 +226,32 @@ on_post_set_vars___ytfzf__ () {
     print_debug "\n============\nEND VAR DUMP\n============\n"
 }
 #}}}
+
+# __ytfzf_multisearch__ extension {{{
+
+on_init_search___ytfzf_multisearch__ () {
+    prepare_for_set_args ","
+    # shellcheck disable=SC2086
+    set -- $1
+    end_of_set_args
+    __total_search_count="$#"
+    printf "%s\n" "$@" > "${session_cache_dir}/searches.list"
+    # if we get rid of everything up to the first comma, and it's empty or equal to the original, there is 1 scrape
+    if [ "$__total_scrape_count" -lt "$__total_search_count" ]; then
+        scrape=$(mul_str "${scrape}," "$(($(wc -l < "${session_cache_dir}/searches.list")/__total_scrape_count))")
+	    set_scrape_count
+	fi
+}
+
+ext_on_search___ytfzf_multisearch__ () {
+    get_search_from_source "next"
+}
+
+get_search_from_next (){
+    _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1)
+}
+
+# }}}
 
 # __ytfzf_history__ extension {{{
 on_load_fake_extension___ytfzf_history__ () {
@@ -296,11 +298,51 @@ scrape_history () {
 }
 scrape_H (){ scrape_history "$@"; }
 
-on_init_search___ytfzf_history__ () {
-    #these options should only exist if history is enabled
-    [ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
+
+# }}}
+
+# __ytfzf_search_history__ extension {{{
+
+on_load_fake_extension___ytfzf_search_history__ (){
+    if [ "$enable_search_hist" -eq 0 ]; then
+        on_opt_parse_q () {
+            die 1 "In order to use this, search history must be enabled\n"
+        }
+        on_opt_parse_search_hist () {
+            on_opt_parse_q "$@"
+        }
+    else
+        : "${search_hist_file:="$cache_dir/search_hist"}" 
+
+        on_opt_parse_q () {
+            [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; search_source="hist:$search_source"
+        }
+        on_opt_parse_search_hist () {
+            on_opt_parse_q "$@"
+        }
+    fi
 }
 
+on_post_set_vars___ytfzf_search_history__ () {
+    [ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
+}
+
+on_init_search___ytfzf_history__ () {
+    #these options should only exist if history is enabled
+    [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
+}
+
+get_search_from_hist (){
+    _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)"
+}
+
+parse_search_hist_file () {
+	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
+}
+
+handle_search_history () {
+    printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
+}
 
 # }}}
 
@@ -897,7 +939,6 @@ get_search_from_source () {
         case "$src" in
             args) _search="$initial_search" ;;
             prompt) search_prompt_menu_wrapper ;;
-            hist) _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)" ;;
             fn-args) _search="$*" ;;
             *) command_exists "get_search_from_$src" && get_search_from_"$src" "$@" ;;
         esac
@@ -905,12 +946,6 @@ get_search_from_source () {
     done
 }
 
-parse_search_hist_file () {
-	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
-}
-handle_search_history () {
-    printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
-}
 
 # }}}
 
@@ -1066,7 +1101,7 @@ done
 load_fake_extension "__ytfzf__"
 
 # files, and const vars
-: "${search_hist_file:="$cache_dir/search_hist"}" : "${instances_file:="$cache_dir/instancesV2.json"}"
+: "${instances_file:="$cache_dir/instancesV2.json"}"
 
 new_line='
 '
@@ -2653,7 +2688,6 @@ parse_opt () {
         version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
         version-all) printf -- '---\n%s: %s\n' "ytfzf" "$YTFZF_VERSION" "jq" "$(jq --version)" "curl" "$(curl --version)"; exit 0 ;;
         L) info_to_print="$info_to_print,L" ;;
-        q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; search_source="hist:$search_source" ;;
         pages) pages_to_scrape="$optarg" ;;
         pages-start) pages_start="$optarg" ;;
         thumbnail-log) thumbnail_debug_log="${optarg:-/dev/stderr}" ;;
