@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1830.660c820"
+YTFZF_VERSION="git-1832.af45edb"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -222,8 +222,12 @@ on_post_set_vars___ytfzf__ () {
     source_scrapers
 
     print_debug "\n=============\nVARIABLE DUMP\n=============\n"
-    print_debug "$(export -p)\n"
+    print_debug "$(set)\n"
     print_debug "\n============\nEND VAR DUMP\n============\n"
+}
+
+on_init_search___ytfzf__ () {
+    set > "$session_cache_dir/environment"
 }
 #}}}
 
@@ -2465,12 +2469,12 @@ interface_thumbnails () {
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	# fzf_preview_side will get reset if we don't pass it in
     jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
-	sort_video_data_fn |
-    jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
-	SHELL="$(command -v sh)" fzf -m \
-	--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -W \"preview_img"$EOT"$thumbnail_viewer"$EOT"$video_json_file"$EOT"{f}\"" \
-	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
-	trim_url > "$selected_id_file"
+        sort_video_data_fn |
+        jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
+        SHELL="$(command -v sh)" fzf -m \
+            --preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"preview_img"$EOT"{f}\"" \
+            --preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
+        trim_url > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
 
@@ -2659,6 +2663,49 @@ open_format_selection_if_requested (){
 
 #}}}
 
+# Internal Actions {{{
+#
+# Internal actions are usually called from fzf with the -W option.
+# The point of these actions is to do something that can only be done given a specific ytfzf process instance. Such as displaying thumbnails
+
+internal_action_help () {
+    printf "%s\n" "Usage: ytfzf -W [help|preview_img]<EOT>[args...]
+An action followed by \\003 (ascii: EOT) followed by args which are seperated by \\003.
+Actions:
+help:
+    Prints usage on -W
+preview_img <ytfzf-line-format>:
+    ytfzf-line-format:
+        items seperated by \t| where the last item is the url of the item
+    The following variables must be set
+        session_temp_dir set to the ytfzf process instance's temp dir
+        session_cache_dir set to the ytfzf process instance's cache dir"
+}
+
+internal_action_preview_img () {
+    shift
+
+    thumb_dir="${session_cache_dir}/thumbnails"
+    YTFZF_PID="$(sed -n 's/^YTFZF_PID=\(.*\)/\1/p' "$session_cache_dir/environment")"
+    UEBERZUG_FIFO="$(sed -n 's/^UEBERZUG_FIFO=\(.*\)/\1/p' "$session_cache_dir/environment")"
+
+    fzf_preview_side="$(sed -n 's/^fzf_preview_side=\(.*\)/\1/p' "$session_cache_dir/environment")"
+    scrape="$(sed -n 's/^scrape=\(.*\)/\1/p' "$session_cache_dir/environment")"
+
+    thumbnail_viewer="$(sed -n 's/^thumbnail_viewer=\(.*\)/\1/p' "$session_cache_dir/environment")"
+
+    ytfzf_video_json_file="$(sed -n 's/^ytfzf_video_json_file=\(.*\)/\1/p' "$session_cache_dir/environment")"
+    ytfzf_video_json_file="${ytfzf_video_json_file#[\"\']}"
+    ytfzf_video_json_file="${ytfzf_video_json_file%[\"\']}"
+
+    line_file="$*"
+    read -r line < "$line_file"
+    line="${line#\'}" line="${line%\'}"
+    source_scrapers
+    preview_img "$thumbnail_viewer" "$line" "$ytfzf_video_json_file"
+}
+# }}}
+
 # Options {{{
 parse_opt () {
 	opt=$1
@@ -2774,28 +2821,7 @@ parse_opt () {
             set -- $optarg
             end_of_set_args
             action="$1"
-            case "$action" in
-                help)
-                    printf "%s\n" "Usage: ytfzf -W [help|preview_img]<EOT>[args...]
-An action followed by \\003 (ascii: EOT) followed by args which are seperated by \\003.
-Actions:
-help:
-    Prints usage on -W
-preview_img<EOT><thumb_viewer><EOT><video_json_file>:
-    The following variables must be set
-        session_temp_dir set to the ytfzf process instance's temp dir
-        session_cache_dir set to the ytfzf process instance's cache dir
-        scrape the scrapers used for finding results
-        thumb_dir the place where the result thumbnails are stored" ;;
-                preview_img)
-                    thumb_viewer="$2" ytfzf_video_json_file="$3"
-                    shift 3
-                    line_file="$*"
-                    read -r line < "$line_file"
-                    line="${line#\'}" line="${line%\'}"
-                    source_scrapers
-                    preview_img "$thumb_viewer" "$line" "$ytfzf_video_json_file";;
-            esac
+            command_exists "internal_action_$1" && internal_action_"$1" "$@"
             exit 0 ;;
         *)
             # shellcheck disable=SC2031

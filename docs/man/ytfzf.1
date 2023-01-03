@@ -837,6 +837,7 @@ $cache_dir
 |  | \-\- post-scrape
 |  | \-\- <submenu-search>-<submenu-pid>?
 |  | \-\- thumbnails?
+|  | \-\- environment
 |  | \-\- tmp
 |  |  | \-\- curl_config
 |  |  | \-\- <scrape>.html
@@ -874,6 +875,9 @@ Created when a submenu is opened (eg: when a channel/playlist is selected).
 .TP
 .IR thumbnails
 Stores the thumbnails for the instance (only with \-t).
+.TP
+.IR environment
+Every variable that is set and it's value, in that instance of ytfzf
 .TP
 .IR tmp
 Stores less important temporarily used files.
