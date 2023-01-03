@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1833.af57461"
+YTFZF_VERSION="git-1834.0736d73"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1001,6 +1001,8 @@ set_vars () {
     # shortcuts
     download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s"
     custom_shortcut_binds=""
+
+    next_page_action_shortcut="ctrl-p"
 
     # interface design
     show_thumbnails="0" is_sort="0" skip_thumb_download="0" external_menu_len="210"
@@ -2467,7 +2469,7 @@ interface_thumbnails () {
         jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
         SHELL="$(command -v sh)" fzf -m \
             --preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"preview_img"$EOT"{f}\"" \
-            --bind "ctrl-p:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
+            --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
             --preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
         trim_url > "$selected_id_file"
 
