@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1828.7db1f49"
+YTFZF_VERSION="git-1828.9a8e499"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3007,7 +3007,7 @@ init_and_make_search () {
 	_search=$1
 	_search_source=$2
 	init_search "$_search" "$_search_source"
-	make_search "$_search" "$_search_source"
+	make_search "$_search"
 }
 
 make_search () {
