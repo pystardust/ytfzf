@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1833.fe6c523"
+YTFZF_VERSION="git-1833.af57461"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -201,7 +201,7 @@ on_post_set_vars___ytfzf__ () {
 
     : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
 
-    : "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
+    : "${shortcut_binds="Enter,double-click,${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
 
     [ ! -d "$cache_dir" ] && mkdir -p "$cache_dir"
 
@@ -999,7 +999,7 @@ set_vars () {
     fzf_preview_side="left" thumbnail_viewer="ueberzug"
 
     # shortcuts
-    download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s" next_page_shortcut="alt-p"
+    download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s"
     custom_shortcut_binds=""
 
     # interface design
@@ -1983,7 +1983,6 @@ handle_post_keypress () {
 		"$detach_shortcut") is_detach=0 ;;
 		"$print_link_shortcut"|"$info_shortcut") info_to_print="$_last_info_to_print" ;;
 		"$show_formats_shortcut") show_formats=0 ;;
-		"$next_page_shortcut") : ;;
 		"$search_again_shortcut") : ;;
 		*)
 			_fn_name=handle_post_keypress_$(sed 's/-/_/g' <<-EOF
@@ -2010,15 +2009,6 @@ handle_keypress () {
 		"$print_link_shortcut") _last_info_to_print="$info_to_print"; info_to_print="L" ;;
 		"$show_formats_shortcut") show_formats=1 ;;
 		"$info_shortcut") _last_info_to_print="$info_to_print"; info_to_print="VJ" ;;
-		"$next_page_shortcut")
-			read -r url < "$selected_id_file"
-			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
-            pages_to_scrape="$(sed -n 's/^pages_to_scrape=\(.*\)/\1/p' "$session_cache_dir/environment")"
-            pages_start="$(cat "${session_temp_dir}/${hovered_scraper}-current-page")"
-			"scrape_next_page_$hovered_scraper"
-			unset hovered_scraper
-			return 3
-			;;
 		"$search_again_shortcut")
 			clean_up
 			initial_search="" init_and_make_search "" "$search_source"
