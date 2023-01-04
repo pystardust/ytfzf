@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1834.0736d73"
+YTFZF_VERSION="git-1835.0817eef"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2673,7 +2673,7 @@ help:
     Prints usage on -W
 preview_img <ytfzf-line-format>:
     ytfzf-line-format:
-        items seperated by \t| where the last item is the url of the item
+        path to file where items seperated by \t| where the last item is the url of the item
     The following variables must be set
         session_temp_dir set to the ytfzf process instance's temp dir
         session_cache_dir set to the ytfzf process instance's cache dir"
