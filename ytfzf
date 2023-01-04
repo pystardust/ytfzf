@@ -3113,7 +3113,7 @@ until handle_empty_scrape; do
 done
 
 main() {
-	while :; do
+	while [ "$is_loop" -eq 1 ]; do
 		# calls the interface
 		run_interface
 		handle_keypress "$keypress_file" || case "$?" in 2) break ;; 3) continue ;; esac
@@ -3135,8 +3135,6 @@ main() {
 
 		open_url_handler "$ytfzf_selected_urls"
 		close_url_handler "$url_handler"
-
-		[ "$is_loop" -eq 0 ] && break
 	done
 
     # doing this after the loop allows for -l and -s to coexist
