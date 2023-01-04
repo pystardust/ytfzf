@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1838.fc76cb6"
+YTFZF_VERSION="git-1841.d35fde2"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2093,7 +2093,8 @@ interface_text () {
 		sort_video_data_fn |
         video_info_text |
         { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
-		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
+		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" \
+            --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" | set_keypress |
 		trim_url > "$selected_id_file"
 
     _const_top_url="$(head -n 1 "$selected_id_file")"
