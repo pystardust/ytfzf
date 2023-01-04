@@ -1,5 +1,13 @@
 #!/bin/sh
 
+die () {
+    printf "\033[31m$2\033[0m"
+    exit "$1"
+}
+command_exists () {
+    command -v "$1" > /dev/null 2>&1
+}
+
 thumb_path="$2"
 foodpid="${TMPDIR:-/tmp}/ytfzf-foot.pid"
 case "$1" in

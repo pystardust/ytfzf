@@ -1,5 +1,14 @@
 #!/bin/sh
 
+die () {
+    printf "\033[31m$2\033[0m"
+    exit "$1"
+}
+command_exists () {
+    command -v "$1" > /dev/null 2>&1
+}
+
+
 case "$1" in
   start) command_exists "display" || die 3 "\nimagemagick is not installed" ;;
   stop) : ;;

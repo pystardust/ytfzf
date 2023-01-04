@@ -6,6 +6,20 @@
 #  append --url-handler=mpvq to ytfzf args
 mpv_socket=${TMPDIR:-/tmp}/${USER}-ytfzf-mpv-socket
 
+die () {
+    printf "\033[31m$2\033[0m"
+    exit "$1"
+}
+command_exists () {
+    command -v "$1" > /dev/null 2>&1
+}
+
+
+
+for dep in lsof mpv socat; do
+    command_exists "$dep" || die 3 "$dep is not installed and is required for the mpvq url handler\n"
+done
+
 IFS="$(printf '\t')"
 read -r ytdl_pref is_audio_only is_detach video_pref audio_pref url_handler_opts _
 unset IFS

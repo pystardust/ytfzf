@@ -2,6 +2,7 @@
 
 
 interface_sxiv () {
+    command_exists "sxiv" || die 3 "sxiv is required for this menu\n"
     video_json_file=$1
     selected_id_file=$2
     curl_config_file="${session_temp_dir}/curl_config"
