@@ -21,7 +21,7 @@ thumbnail_video_info_text_pictures () {
 
 scrape_pictures () {
     search="${1:-"${XDG_PICTURES_HOME:-"$HOME/Pictures"}"}"
-    [ "$search" = ":help" ] && printf "%s\n" "Display your pictures folder, or folder if a search is gven\nuse :w as the search to search possible wallpaper folders" && return 100
+    [ "$search" = ":help" ] && printf "%s\n" "Display your pictures folder, or folder if a search is gven" "use :w as the search to search possible wallpaper folders" "set YTFZF_PICTURES_WALLPAPER_PATH to different paths if you do not like the default" && return 100
     output_json_file="${2}"
     : "${YTFZF_PICTURES_WALLPAPER_PATH:="/usr/share/wallpapers:/usr/share/backgrounds:$HOME/.local/share/wallpapers:$HOME/.local/share/backgrounds"}"
     case "$search" in
