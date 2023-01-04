@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="2.5.4.rc-1"
+YTFZF_VERSION="git-1846.5d07c5a"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -762,7 +762,7 @@ load_fake_extension () {
     loaded_extensions="${loaded_extensions# }"
 
     command_exists "on_load_fake_extension_$1" && on_load_fake_extension_"$1"
-    print_debug "[LOADING]: fake extension: $1 loaded"
+    print_debug "[LOADING]: fake extension: $1 loaded\n"
 }
 
 load_sort_name () {
@@ -2056,16 +2056,14 @@ interface_text () {
     # if it doesn't exist, this menu has not opened yet, no need to revert the actions of the last keypress
 	[ -f "$keypress_file" ] && handle_post_keypress
 
-    if [ "${_const_fzf_selected_line_no:=0}" -gt 0 ]; then
+    _fzf_start_bind=""
+    if [ "${_const_fzf_selected_line_no:-0}" -gt 0 ]; then
         #if line n (where n != 0) was selected, add a start bind that moves the cursor down (n) times
-        FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS --bind start:"
-        for i in $(seq 1 "${_const_fzf_selected_line_no}"); do
-            FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS}down+"
-        done
-        FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS%"+"}"
+        _fzf_start_bind="--bind start:$(mul_str "down+" "${_const_fzf_selected_line_no}")"
+        _fzf_start_bind="${_fzf_start_bind%"+"}"
     fi
 
-	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
+	[ "$show_thumbnails" -eq 1 ] && { interface_thumbnails "$@"; return; }
 
 	if command_exists "tput"; then
 	    TTY_COLS=$(tput cols 2> /dev/null)
@@ -2094,6 +2092,7 @@ interface_text () {
         video_info_text |
         { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
 		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" \
+            $_fzf_start_bind \
             --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" | set_keypress |
 		trim_url > "$selected_id_file"
 
@@ -2485,12 +2484,15 @@ interface_thumbnails () {
         SHELL="$(command -v sh)" fzf -m --sync \
             --expect="$shortcut_binds" \
             --preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"preview_img"$EOT"{f}\"" \
+            $_fzf_start_bind \
             --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
             --preview-window "$fzf_preview_side:50%:wrap" --layout=reverse  | set_keypress |
         trim_url > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
 
+    _const_top_url="$(head -n 1 "$selected_id_file")"
+    _const_fzf_selected_line_no="$(jq -s -r --arg url "$_const_top_url" 'flatten|[.[]|.url]|index($url)' < "$video_json_file")"
 }
 #}}}
 
@@ -3117,8 +3119,7 @@ main() {
 		# calls the interface
 		run_interface
 		handle_keypress "$keypress_file" || case "$?" in 2) break ;; 3) continue ;; esac
-		handle_actions "$ytfzf_selected_urls" || { [ "$?" -eq 2 ] || continue && break; }
-
+        handle_actions "$ytfzf_selected_urls" || case "$?" in 2) break ;; 3) continue ;; esac
 
 		# nothing below needs to happen if  this is empty (causes bugs when this is not here)
 		[ ! -s "$ytfzf_selected_urls" ] && break
