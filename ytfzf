@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1846.672e086"
+YTFZF_VERSION="git-1847.a98b74d"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -475,8 +475,14 @@ _get_real_channel_link () {
                 printf "%s\n" "https://${domain}/channel/${id}/videos"
             } ;;
         "@"*)
-            _get_real_channel_link "https://www.youtube.com/user/${1#"@"}"
-            return "$?" ;;
+            for link in "https://www.youtube.com/user/${1#"@"}" "https://www.youtube.com/c/${1#"@"}"; do
+                _real_link="$(_get_real_channel_link "$link")"
+                if [ "$_real_link" != "$link" ] ; then
+                    printf "%s\n" "$_real_link"
+                    return 0
+                fi
+            done
+            return 1 ;;
         *)
             _get_real_channel_link_handle_empty_real_path(){
                 printf "$1\n"
