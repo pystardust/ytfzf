@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1835.0817eef"
+YTFZF_VERSION="git-1837.093259b"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2056,6 +2056,15 @@ interface_text () {
     # if it doesn't exist, this menu has not opened yet, no need to revert the actions of the last keypress
 	[ -f "$keypress_file" ] && handle_post_keypress
 
+    if [ "${_const_fzf_selected_line_no:=0}" -gt 0 ]; then
+        #if line n (where n != 0) was selected, add a start bind that moves the cursor down (n) times
+        FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS --bind start:"
+        for i in $(seq 1 "${_const_fzf_selected_line_no}"); do
+            FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS}down+"
+        done
+        FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS%"+"}"
+    fi
+
 	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
 
 	if command_exists "tput"; then
@@ -2084,8 +2093,12 @@ interface_text () {
 		sort_video_data_fn |
         video_info_text |
         { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
-		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
+		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
 		trim_url > "$selected_id_file"
+
+    _const_top_url="$(head -n 1 "$selected_id_file")"
+    _const_fzf_selected_line_no="$(jq -s -r --arg url "$_const_top_url" 'flatten|[.[]|.url]|index($url)' < "$video_json_file")"
+
 }
 #}}}
 
@@ -2464,13 +2477,15 @@ interface_thumbnails () {
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	# fzf_preview_side will get reset if we don't pass it in
+
     jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
         sort_video_data_fn |
         jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
-        SHELL="$(command -v sh)" fzf -m \
+        SHELL="$(command -v sh)" fzf -m --sync \
+            --expect="$shortcut_binds" \
             --preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"preview_img"$EOT"{f}\"" \
             --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
-            --preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
+            --preview-window "$fzf_preview_side:50%:wrap" --layout=reverse  | set_keypress |
         trim_url > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
