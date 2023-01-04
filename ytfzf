@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1846.5d07c5a"
+YTFZF_VERSION="git-1846.672e086"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -180,10 +180,10 @@ on_clean_up___ytfzf__ () {
 	while read -r line; do
 		[ "$line" ] && kill "$line" 2> /dev/null
 	done < "$jobs_file"
-    rm "$jobs_file"
+    rm -f "$jobs_file"
 	#}}}
 	if [ $__is_fzf_preview -eq 0 ]; then
-		[ -d "$session_cache_dir" ] && [ "$keep_cache" -eq 0 ] && rm -r "$session_cache_dir"
+		[ -d "$session_cache_dir" ] && [ "$keep_cache" -eq 0 ] && rm -rf "$session_cache_dir"
 	fi
 }
 
@@ -669,6 +669,7 @@ run_interface () {
     _interface="interface_${interface:-text}"
 
     print_debug "[INTERFACE]: Running interface: $_interface\n"
+
 
     $(printf "%s" "$_interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
     unset _interface
@@ -2042,8 +2043,8 @@ interface_scripting () {
 	case 1 in
         #sed is faster than jq, lets use it
         #this sed command finds `"url": "some-url"`, and prints all urls then selects the first $scripting_video_count urls.
-        "$is_auto_select") sed -n 's/[[:space:]]*"url":[[:space:]]*"\([^"]\+\)",*$/\1/p' | sed -n "1,${scripting_video_count}p" ;;
-		"$is_random_select") sed -n 's/[[:space:]]*"url":[[:space:]]*"\([^"]\+\)",*$/\1/p' | shuf  | sed -n "1,$scripting_video_count"p ;;
+        "$is_auto_select") sed -n 's/[[:space:]]*"url":[[:space:]]*"\([^"]\+\)",*$/\1/p' < "$video_json_file" | sed -n "1,${scripting_video_count}p" ;;
+		"$is_random_select") sed -n 's/[[:space:]]*"url":[[:space:]]*"\([^"]\+\)",*$/\1/p' < "$video_json_file" | shuf  | sed -n "1,$scripting_video_count"p ;;
 		"$is_specific_select") jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file" | sed -n "$scripting_video_count"p | trim_url ;;
 	esac > "$selected_id_file"
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
@@ -3115,7 +3116,7 @@ until handle_empty_scrape; do
 done
 
 main() {
-	while [ "$is_loop" -eq 1 ]; do
+	while :; do
 		# calls the interface
 		run_interface
 		handle_keypress "$keypress_file" || case "$?" in 2) break ;; 3) continue ;; esac
@@ -3136,6 +3137,8 @@ main() {
 
 		open_url_handler "$ytfzf_selected_urls"
 		close_url_handler "$url_handler"
+
+        [ "$is_loop" -eq 0 ] && break
 	done
 
     # doing this after the loop allows for -l and -s to coexist
