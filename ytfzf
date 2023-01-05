@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1847.a98b74d"
+YTFZF_VERSION="git-1849.87e03d0"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1952,6 +1952,9 @@ clear_hist () {
 
 # Interfaces are responsible for the following:
 
+# $ytfzf_video_json_file contains a file with the raw search result json
+# $const_SORTED_VIDEO_DATA is a sorted jsonl string, use this if you want to implement sorting in the gui.
+
 # * Checking if the menu it wants to use is installed.
     # * Example: interface_text checks if fzf is installed and exits with code 3 if it can't.
 
@@ -2094,8 +2097,7 @@ interface_text () {
 	unset IFS
 
 	# shellcheck disable=2015
-    jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
-		sort_video_data_fn |
+    printf "%s\n" "$const_SORTED_VIDEO_DATA" |
         video_info_text |
         { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
 		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" \
@@ -2104,8 +2106,10 @@ interface_text () {
 		trim_url > "$selected_id_file"
 
     _const_top_url="$(head -n 1 "$selected_id_file")"
-    _const_fzf_selected_line_no="$(jq -s -r --arg url "$_const_top_url" 'flatten|[.[]|.url]|index($url)' < "$video_json_file")"
-
+    _const_fzf_selected_line_no="$(jq -s -r --arg url "$_const_top_url" 'flatten|[.[]|.url]|index($url)' <<-EOF
+    $const_SORTED_VIDEO_DATA
+EOF
+)"
 }
 #}}}
 
@@ -2122,8 +2126,7 @@ interface_ext () {
 	view_len=10
 	date_len=100
 
-    jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
-		sort_video_data_fn |
+    printf "%s\n" "$const_SORTED_VIDEO_DATA" |
         video_info_text |
 		external_menu "Select video: " |
 		trim_url > "$selected_id_file"
@@ -2485,8 +2488,7 @@ interface_thumbnails () {
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	# fzf_preview_side will get reset if we don't pass it in
 
-    jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
-        sort_video_data_fn |
+    printf "%s\n" "$const_SORTED_VIDEO_DATA" |
         jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
         SHELL="$(command -v sh)" fzf -m --sync \
             --expect="$shortcut_binds" \
@@ -2499,7 +2501,10 @@ interface_thumbnails () {
 	preview_stop "$thumbnail_viewer"
 
     _const_top_url="$(head -n 1 "$selected_id_file")"
-    _const_fzf_selected_line_no="$(jq -s -r --arg url "$_const_top_url" 'flatten|[.[]|.url]|index($url)' < "$video_json_file")"
+    _const_fzf_selected_line_no="$(jq -s -r --arg url "$_const_top_url" 'flatten|[.[]|.url]|index($url)' <<-EOF
+    $const_SORTED_VIDEO_DATA
+EOF
+)"
 }
 #}}}
 
@@ -3123,6 +3128,9 @@ done
 
 main() {
 	while :; do
+
+        const_SORTED_VIDEO_DATA=$(jq -c -r 'select(.!=[])|.[]' < "$ytfzf_video_json_file" | sort_video_data_fn)
+
 		# calls the interface
 		run_interface
 		handle_keypress "$keypress_file" || case "$?" in 2) break ;; 3) continue ;; esac
