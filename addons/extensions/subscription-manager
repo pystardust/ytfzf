@@ -1,0 +1,32 @@
+#!/bin/sh
+
+print_help_subscription_manager () {
+    cat <<EOF
+This extension adds options:
+    --add-sub and --remove-sub
+Usage:
+    --add-sub="<channel>": Adds a channel to your subscriptions file
+    --remove-sub="<channel>": Removes a channel (or multiple channels) from your subscriptions file
+EOF
+}
+
+on_opt_parse_add_sub () {
+    real_link="$(_get_real_channel_link "$1")"
+    printf "%s >> " "Type a comment for this channel"
+    read -r comment
+    printf "%s #%s\n" "$real_link" "$comment" >> "${YTFZF_SUBSCRIPTIONS_FILE}"
+    exit 0
+}
+
+on_opt_parse_remove_sub () {
+    lines_to_remove=$(quick_menu_wrapper "Remove a channel " < "$YTFZF_SUBSCRIPTIONS_FILE")
+    _tmp_subfile="${YTFZF_SUBSCRIPTIONS_FILE}.tmp"
+    while read -r subline; do
+        case "$lines_to_remove" in
+            *"$subline"*) : ;;
+            *) printf "%s\n" "$subline" >> "$_tmp_subfile" ;;
+        esac
+    done < "$YTFZF_SUBSCRIPTIONS_FILE"
+    mv "$_tmp_subfile" "$YTFZF_SUBSCRIPTIONS_FILE"
+    exit 0
+}
