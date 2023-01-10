@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1849.87e03d0"
+YTFZF_VERSION="git-1850.a89d879"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -192,8 +192,8 @@ on_load_fake_extension___ytfzf__ () {
     #also no harm done because enable_hist cannot be set to true with an --option
 
     #do not check if hist is enabled, because on_load_fake_extension___ytfzf_history__ does that
-    load_fake_extension "__ytfzf_history__"
-    load_fake_extension "__ytfzf_search_history__"
+    load_fake_extension "__ytfzf_history__" "1"
+    load_fake_extension "__ytfzf_search_history__" "1"
 }
 
 on_post_set_vars___ytfzf__ () {
@@ -765,8 +765,13 @@ load_extension () {
 
 #for extensions succh as __ytfzf__
 load_fake_extension () {
-    loaded_extensions="${loaded_extensions} $1"
-    loaded_extensions="${loaded_extensions# }"
+    _should_be_first="$2"
+    if [ "$_should_be_first" -eq 1 ]; then
+        loaded_extensions="$1 ${loaded_extensions}"
+    else
+        loaded_extensions="${loaded_extensions} $1"
+        loaded_extensions="${loaded_extensions# }"
+    fi
 
     command_exists "on_load_fake_extension_$1" && on_load_fake_extension_"$1"
     print_debug "[LOADING]: fake extension: $1 loaded\n"
@@ -1111,7 +1116,7 @@ done
 # shellcheck disable=SC1090
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 
-load_fake_extension "__ytfzf__"
+load_fake_extension "__ytfzf__" "1"
 
 # files, and const vars
 : "${instances_file:="$cache_dir/instancesV2.json"}"
