@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1851.2c978b6"
+YTFZF_VERSION="git-1852.2500625"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -456,10 +456,15 @@ end_modify_ifs (){
 #general util{{{
 _get_real_channel_link () {
     case "$1" in
-        https://*|*\.*)
+        http?://*/@*)
             domain=${1#https://}
             domain=${domain%%/*}
-            url=$(printf "%s" "$1" | sed 's/\/@\([^\/]\+\)/\/user\/\1/' | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+            printf "https://www.youtube.com/channel/%s\n" "$(_get_request "$1" | sed -n 's/.*itemprop="channelId" content="\([^"]*\)".*/\1/p')"
+            ;;
+        http?://*/c/*|http?://*/user/*|*\.*)
+            domain=${1#https://}
+            domain=${domain%%/*}
+            url=$(printf "%s" "$1" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
             _get_real_channel_link_handle_empty_real_path () {
                  printf "https://%s\n" "${1#https://}"
             } ;;
