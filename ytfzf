@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1852.2500625"
+YTFZF_VERSION="git-1853.515d9fc"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -259,23 +259,16 @@ get_search_from_next (){
 
 # __ytfzf_history__ extension {{{
 on_load_fake_extension___ytfzf_history__ () {
-    if [ "$enable_hist" -eq 0 ]; then
-        on_opt_parse_history () {
+    : "${hist_file:="$cache_dir/watch_hist"}" 
+    on_opt_parse_history () {
+        if [ "$enable_hist" -eq 0 ]; then
             die 1 "enable_hist must be set to 1 for -H/--history\n"
-        }
-        on_opt_parse_H () {
-            on_opt_parse_history "$@"
-        }
-    else
-        : "${hist_file:="$cache_dir/watch_hist"}" 
-
-        on_opt_parse_history () {
-            scrape=history
-        }
-        on_opt_parse_H () {
-            scrape=history
-        }
-    fi
+        fi
+        scrape=history
+    }
+    on_opt_parse_H () {
+        on_opt_parse_history "$@"
+    }
 }
 
 on_open_url_handler___ytfzf_history__ () {
@@ -308,23 +301,16 @@ scrape_H (){ scrape_history "$@"; }
 # __ytfzf_search_history__ extension {{{
 
 on_load_fake_extension___ytfzf_search_history__ (){
-    if [ "$enable_search_hist" -eq 0 ]; then
-        on_opt_parse_q () {
-            die 1 "In order to use this, search history must be enabled\n"
-        }
-        on_opt_parse_search_hist () {
-            on_opt_parse_q "$@"
-        }
-    else
-        : "${search_hist_file:="$cache_dir/search_hist"}" 
-
-        on_opt_parse_q () {
-            [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; search_source="hist:$search_source"
-        }
-        on_opt_parse_search_hist () {
-            on_opt_parse_q "$@"
-        }
-    fi
+    : "${search_hist_file:="$cache_dir/search_hist"}" 
+    on_opt_parse_q () {
+        if [ "$enable_search_hist" -eq 0 ]; then
+            die 1 'In order to use this search history must be enabled\n'
+        fi
+        [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"; search_source="hist:$search_source"
+    }
+    on_opt_parse_search_hist () {
+        on_opt_parse_q "$@"
+    }
 }
 
 on_post_set_vars___ytfzf_search_history__ () {
