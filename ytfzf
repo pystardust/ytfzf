@@ -440,6 +440,15 @@ end_modify_ifs (){
 # }}}
 
 #general util{{{
+
+remove_quotes_on_var_value () {
+    read -r val
+    val="${val#[\"\']}"
+    val="${val%[\"\']}"
+    echo "$val"
+    unset val
+}
+
 _get_real_channel_link () {
     case "$1" in
         http?://*/@*)
@@ -2734,17 +2743,17 @@ internal_action_preview_img () {
     shift
 
     thumb_dir="${session_cache_dir}/thumbnails"
-    YTFZF_PID="$(sed -n 's/^YTFZF_PID=\(.*\)/\1/p' "$session_cache_dir/environment")"
-    UEBERZUG_FIFO="$(sed -n 's/^UEBERZUG_FIFO=\(.*\)/\1/p' "$session_cache_dir/environment")"
+    YTFZF_PID="$(sed -n 's/^YTFZF_PID=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
 
-    fzf_preview_side="$(sed -n 's/^fzf_preview_side=\(.*\)/\1/p' "$session_cache_dir/environment")"
-    scrape="$(sed -n 's/^scrape=\(.*\)/\1/p' "$session_cache_dir/environment")"
+    UEBERZUG_FIFO="$(sed -n 's/^UEBERZUG_FIFO=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
 
-    thumbnail_viewer="$(sed -n 's/^thumbnail_viewer=\(.*\)/\1/p' "$session_cache_dir/environment")"
+    fzf_preview_side="$(sed -n 's/^fzf_preview_side=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
 
-    ytfzf_video_json_file="$(sed -n 's/^ytfzf_video_json_file=\(.*\)/\1/p' "$session_cache_dir/environment")"
-    ytfzf_video_json_file="${ytfzf_video_json_file#[\"\']}"
-    ytfzf_video_json_file="${ytfzf_video_json_file%[\"\']}"
+    scrape="$(sed -n 's/^scrape=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+
+    thumbnail_viewer="$(sed -n 's/^thumbnail_viewer=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+
+    ytfzf_video_json_file="$(sed -n 's/^ytfzf_video_json_file=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
 
     line_file="$*"
     read -r line < "$line_file"
