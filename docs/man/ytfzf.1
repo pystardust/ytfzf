@@ -684,6 +684,10 @@ Used internally to use the next search in the list when \fBmulti_search\fR is en
 .TP
 .RB fn-args
 Used internally to use the function arguments passed to the function as the source.
+.TP
+.RB <custom>
+A custom search source may be used if a function called get_search_from_<source> exists.
+The function must set the _search variable to a search.
 .RE
 .TP
 .BR \-x ", " \-\-history\-clear=<search|watch>
