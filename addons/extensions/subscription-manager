@@ -2,8 +2,6 @@
 
 print_help_subscription_manager () {
     cat <<EOF
-This extension adds options:
-    --add-sub and --remove-sub
 Usage:
     --add-sub="<channel>": Adds a channel to your subscriptions file
     --remove-sub="<channel>": Removes a channel (or multiple channels) from your subscriptions file
