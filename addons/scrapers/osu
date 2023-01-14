@@ -16,8 +16,8 @@ on_startup_osu () {
 }
 
 thumbnail_video_info_text_osu () {
-	bpm="$(get_video_json_attr "bpm")"
-	diffs="$(get_video_json_attr "diffs")"
+	bpm="$(_get_video_json_attr "bpm")"
+	diffs="$(_get_video_json_attr "diffs")"
 	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%s" "$views" | add_commas)"
 	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
 	[ -n "$channel" ] && printf "\n ${c_blue}Channel:    ${c_green}%s" "$channel"

@@ -2,6 +2,17 @@
 
 IFS="$(printf '\t')"
 read -r ytdl_pref is_audio_only is_detach video_pref audio_pref url_handler_opts _
+
+die () {
+    printf "\033[31m$2\033[0m"
+    exit "$1"
+}
+command_exists () {
+    command -v "$1" > /dev/null 2>&1
+}
+
+command_exists "vlc" || die 3 "vlc must be installed for the vlc url handler\n"
+
 unset IFS
 
 set -f

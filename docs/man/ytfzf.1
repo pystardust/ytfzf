@@ -34,6 +34,53 @@ Prints a possibly brief description of how to use the scraper.
 .PP
 Addon scrapers may have more or less search operators
 
+.SH SHORTCUTS
+
+.PP
+These shortcuts will apply in any menu that supports it.
+.br
+The only menu that currently supports it is fzf.
+.br
+Shortcuts starting with alt, will exit the menu, shortcuts starting with ctrl will not.
+.br
+To change any of the defaults set the corresponding variable in your configuration file.
+
+.TP
+.BR download
+alt-d (download_shortcut)
+
+.TP
+.BR "watch video"
+alt-v (video_shortcut)
+
+.TP
+.BR "audio only"
+alt-m (audio_shortcut)
+
+.TP
+.BR "detatch"
+alt-e (detach_shortcut)
+
+.TP
+.BR "print link"
+alt-l (print_link_shortcut)
+
+.TP
+.BR "show formats"
+alt-f (show_formats_shortcut)
+
+.TP
+.BR "show all info"
+alt-i (info_shortcut)
+
+.TP
+.BR "new search"
+alt-s (search_again_shortcut)
+
+.TP
+.BR "scrape next page"
+ctrl-p (next_page_action_shortcut)
+
 .SH OPTIONS
 
 .PP
@@ -637,6 +684,10 @@ Used internally to use the next search in the list when \fBmulti_search\fR is en
 .TP
 .RB fn-args
 Used internally to use the function arguments passed to the function as the source.
+.TP
+.RB <custom>
+A custom search source may be used if a function called get_search_from_<source> exists.
+The function must set the _search variable to a search.
 .RE
 .TP
 .BR \-x ", " \-\-history\-clear=<search|watch>
@@ -802,6 +853,13 @@ The default may vary depending on how you installed ytfzf.
 Whether or not to check if variables are set in the environment before setting default values.
 The default is
 .I 1
+.TP
+.B $YTFZF_TEMP_DIR
+The temporary directory
+The default is is
+.I $TMPDIR/ytfzf-$user-id.
+.br
+If $TMPDIR is not defined it will use /tmp
 
 .SH FILES
 .TP
@@ -816,9 +874,9 @@ The subscriptions file.
 
 .SH CACHE
 .PP
-Each instance of ytfzf has its own directory in $cache_dir.
+Each instance of ytfzf has its own directory in $YTFZF_TEMP_DIR, if $keep_cache is enabled, it uses $cache_dir instead.
 .br
-The structure of $cache_dir looks like this: (<> represents a placeholder, ? means optional)
+The structure of each instance folder looks like this: (<> represents a placeholder, ? means optional)
 .br
 If an addon scraper is used, it may use undocumented files.
 .RS
@@ -830,6 +888,7 @@ $cache_dir
 |  | \-\- post-scrape
 |  | \-\- <submenu-search>-<submenu-pid>?
 |  | \-\- thumbnails?
+|  | \-\- environment
 |  | \-\- tmp
 |  |  | \-\- curl_config
 |  |  | \-\- <scrape>.html
@@ -867,6 +926,9 @@ Created when a submenu is opened (eg: when a channel/playlist is selected).
 .TP
 .IR thumbnails
 Stores the thumbnails for the instance (only with \-t).
+.TP
+.IR environment
+Every variable that is set and it's value, in that instance of ytfzf
 .TP
 .IR tmp
 Stores less important temporarily used files.
@@ -911,6 +973,7 @@ Report bugs on github
 .SH SEE ALSO
 .BR ytfzf (5)
 .BR youtube\-dl (1),
+.BR mpv (1)
 .BR fzf (1)
 .BR dmenu (1)
 

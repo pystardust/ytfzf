@@ -1,0 +1,26 @@
+#!/bin/sh
+
+die () {
+    printf "\033[31m$2\033[0m"
+    exit "$1"
+}
+command_exists () {
+    command -v "$1" > /dev/null 2>&1
+}
+
+thumb_path="$2"
+foodpid="${TMPDIR:-/tmp}/ytfzf-foot.pid"
+case "$1" in
+  start)
+      for dep in img2sixel foot; do
+          command_exists "$dep" || die 3 "\n$dep is not installed"
+      done
+      export const_FOOT_PID_FILE="" ;;
+  stop) kill "$(cat "${foodpid}")" > /dev/null 2>&1 ;;
+  no-img) : ;;
+  view)
+        kill $(cat "${foodpid}") > /dev/null 2>&1
+        foot --app-id='ytfzf-foot' -H -e img2sixel "$thumb_path" > /dev/null 2>&1 &
+        printf "%s\n" "$!" > "${foodpid}"
+        ;;
+esac

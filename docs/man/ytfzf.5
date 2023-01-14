@@ -30,6 +30,8 @@ A file that is a list of links to youtube channel's video page, such as:
 .EE
 .RE
 .PP
+Each link should be separated by a new line.
+.PP
 If a channel appears similar to "https://www.youtube.com/c/SomeOrdinaryGamers", run
 .br
 ytfzf --channel-link="https://www.youtube.com/c/SomeOrdinaryGamers"
@@ -499,19 +501,18 @@ The shortcut to make another search.
 .IR default: " alt-s"
 
 .TP
-.RB $ next_page_shortcut
-The shortcut to scrape the next page.
-.br
-Currently only applies to the comments scrape.
-.IR default: " alt-p"
-
-.TP
 .RB $ shortcut_binds
 The keys to listen for in fzf.
 .br
-.IR default: " Enter,double-click,$next_page_shortcut,$download_shortcut,
+.IR default: " Enter,double-click,$download_shortcut,
 $video_shortcut,$detach_shortcut,$print_link_shortcut,$show_formats_shortcut,
 $info_shortcut,$search_again_shortcut,$custom_shortcut_binds"
+
+.TP
+.RB next_page_action_shortcut
+The shortcut to scrape the next page.
+.br
+.IR default: " ctrl-p"
 
 .TP
 .RB $ custom_shortcut_binds
@@ -850,6 +851,14 @@ Option Parsing
 The char to use for long opts.
 .br
 .IR default: " \-"
+
+.TP
+.RB $ optstring
+The string of options to use for the \fBgetopts\fR function.
+.br
+It is highly unrecommended to change this variable, unless you know what you are doing.
+.br
+.IR default: " ac:de:fhi:lmn:qrstu:xADHI:LS:T:W:\fI$long_opt_char\fR:"
 
 .TP
 .RB $ YTFZF_CHECK_VARS_EXISTS
@@ -1271,6 +1280,13 @@ This function should set ytdl_pref
 This function takes all urls as separate arguments.
 
 .TP
+.BR on_open_url_handler_<ext>()
+This function is run when \fBopen_url_handler\fR is called, but before the url handler is actually opened.
+.br
+This function takes an unlimited number of arguments, each argument is a url that was opened.
+
+
+.TP
 .BR close_url_handler_<name>
 <name> should be the name of the url handler with \- replaced with _.
 .br
@@ -1279,7 +1295,7 @@ A function that happens after the url handler has finished playing.
 The point of this function is to clean up anything that the url handler did.
 
 .TP
-.BR after_close_url_handler
+.BR after_close_url_handler_<ext>
 A function that happens after the url handler has finished playing, and after
 .BR close_url_handler_<name>
 has happened.
@@ -1592,6 +1608,10 @@ This function is effectively the same as thumbnail_video_info_text().
 .RS
 .PP
 This function shall scrape more videos from <scraper>.
+.br
+In order for this function to be called properly with alt-p, or ctrl-p, the page it left off on must be written to ${session_cache_dir}/<scraper>-current-page.
+.br
+Where scraper is the name of the scraper with _ instead of \-
 .PP
 <scraper> should be the name put in the "scraper" attribute in VIDEO JSON FORMAT
 .PP
@@ -1870,6 +1890,12 @@ This function then prints the final string to stdout.
 This function takes no arguments.
 
 .TP
+.BR remove_quotes_on_var_value ()
+This function removes the leading and ending quotes from a string passed through stdin.
+This function prints the final string to stdout.
+This function takes no arguments
+
+.TP
 .BR do_an_event_function ()
 This function runs an event if it exists, then runs event_<ext> for every loaded extension \fB$loaded_extensions\fR, if they exist.
 This function takes an unlimited number of arguments.
@@ -2141,7 +2167,7 @@ The thumbnail viewer to load
 .TP
 .BR _get_request ()
 This function sends a request to a server and prints the response.
-This funciton takes Unlimited arguments.
+This function takes Unlimited arguments.
 .RS
 .TP
 .I 1

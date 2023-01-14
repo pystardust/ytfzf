@@ -1,15 +1,82 @@
 #!/usr/bin/env sh
 #
 
+# state variables
+: "${__is_submenu:=0}" "${__is_fzf_preview:=0}"
+
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="2.5.3"
+YTFZF_VERSION="2.5.4"
 
-# Scraping: query -> video json
-# User Interface: video json -> user selection -> ID
-# Player: ID -> video player
+#ENVIRONMENT VARIABLES {{{
+: "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
+: "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
+: "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
+: "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
+: "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
+: "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
+: "${YTFZF_URL_HANDLERS_DIR:=$YTFZF_CONFIG_DIR/url-handlers}"
+: "${YTFZF_CUSTOM_THUMBNAILS_DIR:=$YTFZF_CONFIG_DIR/thumbnails}"
+: "${YTFZF_EXTENSIONS_DIR:=$YTFZF_CONFIG_DIR/extensions}"
+: "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
 
-# error codes:
+: "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
+
+: "${YTFZF_TEMP_DIR:="${TMPDIR:-/tmp}"/ytfzf-$(id -u)}"
+
+: "${YTFZF_LOGFILE:="/dev/stderr"}"
+
+[ "${YTFZF_LOGFILE}" != "/dev/stderr" ] && printf "[%s]\n==============\nSubmenu: %d\nFzf Preview: %d\n==============\n" "$(date)" "$__is_submenu" "$__is_fzf_preview" >> "${YTFZF_LOGFILE}"
+
+! [ -d "$YTFZF_TEMP_DIR" ] && mkdir -p "${YTFZF_TEMP_DIR}"
+#}}}
+
+############################
+#        DEBUGGING         #
+############################
+
+# There are only a couple tooling methods that I know of for debugging (other than printing stuff everywhere)
+# set log_level to 3, and set YTFZF_LOGFILE=./some-file.log
+# set -x may also be used.
+
+############################
+#        CODE STYLE        #
+############################
+
+##################
+# VARIABLE NAMES #
+##################
+
+# Starts with __ if it is a state variable thatt is allowed to be accessed globally.
+    # for example: __is_submenu is a state variable that keeps track of whether or not itt is a submenu
+    # another example: __scrape_count is the current scrape number
+   
+# Environment variables should be all caps, do not use full caps for constansts
+
+# Const variable should start with c_ or const_
+
+# Configuration variables should not start with any prefix, and should have a --long-opt equivelent with as close of a name as posisble to the variable
+    # example: the search_source variable has the long opt equivelent of --search-source
+
+# Private variables should start with an _
+    # A major exception to this is the _search variable, which is global, and should not be used as a local variable.
+
+##################
+# FUNCTION NAMES #
+##################
+
+# Private functions should start with an _
+
+# All other functions that should be accessed globally should not start with an _
+    # A major exception to this is _get_request which is a global function
+
+# interface functions MUST start with interface_ in order to work properly
+# scraper functions MUST start with scrape_ in order to work properly
+
+############################
+#          ERRORS          #
+############################
+
 # 0: success
 # 1: general error
 # 2: invalid -opt or command argument, invalid argument for opt, configuration error
@@ -18,6 +85,10 @@ YTFZF_VERSION="2.5.3"
 # 4: scraping error
 # 5: empty search
 # *: Likely a curl error
+
+############################
+#          CODE            #
+############################
 
 # colors {{{
 c_red="\033[1;31m"
@@ -30,10 +101,327 @@ c_reset="\033[0m"
 c_bold="\033[1m"
 #}}}
 
-# state variables
-: "${__is_submenu:=0}" "${__is_fzf_preview:=0}"
-
 : "${check_vars_exists:=${YTFZF_CHECK_VARS_EXISTS:-1}}"
+
+# __ytfzf__ extension {{{
+
+print_help___ytfzf__ () {
+    #the [2A will clear the \n---__ytfzf__--- garbage (in supported terminals)
+	printf "\033[2A%s" \
+"Usage: ytfzf [OPTIONS...] <search-query>
+    The search-query can also be read from stdin
+    GENERAL OPTIONS:
+        -h                      Show this help text
+
+        --version                Get the current version
+
+        --version-all            Get the current version of ytfzf,
+                                    and required dependencies
+
+    UTILITY OPTIONS:
+        --channel-link=<link>    Gets the uuid of a youtube channel from a link.
+
+    PLAYING OPTIONS:
+        -d                      Download the selected video(s)
+
+        -m                      Only play audio
+
+        -f                      Select a video format before playing
+
+        --format-selection=<type>
+                                Type can either be normal, or simple
+        --format-sort=<sort>    The sort used in ytdl for -f.
+
+        --video-pref=<pref>     The ytdl video preference.
+
+        --audio-pref=<pref>     The ytdl audio preference.
+
+        --ytdl-pref=<pref>      The combined ytdl video and audio preference.
+
+        -u <url handler>        The program to use for handling urls
+                                    (deafult: multimedia_player)
+        -L                      Show the link of selected video(s)
+
+        -I <info>               Instead of playing the selected video(s),
+                                    get information about them.
+                                    Options can be separated with a comma,
+                                      eg: L,R
+                                    Options for info:
+                                      L:         print the link of the video
+                                      VJ:        print the json of the video
+                                      J:         print the json of all videos
+                                                 shown in the search
+                                      R:         print the data
+                                                 of the selected videos,
+                                                 as appears in the menu
+                                      F:         print the selected video format
+        --info-wait              When -I or -L is used,
+                                 wait for user input before continuing
+
+        --info-action=<action>   
+                                 The action to do when --info-wait is 1.
+                                 action can be one of
+                                      q: exit
+                                      Q: exit (bypass -l)
+                                      '': play video
+
+        --detach                 Detach the url handler from the terminal
+
+        --notify-playing         Sends a notification when a video is selected.
+
+        --url-handler-opts=<opts>
+                                 Pass the given opts to the url handler.
+
+        --ytdl-opts=<opts>       Pass the opts to ytdl when downloading
+
+        --ytdl-path=<path>       The path to youtube-dl
+
+    MENU OPTIONS:
+        -l                      Reopen the menu when the video stops playing
+
+        -t                      Show thumbnails
+
+        -T <viewer>             The program to use for displaying thumbnails.
+                                    see ytfzf(1) for a list of viewers.
+
+        --async-thumbnails      Download thumbnails asynchronously.
+
+        --skip-thumb-download   Skips the process of downloading thumbnails
+
+        --thumbnail-quality=<quality>
+                                Select quality of thumbnails,
+                                can be:
+                                    maxres
+                                    maxresdefault
+                                    sddefault
+                                    high (default)
+                                    medium
+                                    default
+                                    start
+                                    middle
+                                    end
+
+        -i <interface>          The interface to use (default: text)
+
+        -D                      Alias for -i ext
+
+        -a                      Automatically select the first video
+
+        -r                      Automatically select a random video
+
+        -A                      Select all videos
+
+        -S <sed address>        Automatically selects a specific video
+                                    based on a given sed address
+
+        -n <video count>        The amount of videos to select with -a and -r
+
+        --preview-side=<side>   The side to show the preview on in fzf:
+                                    left
+                                    right
+                                    up
+                                    down
+        --fancy-subs             Adds a divider between each subscription
+                                 when scraping subscriptions
+
+        --sort                   Sorts video results by a sort name,
+                                    The default sort name is upload-date
+                                    To change sort names use --sort-name=
+
+        --sort-name=<name>       Load a different sorting algorithm for --sort
+                                    To see usable sort-names, use --list-addons
+
+        --disable-submenus       Whether or not to disable submenus,
+                                 which are menus for results like:
+                                    playlists and channels
+        --disable-back           Disables the back button in submenus
+
+        --keep-vars              Options passed to ytfzf are kept in submenus.
+
+        --submenu-opts=<opts>    ytfzf options to pass to submenus.
+
+    SEARCH OPTIONS:
+        -s                      After closing fzf make another search
+
+        -q                      Use a search query from search history
+                                see ytfzf(1) for more info.
+
+        --search-source=<source>
+                                The place to get the search from
+                                see ytfzf(1) for more information
+
+        --multi-search          Allow multiple searches seperated by ,
+
+        --pages                 The amount of pages to scrape
+                                    does not work with some scrapers.
+        --pages-start=<page>    The page number to start on
+
+        --odysee-video-count    The amount of videos to scrape from odysee
+
+        --nsfw                  Enable nsfw videos (odysee only)
+
+        --sort-by=<sort>        Searches for videos sorted by:
+                                    relevance
+                                    rating (youtube only)
+                                    upload_date
+                                    oldest_first (odysee only)
+                                    view_count (youtube only)
+
+        --upload-date=<time>    Searches for videos that were uploaded:
+                                    hour
+                                    today
+                                    week
+                                    month
+                                    year
+
+        --video-duration=<time> Searches for vidos that are:
+                                    short
+                                    medium
+                                    long
+
+        --type=<type>           Searches for uploads of type:
+                                    video
+                                    playlist
+                                    channel
+                                    all
+
+        --features=<features>   Searches for videos with features:
+                                    hd
+                                    subtitles
+                                    creative_commons
+                                    3d
+                                    live
+                                    4k
+                                    360
+                                    location
+                                    hdr
+
+        --region=<country-code> The region to search.
+
+        -c <scraper>            The scraper to use,
+                                    See ytfzf(1) for a list of builtin scrapers
+                                    you can use multiple scrapers
+                                    by separating each with a comma, eg:
+                                        youtube,odysee
+
+        --scrape+=<scraper>     Use another scraper
+
+        --scrape-=<scraper>     Dont use a scraper.
+
+        -H                      alias for -c H
+
+        --ii=<instance>         The invidious instance to use for scraping.
+
+        --force-youtube         Converts invidious links to youtube links
+                                before playing (enabled by default)
+
+    ADDON OPTIONS:
+        -e <extention>          Load an extention
+
+        --list-addons            Show available addons
+
+    MISC OPTIONS:
+        -x                       Clear search and watch history
+
+        --history-clear=<type>   Clear either search, or watch  history.
+
+        --max-threads=<count>    The amount of threads that should be spawned
+                                 at any given time.
+
+        --single-threaded        Same as --max-threads=1
+
+        --rii                   Refreseh invidious instance cache
+
+        --available-inv-instances
+                                Shows the invidious instances
+                                that ytfzf may pick from
+
+        --keep-cache            Do not delete the cache files.
+
+        --thumbnail-log         Write thumbnail errors to this file.
+
+    See ytfzf(1) and ytfzf(5) for more information.
+"
+}
+
+handle_playing_notifications (){
+	# if no notify-send push error to /dev/null
+	if [ "$#" -le 1 ]; then
+	    unset IFS
+	    while read -r id title; do
+		    notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
+	    done <<-EOF
+	    $(jq -r '.[]|select(.url=="'"$*"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
+EOF
+	else
+	    notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null
+	fi
+}
+
+on_open_url_handler___ytfzf__ () {
+    [ "$notify_playing" -eq 1 ] && handle_playing_notifications "$@"
+}
+
+on_clean_up___ytfzf__ () {
+	# print_info "cleaning up\n"
+	# clean up only as parent process
+	# kill ytfzf sub process{{{
+	# I think this needs to be written to a file because of sub-shells
+    jobs_file="${YTFZF_TEMP_DIR}/the-jobs-need-to-be-written-to-a-file-$$.list"
+	jobs -p > "$jobs_file"
+	while read -r line; do
+		[ "$line" ] && kill "$line" 2> /dev/null
+	done < "$jobs_file"
+    rm -f "$jobs_file"
+	#}}}
+	if [ $__is_fzf_preview -eq 0 ]; then
+		[ -d "$session_cache_dir" ] && [ "$keep_cache" -eq 0 ] && rm -rf "$session_cache_dir"
+	fi
+}
+
+on_load_fake_extension___ytfzf__ () {
+    #these need to be here, because it modifies stuff for _getopts
+    #also no harm done because enable_hist cannot be set to true with an --option
+
+    #do not check if hist is enabled, because on_load_fake_extension___ytfzf_history__ does that
+    load_fake_extension "__ytfzf_history__" "1"
+    load_fake_extension "__ytfzf_search_history__" "1"
+}
+
+on_post_set_vars___ytfzf__ () {
+    [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
+
+    : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
+
+    : "${shortcut_binds="Enter,double-click,${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
+
+    [ ! -d "$cache_dir" ] && mkdir -p "$cache_dir"
+
+    # If file doesn't already exist (or if force-refresh is requested), cURL and cache it.
+    # CHECK: implement check for force-request
+    # CHECK: added --refresh-inv-instances to optargs
+    [ ! -f "$instances_file" ] && refresh_inv_instances
+
+    : "${invidious_instance:=$(get_random_invidious_instance)}"
+
+    FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
+
+
+    [ "$multi_search" -eq 1 ] && load_fake_extension "__ytfzf_multisearch__"
+
+    scrape_search_exclude="${scrape_search_exclude}${custom_scrape_search_exclude} "
+
+    source_scrapers
+
+    print_debug "\n=============\nVARIABLE DUMP\n=============\n"
+    print_debug "$(set)\n"
+    print_debug "\n============\nEND VAR DUMP\n============\n"
+}
+
+on_init_search___ytfzf__ () {
+    set > "$session_cache_dir/environment"
+}
+#}}}
 
 # __ytfzf_multisearch__ extension {{{
 
@@ -55,103 +443,100 @@ ext_on_search___ytfzf_multisearch__ () {
     get_search_from_source "next"
 }
 
+get_search_from_next (){
+    _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1)
+}
+
 # }}}
 
-# __ytfzf__ extension {{{
-
-print_help___ytfzf__ () {
-    #the [2A will clear the \n---__ytfzf__--- garbage (in supported terminals)
-	printf "\033[2A%s" \
-"Usage: ytfzf [OPTIONS...] <search-query>
-    The search-query can also be read from stdin
-    OPTIONS:
-        -h                      Show this help text
-        -d                      Download the selected video(s)
-        -m                      Only play audio
-        -f                      Select a video format before playing
-        -l                      Reopen the menu when the video stops playing
-        -s                      After closing fzf make another search
-        -q                      Use a search query from search history
-        -L                      Show the link of selected video(s)
-        -a                      Automatically select the first video
-        -r                      Automatically select a random video
-        -A                      Select all videos
-        -S <sed address>        Automatically selects a specific video based on a given sed address,
-                                see ytfzf(1) for more info.
-        -n <video count>        The amount of videos to select with -a and -r
-        -c <scraper>            The scraper to use,
-                                    See ytfzf(1) for a list of builtin scrapers
-                                    you can use multiple scrapers by separating each with a comma, eg: youtube,odysee
-        -H                      alias for -c H
-        -t                      Show thumbnails
-        -T <viewer>             The program to use for displaying thumbnails.
-        -i <interface>          The interface to use (default: text)
-        -D                      Alias for -i ext
-        -u <url handler>        The program to use for handling urls (deafult: multimedia_player)
-        -e <extention>          Load an extention
-        -I <info>               Instead of playing the selected video(s), get information about them.
-                                    Options can be separated with a comma, eg: L,R
-                                    Options for info:
-                                      L:         print the link of the video
-                                      VJ:        print the json of the video
-                                      J:         print the json of all videos shown in the search
-                                      R:         print the data of the selected videos, as appears in the menu
-                                      F:         print the selected video format
-        -x                       Clear search and watch history (use --history-clear=<search|watch> to specify 1)
-        --disable-submenus       Whether or not to disable submenus, which are menus for things like playlists and channels
-        --version                Get the current version
-        --version-all            Get the current version of ytfzf, and required dependencies
-
-          See ytfzf(1) and ytfzf(5) for more information.
-"
+# __ytfzf_history__ extension {{{
+on_load_fake_extension___ytfzf_history__ () {
+    : "${hist_file:="$cache_dir/watch_hist"}" 
+    on_opt_parse_history () {
+        if [ "$enable_hist" -eq 0 ]; then
+            die 1 "enable_hist must be set to 1 for -H/--history\n"
+        fi
+        scrape=history
+    }
+    on_opt_parse_H () {
+        on_opt_parse_history "$@"
+    }
 }
 
-on_clean_up___ytfzf__ () {
-	# print_info "cleaning up\n"
-	# clean up only as parent process
-	# kill ytfzf sub process{{{
-	# I think this needs to be written to a file because of sub-shells
-    jobs_file="${TMPDIR:-/tmp}/ytfzf-the-jobs-need-to-be-written-to-a-file-$(id -u).list"
-	jobs -p > "$jobs_file"
-	while read -r line; do
-		[ "$line" ] && kill "$line" 2> /dev/null
-	done < "$jobs_file"
-	#}}}
-	if [ $__is_fzf_preview -eq 0 ]; then
-		[ -d "$session_cache_dir" ] && [ "$keep_cache" -eq 0 ] && rm -r "$session_cache_dir"
-	fi
+on_open_url_handler___ytfzf_history__ () {
+    add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
 }
 
-on_post_set_vars___ytfzf__ () {
-    [ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
+add_to_hist () {
+    print_debug "[WATCH HIST]: adding to file $hist_file\n"
+	# id of the video to add to hist will be passed through stdin
+	# if multiple videos are selected, multiple ids will be present on multiple lines
+	json_file="$1"
+	urls="["
+	while read -r url; do
+	    urls="${urls}\"${url}\","
+	done
+	urls="${urls%,}]"
+	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' < "$json_file" | sed '/\[\]/d' >> "$hist_file"
+	unset url urls json_file
+}
 
-    : "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
-
-    : "${shortcut_binds="Enter,double-click,${next_page_shortcut},${download_shortcut},${video_shortcut},${audio_shortcut},${detach_shortcut},${print_link_shortcut},${show_formats_shortcut},${info_shortcut},${search_again_shortcut},${custom_shortcut_binds},${custom_shortcut_binds}"}"
-
-    [ ! -d "$cache_dir" ] && mkdir -p "$cache_dir"
-
-    # If file doesn't already exist (or if force-refresh is requested), cURL and cache it.
-    # CHECK: implement check for force-request
-    # CHECK: added --refresh-inv-instances to optargs
-    [ ! -f "$instances_file" ] && refresh_inv_instances
-
-    : "${invidious_instance:=$(get_invidious_instances | shuf | head -n 1)}"
+scrape_history () {
+	enable_hist=0 # enabling history while scrape is history causes issues
+	scrape_json_file "$hist_file" "$2"
+}
+scrape_H (){ scrape_history "$@"; }
 
 
-    FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
+# }}}
 
+# __ytfzf_search_history__ extension {{{
+
+on_load_fake_extension___ytfzf_search_history__ (){
+    : "${search_hist_file:="$cache_dir/search_hist"}" 
+    on_opt_parse_q () {
+        if [ "$enable_search_hist" -eq 0 ]; then
+            die 1 'In order to use this search history must be enabled\n'
+        fi
+        [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"; search_source="hist:$search_source"
+    }
+    on_opt_parse_search_hist () {
+        on_opt_parse_q "$@"
+    }
+}
+
+on_post_set_vars___ytfzf_search_history__ () {
     [ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
-
-    [ "$multi_search" -eq 1 ] && load_fake_extension "__ytfzf_multisearch__"
-
-    scrape_search_exclude="${scrape_search_exclude}${custom_scrape_search_exclude} "
-
-    source_scrapers
 }
-#}}}
+
+on_init_search___ytfzf_history__ () {
+    #these options should only exist if history is enabled
+    [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
+}
+
+get_search_from_hist (){
+    _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)"
+}
+
+parse_search_hist_file () {
+	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
+}
+
+handle_search_history () {
+    printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
+}
+
+# }}}
 
 # Utility functions {{{
+
+############################
+#    UTILITY FUNCTIONS     #
+############################
+
+# In order to be a utility function it must meet the following requirements:
+    # Does not have side effects
+    # Can be redefined by the user in an extension or config file
 
 ## Jq util{{{
 jq_pad_left='
@@ -164,17 +549,19 @@ def pad_left(n; num):
 # Invidious{{{
 refresh_inv_instances () {
     print_info "Fetching list of healthy invidious instances ...\n" &&
-        curl -X GET -sSfo "$instances_file" "$instances_url"
+        # The pipeline does the following:
+        #   - Fetches the avaiable invidious instances
+        #   - Gets the one where the api is public
+        #   - Puts them in a list
+        curl -X GET -sSf "$instances_url" | jq -r '[.[]|select(.[1].api==true)|.[1].uri]|join("\n")' > "$instances_file"
 }
 
 get_invidious_instances () {
-    # URL for instance list sorted by type, health and api (ones without API do not work!)
-    # The pipeline does the following:
-    #   - Get top 10 instance URIs
-    #   - Output these on individual lines
-    #   - Shuffle the list
-    #   - Choose the first entry
-    jq -r '[.[]|select(.[1].api==true)|.[1].uri]|.[:10]|join("\n")' < "$instances_file"
+    cat "$instances_file"
+}
+
+get_random_invidious_instance () {
+    shuf "$instances_file" | head -n 1
 }
 # }}}
 
@@ -210,7 +597,7 @@ get_missing_thumbnails () {
 	_downloaded_ids_file="${session_temp_dir}/downloaded-ids.list"
 
     # gets all ids and writes them to file
-	jq -r '.[]|select(.thumbs!=null)|.ID' < "$video_json_file" | sort |uniq > "$_tmp_id_list_file"
+	jq -r '.[]|select(.thumbs!=null)|.ID' < "$ytfzf_video_json_file" | sort |uniq > "$_tmp_id_list_file"
     # gets thumb urls, and ids, and concatinates them such as: <thumbnail>;<id>
     # essencially gets all downloaded thumbnail ids, by checking $thumb_dir and substituting out the \.jpg at the end
 	find "$thumb_dir" -type f | sed -n 's/^.*\///; s/\.jpg$//; /^[^\/]*$/p' | sort > "$_downloaded_ids_file"
@@ -220,7 +607,7 @@ get_missing_thumbnails () {
     missing_ids="\"$(diff "$_downloaded_ids_file" "$_tmp_id_list_file" | sed -n 's/^[>+] *\(.*\)$/\1/p')\""
 
     # formats missing ids into the format: <thumb-url>;<id>
-    jq --arg ids "$missing_ids" -r '.[]|select(.thumbs!=null)|select(.ID as $id | $ids | contains($id))|.thumbs + ";" + .ID' < "$video_json_file"
+    jq --arg ids "$missing_ids" -r '.[]|select(.thumbs!=null)|select(.ID as $id | $ids | contains($id))|.thumbs + ";" + .ID' < "$ytfzf_video_json_file"
 
 	unset _tmp_id_list_file _downloaded_ids_file missing_ids
 }
@@ -245,12 +632,26 @@ end_modify_ifs (){
 # }}}
 
 #general util{{{
+
+remove_quotes_on_var_value () {
+    read -r val
+    val="${val#[\"\']}"
+    val="${val%[\"\']}"
+    echo "$val"
+    unset val
+}
+
 _get_real_channel_link () {
     case "$1" in
-        https://*|*\.*)
+        http?://*/@*)
             domain=${1#https://}
             domain=${domain%%/*}
-            url=$(printf "%s" "$1" | sed 's/\/@\([^\/]\+\)/\/user\/\1/' | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+            printf "https://www.youtube.com/channel/%s\n" "$(_get_request "$1" | sed -n 's/.*itemprop="channelId" content="\([^"]*\)".*/\1/p')"
+            ;;
+        http?://*/c/*|http?://*/user/*|*\.*)
+            domain=${1#https://}
+            domain=${domain%%/*}
+            url=$(printf "%s" "$1" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
             _get_real_channel_link_handle_empty_real_path () {
                  printf "https://%s\n" "${1#https://}"
             } ;;
@@ -266,8 +667,14 @@ _get_real_channel_link () {
                 printf "%s\n" "https://${domain}/channel/${id}/videos"
             } ;;
         "@"*)
-            _get_real_channel_link "https://www.youtube.com/user/${1#"@"}"
-            return "$?" ;;
+            for link in "https://www.youtube.com/user/${1#"@"}" "https://www.youtube.com/c/${1#"@"}"; do
+                _real_link="$(_get_real_channel_link "$link")"
+                if [ "$_real_link" != "$link" ] ; then
+                    printf "%s\n" "$_real_link"
+                    return 0
+                fi
+            done
+            return 1 ;;
         *)
             _get_real_channel_link_handle_empty_real_path(){
                 printf "$1\n"
@@ -421,8 +828,11 @@ generic_wrapper () {
     shift
     fn_name="$base_name""$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
     if command_exists "$fn_name"; then
+        print_debug "[INTERFACE]: Running menu function: $fn_name\n"
 	    $fn_name "$@"
-    else "$base_name"_ext "$@"
+    else
+        print_debug "[INTERFACE]: Menu function $fn_name did not exist, falling back to ${base_name}_ext\n"
+        "$base_name"_ext "$@"
     fi
     unset fn_name
 }
@@ -444,25 +854,43 @@ search_prompt_menu_ext () {
 search_prompt_menu_scripting () {
 	search_prompt_menu
 }
+
 run_interface () {
+    if [ "$show_thumbnails" -eq 1 ]; then
+        prepare_for_set_args
+        case "$async_thumbnails" in
+            0) download_thumbnails $(get_missing_thumbnails) ;;
+            1) download_thumbnails $(get_missing_thumbnails) & ;;
+        esac
+        end_of_set_args
+    fi
     _interface="interface_${interface:-text}"
+
+    print_debug "[INTERFACE]: Running interface: $_interface\n"
+
+
     $(printf "%s" "$_interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
     unset _interface
 }
 
-# Takes video json file as $1 and returns the selected video IDs to file $2
+#This function generates a series of lines that will be displayed in fzf, or some other interface
+#takes in a series of jsonl lines, each jsonl should follow the VIDEO JSON FORMAT
 video_info_text () {
-	# we can't just change the views line to %d because it needs to display the "|", and "|$views" is NaN
-	[ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
-	printf "%-${title_len}.${title_len}s\t" "$title"
-	printf "%-${channel_len}.${channel_len}s\t" "$channel"
-	printf "%-${dur_len}.${dur_len}s\t" "$duration"
-	printf "%-${view_len}.${view_len}s\t" "$views"
-	printf "%-${date_len}.${date_len}s\t" "$date"
-	printf "%s" "$url"
-	printf "\n"
+    jq -r '[.title, .channel, .duration, .views, .date, .url]|join("\t|")' |
+    while IFS=$tab_space read -r title channel duration views date url; do
+        [ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
+        printf "%-${title_len}.${title_len}s\t" "$title"
+        printf "%-${channel_len}.${channel_len}s\t" "$channel"
+        printf "%-${dur_len}.${dur_len}s\t" "$duration"
+        printf "%-${view_len}.${view_len}s\t" "$views"
+        printf "%-${date_len}.${date_len}s\t" "$date"
+        printf "%s" "$url"
+        printf "\n"
+    done
 }
 
+# This is completely unrelated to video_info_text
+# It is used in preview_img for when text should appear in the preview in fzf
 thumbnail_video_info_text () {
 	[ "$views" -eq "$views" ] 2>/dev/null && views="$(printf "%s" "$views" | add_commas)"
 	[ -n "$title" ] && printf "\n ${c_cyan}%s" "$title"
@@ -476,14 +904,15 @@ thumbnail_video_info_text () {
 
 # Extension stuff{{{
 
-
 do_an_event_function () {
     event="$1"
     shift
+    print_debug "[EVENT]: doing event: $event\n"
     command_exists "$event" && $event "$@"
     modify_ifs " "
     for ext in $loaded_extensions; do
-        command_exists "${event}_$ext" && "${event}_$ext" "$@"
+        
+        command_exists "${event}_$ext" && print_debug "[EVENT]: $ext running $event\n"  && "${event}_$ext" "$@"
     done
     end_modify_ifs
 }
@@ -499,6 +928,7 @@ source_scrapers () {
 			. "${YTFZF_SYSTEM_ADDON_DIR}/scrapers/$_scr"
 		fi
 		[ "$__is_fzf_preview" -eq 0 ] && command_exists "on_startup_$_scr" && "on_startup_$_scr"
+        print_debug "[LOADING]: Loaded scraper: $_scr\n"
 	done
 	end_of_set_args
 }
@@ -517,13 +947,26 @@ load_extension () {
 	# shellcheck disable=SC1090
         . "$ext"
     fi
-    return $?
+
+    rv="$?"
+
+    print_debug "[LOADING]: loaded extension: ${ext} with exit code: ${rv}\n"
+
+    return $rv
 }
 
 #for extensions succh as __ytfzf__
 load_fake_extension () {
-    loaded_extensions="${loaded_extensions} $1"
-    loaded_extensions="${loaded_extensions# }"
+    _should_be_first="$2"
+    if [ "$_should_be_first" -eq 1 ]; then
+        loaded_extensions="$1 ${loaded_extensions}"
+    else
+        loaded_extensions="${loaded_extensions} $1"
+        loaded_extensions="${loaded_extensions# }"
+    fi
+
+    command_exists "on_load_fake_extension_$1" && on_load_fake_extension_"$1"
+    print_debug "[LOADING]: fake extension: $1 loaded\n"
 }
 
 load_sort_name () {
@@ -542,6 +985,7 @@ load_sort_name () {
     esac
     rv="$?"
     unset "$_sort_name"
+    print_debug "[LOADING]: loaded sort name: ${_sort_name} with exit code: ${rv}\n"
     return "$rv"
 }
 
@@ -555,6 +999,7 @@ load_url_handler () {
 	done
 	die 2 "$1 is not a url-handler\n"
     fi
+    print_debug "[LOADING]: loaded url handler: ${requested_url_handler}\n"
 }
 
 load_interface () {
@@ -576,6 +1021,7 @@ load_interface () {
     esac
     rv="$?"
     unset requested_interface
+    print_debug "[LOADING]: loaded interface: ${requested_interface}\n"
     return "$rv"
 }
 
@@ -594,26 +1040,54 @@ load_thumbnail_viewer () {
                    fi; false
     esac
     rv="$?"
+    print_debug "[LOADING]: loaded thumbnail viewer: ${_thumbnail_viewer}\n"
     unset _thumbnail_viewer
     return $rv
 }
 #}}}
 
 # Logging {{{
-print_info () {
-	# information goes to stdout ( does not disturb show_link_only )
-	# shellcheck disable=2059
-	[ "$log_level" -ge 2 ] && printf -- "$1" >&2
-}
-print_warning () {
-	# shellcheck disable=2059
-	[ "$log_level" -ge 1 ] && printf -- "${c_yellow}${1}${c_reset}" >&2
-}
-print_error () {
-	# shellcheck disable=2059
-	[ "$log_level" -ge 0 ] && printf -- "${c_red}${1}${c_reset}" >&2
-}
 
+#write to stderr if the logfile is that
+if [ "$YTFZF_LOGFILE" = "/dev/stderr" ]; then
+    print_debug () {
+        [ "$log_level" -ge 3 ] && printf -- "${c_blue}[DEBUG]${c_reset}: $1" >&2
+        return 0
+    }
+    print_info () {
+        # information goes to stdout ( does not disturb show_link_only )
+        # shellcheck disable=2059
+        [ "$log_level" -ge 2 ] && printf -- "$1" >&2
+    }
+    print_warning () {
+        # shellcheck disable=2059
+        [ "$log_level" -ge 1 ] && printf -- "${c_yellow}[WARNING]${c_reset}: ${c_yellow}${1}${c_reset}" >&2
+    }
+    print_error () {
+        # shellcheck disable=2059
+        [ "$log_level" -ge 0 ] && printf -- "${c_red}[ERROR]${c_reset}: ${c_red}${1}${c_reset}" >&2
+    }
+#Otherwise do a bit of magic to remove ansi escape sequences, print to stderr, and to the log file
+else
+    print_debug () {
+        [ "$log_level" -ge 3 ] && printf -- "[DEBUG]: $1" | remove_ansi_escapes | tee -a "$YTFZF_LOGFILE" >&2
+        return 0
+    }
+    print_info () {
+        # information goes to stdout ( does not disturb show_link_only )
+        # shellcheck disable=2059
+        [ "$log_level" -ge 2 ] && printf -- "$1" | remove_ansi_escapes | tee -a "$YTFZF_LOGFILE" >&2
+    }
+    print_warning () {
+        # shellcheck disable=2059
+        [ "$log_level" -ge 1 ] && printf -- "[WARNING]: ${1}" | remove_ansi_escapes | tee -a "$YTFZF_LOGFILE" >&2
+    }
+    print_error () {
+        # shellcheck disable=2059
+        [ "$log_level" -ge 0 ] && printf -- "[ERROR]: ${1}" | remove_ansi_escapes | tee -a "$YTFZF_LOGFILE" >&2
+    }
+fi
+    
 die () {
 	_return_status=$1
 	print_error "$2"
@@ -673,8 +1147,6 @@ get_search_from_source () {
         case "$src" in
             args) _search="$initial_search" ;;
             prompt) search_prompt_menu_wrapper ;;
-            hist) _search="$(parse_search_hist_file < "$search_hist_file" | quick_menu_wrapper)" ;;
-            next) _search=$(head -n "$__scrape_count" "${session_cache_dir}/searches.list" | tail -n 1) ;;
             fn-args) _search="$*" ;;
             *) command_exists "get_search_from_$src" && get_search_from_"$src" "$@" ;;
         esac
@@ -682,13 +1154,7 @@ get_search_from_source () {
     done
 }
 
-parse_search_hist_file () {
-	awk -F"${tab_space}" '{ if ($2 == "") {print $1} else {print $2} }'
-}
 
-handle_search_history () {
-    printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
-}
 # }}}
 
 #Misc{{{
@@ -696,19 +1162,7 @@ clean_up () {
     do_an_event_function on_clean_up
 }
 
-handle_playing_notifications (){
-	# if no notify-send push error to /dev/null
-	if [ "$#" -le 1 ]; then
-	    unset IFS
-	    while read -r id title; do
-		    notify-send -c ytfzf -i "$thumb_dir/${id}.jpg" "Ytfzf Info" "Opening: $title" 2>/dev/null
-	    done <<-EOF
-	    $(jq -r '.[]|select(.url=="'"$*"'")|"\(.ID)\t\(.title)"' < "$ytfzf_video_json_file")
-EOF
-	else
-	    notify-send -c ytfzf "ytfzf info" "Opening: $# videos" 2>/dev/null
-	fi
-}
+# }}}
 # }}}
 
 # Traps {{{
@@ -716,35 +1170,14 @@ EOF
 [ $__is_fzf_preview -eq 0 ] && trap 'exit' INT TERM HUP
 #}}}
 
-# }}}
-
 # Global Variables and Start Up {{{
-
-# expansions where the variable is a string and globbing shouldn't happen should be surrounded by quotes
-# variables that cannot be empty should use := instead of just =
-
-# configuration handling {{{
-: "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
-: "${YTFZF_CONFIG_FILE:=$YTFZF_CONFIG_DIR/conf.sh}"
-: "${YTFZF_SUBSCRIPTIONS_FILE:=$YTFZF_CONFIG_DIR/subscriptions}"
-: "${YTFZF_THUMBNAIL_VIEWERS_DIR:=$YTFZF_CONFIG_DIR/thumbnail-viewers}"
-: "${YTFZF_SORT_NAMES_DIR:=$YTFZF_CONFIG_DIR/sort-names}"
-: "${YTFZF_CUSTOM_INTERFACES_DIR:=$YTFZF_CONFIG_DIR/interfaces}"
-: "${YTFZF_URL_HANDLERS_DIR:=$YTFZF_CONFIG_DIR/url-handlers}"
-: "${YTFZF_CUSTOM_THUMBNAILS_DIR:=$YTFZF_CONFIG_DIR/thumbnails}"
-: "${YTFZF_EXTENSIONS_DIR:=$YTFZF_CONFIG_DIR/extensions}"
-: "${YTFZF_CUSTOM_SCRAPERS_DIR:=$YTFZF_CONFIG_DIR/scrapers}"
-
-: "${YTFZF_SYSTEM_ADDON_DIR:=/usr/local/share/ytfzf/addons}"
-
-#}}}
 
 set_vars () {
     check_exists="${1:-1}"
 
     # save the ecurrent environment so that any user set variables will be saved
     if [ "$check_exists" -eq 1 ]; then
-        tmp_env=/tmp/"ytfzf-env-$(id -u)"
+        tmp_env="${YTFZF_TEMP_DIR}/ytfzf-env-$$"
         export -p > "$tmp_env"
     fi
 
@@ -770,8 +1203,10 @@ set_vars () {
     fzf_preview_side="left" thumbnail_viewer="ueberzug"
 
     # shortcuts
-    download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s" next_page_shortcut="alt-p"
+    download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s"
     custom_shortcut_binds=""
+
+    next_page_action_shortcut="ctrl-p"
 
     # interface design
     show_thumbnails="0" is_sort="0" skip_thumb_download="0" external_menu_len="210"
@@ -784,7 +1219,6 @@ set_vars () {
 
     # directories
     cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ytfzf" keep_cache="0"
-
 
     # history
     enable_hist="1" enable_search_hist="1"
@@ -815,7 +1249,6 @@ set_vars () {
     pages_to_scrape="" pages_start=""
     nsfw="false" odysee_video_search_count="30"
 
-
     multi_search="0"
 
     custom_scrape_search_exclude="" scrape_search_exclude=" youtube-subscriptions S SI SL T youtube-trending H history "
@@ -845,20 +1278,21 @@ END{
     print vars;
 }
 ' < "$tmp_env")
-	while read -r variable; do
-           [ -z "$variable" ] && continue
-	   variable="${variable#export }"
-	   var_name="${variable%%=*}"
-	   # some shells do have quotation marks around the value, and some don't, these 2 lines must be seperate
-	   var_val="${variable#*=}"
-	   # since export -p is gauranteed to be able to be copied into a shell and work as intended, any value taht starts with a quote, wil be surrounded by quotes even if that particular shell doesn't normally do that. TLDR: this will only remove unimportant quotes
-	   var_val="${var_val#[\"\']}"
-	   # same goes for here
-	   var_val="${var_val%[\"\']}"
-	   export "$var_name"="${var_val}"
-       done <<-EOF
+        while read -r variable; do
+            [ -z "$variable" ] && continue
+            variable="${variable#export }"
+            var_name="${variable%%=*}"
+            # some shells do have quotation marks around the value, and some don't, these 2 lines must be seperate
+            var_val="${variable#*=}"
+            # since export -p is gauranteed to be able to be copied into a shell and work as intended, any value taht starts with a quote, wil be surrounded by quotes even if that particular shell doesn't normally do that. TLDR: this will only remove unimportant quotes
+            var_val="${var_val#[\"\']}"
+            # same goes for here
+            var_val="${var_val%[\"\']}"
+            export "$var_name"="${var_val}"
+        done <<-EOF
     $_vars
 EOF
+        rm "$tmp_env"
     fi
     unset check_exists _vars variable var_name var_val
 }
@@ -871,13 +1305,13 @@ for dep in jq curl; do
 done
 #}}}
 
-load_fake_extension "__ytfzf__"
-
 # shellcheck disable=SC1090
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 
+load_fake_extension "__ytfzf__" "1"
+
 # files, and const vars
-: "${hist_file:="$cache_dir/watch_hist"}" "${search_hist_file:="$cache_dir/search_hist"}" : "${instances_file:="$cache_dir/instances.json"}"
+: "${instances_file:="$cache_dir/instancesV2.json"}"
 
 new_line='
 '
@@ -898,18 +1332,65 @@ usage () {
 }
 
 # Scraping {{{
-# * a scraper function takes a search query as $1 and returns video json to file $2
-# * argument 3 and above are undefined and can be used for filters
-# * return codes:
-#            5 : scrape is disabled
-#            6 : no response from site (matches curl)
-#            22: error scraping site (matches curl)
 
-# Json keys:
-#	Needed:
-#	ID url title
-#	Optional:
-#	thumbs channel duration views date description
+############################
+#         SCRAPERS         #
+############################
+
+#############
+# ARGUMENTS #
+#############
+
+# Scrapers take 2 arguments:
+    # 1: the search query (do not store in a variable called $_search, it is preferable to use $search, $c_search, or $const_search)
+        # Do not use the global $_search variable directly as $1 may be different.
+    # 2: the file to write the finished json to (the standard name for this variable is $output_json_file)
+
+#############
+#   FILES   #
+#############
+
+# Store all temp files in $session_temp_dir with a name prefix that matches the scraper name.
+    # Even better all temp files can be in $session_temp_dir/$scrape_name, no name prefix required.
+
+##############
+# EXIT CODES #
+##############
+
+# 0: success
+# 1: failed to load website, or general error
+# 100: :help search query
+#----curl errors-----
+# Even if not using curl, return these values.
+# 6: Unresponsive website
+# 22: General request error
+
+####################
+# RESPONSIBILITIES #
+####################
+
+# Scrapers are responsible for the following
+
+# * If the search query is exactly: ":help", it should:
+    # 1. print a little information on what the scraper does, and how to use it
+    # 2. return 100
+
+# * All other search words starting with : may be treated as special operators, you can do anything you want with them.
+    # * Currently :help is the only standard operator.
+
+# * Lastly the scraper should create a json and store it in $2
+    # The required keys are:
+        # ID (string): (a unique identifier for the video can be anything really)
+        # url (string): the url that will be opened when the video is selected.
+        # title (string): The tittle of the video.
+    # Optional keys include:
+        # thumbs (string): Link to a thumbnail (no, "thumbs" is not a typo)
+        # channel (string): The author of the video (Should be human readable)
+        # duration (string): Length of the video (Should be human readable)
+        # views (string): view count
+        # date (string): The upload date (should be human readable).
+        # action (string): An action that should be read by the handle_actions function when the video is selected.
+            # For information on how to format an action, see the handle_actions function.
 
 # Scraping backends {{{
 
@@ -923,7 +1404,6 @@ _thread_started (){
 	[ $_thread_count -ge $max_thread_count ] && wait "$_latest_fork" && _thread_count=$(jobs -p | wc -l)
 }
 
-
 set_real_channel_url_and_id () {
     _url="$1"
     case "$_url" in
@@ -936,7 +1416,6 @@ set_real_channel_url_and_id () {
     channel_url="$_url" channel_id="$_id"
     unset _url _id
 }
-
 
 #}}}
 
@@ -1313,6 +1792,7 @@ scrape_invidious_search () {
 	*) wait ;;
     esac
     _concatinate_json_file "${session_temp_dir}/yt-search-" "$((_ivs_cur_page-1))" "$output_json_file" "$pages_start"
+    printf "%s\n" "$_ivs_cur_page" > "${session_temp_dir}/invidious_search-current-page"
 }
 
 scrape_youtube () { scrape_invidious_search "$@"; }
@@ -1320,7 +1800,7 @@ scrape_Y () { scrape_invidious_search "$@"; }
 
 scrape_next_page_invidious_search () {
 	# we can do this because _comment_file is overritten every time, meaning it will contain the latest scrape
-	pages_to_scrape=1 pages_start="$_ivs_cur_page" scrape_invidious_search "$_search" "$video_json_file"
+     scrape_invidious_search "$_search" "$video_json_file"
 }
 
 scrape_invidious_video_recommended () {
@@ -1418,7 +1898,7 @@ Eg:
 	    search_again=0
 	    unset IFS
 	    init_and_make_search "$*" "fn-args"
-	    handle_empty_scrape || die 4
+	    handle_empty_scrape || exit 4
 	    cat "$ytfzf_video_json_file" >> "$PARENT_OUTPUT_JSON_FILE"
 	    clean_up
 	)
@@ -1540,13 +2020,7 @@ scrape_odysee () {
 scrape_O (){ scrape_odysee "$@"; }
 ## }}}
 
-# History{{{
-scrape_history () {
-	[ $enable_hist -eq 0 ] && print_info "enable_hist must be set to 1 for this option" && return 5
-	enable_hist=0 # enabling history while scrape is history causes issues
-	scrape_json_file "$hist_file" "$2"
-}
-scrape_H (){ scrape_history "$@"; }
+# ytfzf json format{{{
 
 scrape_json_file () {
 	search="$1"
@@ -1577,17 +2051,19 @@ scrape_comments () {
 		jq --arg continuation "$continuation" '[ .comments[] | {"scraper": "comments", "channel": .author, "date": .publishedText, "ID": .commentId, "title": .author, "description": .content, "url": "'"$yt_video_link_domain"'/watch?v='"$video_id"'&lc=\(.commentId)", "action": "do-nothing", "thumbs": .authorThumbnails[2].url, "continuation": $continuation} ]' < "$_comment_file"  >>  "$output_json_file"
 		i=$((i+1))
 	done
+    printf "%s\n" "$i" > "${session_temp_dir}/comments-current-page"
 }
 
 scrape_next_page_comments () {
 	# we can do this because _comment_file is overritten every time, meaning it will contain the latest scrape
-	scrape_comments "$_search" "$video_json_file" "1"
+	scrape_comments "$_search" "$video_json_file"
 }
 #}}}
 
 # url {{{
 scrape_url () {
     printf "%s\n" "$1" > "$ytfzf_selected_urls"
+    open_format_selection_if_requested "$ytfzf_selected_urls"
     open_url_handler "$ytfzf_selected_urls"
     close_url_handler "$url_handler"
     exit
@@ -1600,28 +2076,43 @@ scrape_u (){ printf '[{"ID": "%s", "title": "%s", "url": "%s"}]\n' "URL-${1##*/}
 
 # Sorting {{{
 
+############################
+#         SORTING          #
+############################
+
+# There is a 2 step soring process.
+    # 1. the get_sort_by function is called
+    # 2. the data_sort_fn function is called
+# The result of those 2 steps is then printed to stdout.
+
+#TODO: refactor sorting to not rely on video_info_text, and instead be based on json
+
+# Take a json line as the first argument, the line should follow VIDEO JSON FORMAT
+# This function should print the information from the line to sort by (or something else)
+# This specific implementation of get_sort_by prints the upload date in unix time
 command_exists "get_sort_by" || get_sort_by () {
-	line="$1"
-	date="${line%"|"*}"
-	date=${date##*"|"}
+	_video_json_line="$1"
+	date="${_video_json_line##*'"date":"'}"
+    date="${date%%\"*}"
 	# youtube specific
 	date=${date#*Streamed}
 	date=${date#*Premiered}
 	date -d "$date" '+%s' 2>/dev/null || date -f "$date" '+%s' 2> /dev/null || printf "null"
-	unset line
 }
 
+# This function sorts the data being piped into it.
 command_exists "data_sort_fn" || data_sort_fn () {
 	sort -nr
 }
 
+#This function reads all lines being piped in, and sorts them.
 sort_video_data_fn () {
 	if [ $is_sort -eq 1 ]; then
-		while IFS= read -r line
+		while IFS= read -r _video_json_line
 		do
 			# run the key function to get the value to sort by
-			get_sort_by "$line" | tr -d '\n'
-			printf "\t%s\n" "$line"
+			get_sort_by "$_video_json_line" | tr -d '\n'
+			printf "\t%s\n" "$_video_json_line"
 		done | data_sort_fn | cut -f2-
 	else
 		cat
@@ -1630,18 +2121,6 @@ sort_video_data_fn () {
 #}}}
 
 # History Management {{{
-add_to_hist () {
-	# id of the video to add to hist will be passed through stdin
-	# if multiple videos are selected, multiple ids will be present on multiple lines
-	json_file="$1"
-	urls="["
-	while read -r url; do
-	    urls="${urls}\"${url}\","
-	done
-	urls="${urls%,}]"
-	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' < "$json_file" | sed '/\[\]/d' >> "$hist_file"
-	unset url urls json_file
-}
 
 clear_hist () {
 	case "$1" in
@@ -1657,6 +2136,35 @@ clear_hist () {
 #}}}
 
 # User Interface {{{
+
+############################
+#        INTERFACES        #
+############################
+
+# The interface takes 2 arguments
+# 1: The video json file to read from
+    # The json file will be in the VIDEO JSON FORMAT (see ytfzf(5)) for more information
+# 2: The url file to write to
+    # each url should be seperated by a new line when written to the url file.
+
+# Interfaces are responsible for the following:
+
+# $ytfzf_video_json_file contains a file with the raw search result json
+# $const_SORTED_VIDEO_DATA is a sorted jsonl string, use this if you want to implement sorting in the gui.
+
+# * Checking if the menu it wants to use is installed.
+    # * Example: interface_text checks if fzf is installed and exits with code 3 if it can't.
+
+# * If the interface uses shortcuts, it is responsible for calling handle_post_keypress if the $keypress_file exists.
+
+# * The interface should display thumbnails if thumbnails are enabled, and the interface supports it
+
+# * It is not required, but interfaces (especially tui interfaces) should use the output from the output from the video_info_text function to display the results.
+
+# * Lastly, if a key, or key combination was pressed (and the interface supports it), it should be written to $keypress_file.
+    # * $keypress_file will be used *after* the interface is closed, If the interface does not function in a way similar to fzf do not use this file for shortcuts.
+    # * When handling keypresses manually, it is preferrable to use the keybinds listed in $shortcut_binds,
+        # * For example, the download shortcut to check against should be $download_shortcut
 
 # Keypresses {{{
 set_keypress () {
@@ -1684,7 +2192,6 @@ handle_post_keypress () {
 		"$detach_shortcut") is_detach=0 ;;
 		"$print_link_shortcut"|"$info_shortcut") info_to_print="$_last_info_to_print" ;;
 		"$show_formats_shortcut") show_formats=0 ;;
-		"$next_page_shortcut") : ;;
 		"$search_again_shortcut") : ;;
 		*)
 			_fn_name=handle_post_keypress_$(sed 's/-/_/g' <<-EOF
@@ -1699,6 +2206,9 @@ handle_post_keypress () {
 
 handle_keypress () {
 	read -r keypress < "$1"
+
+    print_debug "[KEYPRESS]: handling keypress: $keypress\n"
+
 	command_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
 	case "$keypress" in
 		"$download_shortcut") _last_url_handler=$url_handler; url_handler=downloader ;;
@@ -1708,13 +2218,6 @@ handle_keypress () {
 		"$print_link_shortcut") _last_info_to_print="$info_to_print"; info_to_print="L" ;;
 		"$show_formats_shortcut") show_formats=1 ;;
 		"$info_shortcut") _last_info_to_print="$info_to_print"; info_to_print="VJ" ;;
-		"$next_page_shortcut")
-			read -r url < "$selected_id_file"
-			hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
-			"scrape_next_page_$hovered_scraper"
-			unset hovered_scraper
-			return 3
-			;;
 		"$search_again_shortcut")
 			clean_up
 			initial_search="" init_and_make_search "" "$search_source"
@@ -1734,7 +2237,6 @@ handle_keypress () {
 
 #}}}
 
-
 command_exists "thumbnail_video_info_text_comments" || thumbnail_video_info_text_comments () {
 	[ -n "$title" ] && printf "${c_bold}%s\n${c_reset}" "$title"
 	[ -n "$description" ] && printf "\n%s" "$description"
@@ -1745,8 +2247,10 @@ interface_scripting () {
 	selected_id_file=$2
 	# shellcheck disable=SC2194
 	case 1 in
-		"$is_auto_select") jq -r ".[].url"  < "$video_json_file" | sed -n "1,$scripting_video_count"p  ;;
-		"$is_random_select") jq -r ".[].url"  < "$video_json_file"  | shuf  | sed -n "1,$scripting_video_count"p ;;
+        #sed is faster than jq, lets use it
+        #this sed command finds `"url": "some-url"`, and prints all urls then selects the first $scripting_video_count urls.
+        "$is_auto_select") sed -n 's/[[:space:]]*"url":[[:space:]]*"\([^"]\+\)",*$/\1/p' < "$video_json_file" | sed -n "1,${scripting_video_count}p" ;;
+		"$is_random_select") sed -n 's/[[:space:]]*"url":[[:space:]]*"\([^"]\+\)",*$/\1/p' < "$video_json_file" | shuf  | sed -n "1,$scripting_video_count"p ;;
 		"$is_specific_select") jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file" | sed -n "$scripting_video_count"p | trim_url ;;
 	esac > "$selected_id_file"
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
@@ -1759,7 +2263,14 @@ interface_text () {
     # if it doesn't exist, this menu has not opened yet, no need to revert the actions of the last keypress
 	[ -f "$keypress_file" ] && handle_post_keypress
 
-	[ $show_thumbnails -eq 1 ] && { interface_thumbnails "$@"; return; }
+    _fzf_start_bind=""
+    if [ "${_const_fzf_selected_line_no:-0}" -gt 0 ]; then
+        #if line n (where n != 0) was selected, add a start bind that moves the cursor down (n) times
+        _fzf_start_bind="--bind start:$(mul_str "down+" "${_const_fzf_selected_line_no}")"
+        _fzf_start_bind="${_fzf_start_bind%"+"}"
+    fi
+
+	[ "$show_thumbnails" -eq 1 ] && { interface_thumbnails "$@"; return; }
 
 	if command_exists "tput"; then
 	    TTY_COLS=$(tput cols 2> /dev/null)
@@ -1783,15 +2294,19 @@ interface_text () {
 	unset IFS
 
 	# shellcheck disable=2015
-	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
-		sort_video_data_fn |
-		while IFS=$tab_space read -r title channel duration views date url
-		do
-			video_info_text
-		done |
+    printf "%s\n" "$const_SORTED_VIDEO_DATA" |
+        video_info_text |
         { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
-		fzf -m --tabstop=1 --layout=reverse --expect="$shortcut_binds" | set_keypress |
+		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" \
+            $_fzf_start_bind \
+            --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" | set_keypress |
 		trim_url > "$selected_id_file"
+
+    _const_top_url="$(head -n 1 "$selected_id_file")"
+    _const_fzf_selected_line_no="$(jq -s -r --arg url "$_const_top_url" 'flatten|[.[]|.url]|index($url)' <<-EOF
+    $const_SORTED_VIDEO_DATA
+EOF
+)"
 }
 #}}}
 
@@ -1808,12 +2323,8 @@ interface_ext () {
 	view_len=10
 	date_len=100
 
-	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
-		sort_video_data_fn |
-		while IFS=$tab_space read -r title channel duration views date url
-		do
-			video_info_text
-		done |
+    printf "%s\n" "$const_SORTED_VIDEO_DATA" |
+        video_info_text |
 		external_menu "Select video: " |
 		trim_url > "$selected_id_file"
 }
@@ -1821,7 +2332,7 @@ interface_ext () {
 
 # Thumbnail Interface {{{
 
-get_video_json_attr () {
+_get_video_json_attr () {
 	sed -n 's/^[[:space:]]*"'"$1"'":[[:space:]]*"\([^\n]*\)",*/\1/p' <<-EOF | sed 's/\\\([\\"]\)/\1/g'
     $_correct_json
 EOF
@@ -1881,7 +2392,7 @@ preview_stop () {
 }
 
 command_exists "on_no_thumbnail" || on_no_thumbnail () {
-    die 1 "\nno image found"
+    die 1 "No image\n"
 }
 
 preview_no_img (){
@@ -2118,7 +2629,7 @@ EOF
 	    kitty)
 		get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 		kitty +kitten icat --clear --transfer-mode file > "$thumbnail_debug_log" 2>&1
-		kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" > "$thumbnail_debug_log" 2>&1 ;;
+        kitty +kitten icat --place "$(( width-2 ))x$(( height-2 ))@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" > "$thumbnail_debug_log" 2>&1 ;;
 	    *)
 		get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 		"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
@@ -2136,28 +2647,28 @@ preview_img () {
 
 	# make sure all variables are set{{{
 	_correct_json=$(jq -nr --arg url "$url" '[inputs[]|select(.url==$url)][0]' < "$video_json_file")
-	id="$(get_video_json_attr "ID")"
-	title="$(get_video_json_attr "title")"
-	channel="$(get_video_json_attr "channel")"
-	views="$(get_video_json_attr "views")"
-	date="$(get_video_json_attr "date")"
-	scraper="$(get_video_json_attr "scraper")"
-	duration="$(get_video_json_attr "duration")"
-    description="$(get_video_json_attr "description" | sed 's/\\n/\n/g' | fold -w $((FZF_PREVIEW_COLUMNS/2)))"
+	id="$(_get_video_json_attr "ID")"
+	title="$(_get_video_json_attr "title")"
+	channel="$(_get_video_json_attr "channel")"
+	views="$(_get_video_json_attr "views")"
+	date="$(_get_video_json_attr "date")"
+	scraper="$(_get_video_json_attr "scraper")"
+	duration="$(_get_video_json_attr "duration")"
+    description="$(_get_video_json_attr "description" | sed 's/\\n/\n/g' | fold -w $((FZF_PREVIEW_COLUMNS/2)))"
 #}}}
 
-	__text=$(if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
+	_const_text=$(if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
 		thumbnail_video_info_text${scraper:+_$scraper}
 	else
 		thumbnail_video_info_text
     fi)
 
     __text_line_count=$(wc -l <<-EOF
-    $__text
+    $_const_text
 EOF
 )
 
-    echo "$__text"
+    echo "$_const_text"
 
 	preview_display_image "$thumbnail_viewer" "$id"
 }
@@ -2167,37 +2678,36 @@ interface_thumbnails () {
 	video_json_file=$1
 	selected_id_file=$2
 
-	# Download thumbnails, only if they're not already downloaded
-
-	set -f
-	unset IFS
-	# shellcheck disable=SC2046
-	case "$async_thumbnails" in
-	    0) download_thumbnails $(get_missing_thumbnails) ;;
-	    1) download_thumbnails $(get_missing_thumbnails) & ;;
-	esac
-
 	preview_start "$thumbnail_viewer"
 
 	unset IFS
 
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	# fzf_preview_side will get reset if we don't pass it in
-	jq -r '.[]|[.title,"'"$gap_space"'|"+.channel,"|"+.duration,"|"+.views,"|"+.date,"|"+.url]|join("\t")' < "$video_json_file" |
-	sort_video_data_fn |
-	SHELL="$(command -v sh)" fzf -m \
-	--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumb_dir='$thumb_dir' session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' UEBERZUG_FIFO='$UEBERZUG_FIFO' $0 -W \"preview_img"$EOT"$thumbnail_viewer"$EOT"$video_json_file"$EOT"{+f}\"" \
-	--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse --expect="$shortcut_binds" | set_keypress |
-	trim_url > "$selected_id_file"
+
+    printf "%s\n" "$const_SORTED_VIDEO_DATA" |
+        jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
+        SHELL="$(command -v sh)" fzf -m --sync \
+            --expect="$shortcut_binds" \
+            --preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"preview_img"$EOT"{f}\"" \
+            $_fzf_start_bind \
+            --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
+            --preview-window "$fzf_preview_side:50%:wrap" --layout=reverse  | set_keypress |
+        trim_url > "$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
 
+    _const_top_url="$(head -n 1 "$selected_id_file")"
+    _const_fzf_selected_line_no="$(jq -s -r --arg url "$_const_top_url" 'flatten|[.[]|.url]|index($url)' <<-EOF
+    $const_SORTED_VIDEO_DATA
+EOF
+)"
 }
 #}}}
 
 #}}}
 
-# Player {{{
+# Handling selection from interface {{{
 get_requested_info () {
     url_list="$1"
     prepare_for_set_args ","
@@ -2266,9 +2776,10 @@ submenu_handler () {
 		. "$YTFZF_CONFIG_FILE"
 	    fi
 
-	    set -f
+        prepare_for_set_args
 	    # shellcheck disable=2086
 	    set -- $submenu_opts "$search"
+        end_of_set_args
 
 	    on_opt_parse_s () {
 		print_warning "-s is not supported in submenus\n"
@@ -2288,7 +2799,7 @@ submenu_handler () {
 		echo '[{"ID": "BACK-BUTTON", "title": "[BACK]", "url": "back", "action": "back"}]' "$data" > "$ytfzf_video_json_file"
 	    fi
 
-	    handle_empty_scrape || die 4
+	    handle_empty_scrape || exit 4
 
 	    main
 	)
@@ -2305,33 +2816,32 @@ close_url_handler_submenu_handler () {
 close_url_handler () {
     fn_name="$(printf "%s" "$1" | tr '-' '_')"
     command_exists "close_url_handler_$fn_name" && close_url_handler_"$fn_name"
+    print_debug "[URL HANDLER]: Closing url handler: ${c_blue}${1}${c_reset} with function: ${c_bold}close_url_handler_${fn_name}${c_reset}\n"
     do_an_event_function "after_close_url_handler" "$1"
 }
 
 open_url_handler () {
 	# isaudio, isdownload, ytdl_pref
 	urls="$(tr '\n' ' ' < "$1")"
+
 	prepare_for_set_args ' '
 	# shellcheck disable=SC2086
 	set -- $urls
 	[ -z "$*" ] && print_info "No urls selected\n" && return 0
+    end_of_set_args
 
-	[ $show_formats -eq 1 ] && {
-	    case "$format_selection_screen" in
-		normal) get_video_format "$1" ;;
-		*) get_video_format_$format_selection_screen "$@" ;;
-	    esac
-	}
+    do_an_event_function "on_open_url_handler" "$@"
 
-	unset IFS
-	[ $notify_playing -eq 1 ] && handle_playing_notifications "$@"
+    print_debug "[URL HANDLER]: Opening links: ${c_bold}${urls}${c_reset} with ${c_blue}${url_handler}${c_reset}\n"
 
 	# if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
 	# shellcheck disable=2031
 	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" "$url_handler_opts" | session_temp_dir="${session_temp_dir}" session_cache_dir="${session_cache_dir}" "$url_handler" "$@"
 	end_of_set_args
 }
+#}}}
 
+# Format selection {{{
 get_video_format_simple () {
     # select format if flag given
     formats=$(${ytdl_path} -F "$1" | grep -v "storyboard")
@@ -2356,7 +2866,94 @@ get_video_format(){
     [ $is_audio_only -eq 0 ] && video_pref="$(${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort"|  sed 's/\\033\[[[:digit:]]*m//g' | grep -v 'audio only' | quick_menu_wrapper "Video Format: "| awk '{print $1}')"
     ytdl_pref="${video_pref}+${audio_pref}/${video_pref}/${audio_pref}"
 }
+
+open_format_selection_if_requested (){
+    if [ "$show_formats" -eq 1 ]; then
+        prepare_for_set_args
+        #read from $ytfzf_selected_urls
+        set -- $(tr '\n' ' ' < "$1")
+        end_of_set_args
+
+        case "$format_selection_screen" in
+            normal)
+                print_debug "[INTERFACE]: [FORMAT SELECTION]: open format screen: ${c_blue}normal${c_reset}\n"
+                get_video_format "$1" ;;
+            *)
+                print_debug "[INTERFACE]: [FORMAT SELECTION]: open format screen: ${c_blue}${format_selection_screen}${c_reset}\n"
+                get_video_format_$format_selection_screen "$@" ;;
+        esac
+    fi
+}
+
 #}}}
+
+# Internal Actions {{{
+#
+# Internal actions are usually called from fzf with the -W option.
+# The point of these actions is to do something that can only be done given a specific ytfzf process instance. Such as displaying thumbnails
+
+internal_action_help () {
+    printf "%s\n" "Usage: ytfzf -W [help|preview_img]<EOT>[args...]
+An action followed by \\003 (ascii: EOT) followed by args which are seperated by \\003.
+Actions:
+help:
+    Prints usage on -W
+preview_img <ytfzf-line-format>:
+    ytfzf-line-format:
+        path to file where items seperated by \t| where the last item is the url of the item
+    The following variables must be set
+        session_temp_dir set to the ytfzf process instance's temp dir
+        session_cache_dir set to the ytfzf process instance's cache dir"
+}
+
+internal_action_next_page () {
+    shift
+
+    read -r line < "$*"
+    url="${line##*"|"}"
+
+    ytfzf_video_json_file="$(sed -n 's/^ytfzf_video_json_file=\(.*\)/\1/p' "$session_cache_dir/environment")"
+    ytfzf_video_json_file="${ytfzf_video_json_file#[\"\']}"
+    ytfzf_video_json_file="${ytfzf_video_json_file%[\"\']}"
+
+    video_json_file="$ytfzf_video_json_file"
+
+    hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
+
+    if command_exists "scrape_next_page_$hovered_scraper"; then
+        _search="$(cat "${session_cache_dir}/searches.list")"
+        pages_to_scrape="$(sed -n 's/^pages_to_scrape=\(.*\)/\1/p' "$session_cache_dir/environment")"
+        pages_start="$(cat "${session_temp_dir}/${hovered_scraper}-current-page")"
+        scrape_next_page_"$hovered_scraper"
+    fi
+    jq -c -r 'select(.!=[])|.[]' < "$ytfzf_video_json_file" |
+        sort_video_data_fn |
+        jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"'
+}
+
+internal_action_preview_img () {
+    shift
+
+    thumb_dir="${session_cache_dir}/thumbnails"
+    YTFZF_PID="$(sed -n 's/^YTFZF_PID=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+
+    UEBERZUG_FIFO="$(sed -n 's/^UEBERZUG_FIFO=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+
+    fzf_preview_side="$(sed -n 's/^fzf_preview_side=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+
+    scrape="$(sed -n 's/^scrape=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+
+    thumbnail_viewer="$(sed -n 's/^thumbnail_viewer=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+
+    ytfzf_video_json_file="$(sed -n 's/^ytfzf_video_json_file=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+
+    line_file="$*"
+    read -r line < "$line_file"
+    line="${line#\'}" line="${line%\'}"
+    source_scrapers
+    preview_img "$thumbnail_viewer" "$line" "$ytfzf_video_json_file"
+}
+# }}}
 
 # Options {{{
 parse_opt () {
@@ -2365,6 +2962,7 @@ parse_opt () {
 	# for some reason optarg may equal opt intentionally,
 	# this checks the unmodified optarg, which will only be equal if there is no = sign
 	[ "$opt" = "$OPTARG" ] && optarg=""
+    print_debug "[OPTIONS]: Parsing opt: $opt=$optarg\n"
 	# shellcheck disable=SC2031
 	command_exists "on_opt_parse" && { on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG" || return 0; }
 	fn_name="on_opt_parse_$(printf "%s" "$opt" | tr '-' '_')"
@@ -2376,7 +2974,6 @@ parse_opt () {
         m|audio-only) is_audio_only=${optarg:-1};;
         d|download) url_handler=downloader ;;
         f|formats) show_formats=${optarg:-1} ;;
-        H|history) scrape="history" ;;
         x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
         S|select) interface="scripting" && is_specific_select="1" && scripting_video_count="$optarg" ;;
         a|auto-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
@@ -2389,7 +2986,6 @@ parse_opt () {
         version) printf 'ytfzf: %s \n' "$YTFZF_VERSION"; exit 0;;
         version-all) printf -- '---\n%s: %s\n' "ytfzf" "$YTFZF_VERSION" "jq" "$(jq --version)" "curl" "$(curl --version)"; exit 0 ;;
         L) info_to_print="$info_to_print,L" ;;
-        q|search-hist) [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"a; search_source="hist:$search_source" ;;
         pages) pages_to_scrape="$optarg" ;;
         pages-start) pages_start="$optarg" ;;
         thumbnail-log) thumbnail_debug_log="${optarg:-/dev/stderr}" ;;
@@ -2426,7 +3022,7 @@ parse_opt () {
         features) search_result_features=$optarg ;;
         region) search_region=$optarg ;;
         channel-link)
-            invidious_instance=$(get_invidious_instances | shuf | head -n 1)
+            invidious_instance=$(get_random_invidious_instance)
             _get_real_channel_link "$optarg"; exit 0 ;;
         available-inv-instances) get_invidious_instances; exit 0 ;;
         disable-submenus) enable_submenus="${optarg:-0}" ;;
@@ -2474,16 +3070,7 @@ parse_opt () {
             set -- $optarg
             end_of_set_args
             action="$1"
-            case "$action" in
-                preview_img)
-                    thumb_viewer="$2" video_json_file="$3"
-                    shift 3
-                    line_file="$*"
-                    read -r line < "$line_file"
-                    line="${line#\'}" line="${line%\'}"
-                    source_scrapers
-                    preview_img "$thumb_viewer" "$line" "$video_json_file";;
-            esac
+            command_exists "internal_action_$1" && internal_action_"$1" "$@"
             exit 0 ;;
         *)
             # shellcheck disable=SC2031
@@ -2528,35 +3115,69 @@ unset IFS
 # files {{{
 init_files (){
 	YTFZF_PID=$$
+
 	#$1 will be a search
 	SEARCH_PREFIX=$(printf "%s" "$1" | tr '/' '_' | tr -d "\"'")
 	# shellcheck disable=SC2031
 	if [ "$__is_submenu" -eq 1 ]; then
 	    SEARCH_PREFIX=$(jq -r --arg url "$1" '.[]|select(.url==$url).title' < "${cache_dir}/videos_json")
 	fi
+
 	# if no search is provided, use a fallback value of SCRAPE-$scrape
 	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
+
 	# shellcheck disable=SC2031
-	session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+    if [ "$__is_submenu" -eq 1 ]; then
+        #if we are in a submenu, cache_dir will be the previous session_cache_dir
+        session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+    elif [ "$keep_cache" -eq 0 ]; then
+        #by default we should store in ${TMPDIR:-/tmp} to reduce io usage
+        session_cache_dir="${YTFZF_TEMP_DIR}/${SEARCH_PREFIX}-${YTFZF_PID}"
+    else
+        #if we want to keep the cache, use real cache dir
+        session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+    fi
+
 	session_temp_dir="${session_cache_dir}/tmp"
+
 	thumb_dir="${session_cache_dir}/thumbnails"
-	mkdir -p "$session_temp_dir" "$thumb_dir"
+
 	ytfzf_selected_urls=$session_cache_dir/ids
 	ytfzf_video_json_file=$session_cache_dir/videos_json
+
+	mkdir -p "$session_temp_dir" "$thumb_dir"
+
 	keypress_file="${session_temp_dir}/menu_keypress"
+
 	: > "$ytfzf_video_json_file" 2> "$ytfzf_selected_urls" 3> "$keypress_file"
+
 	[ "$1" ] && printf "%s\n" "$1" > "${session_cache_dir}/searches.list"
 }
 
 # }}}
 
 # actions {{{
+
+############################
+#         ACTIONS          #
+############################
+
+# Actions happen after a video is selected, and after the keypresses are handled
+
+# Actions are formatted in the following way
+    # action-name data...
+# for the scrape action, data must be formatted in the following way,
+# For custom actions, data can be formatted in any way
+    # scrape search=search-in-one-word type=scraper
+
 # actions are attached to videos/items in the menu
 handle_actions () {
 	unset _submenu_actions IFS
 	actions=$(jq -r --arg urls "$(cat "$1")" '.[] | [.url, .action] as $data | if ( ($urls | split("\n" )) | index($data[0]) and $data[1] != null ) == true then $data[1] else "" end' < "$ytfzf_video_json_file" | sed '/^[[:space:]]*$/d')
 	while read -r action; do
+        print_debug "[ACTION]: handling action: $action\n"
+
 		# this wil only be empty after all urls with actions have happened
 		# shellcheck disable=SC2031
 		# shellcheck disable=SC2086
@@ -2638,15 +3259,10 @@ handle_scraping (){
 handle_empty_scrape () {
     [ ! -s "$ytfzf_video_json_file" ] && print_error "Nothing was scraped\n" && return 1
 
-    # sometimes the file fils up with empty arrays, we have to check if that's the case
-    something_was_scraped=0
-    while read -r line; do
-        [ "$line" = "[]" ] && continue
-        something_was_scraped=1
-        # we can break if something was scraped, otherwise we are wasting time in the loop
-        break
-    done < "$ytfzf_video_json_file"
-    [ $something_was_scraped -eq 0 ] && print_error "Nothing was scraped\n" && return 1
+    if ! grep -q -v -e '\[\]' "$ytfzf_video_json_file"; then
+        print_error "Nothing was scraped\n"
+        return 1;
+    fi
     return 0
 }
 #}}}
@@ -2668,13 +3284,15 @@ is_asking_for_search_necessary () {
 init_search () {
 	_search="$1"
 	_search_source="$2"
+
+    print_debug "[SEARCH]: initializing search with search: $_search, and sources: $_search_source\n"
+
 	# only ask for search if scrape isn't something like S or T
 	is_asking_for_search_necessary && { get_search_from_source "$_search_source" "$_search" || die 5 "No search query\n"; }
 	init_files "$_search"
 	set_scrape_count
 
 	# shellcheck disable=SC2031
-	[ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 
     do_an_event_function "on_init_search" "$_search"
 }
@@ -2683,7 +3301,7 @@ init_and_make_search () {
 	_search=$1
 	_search_source=$2
 	init_search "$_search" "$_search_source"
-	make_search "$_search" "$_search_source"
+	make_search "$_search"
 }
 
 make_search () {
@@ -2700,20 +3318,20 @@ make_search () {
 init_and_make_search "$initial_search" "$search_source"
 until handle_empty_scrape; do
     case "$search_again" in
-        0) die 4 ;;
+        0) exit 4 ;;
         1) init_and_make_search "" "$search_source" ;;
     esac
 done
 
-
 main() {
 	while :; do
+
+        const_SORTED_VIDEO_DATA=$(jq -c -r 'select(.!=[])|.[]' < "$ytfzf_video_json_file" | sort_video_data_fn)
+
 		# calls the interface
 		run_interface
 		handle_keypress "$keypress_file" || case "$?" in 2) break ;; 3) continue ;; esac
-		handle_actions "$ytfzf_selected_urls" || { [ "$?" -eq 2 ] || continue && break; }
-
-		[ $enable_hist -eq 1 ] && add_to_hist "$ytfzf_video_json_file" < "$ytfzf_selected_urls"
+        handle_actions "$ytfzf_selected_urls" || case "$?" in 2) break ;; 3) continue ;; esac
 
 		# nothing below needs to happen if  this is empty (causes bugs when this is not here)
 		[ ! -s "$ytfzf_selected_urls" ] && break
@@ -2725,21 +3343,23 @@ main() {
 		    handle_info_wait_action
 		    case "$?" in 3) continue ;; 2) break ;; esac
 		fi
+
+        open_format_selection_if_requested "$ytfzf_selected_urls"
+
 		open_url_handler "$ytfzf_selected_urls"
 		close_url_handler "$url_handler"
 
-		[ "$is_loop" -eq 0 ] && break
+        [ "$is_loop" -eq 0 ] && break
 	done
 
     # doing this after the loop allows for -l and -s to coexist
     while [ "$search_again" -eq 1 ] ; do
         clean_up
-        initial_search=""
+        init_and_make_search "" "prompt"
         main
     done
 }
 main
-
 #}}}
 
 # vim: foldmethod=marker:shiftwidth=4:tabstop=4

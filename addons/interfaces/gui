@@ -25,18 +25,18 @@ gui_dialog () {
         : > "$css_file"
     fi
     export MAIN_DIALOG="<window><vbox scrollable=\"true\" vscrollbar-policy=\"0\">"
-    download_thumbnails $(get_missing_thumbnails)
-    while read -r line; do
-        url="${line##*|}"
+    urls="$(jq -r '.url')"
+    while read -r url; do
         _correct_json="$(jq -r --arg url "$url" '[.[]|select(.url==$url)]|unique_by(.ID)[0]' < "$video_json_file")"
-        id="$(get_video_json_attr "ID")"
-        title="$(get_video_json_attr "title")"
-        channel="$(get_video_json_attr "channel")"
-        views="$(get_video_json_attr "views" | add_commas)"
-        date="$(get_video_json_attr "date")"
-        scraper="$(get_video_json_attr "scraper")"
-        duration="$(get_video_json_attr "duration")"
-        description="$(get_video_json_attr "description" | sed 's/\\n/\n/g')"
+        id="$(_get_video_json_attr "ID")"
+        title="$(_get_video_json_attr "title")"
+        channel="$(_get_video_json_attr "channel")"
+        views="$(_get_video_json_attr "views" | add_commas)"
+        date="$(_get_video_json_attr "date")"
+        scraper="$(_get_video_json_attr "scraper")"
+        duration="$(_get_video_json_attr "duration")"
+        description="$(_get_video_json_attr "description" | sed 's/\\n/\n/g')"
+
 
         unset IFS
 
@@ -69,23 +69,30 @@ gui_dialog () {
                 <input file>$thumb_path</input>
             </pixmap>
         </hbox>"
-    done
-    export MAIN_DIALOG="$MAIN_DIALOG<width>750</width><height>500</height></vbox></window>"
-    MAIN_DIALOG=$MAIN_DIALOG gtkdialog --styles="$css_file"
+    done <<-EOF
+    $urls
+EOF
+
+    export MAIN_DIALOG="$MAIN_DIALOG</vbox></window>"
+    if gtkdialog -h 2> /dev/null | grep -q -- '--styles'; then
+        MAIN_DIALOG=$MAIN_DIALOG gtkdialog --styles "$css_file"
+    else
+
+        MAIN_DIALOG=$MAIN_DIALOG gtkdialog
+    fi
 }
 
 interface_gui () {
     video_json_file="$1"
     selected_id_file="$2"
     command_exists "gtkdialog" || die 3 "gtkdialog (https://github.com/puppylinux-woof-CE/gtkdialog) is required for the gui interface\n"
-	jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$video_json_file" |
-        sort_video_data_fn | gui_dialog | sed -n -e 's/EXIT="\(.*\)"/\1/p' -e 's/[[:space:]]*//g' > "$selected_id_file"
+    printf "%s\n" "$const_SORTED_VIDEO_DATA" | gui_dialog | sed -n -e 's/EXIT="\(.*\)"/\1/p' -e 's/[[:space:]]*//g' > "$selected_id_file"
     while read -r line; do
         [ "$line" = "abort" ] && exit 0
     done < "$selected_id_file"
 }
 
-on_opt_parse_i_gui_help (){
+print_help_gui (){
     print_info "YTFZF_GUI_CSS is a file for custom css for the window\nselectors:\n#TitleText\n#ViewsText\n#DateText\n#DurationText\n#UrlButton\n#Thumbnail\n"
     exit 0
 }
