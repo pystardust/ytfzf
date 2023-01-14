@@ -2629,7 +2629,7 @@ EOF
 	    kitty)
 		get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 		kitty +kitten icat --clear --transfer-mode file > "$thumbnail_debug_log" 2>&1
-		kitty +kitten icat --place "${width}x${height}@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" > "$thumbnail_debug_log" 2>&1 ;;
+        kitty +kitten icat --place "$(( width-2 ))x$(( height-2 ))@${x}x${y}" --scale-up --transfer-mode file "$thumb_path" > "$thumbnail_debug_log" 2>&1 ;;
 	    *)
 		get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 		"$thumbnail_viewer" "view" "$thumb_path" "$x" "$y" "$width" "$height" "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side";;
