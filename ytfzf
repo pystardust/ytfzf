@@ -2923,12 +2923,19 @@ internal_action_next_page () {
     if command_exists "scrape_next_page_$hovered_scraper"; then
         _search="$(cat "${session_cache_dir}/searches.list")"
         pages_to_scrape="$(sed -n 's/^pages_to_scrape=\(.*\)/\1/p' "$session_cache_dir/environment")"
+        pages_to_scrape="${pages_to_scrape#[\"\']}"
+        pages_to_scrape="${pages_to_scrape%[\"\']}"
+
         pages_start="$(cat "${session_temp_dir}/${hovered_scraper}-current-page")"
+        pages_start="${pages_start#[\"\']}"
+        pages_start="${pages_start%[\"\']}"
+
         scrape_next_page_"$hovered_scraper"
     fi
     jq -c -r 'select(.!=[])|.[]' < "$ytfzf_video_json_file" |
         sort_video_data_fn |
         jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"'
+
 }
 
 internal_action_preview_img () {
