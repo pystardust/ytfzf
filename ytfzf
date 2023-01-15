@@ -523,7 +523,7 @@ parse_search_hist_file () {
 }
 
 handle_search_history () {
-    printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S')" "${1}" >> "$2"
+    printf "%s${tab_space}%s\n" "$(date +'%D %H:%M:%S %z')" "${1}" >> "$2"
 }
 
 # }}}
