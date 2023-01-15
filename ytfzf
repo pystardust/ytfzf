@@ -477,7 +477,7 @@ add_to_hist () {
 	    urls="${urls}\"${url}\","
 	done
 	urls="${urls%,}]"
-	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' < "$json_file" | sed '/\[\]/d' | tac | sed "3s/$/,/;2s/$/\n    \"viewed\": \"$(date +'%m\/%d\/%y %H:%M:%S %z')\"/" | tac >> "$hist_file"
+	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' < "$json_file" | sed '/\[\]/d' | sed -z "s/\"\n  }/\",\n    \"viewed\": \"$(date +'%m\/%d\/%y %H:%M:%S %z')\"\n  }/" >> "$hist_file"
 	unset url urls json_file
 }
 
