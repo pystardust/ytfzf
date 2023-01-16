@@ -477,7 +477,7 @@ add_to_hist () {
 	    urls="${urls}\"${url}\","
 	done
 	urls="${urls%,}]"
-	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' < "$json_file" | sed '/\[\]/d' >> "$hist_file"
+	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' < "$json_file" | sed "/\[\]/d" | sed "2s/$/\n    \"viewed\": \"$(date +'%m\/%d\/%y\ %H\:%M\:%S\ %z')\",/" >> "$hist_file"
 	unset url urls json_file
 }
 
@@ -876,14 +876,15 @@ run_interface () {
 #This function generates a series of lines that will be displayed in fzf, or some other interface
 #takes in a series of jsonl lines, each jsonl should follow the VIDEO JSON FORMAT
 video_info_text () {
-    jq -r '[.title, .channel, .duration, .views, .date, .url]|join("\t|")' |
-    while IFS=$tab_space read -r title channel duration views date url; do
+    jq -r '[.title, .channel, .duration, .views, .date, .viewed, .url]|join("\t|")' |
+    while IFS=$tab_space read -r title channel duration views date viewed url; do
         [ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
         printf "%-${title_len}.${title_len}s\t" "$title"
         printf "%-${channel_len}.${channel_len}s\t" "$channel"
         printf "%-${dur_len}.${dur_len}s\t" "$duration"
         printf "%-${view_len}.${view_len}s\t" "$views"
         printf "%-${date_len}.${date_len}s\t" "$date"
+	[ $scrape = "history" ] && printf "%-${viewed_len}.${viewed_len}s\t" "$viewed"
         printf "%s" "$url"
         printf "\n"
     done
@@ -898,6 +899,7 @@ thumbnail_video_info_text () {
 	[ -n "$duration" ] && printf "\n ${c_blue}Duration ${c_yellow}%s" "$duration"
 	[ -n "$views" ] && printf "\n ${c_blue}Views    ${c_magenta}%s" "$views"
 	[ -n "$date" ] && printf "\n ${c_blue}Date     ${c_cyan}%s" "$date"
+	[ -n "$viewed" ] && printf "\n ${c_blue}Viewed   ${c_cyan}%s" "$viewed"
 	[ -n "$description" ] && printf "\n ${c_blue}Description ${c_reset}: %s" "$(printf "%s" "$description" | sed 's/\\n/\n/g')"
 }
 # }}}
@@ -2251,7 +2253,7 @@ interface_scripting () {
         #this sed command finds `"url": "some-url"`, and prints all urls then selects the first $scripting_video_count urls.
         "$is_auto_select") sed -n 's/[[:space:]]*"url":[[:space:]]*"\([^"]\+\)",*$/\1/p' < "$video_json_file" | sed -n "1,${scripting_video_count}p" ;;
 		"$is_random_select") sed -n 's/[[:space:]]*"url":[[:space:]]*"\([^"]\+\)",*$/\1/p' < "$video_json_file" | shuf  | sed -n "1,$scripting_video_count"p ;;
-		"$is_specific_select") jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' < "$ytfzf_video_json_file" | sed -n "$scripting_video_count"p | trim_url ;;
+		"$is_specific_select") jq -r '.[]|"\(.title)\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.viewed)\t|\(.url)"' < "$ytfzf_video_json_file" | sed -n "$scripting_video_count"p | trim_url ;;
 	esac > "$selected_id_file"
 	# jq '.[]' < "$video_json_file" | jq -s -r --arg N "$scripting_video_count" '.[0:$N|tonumber]|.[]|.ID' > "$selected_id_file"
 }
@@ -2289,7 +2291,8 @@ interface_text () {
 	channel_len=$((TTY_COLS/5))
 	dur_len=7
 	view_len=10
-	date_len=100
+	date_len=14
+	viewed_len=19
 
 	unset IFS
 
@@ -2320,8 +2323,8 @@ interface_ext () {
 	title_len=$((TTY_COLS/2))
 	channel_len=$((TTY_COLS/5))
 	dur_len=7
-	view_len=10
-	date_len=100
+	date_len=14
+	viewed_len=19
 
     printf "%s\n" "$const_SORTED_VIDEO_DATA" |
         video_info_text |
@@ -2654,6 +2657,7 @@ preview_img () {
 	date="$(_get_video_json_attr "date")"
 	scraper="$(_get_video_json_attr "scraper")"
 	duration="$(_get_video_json_attr "duration")"
+	viewed="$(_get_video_json_attr "viewed")"
     description="$(_get_video_json_attr "description" | sed 's/\\n/\n/g' | fold -w $((FZF_PREVIEW_COLUMNS/2)))"
 #}}}
 
@@ -2686,7 +2690,7 @@ interface_thumbnails () {
 	# fzf_preview_side will get reset if we don't pass it in
 
     printf "%s\n" "$const_SORTED_VIDEO_DATA" |
-        jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"' |
+        jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.viewed)\t|\(.url)"' |
         SHELL="$(command -v sh)" fzf -m --sync \
             --expect="$shortcut_binds" \
             --preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"preview_img"$EOT"{f}\"" \
