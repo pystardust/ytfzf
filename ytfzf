@@ -1864,6 +1864,12 @@ scrape_invidious_channel () {
 
     _get_invidious_thumb_quality_name
 
+    #checks  if it uses the new invidious json layout vs the old one
+    [ -n "$(jq '.videos[0].type' < "$_tmp_json" 2> /dev/null)" ] && {
+        data="$(jq '.videos' < "$_tmp_json")"
+        echo "$data" > "$_tmp_json"
+    }
+
     {
         _invidious_search_json_videos "invidious_channel" < "$_tmp_json"
         _invidious_search_json_live < "$_tmp_json"
