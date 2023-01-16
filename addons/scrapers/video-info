@@ -1,0 +1,55 @@
+#!/usr/bin/env sh
+
+#this scraper uses return youtube dislike's api: https://returnyoutubedislike.com/
+
+scrape_video_info () {
+	set -f
+	unset IFS
+	videos="$(printf "%s\n" $1)"
+	output_json_file=$2
+	printf "Not sure what 'clearly attributed means', but i don't like cutting people short\nThis scraper uses return youtube dislike's api: https://returnyoutubedislike.com/\n" >&2
+    _get_invidious_thumb_quality_name
+	while read -r line; do
+		{
+			id="${line##*=}"
+			print_info "Scraping video info for $id\n"
+			_tmp_json="${session_temp_dir}/video-info-ratings-$id.json"
+			_get_request "https://returnyoutubedislikeapi.com/votes?videoid=$id" > "$_tmp_json" || exit "$?"
+			rating_json="$(jq '{"likes": "\(.likes)", "dislikes": "\(.dislikes)"}' < "$_tmp_json")"
+			_get_request "${invidious_instance}/api/v1/videos/$id" |
+				jq '
+				def pad_left(n; num):
+					num | tostring |
+					if (n > length) then ((n - length) * "0") + (.) else . end
+				;
+				{
+					"scraper": "video_info",
+					"title": .title,
+					"ID": .videoId,
+					"genre": .genre,
+					"author": .author,
+					"url": "'"$line"'",
+					"duration": "\(.lengthSeconds / 60 | floor):\(pad_left(2; .lengthSeconds % 60))",
+					"description": .description,
+                    "thumbs": "'"${invidious_instance}"'/vi/\(.videoId)/'"$thumbnail_quality"'.jpg"
+				}' | jq '[ . + '"$rating_json"' ]' >> "$_tmp_json.final"
+		} & 
+		count=$((count+1))
+		#youtube dislikes only allows 100 pings per minute
+		[ $count -ge 99 ] && break
+	done <<-EOF
+	$videos
+	EOF
+	wait
+	set +f
+	cat "${session_temp_dir}/video-info-ratings"*".final" >> "$output_json_file"
+}
+
+thumbnail_video_info_text_video_info () {
+	IFS=';' read -r genre likes dislikes <<-EOF
+	$(jq -r --arg url "$url" '.[]|select(.url == $url )| .genre + ";" + .likes + ";" + .dislikes' < "$video_json_file")
+	EOF
+	printf "${c_cyan}%s${c_reset} (%s)\n" "$title" "$id"
+	printf "${c_yellow}%s${c_reset}\n" "$genre"
+	printf "${c_green}%s${c_reset}/${c_red}%s${c_reset}\n" "$(printf "%s" "$likes" | add_commas)" "$(printf "%s" "$dislikes" | add_commas)"
+}
