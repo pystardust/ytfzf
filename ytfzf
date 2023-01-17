@@ -484,10 +484,25 @@ add_to_hist () {
 scrape_history () {
 	enable_hist=0 # enabling history while scrape is history causes issues
 	scrape_json_file "$hist_file" "$2"
+    cp "$2" "$2.tmp"
+    jq -s '[.[]|.[]+{scraper: "watch_history"}]' < "$2.tmp" > "$2"
+    rm "$2.tmp"
 }
 scrape_H (){ scrape_history "$@"; }
 
+video_info_text_watch_history () {
+	viewed_len=19
 
+    [ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
+    printf "%-${title_len}.${title_len}s\t" "$title"
+    printf "%-${channel_len}.${channel_len}s\t" "$channel"
+    printf "%-${dur_len}.${dur_len}s\t" "$duration"
+    printf "%-${view_len}.${view_len}s\t" "$views"
+    printf "%-${date_len}.${date_len}s\t" "$date"
+    printf "%-${viewed_len}.${viewed_len}s\t" "$viewed"
+    printf "%s" "$url"
+    printf "\n"
+}
 # }}}
 
 # __ytfzf_search_history__ extension {{{
@@ -873,21 +888,35 @@ run_interface () {
     unset _interface
 }
 
+_video_info_text () {
+    [ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
+    printf "%-${title_len}.${title_len}s\t" "$title"
+    printf "%-${channel_len}.${channel_len}s\t" "$channel"
+    printf "%-${dur_len}.${dur_len}s\t" "$duration"
+    printf "%-${view_len}.${view_len}s\t" "$views"
+    printf "%-${date_len}.${date_len}s\t" "$date"
+    printf "%s" "$url"
+    printf "\n"
+
+}
+
 #This function generates a series of lines that will be displayed in fzf, or some other interface
 #takes in a series of jsonl lines, each jsonl should follow the VIDEO JSON FORMAT
 video_info_text () {
-    jq -r '[.title, .channel, .duration, .views, .date, .viewed, .url]|join("\t|")' |
-    while IFS=$tab_space read -r title channel duration views date viewed url; do
-        [ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
-        printf "%-${title_len}.${title_len}s\t" "$title"
-        printf "%-${channel_len}.${channel_len}s\t" "$channel"
-        printf "%-${dur_len}.${dur_len}s\t" "$duration"
-        printf "%-${view_len}.${view_len}s\t" "$views"
-        printf "%-${date_len}.${date_len}s\t" "$date"
-	[ $scrape = "history" ] && printf "%-${viewed_len}.${viewed_len}s\t" "$viewed"
-        printf "%s" "$url"
-        printf "\n"
+    while read -r _jsonl; do
+        #global vars for whatever video_info_text function is called
+        IFS=$tab_space read -r title channel duration views date viewed url scraper <<-EOF
+$(echo "$_jsonl" | jq -r '[.title, .channel, .duration, .views, .date, .viewed, .url, .scraper]|join("\t|")')
+EOF
+        scraper="${scraper#"|"}"
+        fn_name=video_info_text_"${scraper}"
+        if command_exists "$fn_name"; then
+            "$fn_name" "$_jsonl"
+        else
+            _video_info_text "$_jsonl"
+        fi
     done
+    unset title channel duration views date viewed url scraper
 }
 
 # This is completely unrelated to video_info_text
@@ -1385,6 +1414,7 @@ usage () {
         # ID (string): (a unique identifier for the video can be anything really)
         # url (string): the url that will be opened when the video is selected.
         # title (string): The tittle of the video.
+        # scraper (string): the name of the scraper.
     # Optional keys include:
         # thumbs (string): Link to a thumbnail (no, "thumbs" is not a typo)
         # channel (string): The author of the video (Should be human readable)
@@ -2298,7 +2328,6 @@ interface_text () {
 	dur_len=7
 	view_len=10
 	date_len=14
-	viewed_len=19
 
 	unset IFS
 
@@ -2330,7 +2359,6 @@ interface_ext () {
 	channel_len=$((TTY_COLS/5))
 	dur_len=7
 	date_len=14
-	viewed_len=19
 
     printf "%s\n" "$const_SORTED_VIDEO_DATA" |
         video_info_text |
