@@ -490,7 +490,19 @@ scrape_history () {
 }
 scrape_H (){ scrape_history "$@"; }
 
+video_info_text_watch_history () {
+	viewed_len=19
 
+    [ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
+    printf "%-${title_len}.${title_len}s\t" "$title"
+    printf "%-${channel_len}.${channel_len}s\t" "$channel"
+    printf "%-${dur_len}.${dur_len}s\t" "$duration"
+    printf "%-${view_len}.${view_len}s\t" "$views"
+    printf "%-${date_len}.${date_len}s\t" "$date"
+    printf "%-${viewed_len}.${viewed_len}s\t" "$viewed"
+    printf "%s" "$url"
+    printf "\n"
+}
 # }}}
 
 # __ytfzf_search_history__ extension {{{
@@ -874,20 +886,6 @@ run_interface () {
 
     $(printf "%s" "$_interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
     unset _interface
-}
-
-video_info_text_watch_history () {
-	viewed_len=19
-
-    [ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
-    printf "%-${title_len}.${title_len}s\t" "$title"
-    printf "%-${channel_len}.${channel_len}s\t" "$channel"
-    printf "%-${dur_len}.${dur_len}s\t" "$duration"
-    printf "%-${view_len}.${view_len}s\t" "$views"
-    printf "%-${date_len}.${date_len}s\t" "$date"
-    printf "%-${viewed_len}.${viewed_len}s\t" "$viewed"
-    printf "%s" "$url"
-    printf "\n"
 }
 
 _video_info_text () {
