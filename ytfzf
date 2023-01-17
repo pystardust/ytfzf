@@ -2354,7 +2354,7 @@ preview_start () {
 		ueberzug)
 			# starts uberzug to this fifo
 			command_exists "ueberzug" || die 3 "ueberzug is not installed\n"
-			UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
+			export UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
 			ueberzug layer --parser json < "$UEBERZUG_FIFO"  > "$thumbnail_debug_log" 2>&1 &
@@ -2953,8 +2953,6 @@ internal_action_preview_img () {
 
     thumb_dir="${session_cache_dir}/thumbnails"
     YTFZF_PID="$(sed -n 's/^YTFZF_PID=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
-
-    UEBERZUG_FIFO="$(sed -n 's/^UEBERZUG_FIFO=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
 
     fzf_preview_side="$(sed -n 's/^fzf_preview_side=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
 
