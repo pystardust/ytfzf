@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1880.734778b"
+YTFZF_VERSION="git-1881.8a4745c"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1287,6 +1287,7 @@ set_vars () {
 
     #misc
     instances_url="https://api.invidious.io/instances.json?sort_by=type,health,api"
+    instances_file="$cache_dir/instancesV2.json"
 
     # read from environment to reset any variables to what the user set
     if [ "$check_exists" -eq 1 ]; then
@@ -1336,12 +1337,9 @@ done
 
 load_fake_extension "__ytfzf__" "1"
 
-# files, and const vars
-: "${instances_file:="$cache_dir/instancesV2.json"}"
-
 new_line='
-'
-tab_space=$(printf '\t')
+' tab_space=$(printf '\t')
+#necessary as a seperator for -W
 EOT="$(printf '\003')"
 
 # }}}
