@@ -1,0 +1,30 @@
+#!/bin/sh
+
+if [ "$TERM" = "xterm-kitty" ]; then
+    thumbnail_viewer=kitty
+else
+    case "${XDG_SESSION_TYPE}" in
+        wayland) 
+            if  command_exists "swayimg"; then
+                case "${XDG_CURRENT_DESKTOP}" in
+                    Hyprland) thumbnail_viewer=swayimg-hyprland ;;
+                    sway) thumbnail_viewer=swayimg ;;
+                esac
+            else
+                thumbnail_viewer=chafa
+            fi
+            ;;
+        X11)
+            if command_exists "ueberzug"; then
+                thumbnail_viewer=ueberzug
+            else
+                thumbnail_viewer=chafa
+            fi
+            ;;
+        tty) thumbnail_viewer=chafa ;;
+        *)
+            print_warning "XDG_SESSION_TYPE is not set, defaulting to chafa\n"
+            thumbnail_viewer=chafa ;;
+    esac
+fi
+
