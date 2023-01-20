@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1881.8a4745c"
+YTFZF_VERSION="git-1883.1ea2816"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1327,9 +1327,12 @@ EOF
 set_vars "${check_vars_exists}"
 
 # hard dependency checks{{{
+missing_deps=""
 for dep in jq curl; do
-    command_exists "$dep" || die 3 "$dep is a required dependency, please install it\n"
+    command_exists "$dep" || missing_deps="${missing_deps}, ${dep}"
 done
+[ "$missing_deps" ] && die 3 "You are missing the following required dependencies${missing_deps}, Please install them.\n"
+unset missing_deps
 #}}}
 
 # shellcheck disable=SC1090
