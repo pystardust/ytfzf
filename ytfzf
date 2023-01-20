@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="2.5.4"
+YTFZF_VERSION="git-1880.734778b"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -897,23 +897,18 @@ _video_info_text () {
     printf "%-${date_len}.${date_len}s\t" "$date"
     printf "%s" "$url"
     printf "\n"
-
 }
 
 #This function generates a series of lines that will be displayed in fzf, or some other interface
 #takes in a series of jsonl lines, each jsonl should follow the VIDEO JSON FORMAT
 video_info_text () {
-    while read -r _jsonl; do
-        #global vars for whatever video_info_text function is called
-        IFS=$tab_space read -r title channel duration views date viewed url scraper <<-EOF
-$(echo "$_jsonl" | jq -r '[.title, .channel, .duration, .views, .date, .viewed, .url, .scraper]|join("\t|")')
-EOF
+     jq -r '[.title, .channel, .duration, .views, .date, .viewed, .url, .scraper]|join("\t|")' | while IFS="$tab_space" read -r title channel duration views date viewed url scraper; do
         scraper="${scraper#"|"}"
         fn_name=video_info_text_"${scraper}"
         if command_exists "$fn_name"; then
-            "$fn_name" "$_jsonl"
+            "$fn_name" "$title" "$channel" "$duration" "$views" "$date" "$viewed" "$url" "$scraper"
         else
-            _video_info_text "$_jsonl"
+            _video_info_text "$title" "$channel" "$duration" "$views" "$date" "$viewed" "$url" "$scraper"
         fi
     done
     unset title channel duration views date viewed url scraper
@@ -2188,7 +2183,7 @@ clear_hist () {
 # Interfaces are responsible for the following:
 
 # $ytfzf_video_json_file contains a file with the raw search result json
-# $const_SORTED_VIDEO_DATA is a sorted jsonl string, use this if you want to implement sorting in the gui.
+# $const_SORTED_VIDEO_DATA is a sorted $ytfzf_video_json_file in a jsonl string, use this if you want to implement sorting in the gui.
 
 # * Checking if the menu it wants to use is installed.
     # * Example: interface_text checks if fzf is installed and exits with code 3 if it can't.
@@ -2198,6 +2193,13 @@ clear_hist () {
 # * The interface should display thumbnails if thumbnails are enabled, and the interface supports it
 
 # * It is not required, but interfaces (especially tui interfaces) should use the output from the output from the video_info_text function to display the results.
+    # * The interface needs to define the following variables for video_info_text to work properly:
+	# * title_len
+	# * channel_len
+	# * dur_len
+	# * view_len
+	# * date_len
+    # Each of these variables should equal the amount of columns (characters) each segment should take
 
 # * Lastly, if a key, or key combination was pressed (and the interface supports it), it should be written to $keypress_file.
     # * $keypress_file will be used *after* the interface is closed, If the interface does not function in a way similar to fzf do not use this file for shortcuts.
