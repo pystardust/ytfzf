@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1891.6647440"
+YTFZF_VERSION="git-1892.1b5b2ca"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1586,7 +1586,7 @@ scrape_youtube_channel () {
     prepare_for_set_args ","
     for _type in $search_result_type; do
         case "$_type" in
-            all) modifiers="live playlists shorts videos" ;;
+            all) modifiers="streams playlists videos" ;;
             *) modifiers="$modifiers $_type" ;;
         esac
     done
@@ -1901,27 +1901,68 @@ scrape_invidious_channel () {
 	_tmp_html="${session_temp_dir}/${tmp_file_name}.html"
 	_tmp_json="${session_temp_dir}/${tmp_file_name}.json"
 
-    print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url\n"
-
     [ -n "$pages_to_scrape" ] || [ -n "$pages_start" ] && print_warning "If you want to use --pages or --pages-start\nuse -c invidious-playlist where the search is https://www.youtube.com/playlist?list=$channel_id\n"
 
-    channel_url="$invidious_instance/api/v1/channels/$channel_id/videos"
-    _get_request "${channel_url##* }" \
-        -G --data-urlencode "page=$_cur_page" \
-        > "$_tmp_json" || return "$?"
+    prepare_for_set_args
+    set -- $1
+    end_of_set_args
 
-    _get_invidious_thumb_quality_name
+    modifiers=""
 
-    #checks  if it uses the new invidious json layout vs the old one
-    [ -n "$(jq '.videos[0].type' < "$_tmp_json" 2> /dev/null)" ] && {
-        data="$(jq '.videos' < "$_tmp_json")"
-        echo "$data" > "$_tmp_json"
-    }
+    # support the --features=live argument
+    case "$search_result_features" in
+        *live*) modifiers="streams" ;;
+        *video*) modifiers="$modifiers videos" ;;
+        *playlist*) modifiers="$modifiers playlists" ;;
+    esac
 
-    {
-        _invidious_search_json_videos "invidious_channel" < "$_tmp_json"
-        _invidious_search_json_live < "$_tmp_json"
-    } | jq 'select(.!=[])' >> "$output_json_file"
+    #support --type=playlist, etc
+    prepare_for_set_args ","
+    for _type in $search_result_type; do
+        case "$_type" in
+            all) modifiers="streams playlists videos" ;;
+            *) modifiers="$modifiers $_type" ;;
+        esac
+    done
+    end_of_set_args
+    unset IFS
+
+    for arg in "$@"; do
+        case "$arg" in
+            :videos|:streams|:playlists) modifiers="$modifiers ${arg#:}" ;; #starts with a colon to have  consistency with the search operator syntax.
+            :v) modifiers="$modifiers videos" ;;
+            :p) modifiers="$modifiers playlists" ;;
+            :s|:l) modifiers="$modifiers streams" ;;
+            *) channel_url=$arg; break ;;
+        esac
+    done
+
+    modifiers="${modifiers##[[:space:]]}"
+
+    [ -z "$modifiers" ] && modifiers="videos"
+
+    for modifier in $modifiers; do
+        echo "$modifier"
+        channel_url="$invidious_instance/api/v1/channels/$channel_id/$modifier"
+        print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url\n"
+
+        _get_request "${channel_url##* }" \
+            -G --data-urlencode "page=$_cur_page" \
+            > "$_tmp_json" || return "$?"
+
+        _get_invidious_thumb_quality_name
+
+        #checks  if it uses the new invidious json layout vs the old one
+        [ -n "$(jq '.videos[0].type' < "$_tmp_json" 2> /dev/null)" ] && {
+            data="$(jq '.videos' < "$_tmp_json")"
+            echo "$data" > "$_tmp_json"
+        }
+
+        {
+            _invidious_search_json_videos "invidious_channel" < "$_tmp_json"
+            _invidious_search_json_live < "$_tmp_json"
+        } | jq 'select(.!=[])' >> "$output_json_file"
+    done
 }
 
 ## }}}
