@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1894.bcad542"
+YTFZF_VERSION="git-1894.853d77d"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1587,6 +1587,7 @@ scrape_youtube_channel () {
     for _type in $search_result_type; do
         case "$_type" in
             all) modifiers="streams playlists videos" ;;
+            video) modifiers="$modifiers videos" ;;
             *) modifiers="$modifiers $_type" ;;
         esac
     done
@@ -1921,6 +1922,7 @@ scrape_invidious_channel () {
     for _type in $search_result_type; do
         case "$_type" in
             all) modifiers="streams playlists videos" ;;
+            video) modifiers="$modifiers videos" ;;
             *) modifiers="$modifiers $_type" ;;
         esac
     done
