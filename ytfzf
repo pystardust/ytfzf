@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1895.81bdf7d"
+YTFZF_VERSION="git-1896.d4577f4"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -449,8 +449,32 @@ get_search_from_next (){
 
 # }}}
 
+# __ytfzf_history_management__ {{{
+
+on_load_fake_extension___ytfzf_history_management__ ( ){
+    on_opt_parse_x () {
+        clear_hist "${1:-all}"; exit 0
+    }
+    on_opt_parse_hist_clear () { on_opt_parse_x "$@"; }
+
+    clear_hist () {
+        case "$1" in
+            search) : > "$search_hist_file"; print_info "Search history cleared\n" ;;
+            watch) : > "$hist_file"; print_info "Watch history cleared\n" ;;
+            *)
+                : > "$search_hist_file"
+                : > "$hist_file"
+                print_info "History cleared\n" ;;
+        esac
+    }
+}
+# }}}
+
 # __ytfzf_history__ extension {{{
 on_load_fake_extension___ytfzf_history__ () {
+
+    ! extension_is_loaded "__ytfzf_history_management__" && load_fake_extension "__ytfzf_history_management__"
+
     : "${hist_file:="$cache_dir/watch_hist"}" 
     on_opt_parse_history () {
         if [ "$enable_hist" -eq 0 ]; then
@@ -508,6 +532,9 @@ video_info_text_watch_history () {
 # __ytfzf_search_history__ extension {{{
 
 on_load_fake_extension___ytfzf_search_history__ (){
+
+    ! extension_is_loaded "__ytfzf_history_management__" && load_fake_extension "__ytfzf_history_management__"
+
     : "${search_hist_file:="$cache_dir/search_hist"}" 
     on_opt_parse_q () {
         if [ "$enable_search_hist" -eq 0 ]; then
@@ -959,6 +986,15 @@ source_scrapers () {
 	end_of_set_args
 }
 
+extension_is_loaded () {
+    case "$loaded_extensions" in
+        #the extension may be at the middle, beginning, or end
+        #spaces must be accounted differently
+        *" $1 "*|"$1 "*|*" $1") return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 load_extension () {
     ext=$1
     loaded_extensions="$loaded_extensions $(printf "%s" "${ext##*/}" | sed 's/[ -]/_/g')"
@@ -983,7 +1019,7 @@ load_extension () {
 #for extensions succh as __ytfzf__
 load_fake_extension () {
     _should_be_first="$2"
-    if [ "$_should_be_first" -eq 1 ]; then
+    if [ "${_should_be_first:-0}" -eq 1 ]; then
         loaded_extensions="$1 ${loaded_extensions}"
     else
         loaded_extensions="${loaded_extensions} $1"
@@ -2219,17 +2255,6 @@ sort_video_data_fn () {
 
 # History Management {{{
 
-clear_hist () {
-	case "$1" in
-		search) : > "$search_hist_file"; print_info "Search history cleared\n" ;;
-		watch) : > "$hist_file"; print_info "Watch history cleared\n" ;;
-		*)
-			: > "$search_hist_file"
-			: > "$hist_file"
-			print_info "History cleared\n" ;;
-	esac
-}
-
 #}}}
 
 # User Interface {{{
@@ -3072,7 +3097,6 @@ parse_opt () {
         m|audio-only) is_audio_only=${optarg:-1};;
         d|download) url_handler=downloader ;;
         f|formats) show_formats=${optarg:-1} ;;
-        x|history-clear) clear_hist "${optarg:-all}"; exit 0 ;;
         S|select) interface="scripting" && is_specific_select="1" && scripting_video_count="$optarg" ;;
         a|auto-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] &&  interface="scripting" && is_auto_select=${optarg:-1} ;;
         A|select-all) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && interface="scripting" && is_auto_select=${optarg:-1} && scripting_video_count='$' ;;
