@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1892.1b5b2ca"
+YTFZF_VERSION="git-1894.bcad542"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1891,7 +1891,7 @@ scrape_T (){ scrape_invidious_trending "$@"; }
 
 scrape_invidious_channel () {
 	channel_url=$1
-    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\n" && return 100
+    [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\nYou can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:\n:videos\n:streams\n:playlists\n:v, :s, and :p may also be used as a shorter version\nYou may also use --type=live, --type=video, --type=playlist, or --type=all\n" && return 100
 	output_json_file=$2
 
 	# Converting channel title page url to channel video url
@@ -1942,7 +1942,6 @@ scrape_invidious_channel () {
     [ -z "$modifiers" ] && modifiers="videos"
 
     for modifier in $modifiers; do
-        echo "$modifier"
         channel_url="$invidious_instance/api/v1/channels/$channel_id/$modifier"
         print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url\n"
 
