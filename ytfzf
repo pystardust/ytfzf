@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1883.1ea2816"
+YTFZF_VERSION="git-1883.4da7bfc"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1199,6 +1199,9 @@ clean_up () {
 # Global Variables and Start Up {{{
 
 set_vars () {
+    # debugging
+    log_level="2" thumbnail_debug_log="/dev/null"
+
     check_exists="${1:-1}"
 
     # save the ecurrent environment so that any user set variables will be saved
@@ -1207,12 +1210,33 @@ set_vars () {
         export -p > "$tmp_env"
     fi
 
+    # global vars
+    
     gap_space="                                                                                                                   "
+    new_line='
+    ' tab_space=$(printf '\t')
+    #necessary as a seperator for -W
+    EOT="$(printf '\003')"
+
+    if [ "$COLUMNS" ] && [ "$LINES" ]; then
+        TTY_COLS="${COLUMNS}"
+        TTY_LINES="${LINES}"
+    elif command_exists "tput"; then
+        TTY_COLS=$(tput cols 2> /dev/null)
+        TTY_LINES=$(tput lines 2> /dev/null)
+    elif [ "${stty_cols_lines:=$(stty size)}" ]; then #set the var here to avoid running stty size twice.
+        TTY_LINES="${stty_cols_lines% *}"
+        TTY_COLS="${stty_cols_lines#* }"
+    else
+        print_warning "Could not determine terminal size, defaulting to 80 COLUMNS x 25 LINES\n"
+        TTY_COLS=80
+        TTY_LINES=25
+    fi
+
+    #config vars
 
     search_source=args:prompt
 
-    # debugging
-    log_level="2" thumbnail_debug_log="/dev/null"
 
     # scraping
     useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.152 Safari/537.36"
@@ -1339,11 +1363,6 @@ unset missing_deps
 [ -f "$YTFZF_CONFIG_FILE" ] && . "$YTFZF_CONFIG_FILE"
 
 load_fake_extension "__ytfzf__" "1"
-
-new_line='
-' tab_space=$(printf '\t')
-#necessary as a seperator for -W
-EOT="$(printf '\003')"
 
 # }}}
 
@@ -2313,13 +2332,6 @@ interface_text () {
 
 	[ "$show_thumbnails" -eq 1 ] && { interface_thumbnails "$@"; return; }
 
-	if command_exists "tput"; then
-	    TTY_COLS=$(tput cols 2> /dev/null)
-	else
-	    TTY_COLS=${COLUMNS:-80}
-	    command_exists "tput" || print_warning "command \"tput\" not found, defaulting to terminal width of $TTY_COLS columns\n"
-	fi
-
 	# shellcheck disable=SC2015
 	command_exists "column" && use_column=1 || { print_warning "command \"column\" not found, the menu may look very bad\n" && use_column=0; }
 
@@ -2589,8 +2601,6 @@ EOF
 EOF
             x=$((x-output_x))
             y=$((y-output_y))
-            TTY_COLS=$(tput cols)
-            TTY_LINES=$(tput lines)
             # shellcheck disable=SC2034
             w_half=$((w/2)) h_half=$((h/2))
             # how many pixels per col
@@ -2626,8 +2636,6 @@ EOF
             # we're subtracting output_* to make sure swayimg places on correct monitor
             x=$((x-output_x))
             y=$((y-output_y))
-            TTY_COLS=$(tput cols)
-            TTY_LINES=$(tput lines)
             # shellcheck disable=SC2034
             w_half=$((w/2)) h_half=$((h/2))
             # how many pixels per col
