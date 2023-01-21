@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1883.4da7bfc"
+YTFZF_VERSION="git-1884.d4feea0"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1224,7 +1224,7 @@ set_vars () {
     elif command_exists "tput"; then
         TTY_COLS=$(tput cols 2> /dev/null)
         TTY_LINES=$(tput lines 2> /dev/null)
-    elif [ "${stty_cols_lines:=$(stty size)}" ]; then #set the var here to avoid running stty size twice.
+    elif [ "${stty_cols_lines:=$(stty size 2> /dev/null)}" ]; then #set the var here to avoid running stty size twice.
         TTY_LINES="${stty_cols_lines% *}"
         TTY_COLS="${stty_cols_lines#* }"
     else
