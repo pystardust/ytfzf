@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1894.853d77d"
+YTFZF_VERSION="git-1895.81bdf7d"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -963,16 +963,15 @@ load_extension () {
     ext=$1
     loaded_extensions="$loaded_extensions $(printf "%s" "${ext##*/}" | sed 's/[ -]/_/g')"
     loaded_extensions="${loaded_extensions# }"
-    if [ -f "${YTFZF_EXTENSIONS_DIR}/${ext}" ]; then
-	# shellcheck disable=SC1090
-        . "${YTFZF_EXTENSIONS_DIR}/${ext}"
-    elif [ -f "${YTFZF_SYSTEM_ADDON_DIR}/extensions/${ext}" ]; then
-	# shellcheck disable=SC1090
-        . "${YTFZF_SYSTEM_ADDON_DIR}/extensions/${ext}"
-    else
-	# shellcheck disable=SC1090
-        . "$ext"
-    fi
+
+    unset IFS
+    for path in "${YTFZF_EXTENSIONS_DIR}/${ext}" "$YTFZF_SYSTEM_ADDON_DIR}/extensions/${ext}" "${ext}"; do
+        if [ -f "$path/${ext}" ]; then
+            __loaded_path="${ext}" . "${ext}"
+            rv="$?"
+            break
+        fi
+    done
 
     rv="$?"
 
