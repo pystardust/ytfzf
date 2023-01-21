@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1889.4b88ede"
+YTFZF_VERSION="git-1890.54cc0e4"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1583,14 +1583,15 @@ scrape_youtube_channel () {
     esac
 
     #support --type=playlist, etc
-    case "$search_result_type" in
-        *video*) modifiers="$modifiers videos" ;;
-        *playlist*) modifiers="$modifiers playlists" ;;
-        *live*) modifiers="$modifiers live" ;;
-        *all*) modifiers="live playlists videos" ;;
-    esac
+    prepare_for_set_args ","
+    for _type in $search_result_type; do
+        case "$_type" in
+            all) modifiers="live playlists shorts videos" ;;
+            *) modifiers="$modifiers $_type" ;;
+        esac
+    done
+    end_of_set_args
 
-    unset IFS
     for arg in "$@"; do
         case "$arg" in
             :videos|:streams|:playlists) modifiers="$modifiers ${arg#:}" ;; #starts with a colon to have  consistency with the search operator syntax.
@@ -1600,6 +1601,8 @@ scrape_youtube_channel () {
             *) channel_url=$arg; break ;;
         esac
     done
+
+    modifiers="${modifiers##[[:space:]]}"
 
     [ -z "$modifiers" ] && modifiers="videos"
 
