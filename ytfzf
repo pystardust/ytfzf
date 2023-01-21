@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1890.54cc0e4"
+YTFZF_VERSION="git-1891.6647440"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1458,7 +1458,7 @@ set_real_channel_url_and_id () {
     esac
     _id="$(_get_channel_id "$_input_url")"
     [ "$_id" = "$_input_url" ] &&\
-        _url="$(_get_real_channel_link "$_url")" && _id="$(_get_channel_id "$_url")"
+        _url="$(_get_real_channel_link "$_input_url")" && _id="$(_get_channel_id "$_url")"
     print_debug "[SCRAPE]: input url: $_input_url, detected url: $_url, detected id: $_id\n"
     channel_url="$_url" channel_id="$_id"
     unset _url _id _input_url
