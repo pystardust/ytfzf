@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1887.2714c41"
+YTFZF_VERSION="git-1888.3a42777"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1452,16 +1452,16 @@ _thread_started (){
 }
 
 set_real_channel_url_and_id () {
-    _url="$1"
-    case "$_url" in
-        */videos|*/streams|*/playlists) url="${url%/*}" ;;
+    _input_url="$1"
+    case "$_input_url" in
+        */videos|*/streams|*/playlists) _input_url="${_input_url%/*}" ;;
     esac
-    _id="$(_get_channel_id "$_url")"
-    [ "$_id" = "$_url" ] &&\
-	print_warning "$_url is not a scrapable link run:\n$0 --channel-link='$_url'\nand use the result of that to fix this warning\n" &&\
-	_url="$(_get_real_channel_link "$_url")" && _id="$(_get_channel_id "$_url")"
+    _id="$(_get_channel_id "$_input_url")"
+    [ "$_id" = "$_input_url" ] &&\
+        _url="$(_get_real_channel_link "$_url")" && _id="$(_get_channel_id "$_url")"
+    print_debug "[SCRAPE]: input url: $_input_url, detected url: $_url, detected id: $_id\n"
     channel_url="$_url" channel_id="$_id"
-    unset _url _id
+    unset _url _id _input_url
 }
 
 #}}}
