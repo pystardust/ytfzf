@@ -26,8 +26,11 @@ doc:
 
 install:
 	chmod 755 ${PROG}
+	cp ${PROG} ${PROG}.bak
+	sed 's_$${YTFZF\_SYSTEM\_ADDON\_DIR:=/usr/local/share/ytfzf/addons}_$${YTFZF\_SYSTEM\_ADDON\_DIR:=${YTFZF_SYSTEM_ADDON_DIR}}_' < ${PROG} > ${PROG}.bak
 	mkdir -p ${DESTDIR}${BINDIR}
-	cp ${PROG} ${DESTDIR}${BINDIR}/${PROG}
+	cp ${PROG}.bak ${DESTDIR}${BINDIR}/${PROG}
+	rm ${PROG}.bak
 
 addons:
 	chmod 755 addons/*/*
