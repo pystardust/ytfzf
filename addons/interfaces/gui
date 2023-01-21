@@ -86,7 +86,7 @@ interface_gui () {
     video_json_file="$1"
     selected_id_file="$2"
     command_exists "gtkdialog" || die 3 "gtkdialog (https://github.com/puppylinux-woof-CE/gtkdialog) is required for the gui interface\n"
-    printf "%s\n" "$const_SORTED_VIDEO_DATA" | gui_dialog | sed -n -e 's/EXIT="\(.*\)"/\1/p' -e 's/[[:space:]]*//g' > "$selected_id_file"
+    create_sorted_video_data | gui_dialog | sed -n -e 's/EXIT="\(.*\)"/\1/p' -e 's/[[:space:]]*//g' > "$selected_id_file"
     while read -r line; do
         [ "$line" = "abort" ] && exit 0
     done < "$selected_id_file"

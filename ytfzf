@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1896.d4577f4"
+YTFZF_VERSION="git-1898.cbb2c3f"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -234,7 +234,10 @@ print_help___ytfzf__ () {
         --disable-submenus       Whether or not to disable submenus,
                                  which are menus for results like:
                                     playlists and channels
+
         --disable-back           Disables the back button in submenus
+
+        --disable-actions        Disables actions such as submenus, and the back button.
 
         --keep-vars              Options passed to ytfzf are kept in submenus.
 
@@ -617,6 +620,10 @@ _get_request () {
 		-H "User-Agent: $useragent" \
 		-H 'Accept-Language: en-US,en;q=0.9' \
 		--compressed
+}
+
+create_sorted_video_data () {
+    jq -c -r 'select(.!=[])|.[]' < "$ytfzf_video_json_file" | sort_video_data_fn
 }
 
 download_thumbnails () {
@@ -1286,6 +1293,9 @@ set_vars () {
     fancy_subs="0" fancy_subs_left="-------------" fancy_subs_right="${fancy_subs_right=$fancy_subs_left}"
 
     fzf_preview_side="left" thumbnail_viewer="ueberzug"
+
+    #actions are slow, disable if you want to increase runtime speed by 15ms
+    enable_actions=1
 
     # shortcuts
     download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s"
@@ -2272,7 +2282,7 @@ sort_video_data_fn () {
 # Interfaces are responsible for the following:
 
 # $ytfzf_video_json_file contains a file with the raw search result json
-# $const_SORTED_VIDEO_DATA is a sorted $ytfzf_video_json_file in a jsonl string, use this if you want to implement sorting in the gui.
+# or use the create_sorted_video_data to get a jsonl string of sorted videos.
 
 # * Checking if the menu it wants to use is installed.
     # * Example: interface_text checks if fzf is installed and exits with code 3 if it can't.
@@ -2415,8 +2425,10 @@ interface_text () {
 
 	unset IFS
 
+    _c_SORTED_VIDEO_DATA="$(create_sorted_video_data)"
+
 	# shellcheck disable=2015
-    printf "%s\n" "$const_SORTED_VIDEO_DATA" |
+    printf "%s\n" "$_c_SORTED_VIDEO_DATA" |
         video_info_text |
         { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
 		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" \
@@ -2426,7 +2438,7 @@ interface_text () {
 
     _const_top_url="$(head -n 1 "$selected_id_file")"
     _const_fzf_selected_line_no="$(jq -s -r --arg url "$_const_top_url" 'flatten|[.[]|.url]|index($url)' <<-EOF
-    $const_SORTED_VIDEO_DATA
+    ${_c_SORTED_VIDEO_DATA}
 EOF
 )"
 }
@@ -2444,7 +2456,7 @@ interface_ext () {
 	dur_len=7
 	date_len=14
 
-    printf "%s\n" "$const_SORTED_VIDEO_DATA" |
+    create_sorted_video_data |
         video_info_text |
 		external_menu "Select video: " |
 		trim_url > "$selected_id_file"
@@ -2803,7 +2815,9 @@ interface_thumbnails () {
 	# ytfzf -U preview_img ueberzug {} "$video_json_file"
 	# fzf_preview_side will get reset if we don't pass it in
 
-    printf "%s\n" "$const_SORTED_VIDEO_DATA" |
+    _c_SORTED_VIDEO_DATA="$(create_sorted_video_data)"
+
+    printf "%s\n" "$_c_SORTED_VIDEO_DATA" |
         jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.viewed)\t|\(.url)"' |
         SHELL="$(command -v sh)" fzf -m --sync \
             --expect="$shortcut_binds" \
@@ -2817,7 +2831,7 @@ interface_thumbnails () {
 
     _const_top_url="$(head -n 1 "$selected_id_file")"
     _const_fzf_selected_line_no="$(jq -s -r --arg url "$_const_top_url" 'flatten|[.[]|.url]|index($url)' <<-EOF
-    $const_SORTED_VIDEO_DATA
+    $_c_SORTED_VIDEO_DATA
 EOF
 )"
 }
@@ -3148,6 +3162,7 @@ parse_opt () {
             _get_real_channel_link "$optarg"; exit 0 ;;
         available-inv-instances) get_invidious_instances; exit 0 ;;
         disable-submenus) enable_submenus="${optarg:-0}" ;;
+        disable-actions) enable_actions="$((${optarg:-1}^1))" ;;
         thumbnail-quality) thumbnail_quality="$optarg" ;;
         u|url-handler)  load_url_handler "$optarg";;
         keep-cache) keep_cache="${optarg:-1}" ;;
@@ -3296,6 +3311,7 @@ init_files (){
 # actions are attached to videos/items in the menu
 handle_actions () {
 	unset _submenu_actions IFS
+    [ "$enable_actions" -eq 0 ] && return 0
 	actions=$(jq -r --arg urls "$(cat "$1")" '.[] | [.url, .action] as $data | if ( ($urls | split("\n" )) | index($data[0]) and $data[1] != null ) == true then $data[1] else "" end' < "$ytfzf_video_json_file" | sed '/^[[:space:]]*$/d')
 	while read -r action; do
         print_debug "[ACTION]: handling action: $action\n"
@@ -3447,8 +3463,6 @@ done
 
 main() {
 	while :; do
-
-        const_SORTED_VIDEO_DATA=$(jq -c -r 'select(.!=[])|.[]' < "$ytfzf_video_json_file" | sort_video_data_fn)
 
 		# calls the interface
 		run_interface
