@@ -1736,6 +1736,10 @@ Extensions should either be in $YTFZF_EXTENSIONS_DIR or $YTFZF_SYSTEM_ADDON_DIR/
 .PP
 An extension can do anything a config file can, this includes modifying the default utility functions in ytfzf (which could break the script)
 .PP
+Extensions will be given a variable called \fB$__loaded_path\fR which is the full path to the extension that is loaded.
+.br
+This is helpful when needing to determine the current runtime path for the extension.
+.PP
 To load an extension add
 .I "load_extension name-of-extension"
 to $YTFZF_CONFIG_FILE
