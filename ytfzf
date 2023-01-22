@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1900.88c7825"
+YTFZF_VERSION="git-1901.37ab33e"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1007,7 +1007,7 @@ load_extension () {
     loaded_extensions="$loaded_extensions $(printf "%s" "${ext##*/}" | sed 's/[ -]/_/g')"
     loaded_extensions="${loaded_extensions# }"
 
-    unset IFS
+    prepare_for_set_args
     for path in "${YTFZF_EXTENSIONS_DIR}/${ext}" "${YTFZF_SYSTEM_ADDON_DIR}/extensions/${ext}" "${ext}"; do
         if [ -f "${path}" ]; then
             __loaded_path="${path}" . "${path}"
@@ -1016,6 +1016,7 @@ load_extension () {
         else rv=127
         fi
     done
+    end_of_set_args
 
     print_debug "[LOADING]: loaded extension: ${ext} with exit code: ${rv}\n"
 
