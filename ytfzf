@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1898.3835728"
+YTFZF_VERSION="git-1899.d12cff6"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1009,8 +1009,8 @@ load_extension () {
 
     unset IFS
     for path in "${YTFZF_EXTENSIONS_DIR}/${ext}" "${YTFZF_SYSTEM_ADDON_DIR}/extensions/${ext}" "${ext}"; do
-        if [ -f "$path/${ext}" ]; then
-            __loaded_path="${ext}" . "${ext}"
+        if [ -f "${path}" ]; then
+            __loaded_path="${path}" . "${path}"
             rv="$?"
             break
         else rv=127
