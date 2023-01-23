@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1904.d6f2f95"
+YTFZF_VERSION="git-1905.eaea5fe"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -24,9 +24,9 @@ YTFZF_VERSION="git-1904.d6f2f95"
 
 : "${YTFZF_TEMP_DIR:="${TMPDIR:-/tmp}"/ytfzf-$(id -u)}"
 
-: "${YTFZF_LOGFILE:="/dev/stderr"}"
+: "${YTFZF_LOGFILE:=}"
 
-[ "${YTFZF_LOGFILE}" != "/dev/stderr" ] && printf "[%s]\n==============\nSubmenu: %d\nFzf Preview: %d\n==============\n" "$(date)" "$__is_submenu" "$__is_fzf_preview" >> "${YTFZF_LOGFILE}"
+[ "${YTFZF_LOGFILE}" ] && printf "[%s]\n==============\nSubmenu: %d\nFzf Preview: %d\n==============\n" "$(date)" "$__is_submenu" "$__is_fzf_preview" >> "${YTFZF_LOGFILE}"
 
 ! [ -d "$YTFZF_TEMP_DIR" ] && mkdir -p "${YTFZF_TEMP_DIR}"
 #}}}
@@ -1120,7 +1120,7 @@ load_thumbnail_viewer () {
 # Logging {{{
 
 #write to stderr if the logfile is that
-if [ "$YTFZF_LOGFILE" = "/dev/stderr" ]; then
+if [ "$YTFZF_LOGFILE" ]; then
     print_debug () {
         [ "$log_level" -ge 3 ] && printf -- "${c_blue}[DEBUG]${c_reset}: $1" >&2
         return 0
@@ -2485,7 +2485,6 @@ preview_start () {
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
 			ueberzug layer --parser json < "$UEBERZUG_FIFO"  > "$thumbnail_debug_log" 2>&1 &
-			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open 
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|swayimg|swayimg-hyprland) : ;;
 		kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
@@ -2512,10 +2511,7 @@ preview_start () {
 preview_stop () {
 	thumbnail_viewer=$1
 	case $thumbnail_viewer in
-	    ueberzug)
-		    exec 3>&- # close file descriptor 3, closing ueberzug
-		    ;;
-	    chafa|chafa-16|chafa-tty|catimg|catimg-256|kitty) : ;;
+	    chafa|chafa-16|chafa-tty|catimg|catimg-256|kitty|ueberzug) : ;;
 	    mpv)
 		kill "$mpv_pid"
 		rm "$MPV_SOCKET" > /dev/null 2>&1
