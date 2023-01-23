@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1905.eaea5fe"
+YTFZF_VERSION="git-1906.34e6114"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1120,7 +1120,7 @@ load_thumbnail_viewer () {
 # Logging {{{
 
 #write to stderr if the logfile is that
-if [ "$YTFZF_LOGFILE" ]; then
+if [ -z "$YTFZF_LOGFILE" ]; then
     print_debug () {
         [ "$log_level" -ge 3 ] && printf -- "${c_blue}[DEBUG]${c_reset}: $1" >&2
         return 0
