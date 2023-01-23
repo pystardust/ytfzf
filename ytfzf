@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1903.3ffa4cd"
+YTFZF_VERSION="git-1904.d6f2f95"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -776,7 +776,10 @@ EOF
 
 # backup shuf function, as shuf is not posix
 command_exists "shuf" || shuf () {
-	awk -F'\n' 'BEGIN{srand()} {print rand() " " $0}' | sort -n | sed 's/[^ ]* //'
+    #make awk read from fd 3, fd 3 will read $1 if exists, or stdin
+    [ "$1" ] && exec 3< "$1" || exec 3<&0
+	awk -F'\n' 'BEGIN{srand()} {print rand() " " $0}' <&3 | sort -n | sed 's/[^ ]* //'
+    exec 3<&-
 }
 
 add_commas () {
