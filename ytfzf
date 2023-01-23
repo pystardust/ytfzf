@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1902.a30d5e8"
+YTFZF_VERSION="git-1903.3ffa4cd"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3446,8 +3446,6 @@ make_search () {
 	_search="$1"
 	handle_scraping "$_search"
 	do_an_event_function post_scrape
-	#:help search operator
-	[ "$?" -eq 100 ] && exit 0
 }
 #}}}
 
