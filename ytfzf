@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1906.34e6114"
+YTFZF_VERSION="git-1907.4ae287d"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1244,8 +1244,6 @@ clean_up () {
 # Global Variables and Start Up {{{
 
 set_vars () {
-    # debugging
-    log_level="2" thumbnail_debug_log="/dev/null"
 
     check_exists="${1:-1}"
 
@@ -1254,6 +1252,9 @@ set_vars () {
         tmp_env="${YTFZF_TEMP_DIR}/ytfzf-env-$$"
         export -p > "$tmp_env"
     fi
+    
+    # debugging
+    log_level="2" thumbnail_debug_log="/dev/null"
 
     # global vars
     
