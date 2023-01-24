@@ -6,7 +6,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1907.4ae287d"
+YTFZF_VERSION="git-1908.ebcf259"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -673,10 +673,11 @@ end_of_set_args (){
 }
 
 modify_ifs () {
-    IFS=$1
+    OLD_IFS=$IFS
+    IFS=${1:-" ${tab_space}${new_line}"}
 }
 end_modify_ifs (){
-    unset IFS
+    IFS=$OLD_IFS
 }
 # }}}
 
@@ -972,12 +973,12 @@ do_an_event_function () {
     shift
     print_debug "[EVENT]: doing event: $event\n"
     command_exists "$event" && $event "$@"
-    modify_ifs " "
+    prepare_for_set_args " "
     for ext in $loaded_extensions; do
         
         command_exists "${event}_$ext" && print_debug "[EVENT]: $ext running $event\n"  && "${event}_$ext" "$@"
     done
-    end_modify_ifs
+    end_of_set_args
 }
 
 source_scrapers () {
