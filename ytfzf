@@ -7,7 +7,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1916.f7c50a4"
+YTFZF_VERSION="git-1916.8f9c6bc"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1571,9 +1571,6 @@ _youtube_channel_json () {
 scrape_subscriptions () {
     ! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist\n"
 
-    # shellcheck disable=SC2015
-    [ "$curr_scrape" = "SI" ] && { channel_scraper="scrape_invidious_channel"; sleep_time=0.03; } || { channel_scraper="scrape_youtube_channel"; sleep_time=0.01; }
-
     # if _tmp_subfile does not have a unique name, weird things happen
     __subfile_line=-1
     _start_series_of_threads
@@ -1590,7 +1587,7 @@ EOF
 	    __subfile_line=$((__subfile_line+1))
 	    {
 			_tmp_subfile="${session_temp_dir}/channel-$__subfile_line"
-			$channel_scraper "$channel_url" "$_tmp_subfile" < /dev/null || return "$?"
+			scrape_youtube_channel "$channel_url" "$_tmp_subfile" < /dev/null || return "$?"
             __new_data="$(jq '.[].scraper="subscriptions"' < "$_tmp_subfile")"
             printf "%s\n" "$__new_data" > "$_tmp_subfile"
 			if [ ${fancy_subs} -eq 1 ]; then
@@ -1600,7 +1597,7 @@ EOF
 			fi >> "$ytfzf_video_json_file"
 	    } &
         _thread_started "$!"
-	    sleep $sleep_time
+	    sleep 0.01
     done < "$YTFZF_SUBSCRIPTIONS_FILE"
     wait 
 }
