@@ -7,7 +7,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1911.4d46cdc"
+YTFZF_VERSION="git-1912.e56d2d9"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3396,11 +3396,10 @@ handle_scraping (){
 
 # check if nothing was scraped{{{
 something_was_scraped () {
-    [ ! -s "$ytfzf_video_json_file" ] && print_error "Nothing was scraped\n" && return 1
-
-    if ! grep -q -v -e '\[\]' "$ytfzf_video_json_file"; then
+    #this MUST be `! grep -q -v -e '\[\]` because it's possible that [] exists in the file IN ADDITION to a list of actual results, we want to see if those actual results exists.
+    if ! [ -s "${ytfzf_video_json_file}" ] || ! grep -q -v -e '\[\]' "$ytfzf_video_json_file"; then
         print_error "Nothing was scraped\n"
-        return 1;
+        return 1
     fi
     return 0
 }
@@ -3414,9 +3413,6 @@ is_asking_for_search_necessary () {
     end_of_set_args
     return 1
 }
-
-# multi search{{{
-#}}}
 
 init_search () {
 	_search="$1"
