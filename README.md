@@ -157,6 +157,12 @@ ytfzf -L <search>
 ytfzf -cO <search>
 ```
 
+> Use the chafa thumbnail viewer, pass --vo=sixel, and --quiet to mpv, scrape odysee with the search *odysee search*, youtube with the search: *youtube search*, and also scrape subscriptions
+
+```sh
+ytfzf -t -T chafa --url-handler-opts='--vo=sixel --quiet' -cO,Y,SI --multi-search odysee search,youtube search
+```
+
 ---
 
 # Configuration
