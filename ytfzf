@@ -7,7 +7,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1912.e56d2d9"
+YTFZF_VERSION="git-1914.7584c71"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1366,37 +1366,28 @@ set_vars () {
 
     # read from environment to reset any variables to what the user set
     if [ "$check_exists" -eq 1 ]; then
-       _vars=$(awk -F"\n" '
-BEGIN {
-    vars=""
-}
-/^[^"]+="/{
-    vars=vars "\n" $1
-}
-!/^[^"]+="/{
-    vars=vars "\t" $1
-}
-END{
-    print vars;
-}
-' < "$tmp_env")
-        while read -r variable; do
-            [ -z "$variable" ] && continue
-            variable="${variable#export }"
-            var_name="${variable%%=*}"
-            # some shells do have quotation marks around the value, and some don't, these 2 lines must be seperate
-            var_val="${variable#*=}"
-            # since export -p is gauranteed to be able to be copied into a shell and work as intended, any value taht starts with a quote, wil be surrounded by quotes even if that particular shell doesn't normally do that. TLDR: this will only remove unimportant quotes
-            var_val="${var_val#[\"\']}"
-            # same goes for here
-            var_val="${var_val%[\"\']}"
-            export "$var_name"="${var_val}"
-        done <<-EOF
-    $_vars
-EOF
+        _current_var_name=
+        _current_var_value=
+        while read -r _var; do
+            [ -z "$_var" ] && continue
+            case "$_var" in
+                export\ *)
+                    [ "$_current_var_name" ] && {
+                        export "${_current_var_name}"="$(eval echo "$_current_var_value")"
+                        _current_var_name=""
+                        _current_var_value=""
+                    }
+                    _current_var_name="${_var#"export "}"
+                    _current_var_name="${_current_var_name%%=*}"
+                    _current_var_value="${_var#*=}"
+                    ;;
+                *) _current_var_value="${_current_var_value}${new_line}${_var}" ;;
+            esac
+        done < "$tmp_env"
+
         rm "$tmp_env"
     fi
-    unset check_exists _vars variable var_name var_val
+    unset check_exists _var _current_var_name _current_var_value
 }
 
 set_vars "${check_vars_exists}"
