@@ -7,7 +7,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1911.cde789f"
+YTFZF_VERSION="git-1911.4d46cdc"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3409,12 +3409,10 @@ something_was_scraped () {
 is_asking_for_search_necessary () {
     prepare_for_set_args ","
     for _scr in $scrape; do
-        case "$scrape_search_exclude" in
-            *' '$_scr' '*) false ;;
-            *) return 0 ;;
-        esac
+        [ "${scrape_search_exclude#*" $_scr "}" = "${scrape_search_exclude}" ] && return 0
     done
     end_of_set_args
+    return 1
 }
 
 # multi search{{{
