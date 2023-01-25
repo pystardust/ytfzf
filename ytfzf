@@ -7,7 +7,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1914.7584c71"
+YTFZF_VERSION="git-1914.9c1bb7b"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -693,25 +693,26 @@ remove_quotes_on_var_value () {
 }
 
 _get_real_channel_link () {
+    _input_link="${1%% *}"
     case "$1" in
         http?://*/@*)
-            domain=${1#https://}
+            domain=${_input_link#https://}
             domain=${domain%%/*}
-            printf "https://www.youtube.com/channel/%s\n" "$(_get_request "$1" | sed -n 's/.*itemprop="channelId" content="\([^"]*\)".*/\1/p')"
+            printf "https://www.youtube.com/channel/%s\n" "$(_get_request "$_input_link" | sed -n 's/.*itemprop="channelId" content="\([^"]*\)".*/\1/p')"
             ;;
         http?://*/c/*|http?://*/user/*|*\.*)
-            domain=${1#https://}
+            domain=${_input_link#https://}
             domain=${domain%%/*}
-            url=$(printf "%s" "$1" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
+            url=$(printf "%s" "$_input_link" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
             _get_real_channel_link_handle_empty_real_path () {
                  printf "https://%s\n" "${1#https://}"
             } ;;
         [Uu][Cc]??????????????????????/videos|[Uu][Cc]??????????????????????|*channel/[Uu][Cc]??????????????????????|*channel/[Uu][Cc]??????????????????????/videos)
-            id="${1%/videos}"
+            id="${_input_link%/videos}"
             id="${id%/playlists}"
             id="${id%/streams}"
             id="${id##*channel/}"
-            print_warning "$1 appears to be a youtube id, which is hard to detect, please use a full channel url next time\n"
+            print_warning "$_input_link appears to be a youtube id, which is hard to detect, please use a full channel url next time\n"
             domain="youtube.com"
             url=$(printf "https://youtube.com/channel/%s/videos" "$id" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
             _get_real_channel_link_handle_empty_real_path () {
@@ -735,7 +736,7 @@ _get_real_channel_link () {
 	real_path="$(curl -is "$url" | sed -n 's/^[Ll]ocation: //p' | sed 's/[\n\r]$//g')"
 	# prints the origional url because it was correct
     if [ -z "$real_path" ]; then
-        _get_real_channel_link_handle_empty_real_path "$1"
+        _get_real_channel_link_handle_empty_real_path "$_input_link"
         return 0
     fi
     printf "%s\n" "https://${domain}${real_path}"
@@ -1604,8 +1605,51 @@ EOF
     wait 
 }
 scrape_youtube_subscriptions (){ scrape_subscriptions "$@"; }
-scrape_SI (){ scrape_subscriptions "$@"; }
+scrape_SI_slow (){ scrape_subscriptions "$@"; }
 scrape_S (){ scrape_subscriptions "$@"; }
+
+scrape_SI () {
+    output_json_file="$2"
+	_curl_config_file="${session_temp_dir}/curl_config"
+    : > "$_curl_config_file"
+
+    while read -r url; do
+        url="${url%%#*}"
+        [ -z "$url" ] && continue
+
+        set_real_channel_url_and_id "$url"
+
+        channel_url="$invidious_instance/api/v1/channels/$channel_id/videos"
+
+        _tmp_file="${session_temp_dir}/SI-${channel_id}.json"
+
+		printf "url=\"%s\"\noutput=\"%s\"\n" "$channel_url" "$_tmp_file" >> "${_curl_config_file}"
+
+    done < "${YTFZF_SUBSCRIPTIONS_FILE}"
+
+    _tmp_json="${session_temp_dir}/SI.json"
+
+	curl -fLZ -K "$_curl_config_file"
+	[ $? -eq 2 ] && curl -fL -K "$_curl_config_file"
+
+    set +f
+    #this pipeline does the following:
+    #   1. concatinate every channel json downloaded (cat)
+    #   2. if the json is the newer-style, convert it to a list of videos (jq part 1)
+    #   3. if fancy_subs -eq 1
+        #   1.  add fancy subs and slice the amount of videos the user wants (jq part 2)
+    #   4. else
+        #   1.  slice the amount of videos the user wants.
+    #   5. convert to ytfzf json format
+
+    cat "${session_temp_dir}/SI-"*".json" |
+        jq 'if (.|type) == "object" then .videos[0] else . end' | if [ "$fancy_subs" -eq 1 ]; then
+				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].author + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel)" }] + .[0:'"$sub_link_count"']'
+            else
+                jq '.[0:'"$sub_link_count"']' | _invidious_search_json_videos "SI"
+            fi >> "$output_json_file"
+    set -f
+}
 
 scrape_youtube_channel () {
 	channel_url="$1"
