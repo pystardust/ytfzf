@@ -7,7 +7,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1918.65c6f9f"
+YTFZF_VERSION="git-1919.f81d58f"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1182,16 +1182,18 @@ video_player () {
 	command_exists "mpv" || die 3 "mpv is not installed\n"
     [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
     # shellcheck disable=SC2086
-    $use_detach_cmd mpv --ytdl-format="$ytdl_pref" $url_handler_opts "$@"
+    unset IFS
+    $use_detach_cmd mpv --ytdl-format="$ytdl_pref" $(eval echo "$url_handler_opts") "$@"
 }
 
 audio_player () {
 	# this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
 	# shellcheck disable=SC2086
+    unset IFS
 	case "$is_detach" in
-		0) mpv --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
-		1) detach_cmd mpv --force-window --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
+        0) mpv --no-video --ytdl-format="$ytdl_pref" $(eval echo "$url_handler_opts") "$@" ;;
+		1) detach_cmd mpv --force-window --no-video --ytdl-format="$ytdl_pref" $(eval echo "$url_handler_opts") "$@" ;;
 	esac
 }
 
