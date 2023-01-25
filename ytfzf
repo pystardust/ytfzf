@@ -1,12 +1,13 @@
 #!/usr/bin/env sh
 #
+#
 
 # state variables
 : "${__is_submenu:=0}" "${__is_fzf_preview:=0}"
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1908.ebcf259"
+YTFZF_VERSION="git-1909.bcb8123"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2046,7 +2047,7 @@ Eg:
 	    search_again=0
 	    unset IFS
 	    init_and_make_search "$*" "fn-args"
-	    handle_empty_scrape || exit 4
+	    something_was_scraped || exit 4
 	    cat "$ytfzf_video_json_file" >> "$PARENT_OUTPUT_JSON_FILE"
 	    clean_up
 	)
@@ -2932,7 +2933,7 @@ submenu_handler () {
 		echo '[{"ID": "BACK-BUTTON", "title": "[BACK]", "url": "back", "action": "back"}]' "$data" > "$ytfzf_video_json_file"
 	    fi
 
-	    handle_empty_scrape || exit 4
+	    something_was_scraped || exit 4
 
 	    main
 	)
@@ -3360,7 +3361,6 @@ set_scrape_count () {
 handle_scrape_error () {
 	_scr="$2"
 	case "$1" in
-		0) true ;;
 		1) print_info "$_scr failed to load website\n" ;;
 		6) print_error "Website ($_scr) unresponsive (do you have internet?)\n" ;;
 		9) print_info "$_scr does not have a configuration file\n" ;;
@@ -3387,15 +3387,16 @@ handle_scraping (){
         __scrape_count=$((__scrape_count+1))
         do_an_event_function "ext_on_search" "$_search" "$curr_scrape"
         command_exists "on_search_$_search" && "on_search_$_search" "$curr_scrape"
-        "scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"
-        handle_scrape_error "$?" "$curr_scrape"
+        if ! "scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"; then
+            handle_scrape_error "$?" "$curr_scrape"
+        fi
     done
     [ "$?" -eq 100 ] && exit 0
     end_of_set_args
 }
 
 # check if nothing was scraped{{{
-handle_empty_scrape () {
+something_was_scraped () {
     [ ! -s "$ytfzf_video_json_file" ] && print_error "Nothing was scraped\n" && return 1
 
     if ! grep -q -v -e '\[\]' "$ytfzf_video_json_file"; then
@@ -3453,7 +3454,7 @@ make_search () {
 # Main {{{
 
 init_and_make_search "$initial_search" "$search_source"
-until handle_empty_scrape; do
+until something_was_scraped; do
     case "$search_again" in
         0) exit 4 ;;
         1) init_and_make_search "" "$search_source" ;;
@@ -3476,7 +3477,7 @@ main() {
 		    data="$(get_requested_info "$ytfzf_selected_urls")"
 		    display_text_wrapper "$data"
 		    handle_info_wait_action
-		    case "$?" in 3) continue ;; 2) break ;; esac
+		    case "$?" in 2) break ;; 3) continue ;; esac
 		fi
 
         open_format_selection_if_requested "$ytfzf_selected_urls"
