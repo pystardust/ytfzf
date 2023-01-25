@@ -7,7 +7,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1919.f81d58f"
+YTFZF_VERSION="git-1920.aa98ced"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2822,7 +2822,7 @@ preview_img () {
 	scraper="$(_get_video_json_attr "scraper")"
 	duration="$(_get_video_json_attr "duration")"
 	viewed="$(_get_video_json_attr "viewed")"
-    description="$(_get_video_json_attr "description" | sed 's/\\n/\n/g' | fold -w $((FZF_PREVIEW_COLUMNS/2)))"
+    description="$(_get_video_json_attr "description" | sed 's/\\n/\n/g')"
 #}}}
 
 	_const_text=$(if command_exists "thumbnail_video_info_text${scraper:+_$scraper}"; then
