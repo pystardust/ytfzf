@@ -1440,10 +1440,15 @@ This function gets called after all vars are set, and all opts are parsed.
 .br
 This function takes no arguments.
 
-
 .TP
 .BR on_clean_up ()
 This function is called when the script is cleaning up files from the search, or when the script exits.
+.br
+This function takes no arguments.
+
+.TP
+.BR usage ()
+This function calls the print_help_<ext> for each loaded extension.
 .br
 This function takes no arguments.
 

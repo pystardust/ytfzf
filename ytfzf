@@ -1,13 +1,11 @@
 #!/usr/bin/env sh
-#
-#
 
 # state variables
 : "${__is_submenu:=0}" "${__is_fzf_preview:=0}"
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1925.a8977c1"
+YTFZF_VERSION="git-1925.67ca70c"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1246,6 +1244,17 @@ clean_up () {
     do_an_event_function on_clean_up
 }
 
+usage () {
+    unset IFS
+    set -f
+    for ext in $loaded_extensions; do
+	if command_exists "print_help_$ext"; then
+	    printf "\n----%s----\n" "$ext"
+	    "print_help_$ext"
+	fi
+    done
+}
+
 # }}}
 # }}}
 
@@ -1418,17 +1427,6 @@ unset missing_deps
 load_fake_extension "__ytfzf__" "1"
 
 # }}}
-
-usage () {
-    unset IFS
-    set -f
-    for ext in $loaded_extensions; do
-	if command_exists "print_help_$ext"; then
-	    printf "\n----%s----\n" "$ext"
-	    "print_help_$ext"
-	fi
-    done
-}
 
 # Scraping {{{
 
