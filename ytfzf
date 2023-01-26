@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1925.67ca70c"
+YTFZF_VERSION="git-1926.c0e51f8"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1107,9 +1107,6 @@ load_thumbnail_viewer () {
            chafa-16|chafa|chafa-tty|catimg|catimg-256|imv|ueberzug|kitty|swayimg|mpv) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
            swayimg-hyprland)
                print_warning "swayimg-hyprland thumbnail viewer may mess up any rules you have for swayimg\n"; thumbnail_viewer="$_thumbnail_viewer"
-                hyprctl keyword windowrulev2 float,title:swayimg > /dev/null 2>&1
-                hyprctl keyword windowrulev2 nofocus,title:swayimg > /dev/null 2>&1
-                hyprctl keyword windowrulev2 "noborder,title:swayimg" > /dev/null 2>&1
                ;;
            ./*|/*|../*|~/*) thumbnail_viewer="$_thumbnail_viewer"; false ;;
            *)
@@ -2441,6 +2438,7 @@ interface_scripting () {
 }
 # }}}
 
+
 # Text interface {{{
 interface_text () {
 	command_exists "fzf" || die 3 "fzf not installed, cannot use the default menu\n"
@@ -2729,6 +2727,9 @@ EOF
             line_px_height=$((h/TTY_LINES))
             get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
             hyprctl keyword windowrulev2 "move $((x+10)) $y,title:swayimg" > /dev/null 2>&1
+            hyprctl keyword windowrulev2 float,title:swayimg > /dev/null 2>&1
+            hyprctl keyword windowrulev2 nofocus,title:swayimg > /dev/null 2>&1
+            hyprctl keyword windowrulev2 "noborder,title:swayimg" > /dev/null 2>&1
             swayimg -s fit -g $((x+10)),$y,$((img_w)),$((img_h)) "$thumb_path"  2> "$thumbnail_debug_log" >&2 &
             printf "%s" "$!" > "$_swayimg_pid_file"
             # without this there are weird flushing issues (maybe)
