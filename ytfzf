@@ -7,7 +7,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1923.94007c2"
+YTFZF_VERSION="git-1925.a8977c1"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -227,7 +227,7 @@ print_help___ytfzf__ () {
 
         --sort                   Sorts video results by a sort name,
                                     The default sort name is upload-date
-                                    To change sort names use --sort-name=
+                                    To change sort names use --sort=<name>
 
         --sort-name=<name>       Load a different sorting algorithm for --sort
                                     To see usable sort-names, use --list-addons
@@ -3172,7 +3172,14 @@ parse_opt () {
         I) info_to_print=$optarg ;;
         notify-playing) notify_playing="${optarg:-1}" ;;
         # long-opt exclusives
-        sort) is_sort=${optarg:-1} ;;
+        sort)
+            : "${optarg:=1}"
+            if [ "$optarg" != 1 ] && [ "$optarg" != 0 ]; then
+                is_sort="1"
+                load_sort_name "$optarg" || die 2 "$optarg is not a sort-name\n"
+            elif [ "$optarg" = "0" ]; then
+                is_sort=0
+            fi ;;
         sort-name)
             # shellcheck disable=SC2015
             load_sort_name "$optarg" && is_sort=1 || die 2 "$optarg is not a sort-name\n" ;;
