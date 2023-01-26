@@ -11,6 +11,7 @@ download_thumbnails () {
         [ -f "${YTFZF_CUSTOM_THUMBNAILS_DIR}/${_id}.jpg" ] && continue
 		printf "url=\"%s\"\noutput=\"$YTFZF_CUSTOM_THUMBNAILS_DIR/%s.jpg\"\n" "${_url}" "${_id}"
 	done >> "$curl_config_file"
+    [ -z "$curl_config_file" ] && return 0
 	[ "$async_thumbnails" -eq 1 ] && use_silent="s"
 	curl -${use_silent}fLZ -K "$curl_config_file"
 	[ $? -eq 2 ] && curl -${use_silent}fL -K "$curl_config_file"
