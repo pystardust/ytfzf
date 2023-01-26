@@ -7,7 +7,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1920.aa98ced"
+YTFZF_VERSION="git-1921.aa04a8b"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1107,7 +1107,12 @@ load_thumbnail_viewer () {
     case "$_thumbnail_viewer" in
            # these are special cases, where they are not themselves commands
            chafa-16|chafa|chafa-tty|catimg|catimg-256|imv|ueberzug|kitty|swayimg|mpv) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
-           swayimg-hyprland) print_warning "swayimg-hyprland thumbnail viewer may mess up any rules you have for swayimg\n"; thumbnail_viewer="$_thumbnail_viewer" ;;
+           swayimg-hyprland)
+               print_warning "swayimg-hyprland thumbnail viewer may mess up any rules you have for swayimg\n"; thumbnail_viewer="$_thumbnail_viewer"
+                hyprctl keyword windowrulev2 float,title:swayimg > /dev/null 2>&1
+                hyprctl keyword windowrulev2 nofocus,title:swayimg > /dev/null 2>&1
+                hyprctl keyword windowrulev2 "noborder,title:swayimg" > /dev/null 2>&1
+               ;;
            ./*|/*|../*|~/*) thumbnail_viewer="$_thumbnail_viewer"; false ;;
            *)
                    if [ -f "${YTFZF_THUMBNAIL_VIEWERS_DIR}/${_thumbnail_viewer}" ]; then
@@ -2707,13 +2712,11 @@ preview_display_image () {
             command_exists "hyprctl" || die 3 "hyprctl is required for this thumbnail viewer\n"
             _swayimg_pid_file="${session_temp_dir}/_swayimg.pid"
             [ -f "$_swayimg_pid_file" ] && kill "$(cat "$_swayimg_pid_file")" 2> /dev/null
-            command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n" 
+
             window_data="$(hyprctl activewindow -j)"
-            read -r x y <<-EOF
-            $(printf "%s" "$window_data" |  jq -r '"\(.at[0]) \(.at[1])"')
-EOF
-            read -r w h <<-EOF
-            $(printf "%s" "$window_data" |  jq -r '"\(.size[0]) \(.size[1])"')
+
+            IFS=" " read -r x y w h <<-EOF
+            $(printf "%s" "$window_data" |  jq -r '"\(.at[0]) \(.at[1]) \(.size[0]) \(.size[1])"')
 EOF
             read -r output_x output_y <<-EOF
             $(hyprctl monitors -j |  jq -r '.[]|select(.focused==true) as $mon | "\($mon.x) \($mon.y)"')
@@ -2727,10 +2730,7 @@ EOF
             # how many pixels per line
             line_px_height=$((h/TTY_LINES))
             get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
-            hyprctl keyword windowrulev2 float,title:swayimg > /dev/null 2>&1
-            hyprctl keyword windowrulev2 nofocus,title:swayimg > /dev/null 2>&1
             hyprctl keyword windowrulev2 "move $((x+10)) $y,title:swayimg" > /dev/null 2>&1
-            hyprctl keyword windowrulev2 "noborder,title:swayimg" > /dev/null 2>&1
             swayimg -s fit -g $((x+10)),$y,$((img_w)),$((img_h)) "$thumb_path"  2> "$thumbnail_debug_log" >&2 &
             printf "%s" "$!" > "$_swayimg_pid_file"
             # without this there are weird flushing issues (maybe)
@@ -2738,7 +2738,6 @@ EOF
 	    swayimg)
             _swayimg_pid_file="${session_temp_dir}/_swayimg.pid"
             [ -f "$_swayimg_pid_file" ] && kill "$(cat "$_swayimg_pid_file")" 2> /dev/null
-            command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n"
             # this jq call finds the id of the selected monitor and saves it as $focused_id
             # then finds x, and y of the focused monitor and saves it as the var $d1
             # then it finds the geometry of the focused window and saves it as the var $d2
