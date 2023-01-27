@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1927.5e8661a"
+YTFZF_VERSION="git-1928.fc87db5"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1621,7 +1621,7 @@ scrape_SI () {
 
         set_real_channel_url_and_id "$url"
 
-        channel_url="$invidious_instance/api/v1/channels/$channel_id/videos"
+        channel_url="$invidious_instance/api/v1/channels/$channel_id"
 
         _tmp_file="${session_temp_dir}/SI-${channel_id}.json"
 
@@ -1644,11 +1644,11 @@ scrape_SI () {
         #   1.  slice the amount of videos the user wants.
     #   5. convert to ytfzf json format
 
-    cat "${session_temp_dir}/SI-"*".json" |
-        jq 'if (.|type) == "object" then .videos[0] else . end' | if [ "$fancy_subs" -eq 1 ]; then
+    cat "${session_temp_dir}/SI-"*".json" |tee test |
+        jq 'if (.videos|type) == "array" then .videos else if (.latestVideos|type) == "array" then .latestVideos end end' | if [ "$fancy_subs" -eq 1 ]; then
 				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].author + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel)" }] + .[0:'"$sub_link_count"']'
             else
-                jq '.[0:'"$sub_link_count"']' | _invidious_search_json_videos "SI"
+                jq '.[0:'"$sub_link_count"']' | _invidious_search_json_generic "SI"
             fi >> "$output_json_file"
     set -f
 }
@@ -1658,9 +1658,10 @@ scrape_youtube_channel () {
     [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\nYou can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:\n:videos\n:streams\n:playlists\n:v, :s, and :p may also be used as a shorter version\nYou may also use --type=live, --type=video, --type=playlist, or --type=all\n" && return 100
 	output_json_file="$2"
 
-    set -f
+    prepare_for_set_args
     #shellcheck disable=2086
     set -- $1
+    end_of_set_args
     modifiers=""
 
     # support the --features=live argument
@@ -1680,6 +1681,8 @@ scrape_youtube_channel () {
         esac
     done
     end_of_set_args
+
+    unset IFS
 
     for arg in "$@"; do
         case "$arg" in
@@ -1983,8 +1986,6 @@ scrape_invidious_channel () {
     [ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel\nYou can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:\n:videos\n:streams\n:playlists\n:v, :s, and :p may also be used as a shorter version\nYou may also use --type=live, --type=video, --type=playlist, or --type=all\n" && return 100
 	output_json_file=$2
 
-	# Converting channel title page url to channel video url
-	set_real_channel_url_and_id "$channel_url"
 
 	tmp_file_name="channel-${channel_id}"
 	_tmp_html="${session_temp_dir}/${tmp_file_name}.html"
@@ -2027,12 +2028,18 @@ scrape_invidious_channel () {
         esac
     done
 
+
     modifiers="${modifiers##[[:space:]]}"
 
     [ -z "$modifiers" ] && modifiers="videos"
 
+    # Converting channel title page url to channel video url
+    set_real_channel_url_and_id "$channel_url"
+
     for modifier in $modifiers; do
         channel_url="$invidious_instance/api/v1/channels/$channel_id/$modifier"
+        
+
         print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url\n"
 
         _get_request "${channel_url##* }" \
@@ -2042,7 +2049,7 @@ scrape_invidious_channel () {
         _get_invidious_thumb_quality_name
 
         #checks  if it uses the new invidious json layout vs the old one
-        [ -n "$(jq '.videos[0].type' < "$_tmp_json" 2> /dev/null)" ] && {
+        [ -n "$(jq 'if (.videos|type) == "array" then .videos else if (.latestVideos|type) == "array" then .latestVideos end end' < "$_tmp_json" 2> /dev/null)" ] && {
             data="$(jq '.videos' < "$_tmp_json")"
             echo "$data" > "$_tmp_json"
         }
