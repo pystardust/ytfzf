@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1928.fc87db5"
+YTFZF_VERSION="git-1929.bb1ad11"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1631,7 +1631,7 @@ scrape_SI () {
 
     _tmp_json="${session_temp_dir}/SI.json"
 
-	curl -fLZ -K "$_curl_config_file"
+	curl -fLZ --parallel-max "${max_thread_count}" -K "$_curl_config_file"
 	[ $? -eq 2 ] && curl -fL -K "$_curl_config_file"
 
     set +f
