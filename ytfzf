@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1931.410d73b"
+YTFZF_VERSION="git-1932.d62074a"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2044,15 +2044,13 @@ scrape_invidious_channel () {
 
         print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url\n"
 
-        _get_request "${channel_url##* }" \
-            -G --data-urlencode "page=$_cur_page" \
-            | jq 'if (.videos|type) == "array" then .videos else if (.latestVideos|type) == "array" then .latestVideos end end' > "$_tmp_json" || return "$?"
-
         _get_invidious_thumb_quality_name
 
-        {
-            _invidious_search_json_generic "invidious_channel" < "$_tmp_json"
-        } | jq 'select(.!=[])' >> "$output_json_file"
+        _get_request "${channel_url##* }" \
+            -G --data-urlencode "page=$_cur_page" \
+            | jq 'if (.videos|type) == "array" then .videos else if (.latestVideos|type) == "array" then .latestVideos end end' \
+            | _invidious_search_json_generic "invidious_channel" \
+            | jq 'select(.!=[])' >> "$output_json_file" || return "$?"
     done
 }
 
