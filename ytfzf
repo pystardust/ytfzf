@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1930.c9840c1"
+YTFZF_VERSION="git-1931.410d73b"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2046,19 +2046,12 @@ scrape_invidious_channel () {
 
         _get_request "${channel_url##* }" \
             -G --data-urlencode "page=$_cur_page" \
-            > "$_tmp_json" || return "$?"
+            | jq 'if (.videos|type) == "array" then .videos else if (.latestVideos|type) == "array" then .latestVideos end end' > "$_tmp_json" || return "$?"
 
         _get_invidious_thumb_quality_name
 
-        #checks  if it uses the new invidious json layout vs the old one
-        [ -n "$(jq 'if (.videos|type) == "array" then .videos else if (.latestVideos|type) == "array" then .latestVideos end end' < "$_tmp_json" 2> /dev/null)" ] && {
-            data="$(jq '.videos' < "$_tmp_json")"
-            echo "$data" > "$_tmp_json"
-        }
-
         {
-            _invidious_search_json_videos "invidious_channel" < "$_tmp_json"
-            _invidious_search_json_live < "$_tmp_json"
+            _invidious_search_json_generic "invidious_channel" < "$_tmp_json"
         } | jq 'select(.!=[])' >> "$output_json_file"
     done
 }
