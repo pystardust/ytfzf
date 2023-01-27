@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1932.d62074a"
+YTFZF_VERSION="git-1933.a71ffc1"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1646,7 +1646,7 @@ scrape_SI () {
         #   1.  slice the amount of videos the user wants.
     #   5. convert to ytfzf json format
 
-    cat "${session_temp_dir}/SI-"*".json" |tee test |
+    cat "${session_temp_dir}/SI-"*".json" |
         jq 'if (.videos|type) == "array" then .videos else if (.latestVideos|type) == "array" then .latestVideos end end' | if [ "$fancy_subs" -eq 1 ]; then
 				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].author + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel)" }] + .[0:'"$sub_link_count"']'
             else
