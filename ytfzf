@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1934.319c247"
+YTFZF_VERSION="git-1935.8b08417"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3534,7 +3534,7 @@ main() {
     # doing this after the loop allows for -l and -s to coexist
     while [ "$search_again" -eq 1 ] ; do
         clean_up
-        init_and_make_search "" "prompt"
+        init_and_make_search "" "$search_source"
         main
     done
 }
