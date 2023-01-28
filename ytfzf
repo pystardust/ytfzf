@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1935.8b08417"
+YTFZF_VERSION="git-1936.4abd9a2"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -543,7 +543,8 @@ on_load_fake_extension___ytfzf_search_history__ (){
         if [ "$enable_search_hist" -eq 0 ]; then
             die 1 'In order to use this search history must be enabled\n'
         fi
-        [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"; search_source="hist:$search_source"
+        [ ! -s "$search_hist_file" ] && die 1 "You have no search history\n"
+        search_source="hist"
     }
     on_opt_parse_search_hist () {
         on_opt_parse_q "$@"
@@ -551,7 +552,7 @@ on_load_fake_extension___ytfzf_search_history__ (){
 }
 
 on_post_set_vars___ytfzf_search_history__ () {
-    [ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist:args
+    [ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead\n" && search_source=hist
 }
 
 on_init_search___ytfzf_history__ () {
