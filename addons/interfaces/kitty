@@ -1,0 +1,25 @@
+#!/bin/sh
+
+interface_kitty () {
+    for path in "${YTFZF_CUSTOM_INTERFACES_DIR}/sixel-menu" "${YTFZF_SYSTEM_ADDON_DIR}/interfaces/sixel-menu"; do
+        const_SIXEL_UTIL_DIR="$YTFZF_CUSTOM_INTERFACES_DIR/sixel-menu"
+        [ -d "$const_SIXEL_UTIL_DIR" ] && break
+        false
+    done || die 3 'The sixel-menu folder is required for this interface\n'
+
+    video_json_file=$1
+    selected_id_file=$2
+
+    export selected_id_file="$selected_id_file"
+    export video_json_file="$video_json_file"
+    export YTFZF_CUSTOM_THUMBNAILS_DIR="${YTFZF_CUSTOM_THUMBNAILS_DIR}"
+    export session_cache_dir="$session_cache_dir"
+    export session_temp_dir="$session_temp_dir"
+
+    _tmp_selection="${session_temp_dir}/menu-selection"
+
+    jq -c -r 'select(.!=[])|.[]' < "$video_json_file" |
+        sort_video_data_fn | jq -r '[.title, .ID, .url]|join("\t|")' | column -t -s "$tab_space" > "$session_temp_dir/sixel-lines"
+    "$const_SIXEL_UTIL_DIR"/menu.py "${session_temp_dir}/sixel-lines" "${const_SIXEL_UTIL_DIR}/kittyatize-item" "${session_cache_dir}" "{}" | trim_url > "$selected_id_file"
+
+}

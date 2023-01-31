@@ -1,0 +1,20 @@
+#!/bin/sh
+
+session_cache_dir="$1"
+item="$@"
+
+: "${SIXELIZE_ITEM_CONFIG:="${XDG_CONFIG_HOME:-$HOME/.config}"/ytfzf/sixel-menu-conf.sh}"
+[ -f "${SIXELIZE_ITEM_CONFIG}" ] && . "${SIXELIZE_ITEM_CONFIG}"
+
+thumb_dir="${session_cache_dir}/thumbnails"
+
+id="$(printf "%s" "$item" | awk '{print $(NF-1)}')"
+id="${id#"|"}"
+
+for path in "${YTFZF_CUSTOM_THUMBNAILS_DIR}/$id.jpg" "${thumb_dir}/${id}.jpg" "${YTFZF_CUSTOM_THUMBNAILS_DIR}/YTFZF:DEFAULT.jpg"; do
+    thumb_path="$path"
+    [ -f "${path}" ] && break
+done
+/usr/bin/kitty icat --clear
+/usr/bin/kitty icat --place "30x30@50x0" "$thumb_path"
+#img2sixel -w 300 "$thumb_path" | tee "${session_sixel_cache}/${id}.sixel"
