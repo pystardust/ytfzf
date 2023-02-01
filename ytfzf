@@ -50,7 +50,7 @@ YTFZF_VERSION="2.5.4"
 # Starts with __ if it is a state variable thatt is allowed to be accessed globally.
     # for example: __is_submenu is a state variable that keeps track of whether or not itt is a submenu
     # another example: __scrape_count is the current scrape number
-   
+
 # Environment variables should be all caps, do not use full caps for constansts
 
 # Const variable should start with c_ or const_
@@ -158,7 +158,7 @@ print_help___ytfzf__ () {
         --info-wait              When -I or -L is used,
                                  wait for user input before continuing
 
-        --info-action=<action>   
+        --info-action=<action>
                                  The action to do when --info-wait is 1.
                                  action can be one of
                                       q: exit
@@ -451,7 +451,7 @@ get_search_from_next (){
 
 # __ytfzf_history__ extension {{{
 on_load_fake_extension___ytfzf_history__ () {
-    : "${hist_file:="$cache_dir/watch_hist"}" 
+    : "${hist_file:="$cache_dir/watch_hist"}"
     on_opt_parse_history () {
         if [ "$enable_hist" -eq 0 ]; then
             die 1 "enable_hist must be set to 1 for -H/--history\n"
@@ -493,7 +493,7 @@ scrape_H (){ scrape_history "$@"; }
 # __ytfzf_search_history__ extension {{{
 
 on_load_fake_extension___ytfzf_search_history__ (){
-    : "${search_hist_file:="$cache_dir/search_hist"}" 
+    : "${search_hist_file:="$cache_dir/search_hist"}"
     on_opt_parse_q () {
         if [ "$enable_search_hist" -eq 0 ]; then
             die 1 'In order to use this search history must be enabled\n'
@@ -911,7 +911,7 @@ do_an_event_function () {
     command_exists "$event" && $event "$@"
     modify_ifs " "
     for ext in $loaded_extensions; do
-        
+
         command_exists "${event}_$ext" && print_debug "[EVENT]: $ext running $event\n"  && "${event}_$ext" "$@"
     done
     end_modify_ifs
@@ -1087,7 +1087,7 @@ else
         [ "$log_level" -ge 0 ] && printf -- "[ERROR]: ${1}" | remove_ansi_escapes | tee -a "$YTFZF_LOGFILE" >&2
     }
 fi
-    
+
 die () {
 	_return_status=$1
 	print_error "$2"
@@ -1104,8 +1104,15 @@ video_player () {
 	# this function should not be set as the url_handler as it is part of multimedia_player
 	command_exists "mpv" || die 3 "mpv is not installed\n"
     [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
-    # shellcheck disable=SC2086
-    $use_detach_cmd mpv --ytdl-format="$ytdl_pref" $url_handler_opts "$@"
+
+    pid=$(pidof "mpv")
+
+    if [ "$pid" ]; then
+        echo "{\"command\":[\"loadfile\",\"${@}\", \"replace\"]}" | socat - /tmp/mpv-socket
+    else
+        # shellcheck disable=SC2086
+        $use_detach_cmd mpv --input-ipc-server=/tmp/mpv-socket --ytdl-format="$ytdl_pref" $url_handler_opts "$@"
+    fi
 }
 
 audio_player () {
@@ -1113,8 +1120,16 @@ audio_player () {
 	command_exists "mpv" || die 3 "mpv is not installed\n"
 	# shellcheck disable=SC2086
 	case "$is_detach" in
-		0) mpv --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
-		1) detach_cmd mpv --force-window --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
+		0)
+            pid=$(pidof "mpv")
+
+            if [ "$pid" ]; then
+                echo "{\"command\":[\"loadfile\",\"${@}\", \"replace\"]}" | socat - /tmp/mpv-socket
+            else
+                mpv --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@"
+            fi
+            ;;
+		1) detach_cmd mpv --input-ipc-server=/tmp/mpv-socket --force-window --no-video --ytdl-format="$ytdl_pref" $url_handler_opts "$@" ;;
 	esac
 }
 
@@ -1512,7 +1527,7 @@ EOF
         _thread_started "$!"
 	    sleep $sleep_time
     done < "$YTFZF_SUBSCRIPTIONS_FILE"
-    wait 
+    wait
 }
 scrape_youtube_subscriptions (){ scrape_subscriptions "$@"; }
 scrape_SI (){ scrape_subscriptions "$@"; }
@@ -2349,7 +2364,7 @@ preview_start () {
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
 			ueberzug layer --parser json < "$UEBERZUG_FIFO"  > "$thumbnail_debug_log" 2>&1 &
-			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open 
+			exec 3> "$UEBERZUG_FIFO" # to keep the fifo open
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|swayimg|swayimg-hyprland) : ;;
 		kitty) command_exists "kitty" || die 3 "kitty is not installed\n" ;;
@@ -2536,7 +2551,7 @@ preview_display_image () {
             command_exists "hyprctl" || die 3 "hyprctl is required for this thumbnail viewer\n"
             _swayimg_pid_file="${session_temp_dir}/_swayimg.pid"
             [ -f "$_swayimg_pid_file" ] && kill "$(cat "$_swayimg_pid_file")" 2> /dev/null
-            command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n" 
+            command_exists "tput" || die 3 "tput is required for this viewer\n(you are probably missing ncurses)\n"
             window_data="$(hyprctl activewindow -j)"
             read -r x y <<-EOF
             $(printf "%s" "$window_data" |  jq -r '"\(.at[0]) \(.at[1])"')
