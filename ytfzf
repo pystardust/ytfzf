@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1940.f70e17e"
+YTFZF_VERSION="git-1941.373183b"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1634,7 +1634,7 @@ scrape_SI () {
 
     print_info "Scraping subscriptions with instance: $invidious_instance\n"
 
-	curl -fLZ --parallel-max "${max_thread_count}" -K "$_curl_config_file"
+	curl -fLZ --parallel-immediate --parallel-max "${max_thread_count}" -K "$_curl_config_file"
 	[ $? -eq 2 ] && curl -fL -K "$_curl_config_file"
 
     set +f
