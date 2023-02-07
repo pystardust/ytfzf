@@ -3088,6 +3088,8 @@ internal_action_next_page () {
     ytfzf_video_json_file="${ytfzf_video_json_file#[\"\']}"
     ytfzf_video_json_file="${ytfzf_video_json_file%[\"\']}"
 
+    invidious_instance="$(sed -n 's/^invidious_instance=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+
     video_json_file="$ytfzf_video_json_file"
 
     hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
