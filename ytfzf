@@ -1251,7 +1251,7 @@ usage () {
 }
 
 start_ytfzf_server () {
-    mkfifo "$session_cache_dir/var-fifo"
+    ! [ -p "$session_cache_dir/var-fifo" ] && mkfifo "$session_cache_dir/var-fifo"
     while :; do
         read -r var_name < "$session_cache_dir/var-fifo"
         eval echo "\$$var_name" > "$session_cache_dir/var-fifo"
