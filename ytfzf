@@ -420,10 +420,6 @@ on_post_set_vars___ytfzf__ () {
     print_debug "$(set)\n"
     print_debug "\n============\nEND VAR DUMP\n============\n"
 }
-
-on_init_search___ytfzf__ () {
-    set > "$session_cache_dir/environment"
-}
 #}}}
 
 # __ytfzf_multisearch__ extension {{{
@@ -1254,6 +1250,14 @@ usage () {
     done
 }
 
+start_ytfzf_server () {
+    mkfifo "$session_cache_dir/var-fifo"
+    while :; do
+        read -r var_name < "$session_cache_dir/var-fifo"
+        eval echo "\$$var_name" > "$session_cache_dir/var-fifo"
+    done
+}
+
 # }}}
 # }}}
 
@@ -1392,6 +1396,7 @@ set_vars () {
             case "$_var" in
                 export\ *)
                     [ "$_current_var_name" ] && {
+                        [ "$_current_var_name" = "invidious_instance" ] && notify-send "$_current_var_value"
                         export "${_current_var_name}"="$(eval echo "$_current_var_value")"
                         _current_var_name=""
                         _current_var_value=""
@@ -2849,6 +2854,10 @@ interface_thumbnails () {
 
     _c_SORTED_VIDEO_DATA="$(create_sorted_video_data)"
 
+    start_ytfzf_server &
+
+    YTFZF_SERVER_PID="$!"
+
     printf "%s\n" "$_c_SORTED_VIDEO_DATA" |
         jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.viewed)\t|\(.url)"' |
         SHELL="$(command -v sh)" fzf -m --sync \
@@ -2866,6 +2875,8 @@ interface_thumbnails () {
     $_c_SORTED_VIDEO_DATA
 EOF
 )"
+
+    kill "$YTFZF_SERVER_PID"
 }
 #}}}
 
@@ -3081,24 +3092,26 @@ preview_img <ytfzf-line-format>:
 internal_action_next_page () {
     shift
 
+    ! [ -p "$var_fifo" ] && die 1 "ytfzf var fifo server not running\n"
+
     read -r line < "$*"
     url="${line##*"|"}"
 
-    ytfzf_video_json_file="$(sed -n 's/^ytfzf_video_json_file=\(.*\)/\1/p' "$session_cache_dir/environment")"
-    ytfzf_video_json_file="${ytfzf_video_json_file#[\"\']}"
-    ytfzf_video_json_file="${ytfzf_video_json_file%[\"\']}"
-
-    invidious_instance="$(sed -n 's/^invidious_instance=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+    printf "%s" ytfzf_video_json_file > "$var_fifo"
+    read -r ytfzf_video_json_file < "$var_fifo"
+    printf "%s" invidious_instance > "$var_fifo"
+    read -r invidious_instance < "$var_fifo"
+    printf "%s" yt_video_link_domain > "$var_fifo"
+    read -r yt_video_link_domain < "$var_fifo"
 
     video_json_file="$ytfzf_video_json_file"
-
+    
     hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
 
     if command_exists "scrape_next_page_$hovered_scraper"; then
         _search="$(cat "${session_cache_dir}/searches.list")"
-        pages_to_scrape="$(sed -n 's/^pages_to_scrape=\(.*\)/\1/p' "$session_cache_dir/environment")"
-        pages_to_scrape="${pages_to_scrape#[\"\']}"
-        pages_to_scrape="${pages_to_scrape%[\"\']}"
+        printf "%s" pages_to_scrape > "$var_fifo"
+        read -r pages_to_scrape < "$var_fifo"
 
         pages_start="$(cat "${session_temp_dir}/${hovered_scraper}-current-page")"
         pages_start="${pages_start#[\"\']}"
@@ -3114,17 +3127,22 @@ internal_action_next_page () {
 
 internal_action_preview_img () {
     shift
+    
+    ! [ -p "$var_fifo" ] && die 1 "ytfzf var fifo server not running\n"
 
     thumb_dir="${session_cache_dir}/thumbnails"
-    YTFZF_PID="$(sed -n 's/^YTFZF_PID=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
 
-    fzf_preview_side="$(sed -n 's/^fzf_preview_side=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
-
-    scrape="$(sed -n 's/^scrape=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
-
-    thumbnail_viewer="$(sed -n 's/^thumbnail_viewer=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
-
-    ytfzf_video_json_file="$(sed -n 's/^ytfzf_video_json_file=\(.*\)/\1/p' "$session_cache_dir/environment" | remove_quotes_on_var_value)"
+    printf "%s" YTFZF_PID > "$var_fifo"
+    read -r YTFZF_PID < "$var_fifo"
+    printf "%s" fzf_preview_side > "$var_fifo"
+    read -r fzf_preview_side < "$var_fifo"
+    printf "%s" scrape > "$var_fifo"
+    read -r scrape < "$var_fifo"
+    printf "%s" thumbnail_viewer > "$var_fifo"
+    read -r thumbnail_viewer < "$var_fifo"
+    printf "%s" ytfzf_video_json_file > "$var_fifo"
+    read -r ytfzf_video_json_file < "$var_fifo"
+    video_json_file="$ytfzf_video_json_file"
 
     line_file="$*"
     read -r line < "$line_file"
@@ -3256,6 +3274,7 @@ parse_opt () {
             set -- $optarg
             end_of_set_args
             action="$1"
+            var_fifo="$session_cache_dir/var-fifo"
             command_exists "internal_action_$1" && internal_action_"$1" "$@"
             exit 0 ;;
         *)
