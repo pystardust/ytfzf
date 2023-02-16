@@ -1,6 +1,14 @@
+<<<<<<< HEAD
 # 1 change on 2 branch
 # 2 change on 2 branch
 # 3 change on 2 branch
+=======
+# change 1 on 1 branch
+# change 2 on 1 branch
+# change 3 on 1 branch
+
+
+>>>>>>> branch1
 <p align="center">
     <a> <img src=.assets/logo.png></a>
     <br />
