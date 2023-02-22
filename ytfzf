@@ -1652,7 +1652,7 @@ scrape_SI () {
     #   5. convert to ytfzf json format
 
     cat "${session_temp_dir}/SI-"*".json" |
-        jq 'if (.videos|type) == "array" then .videos else if (.latestVideos|type) == "array" then .latestVideos end end' | if [ "$fancy_subs" -eq 1 ]; then
+        jq 'if (.videos|type) == "array" then .videos elif (.latestVideos|type) == "array" then .latestVideos else null end' | if [ "$fancy_subs" -eq 1 ]; then
 				jq --arg left "${fancy_subs_left}" --arg right "${fancy_subs_right}" '"\($left + .[0].author + $right)" as $div | [{"title": $div, "action": "do-nothing", "url": $div, "ID": "subscriptions-channel:\(.[0].channel)" }] + .[0:'"$sub_link_count"']'
             else
                 jq '.[0:'"$sub_link_count"']' | _invidious_search_json_generic "SI"
