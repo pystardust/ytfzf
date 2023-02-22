@@ -630,11 +630,10 @@ download_thumbnails () {
 	[ -z "$*" ] && return 0
 	: > "$curl_config_file"
 	for line in "$@"; do
-		printf "url=\"%s\"\noutput=\"$thumb_dir/%s.jpg\"\n" "${line%%;*}" "${line##*;}"
+		printf "url=\"%s\"\noutput=\"$thumb_dir/%s.jpg\"\n" "${line%%';'*}" "${line##*';'}"
 	done >> "$curl_config_file"
-	[ "$async_thumbnails" -eq 1 ] && use_silent="s"
-	curl -${use_silent}fLZ -K "$curl_config_file"
-	[ $? -eq 2 ] && curl -${use_silent}fL -K "$curl_config_file"
+	curl -fLZ -K "$curl_config_file"
+	[ $? -eq 2 ] && curl -fL -K "$curl_config_file"
 }
 
 get_missing_thumbnails () {
@@ -914,7 +913,7 @@ run_interface () {
         prepare_for_set_args
         case "$async_thumbnails" in
             0) download_thumbnails $(get_missing_thumbnails) ;;
-            1) download_thumbnails $(get_missing_thumbnails) & ;;
+            1) download_thumbnails $(get_missing_thumbnails) > /dev/null 2>&1 & ;;
         esac
         end_of_set_args
     fi
@@ -3558,3 +3557,4 @@ main
 #}}}
 
 # vim: foldmethod=marker:shiftwidth=4:tabstop=4
+#
