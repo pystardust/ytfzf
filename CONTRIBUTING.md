@@ -9,7 +9,7 @@
 * Feel free to give yourself a file in the `credits` folder, and add yourself to the table in the README :)
 
 
-# Shells
+# Shells lololol
 
 A non-comprehensive list of shells to test the script with
 
