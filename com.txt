@@ -3,3 +3,4 @@ some text
 to commit
 four
 five
+six
