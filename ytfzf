@@ -2053,7 +2053,7 @@ scrape_invidious_channel () {
 
         _get_request "${channel_url##* }" \
             -G --data-urlencode "page=$_cur_page" \
-            | jq 'if (.videos|type) == "array" then .videos else if (.latestVideos|type) == "array" then .latestVideos end end' \
+            | jq 'if (.videos|type) == "array" then .videos elif (.latestVideos|type) == "array" then .latestVideos else null end' \
             | _invidious_search_json_generic "invidious_channel" \
             | jq 'select(.!=[])' >> "$output_json_file" || return "$?"
     done
