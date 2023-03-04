@@ -3202,8 +3202,8 @@ parse_opt () {
             if [ "$optarg" != 1 ] && [ "$optarg" != 0 ]; then
                 is_sort="1"
                 load_sort_name "$optarg" || die 2 "$optarg is not a sort-name\n"
-            elif [ "$optarg" = "0" ]; then
-                is_sort=0
+            else
+                is_sort=${optarg}
             fi ;;
         sort-name)
             # shellcheck disable=SC2015
