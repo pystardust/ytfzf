@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 <!-- hello! i will be changed! :1 2  -->
+=======
+<!-- helooo! i will be changed too! :) 1 2 -->
+>>>>>>> br2
 <p align="center">
     <a> <img src=.assets/logo.png></a>
     <br />
