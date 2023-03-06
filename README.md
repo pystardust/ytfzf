@@ -1,4 +1,4 @@
-<!-- helooo! i will be changed too! :) 1  -->
+<!-- helooo! i will be changed too! :) 1 2 -->
 <p align="center">
     <a> <img src=.assets/logo.png></a>
     <br />
