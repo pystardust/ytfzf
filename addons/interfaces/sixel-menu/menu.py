@@ -123,6 +123,11 @@ class Lines(list):
 
 
 LINES = Lines()
+
+if not sys.argv[1]:
+    sys.stderr.write("No file to read\n")
+    exit(1)
+
 with open(sys.argv[1], "r") as f:
     for line in f.read().split("\n"):
         if not line:
