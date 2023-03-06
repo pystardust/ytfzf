@@ -78,7 +78,7 @@ class Lines(list):
         self.selectedLine = 0
         self.outputCache = {}
 
-    def renderPreview(self):
+    def renderPreview(self, line):
         sys.stderr.write("\033[s")
         sys.stderr.write(f'\033[0;{TERMCOLUMNS // 2 + 1}H')
         if self.outputCache.get(self.selectedLine):
@@ -101,7 +101,7 @@ class Lines(list):
                 displayLine = line[0:TERMCOLUMNS // 2]
             if i == self.selectedLine:
                 if self.renderCmd:
-                    self.renderPreview()
+                    self.renderPreview(line)
                 sys.stderr.write('\033[31m')
             sys.stderr.write(displayLine + "\033[0m\n\r")
             i += 1
