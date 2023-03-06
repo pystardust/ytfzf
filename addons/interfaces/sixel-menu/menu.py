@@ -78,6 +78,19 @@ class Lines(list):
         self.selectedLine = 0
         self.outputCache = {}
 
+    def renderPreview(self):
+        sys.stderr.write("\033[s")
+        sys.stderr.write(f'\033[0;{TERMCOLUMNS // 2 + 1}H')
+        if self.outputCache.get(self.selectedLine):
+            sys.stderr.write(self.outputCache[self.selectedLine])
+        else:
+            cmd = list(map(lambda x: x.replace(
+                "{}", line), self.renderCmd))
+            o = subprocess.check_output(cmd).decode("utf-8")
+            self.outputCache[self.selectedLine] = o
+            sys.stderr.write(o + "\n")
+        sys.stderr.write("\033[u")
+
     def render(self):
         start = max(0, self.selectedLine - TERMLINES // 2)
         end = min(len(self) + 1, self.selectedLine + TERMLINES // 2)
@@ -87,19 +100,8 @@ class Lines(list):
             if len(line) > TERMCOLUMNS // 2:
                 displayLine = line[0:TERMCOLUMNS // 2]
             if i == self.selectedLine:
-                sys.stderr.write("\033[s")
-                sys.stderr.write(f'\033[0;{TERMCOLUMNS // 2 + 1}H')
                 if self.renderCmd:
-                    if self.outputCache.get(self.selectedLine):
-                        sys.stderr.write(self.outputCache[self.selectedLine])
-                    else:
-                        cmd = list(map(lambda x: x.replace(
-                            "{}", line), self.renderCmd))
-
-                        o = subprocess.check_output(cmd).decode("utf-8")
-                        self.outputCache[self.selectedLine] = o
-                        sys.stderr.write(o + "\n")
-                sys.stderr.write("\033[u")
+                    self.renderPreview()
                 sys.stderr.write('\033[31m')
             sys.stderr.write(displayLine + "\033[0m\n\r")
             i += 1
@@ -123,7 +125,8 @@ class Lines(list):
 LINES = Lines()
 with open(sys.argv[1], "r") as f:
     for line in f.read().split("\n"):
-        if not line: continue
+        if not line:
+            continue
         try:
             LINES.append(line.strip())
         except Exception as err:
@@ -142,7 +145,6 @@ while True:
         f.write("\033[2J\033[0;0H")
 
     LINES.render()
-
 
     sys.stderr.write(f'\033[0;{TERMCOLUMNS // 2}H')
     k = getInput()
@@ -166,4 +168,3 @@ if shouldPrint:
     for fd in sys.stderr, sys.stdout:
         fd.write("\033[2J\033[0;0H")
     print(LINES[LINES.selectedLine])
-
