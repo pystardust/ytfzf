@@ -16,7 +16,7 @@
 </p>
 
 <h1 align="center">
-	This is a little showcase. This is a second commit on second branch
+	This is a little showcase. This is a third commit on second branch
 </h1>
 <p align="center">
 <img src=.assets/ytfzf.gif width="100%">
