@@ -1205,11 +1205,13 @@ multimedia_player () {
 downloader () {
 	command_exists "${ytdl_path}" || die 3 "${ytdl_path} is not installed\n"
     [ "$is_detach" -eq 1 ] && use_detach_cmd=detach_cmd || use_detach_cmd=''
+    prepare_for_set_args
 	# shellcheck disable=SC2086
 	case $is_audio_only in
 	    0) $use_detach_cmd "${ytdl_path}" -f "${ytdl_pref}" $ytdl_opts "$@"	;;
 	    1) $use_detach_cmd "${ytdl_path}" -x -f "${audio_pref}" $ytdl_opts "$@" ;;
 	esac && [ "$notify_playing" -eq 1 ] && notify-send -c ytfzf "Ytfzf Info" "Download complete"
+    end_of_set_args
 }
 # }}}
 

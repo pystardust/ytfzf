@@ -145,6 +145,8 @@ if len(sys.argv) > 2:
 else:
     LINES.renderCmd = ["img2sixel", "-w", "100", "{}"]
 
+
+                             #TOOD: add :command, such as :copy to copy the current line
 while True:
     for f in sys.stderr, sys.stdout:
         f.write("\033[2J\033[0;0H")
