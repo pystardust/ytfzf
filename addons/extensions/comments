@@ -1,0 +1,30 @@
+#!/bin/sh
+
+get_search_from_EXT_comments (){
+    _search="${selected_url}"
+}
+
+set +f
+instances=$(printf "%s\n" "${YTFZF_TEMP_DIR}"/*)
+set -f
+
+instance_count=$(echo "$instances" | wc -l)
+
+if [ "$instance_count" -gt 1 ]; then
+    printf "%s\n" "More than 1 ytfzf instance is running, please select one"
+    echo "$instances" | sed 's/.*\///' | nl
+    read -r num
+
+    instance="$(echo "$instances" | sed -n "${num}p")"
+else
+    instance="$instances"
+fi
+
+read -r selected_url < "${instance}/ids"
+
+[ -z "$selected_url" ] && {
+    printf "%s\n" "This instance is not playing a video"
+}
+
+scrape="comments"
+search_source="EXT_comments"
