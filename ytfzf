@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1965.aa8bd81"
+YTFZF_VERSION="git-1966.9a2f042"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2596,24 +2596,24 @@ preview_no_img (){
 
 }
 # ueberzug positioning{{{
-command_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left (){
+command_exists "get_ueberzug_positioning_left" || get_ueberzug_positioning_left () {
 	width=$1
 	height=$(($2-__text_line_count+2))
 	x=2
     y=$((__text_line_count+2))
 }
-command_exists "get_ueberzug_positioning_right" || get_ueberzug_positioning_right (){
+command_exists "get_ueberzug_positioning_right" || get_ueberzug_positioning_right () {
     get_ueberzug_positioning_left "$@"
 	width=$1
 	x=$(($1+6))
 }
-command_exists "get_ueberzug_positioning_up" || get_ueberzug_positioning_up (){
+command_exists "get_ueberzug_positioning_up" || get_ueberzug_positioning_up () {
 	width=$1
 	height=$(($2-__text_line_count))
 	x=2
 	y=9
 }
-command_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down (){
+command_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down () {
 	width=$1
 	height=$(($2-__text_line_count))
 	#$2*2 goes to the bottom subtracts height, adds padding
@@ -2623,7 +2623,9 @@ command_exists "get_ueberzug_positioning_down" || get_ueberzug_positioning_down 
 
 command_exists "get_swayimg_positioning_left" || get_swayimg_positioning_left () {
     # allows space for text
-    y_gap=$((line_px_height*(__text_line_count+3))) #the plus 3 just seems to work better
+    y_gap=$((__text_line_count + 3)) #the plus 3 just seems to work better
+    y_gap=$((line_px_height * y_gap))
+    #these are seperate because treesitter syntax highlighting dies when parentheses are inside of math
 
     # it's subtracting the gap between the border and the edge of terminal
     w_correct=$((max_width/2-2*col_px_width))
@@ -2650,7 +2652,8 @@ command_exists "get_swayimg_positioning_up" || get_swayimg_positioning_up () {
     h_correct=$((max_height-2*line_px_height))
 
     # offset from info text by 30 columns
-    x=$((term_x+(max_width-w_correct)))
+    x=$((max_width-w_correct))
+    x=$((term_x+x))
     # go down from the top by 2 lines
     y=$((term_y+2*line_px_height))
 
@@ -3531,8 +3534,11 @@ main() {
 
 		# calls the interface
 		run_interface
-		handle_keypress "$keypress_file" || case "$?" in 2) break ;; 3) continue ;; esac
-        handle_actions "$ytfzf_selected_urls" || case "$?" in 2) break ;; 3) continue ;; esac
+		handle_keypress "$keypress_file" || case "$?" in
+            2) break ;; 3) continue ;; esac;
+
+        handle_actions "$ytfzf_selected_urls" || case "$?" in
+            2) break ;; 3) continue ;; esac;
 
 		# nothing below needs to happen if  this is empty (causes bugs when this is not here)
 		[ ! -s "$ytfzf_selected_urls" ] && break
@@ -3542,7 +3548,8 @@ main() {
 		    data="$(get_requested_info "$ytfzf_selected_urls")"
 		    display_text_wrapper "$data"
 		    handle_info_wait_action
-		    case "$?" in 2) break ;; 3) continue ;; esac
+            case "$?" in
+                2) break ;; 3) continue ;; esac
 		fi
 
         open_format_selection_if_requested "$ytfzf_selected_urls"
