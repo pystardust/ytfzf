@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1965.c2c3438"
+YTFZF_VERSION="git-1965.aa8bd81"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1652,6 +1652,8 @@ scrape_SI () {
     #   4. else
         #   1.  slice the amount of videos the user wants.
     #   5. convert to ytfzf json format
+
+    _get_invidious_thumb_quality_name
 
     cat "${session_temp_dir}/SI-"*".json" |
         jq 'if (.videos|type) == "array" then .videos elif (.latestVideos|type) == "array" then .latestVideos else null end' | if [ "$fancy_subs" -eq 1 ]; then
