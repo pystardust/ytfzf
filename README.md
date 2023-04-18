@@ -55,7 +55,10 @@ There are only 2 required dependencies, however the rest require some configurat
 
 * [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (for downloading)
 * [`dmenu`](https://tools.suckless.org/dmenu/) (only if using the -D option)
-* [`ueberzug`](https://github.com/seebye/ueberzug) (if using thumbnails (-t) on x11)
+* [`ueberzug`](https://github.com/seebye/ueberzug) (if using thumbnails (-t) on x11) (no longer maintained, use one of the dropin replacements listed below)
+    * Dropin replacements
+        * https://github.com/jstkdng/ueberzugpp
+        * https://github.com/ueber-devel/ueberzug/
     * If on wayland, or you do not want `ueberzug`, see the alternatives [below](#Alternative-Thumbnail-Viewers).
     * To use an alternative include `-T <alternative>` in the command when running ytfzf
 

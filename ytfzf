@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1966.9a2f042"
+YTFZF_VERSION="git-1967.38261be"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2711,7 +2711,6 @@ preview_display_image () {
 			'path' "$thumb_path" \
 			'x' "$x" \
 			'y' "$y" \
-			'scaler' 'fit_contain' \
 			'width' "$width"
 		    printf '"%s": "%s"' 'height' "$height"
 		    printf "}\n"
