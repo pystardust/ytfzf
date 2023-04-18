@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1967.38261be"
+YTFZF_VERSION="git-1968.dc92198"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3558,15 +3558,15 @@ main() {
 
         [ "$is_loop" -eq 0 ] && break
 	done
-
-    # doing this after the loop allows for -l and -s to coexist
-    while [ "$search_again" -eq 1 ] ; do
-        clean_up
-        init_and_make_search "" "$search_source"
-        main
-    done
 }
+
 main
+# doing this after the loop allows for -l and -s to coexist
+while [ "$search_again" -eq 1 ] ; do
+    clean_up
+    initial_search= init_and_make_search "" "$search_source"
+    main
+done
 #}}}
 
 # vim: foldmethod=marker:shiftwidth=4:tabstop=4
