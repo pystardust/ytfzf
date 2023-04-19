@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1972.f016ba7"
+YTFZF_VERSION="git-1973.ae8adf6"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2940,12 +2940,14 @@ submenu_handler () {
 	# eat stdin and close it
 	cat > /dev/null
     old_interface="$interface"
+    old_thumbnail_viewer="$thumbnail_viewer"
 	[ "$keep_vars" -eq 0 ] && set_vars 0
 	search="$(get_key_value "$_submenu_actions" "search")"
 	__scrape="$(get_key_value "$_submenu_actions" "type")"
 	submenu_opts="$old_submenu_scraping_opts $old_submenu_opts -c${__scrape}"
 	# this needs to be here as well as close_url_handler because it will not happen inside this function if it's not here
 	url_handler="$old_url_handler"
+    thumbnail_viewer="$old_thumbnail_viewer"
     interface="$old_interface"
     unset old_interface
 	(
