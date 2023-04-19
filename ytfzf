@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1968.dc92198"
+YTFZF_VERSION="git-1969.a93d531"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1101,7 +1101,7 @@ load_thumbnail_viewer () {
     _thumbnail_viewer="$1"
     case "$_thumbnail_viewer" in
            # these are special cases, where they are not themselves commands
-           chafa-16|chafa|chafa-tty|catimg|catimg-256|imv|ueberzug|swayimg|mpv) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
+           chafa-16|chafa|chafa-tty|catimg|catimg-256|imv|ueberzug|swayimg|mpv|sixel) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
            swayimg-hyprland)
                print_warning "swayimg-hyprland thumbnail viewer may mess up any rules you have for swayimg\n"; thumbnail_viewer="$_thumbnail_viewer"
                ;;
@@ -2528,13 +2528,14 @@ EOF
 preview_start () {
 	thumbnail_viewer=$1
 	case $thumbnail_viewer in
-		ueberzug)
+		ueberzug|sixel)
 			# starts uberzug to this fifo
 			command_exists "ueberzug" || die 3 "ueberzug is not installed\n"
 			export UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
-			ueberzug layer --parser json < "$UEBERZUG_FIFO"  > "$thumbnail_debug_log" 2>&1 &
+            [ "$thumbnail_viewer" = "ueberzug" ] && o="x11" || o="${thumbnail_viewer}"
+			ueberzug layer -o "${o}" --parser json < "$UEBERZUG_FIFO" 2> "$thumbnail_debug_log" &
             exec 3>"$UEBERZUG_FIFO"
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|swayimg|swayimg-hyprland) : ;;
@@ -2561,7 +2562,7 @@ preview_start () {
 preview_stop () {
 	thumbnail_viewer=$1
 	case $thumbnail_viewer in
-        ueberzug) exec 3>&- ;;
+        ueberzug|sixel) exec 3>&- ;;
 	    chafa|chafa-16|chafa-tty|catimg|catimg-256) : ;;
 	    mpv)
 		kill "$mpv_pid"
@@ -2582,7 +2583,7 @@ preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
 	    chafa|chafa-16|chafa-tty|catimg|catimg-256|imv|mpv) : ;;
-	    ueberzug)
+	    ueberzug|sixel)
 		{
 		    printf "{"
 		    printf "\"%s\": \"%s\"," "action" "remove" "identifier" "ytfzf"
@@ -2702,7 +2703,7 @@ preview_display_image () {
 
     get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 	case $thumbnail_viewer in
-	    ueberzug)
+	    ueberzug|sixel)
 		{
 		    printf "{"
 		    printf '"%s": "%s",' \
