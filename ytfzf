@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1970.46557d0"
+YTFZF_VERSION="git-1971.c9596e9"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2529,13 +2529,18 @@ preview_start () {
 	thumbnail_viewer=$1
 	case $thumbnail_viewer in
 		ueberzug|sixel|kitty)
-			# starts uberzug to this fifo
-			command_exists "ueberzug" || die 3 "ueberzug is not installed\n"
+            command_exists "ueberzug" || {
+                ! [ "$thumbnail_viewer" = "ueberzug" ] && die 3 "ueberzugpp is not installed\n" || die 3 "ueberzug is not installed\n"
+            }
 			export UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
 			mkfifo "$UEBERZUG_FIFO"
             [ "$thumbnail_viewer" = "ueberzug" ] && o="x11" || o="${thumbnail_viewer}"
-			ueberzug layer -o "${o}" --parser json < "$UEBERZUG_FIFO" 2> "$thumbnail_debug_log" &
+            if command_exists ueberzugpp; then 
+                ueberzugpp layer -o "${o}" --parser json < "$UEBERZUG_FIFO" 2> "$thumbnail_debug_log" &
+            else
+                ueberzug layer --parser json < "$UEBERZUG_FIFO" 2> "$thumbnail_debug_log" &
+            fi
             exec 3>"$UEBERZUG_FIFO"
 			;;
 		chafa|chafa-16|chafa-tty|catimg|catimg-256|swayimg|swayimg-hyprland) : ;;
