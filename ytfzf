@@ -491,6 +491,7 @@ on_open_url_handler___ytfzf_history__ () {
 }
 
 add_to_hist () {
+	[ "$enable_hist" -eq 1 ] || return
     print_debug "[WATCH HIST]: adding to file $hist_file\n"
 	# id of the video to add to hist will be passed through stdin
 	# if multiple videos are selected, multiple ids will be present on multiple lines
@@ -553,7 +554,7 @@ on_post_set_vars___ytfzf_search_history__ () {
 
 on_init_search___ytfzf_history__ () {
     #these options should only exist if history is enabled
-    [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
+    [ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 }
 
 get_search_from_hist (){
