@@ -1,25 +1,33 @@
 #!/bin/sh
 
-case "${XDG_SESSION_TYPE}" in
-    wayland) 
-        if  command_exists "swayimg"; then
-            case "${XDG_CURRENT_DESKTOP}" in
-                Hyprland) thumbnail_viewer=swayimg-hyprland ;;
-                sway) thumbnail_viewer=swayimg ;;
-            esac
-        else
-            thumbnail_viewer=chafa
-        fi
-        ;;
-    X11)
-        if command_exists "ueberzug"; then
-            thumbnail_viewer=ueberzug
-        else
-            thumbnail_viewer=chafa
-        fi
-        ;;
-    tty) thumbnail_viewer=chafa ;;
-    *)
-        print_warning "XDG_SESSION_TYPE is not set, defaulting to chafa\n"
-        thumbnail_viewer=chafa ;;
-esac
+
+if [ "$XDG_SESSION_TYPE" = "X11" ]; then
+    command_exists "ueberzug" && thumbnail_viewer=ueberzug
+elif command_exists "ueberzugpp"; then
+    case "$TERM" in
+        xterm-kitty) thumbnail_viewer=kitty ;;
+        foot) thumbnail_viewer=sixel ;;
+        wezterm|iterm2) thumbnail_viewer=iterm2 ;;
+    esac
+else
+    case "${XDG_SESSION_TYPE}" in
+        wayland) 
+            if  command_exists "swayimg"; then
+                case "${XDG_CURRENT_DESKTOP}" in
+                    Hyprland) thumbnail_viewer=swayimg-hyprland ;;
+                    sway) thumbnail_viewer=swayimg ;;
+                esac
+            else
+                thumbnail_viewer=chafa
+            fi
+            ;;
+        X11|tty)
+            thumbnail_viewer=chafa ;;
+        *)
+            print_warning "XDG_SESSION_TYPE is not set, defaulting to chafa\n"
+            thumbnail_viewer=chafa ;;
+    esac
+fi
+
+
+print_info "Thumbnail viewer: $thumbnail_viewer\n"
