@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1973.ae8adf6"
+YTFZF_VERSION="git-1977.419cfaa"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1102,7 +1102,7 @@ load_thumbnail_viewer () {
     _thumbnail_viewer="$1"
     case "$_thumbnail_viewer" in
            # these are special cases, where they are not themselves commands
-           chafa-16|chafa|chafa-tty|catimg|catimg-256|imv|ueberzug|swayimg|mpv|sixel|kitty) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
+           chafa-16|chafa|chafa-tty|catimg|catimg-256|imv|ueberzug|iterm2|swayimg|mpv|sixel|kitty) thumbnail_viewer="$_thumbnail_viewer" ; true ;;
            swayimg-hyprland)
                print_warning "swayimg-hyprland thumbnail viewer may mess up any rules you have for swayimg\n"; thumbnail_viewer="$_thumbnail_viewer"
                ;;
@@ -2529,7 +2529,7 @@ EOF
 preview_start () {
 	thumbnail_viewer=$1
 	case $thumbnail_viewer in
-		ueberzug|sixel|kitty)
+		ueberzug|sixel|kitty|iterm2)
             command_exists "ueberzug" || {
                 ! [ "$thumbnail_viewer" = "ueberzug" ] && die 3 "ueberzugpp is not installed\n" || die 3 "ueberzug is not installed\n"
             }
@@ -2568,7 +2568,7 @@ preview_start () {
 preview_stop () {
 	thumbnail_viewer=$1
 	case $thumbnail_viewer in
-        ueberzug|sixel|kitty) exec 3>&- ;;
+        ueberzug|sixel|kitty|iterm2) exec 3>&- ;;
 	    chafa|chafa-16|chafa-tty|catimg|catimg-256) : ;;
 	    mpv)
 		kill "$mpv_pid"
@@ -2589,7 +2589,7 @@ preview_no_img (){
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
 	    chafa|chafa-16|chafa-tty|catimg|catimg-256|imv|mpv) : ;;
-	    ueberzug|sixel|kitty)
+	    ueberzug|sixel|kitty|iterm2)
 		{
 		    printf "{"
 		    printf "\"%s\": \"%s\"," "action" "remove" "identifier" "ytfzf"
@@ -2709,7 +2709,7 @@ preview_display_image () {
 
     get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 	case $thumbnail_viewer in
-	    ueberzug|sixel|kitty)
+	    ueberzug|sixel|kitty|iterm2)
 		{
 		    printf "{"
 		    printf '"%s": "%s",' \
