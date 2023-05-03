@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1990.619b1e7"
+YTFZF_VERSION="git-1990.ae4e2d9"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -376,9 +376,10 @@ on_clean_up___ytfzf__() {
 	done <"$jobs_file"
 	rm -f "$jobs_file"
 	#}}}
-	if [ $__is_fzf_preview -eq 0 ]; then
-		[ -d "$session_cache_dir" ] && [ "$keep_cache" -eq 0 ] && rm -rf "$session_cache_dir"
-	fi
+    if [ "$__is_fzf_preview" -eq 0 ]; then
+        [ "$keep_cache" -eq 1 ] && print_debug "[CLEAN UP]: copying cache dir\n" cp -r "${session_cache_dir}" "${cache_dir}"
+	    [ -d "$session_cache_dir" ] && rm -rf "$session_cache_dir"
+    fi
 }
 
 on_load_fake_extension___ytfzf__() {
@@ -3407,12 +3408,8 @@ init_files() {
 	if [ "$__is_submenu" -eq 1 ]; then
 		#if we are in a submenu, cache_dir will be the previous session_cache_dir
 		session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
-	elif [ "$keep_cache" -eq 0 ]; then
-		#by default we should store in ${TMPDIR:-/tmp} to reduce io usage
-		session_cache_dir="${YTFZF_TEMP_DIR}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	else
-		#if we want to keep the cache, use real cache dir
-		session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+		session_cache_dir="${YTFZF_TEMP_DIR}/${SEARCH_PREFIX}-${YTFZF_PID}"
 	fi
 
 	session_temp_dir="${session_cache_dir}/tmp"
