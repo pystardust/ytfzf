@@ -197,7 +197,7 @@ Feel free to contribute, and add your name to the credits, please use the develo
 | User           | Contributions                             | Donate|
 | :---           | :---                                      | :--- |
 | Pystardust    | [contributions](credits/pystardust.md)    ||
-| Euro20179     | [contributions](credits/euro20179.md)     | [donate](credits/euro20179.md#Donate) |
+| Euro20179     | [contributions](credits/euro20179.md)     ||
 | Simonhughxyz  | [contributions](credits/simonhughxyz.md)  ||
 | Jac-Zac       | [contributions](credits/jac-zac.md)       ||
 | Mudskipper875 | [contributions](credits/mudskipper875.md) ||
