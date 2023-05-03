@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1983.f990887"
+YTFZF_VERSION="git-1984.8b304a2"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2512,7 +2512,7 @@ preview_start () {
 	case $thumbnail_viewer in
 		ueberzug|sixel|kitty|iterm2)
             command_exists "ueberzug" || {
-                ! [ "$thumbnail_viewer" = "ueberzug" ] && die 3 "ueberzugpp is not installed\n" || die 3 "ueberzug is not installed\n"
+                [ "$thumbnail_viewer" = "ueberzug" ] && die 3 "ueberzug is not installed\n" || die 3 "ueberzugpp is not installed\n"
             }
 			export UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 			rm -f "$UEBERZUG_FIFO"
@@ -3492,7 +3492,6 @@ done
 
 main() {
 	while :; do
-
         # calls the interface only if we shouldn't auto select
         auto_select "$ytfzf_video_json_file" "$ytfzf_selected_urls" || run_interface
 
