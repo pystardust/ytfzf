@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1987.add4e93"
+YTFZF_VERSION="git-1988.37b3a3f"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2901,9 +2901,9 @@ get_requested_info () {
 
 handle_info () {
     display_text_wrapper "$(get_requested_info "$ytfzf_selected_urls")"
-	if [ "$info_wait" -eq 1 ]; then
-	    info_wait_prompt_wrapper
-	fi
+
+    [ "$info_wait" -eq 1 ] && info_wait_prompt_wrapper
+
 	case "$info_wait_action" in
 		# simulates old behavior of when alt-l or alt-i is pressed and -l is enabled
 		q) [ "$is_loop" -eq 1 ] && return 3 || return 2 ;;
@@ -3046,21 +3046,20 @@ get_video_format(){
 }
 
 open_format_selection_if_requested (){
-    if [ "$show_formats" -eq 1 ]; then
-        prepare_for_set_args
-        #read from $ytfzf_selected_urls
-        set -- $(tr '\n' ' ' < "$1")
-        end_of_set_args
+    [ "$show_formats" -eq 0 ] && return
 
-        case "$format_selection_screen" in
-            normal)
-                print_debug "[INTERFACE]: [FORMAT SELECTION]: open format screen: ${c_blue}normal${c_reset}\n"
-                get_video_format "$1" ;;
-            *)
-                print_debug "[INTERFACE]: [FORMAT SELECTION]: open format screen: ${c_blue}${format_selection_screen}${c_reset}\n"
-                get_video_format_$format_selection_screen "$@" ;;
-        esac
-    fi
+    prepare_for_set_args
+    #read from $ytfzf_selected_urls
+    set -- $(tr '\n' ' ' < "$1")
+    end_of_set_args
+
+    print_debug "[INTERFACE]: [FORMAT SELECTION]: open format screen: ${c_blue}${format_selection_screen}${c_reset}\n"
+    case "$format_selection_screen" in
+        normal)
+            get_video_format "$1" ;;
+        *)
+            get_video_format_$format_selection_screen "$@" ;;
+    esac
 }
 
 #}}}
