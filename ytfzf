@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1990.ae4e2d9"
+YTFZF_VERSION="git-1991.15d1bcc"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -504,11 +504,8 @@ add_to_hist() {
 	# id of the video to add to hist will be passed through stdin
 	# if multiple videos are selected, multiple ids will be present on multiple lines
 	json_file="$1"
-	urls="["
-	while read -r url; do
-		urls="${urls}\"${url}\","
-	done
-	urls="${urls%,}]"
+    urls="$(printf '"%s",' $(cat))"
+    urls="[${urls%,}]"
 	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' <"$json_file" | sed "/\[\]/d" | sed "2s/$/\n    \"viewed\": \"$(date +'%m\/%d\/%y\ %H\:%M\:%S\ %z')\",/" >>"$hist_file"
 	unset url urls json_file
 }
@@ -561,7 +558,6 @@ on_post_set_vars___ytfzf_search_history__() {
 }
 
 on_init_search___ytfzf_history__() {
-	#these options should only exist if history is enabled
 	[ "$enable_search_hist" -eq 1 ] && [ -n "$_search" ] && [ "$__is_submenu" -eq 0 ] && [ "$__is_fzf_preview" -eq 0 ] && handle_search_history "$_search" "$search_hist_file"
 }
 
