@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1984.8b304a2"
+YTFZF_VERSION="git-1985.d0aec58"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2534,8 +2534,7 @@ preview_start () {
 			sleep 0.1
 			;;
 		mpv)
-			command_exists "socat" || die 3 "socat is not installed, and is required for the mpv image viewer\n"
-			command_exists "mpv" || die 3 "mpv is not installed\n"
+			command_exists "socat" && command_exists "mpv" || die 3 "socat, and mpv must be installed for the mpv thumbnail viewer"
 			first_img="$(jq -r '.[0].ID|select(.!=null)' < "$ytfzf_video_json_file")"
 			export MPV_SOCKET="$session_temp_dir/mpv.socket"
 			rm -f "$MPV_SOCKET" > /dev/null 2>&1
