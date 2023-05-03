@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1980.8cd25b5"
+YTFZF_VERSION="git-1982.84740eb"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1252,14 +1252,6 @@ usage () {
     done
 }
 
-start_ytfzf_server () {
-    ! [ -p "$session_cache_dir/var-fifo" ] && mkfifo "$session_cache_dir/var-fifo"
-    while :; do
-        read -r var_name < "$session_cache_dir/var-fifo"
-        eval echo "\$$var_name" > "$session_cache_dir/var-fifo"
-    done
-}
-
 # }}}
 # }}}
 
@@ -1330,9 +1322,9 @@ set_vars () {
 
     # shortcuts
     download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s"
-    custom_shortcut_binds=""
 
     next_page_action_shortcut="ctrl-p"
+    next_page_action_shortcut_action="reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")"
 
     # interface design
     show_thumbnails="0" is_sort="0" skip_thumb_download="0" external_menu_len="210"
@@ -2487,7 +2479,7 @@ interface_text () {
         { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
 		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" \
             $_fzf_start_bind \
-            --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" | set_keypress |
+            --bind "${next_page_action_shortcut}:${next_page_action_shortcut_action}" | set_keypress |
 		trim_url > "$selected_id_file"
 
     _const_top_url="$(head -n 1 "$selected_id_file")"
@@ -2868,17 +2860,15 @@ interface_thumbnails () {
 
     _c_SORTED_VIDEO_DATA="$(create_sorted_video_data)"
 
-    start_ytfzf_server &
-
     YTFZF_SERVER_PID="$!"
 
     printf "%s\n" "$_c_SORTED_VIDEO_DATA" |
         jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.viewed)\t|\(.url)"' |
         SHELL="$(command -v sh)" fzf -m --sync \
             --expect="$shortcut_binds" \
-            --preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"preview_img"$EOT"{f}\"" \
+            --preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumbnail_viewer='$thumbnail_viewer' ytfzf_video_json_file='$ytfzf_video_json_file' $0 -W \"preview_img"$EOT"{f}\"" \
             $_fzf_start_bind \
-            --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
+            --bind "${next_page_action_shortcut}:${next_page_action_shortcut_action}" \
             --preview-window "$fzf_preview_side:50%:wrap" --layout=reverse  | set_keypress |
         trim_url > "$selected_id_file"
 
@@ -2889,8 +2879,6 @@ interface_thumbnails () {
     $_c_SORTED_VIDEO_DATA
 EOF
 )"
-
-    kill "$YTFZF_SERVER_PID"
 }
 #}}}
 
@@ -3113,21 +3101,12 @@ internal_action_next_page () {
     read -r line < "$*"
     url="${line##*"|"}"
 
-    printf "%s" ytfzf_video_json_file > "$var_fifo"
-    read -r ytfzf_video_json_file < "$var_fifo"
-    printf "%s" invidious_instance > "$var_fifo"
-    read -r invidious_instance < "$var_fifo"
-    printf "%s" yt_video_link_domain > "$var_fifo"
-    read -r yt_video_link_domain < "$var_fifo"
-
     video_json_file="$ytfzf_video_json_file"
     
     hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' < "$ytfzf_video_json_file")"
 
     if command_exists "scrape_next_page_$hovered_scraper"; then
         _search="$(cat "${session_cache_dir}/searches.list")"
-        printf "%s" pages_to_scrape > "$var_fifo"
-        read -r pages_to_scrape < "$var_fifo"
 
         pages_start="$(cat "${session_temp_dir}/${hovered_scraper}-current-page")"
         pages_start="${pages_start#[\"\']}"
@@ -3143,21 +3122,8 @@ internal_action_next_page () {
 
 internal_action_preview_img () {
     shift
-    
-    ! [ -p "$var_fifo" ] && die 1 "ytfzf var fifo server not running\n"
 
     thumb_dir="${session_cache_dir}/thumbnails"
-
-    printf "%s" YTFZF_PID > "$var_fifo"
-    read -r YTFZF_PID < "$var_fifo"
-    printf "%s" fzf_preview_side > "$var_fifo"
-    read -r fzf_preview_side < "$var_fifo"
-    printf "%s" scrape > "$var_fifo"
-    read -r scrape < "$var_fifo"
-    printf "%s" thumbnail_viewer > "$var_fifo"
-    read -r thumbnail_viewer < "$var_fifo"
-    printf "%s" ytfzf_video_json_file > "$var_fifo"
-    read -r ytfzf_video_json_file < "$var_fifo"
 
     video_json_file="$ytfzf_video_json_file"
 
