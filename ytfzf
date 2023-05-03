@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1986.deabadf"
+YTFZF_VERSION="git-1987.add4e93"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2899,7 +2899,8 @@ get_requested_info () {
     return 0
 }
 
-handle_info_wait_action () {
+handle_info () {
+    display_text_wrapper "$(get_requested_info "$ytfzf_selected_urls")"
 	if [ "$info_wait" -eq 1 ]; then
 	    info_wait_prompt_wrapper
 	fi
@@ -3507,9 +3508,7 @@ main() {
 
 		# shellcheck disable=SC2015
 		if [ "$info_to_print" ]; then
-		    data="$(get_requested_info "$ytfzf_selected_urls")"
-		    display_text_wrapper "$data"
-		    handle_info_wait_action
+		    handle_info
             case "$?" in
                 2) break ;; 3) continue ;; esac
 		fi
@@ -3533,4 +3532,3 @@ done
 #}}}
 
 # vim: foldmethod=marker:shiftwidth=4:tabstop=4
-#
