@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1982.84740eb"
+YTFZF_VERSION="git-1982.199b00a"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1324,7 +1324,6 @@ set_vars () {
     download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s"
 
     next_page_action_shortcut="ctrl-p"
-    next_page_action_shortcut_action="reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")"
 
     # interface design
     show_thumbnails="0" is_sort="0" skip_thumb_download="0" external_menu_len="210"
@@ -1390,7 +1389,6 @@ set_vars () {
             case "$_var" in
                 export\ *)
                     [ "$_current_var_name" ] && {
-                        [ "$_current_var_name" = "invidious_instance" ] && notify-send "$_current_var_value"
                         export "${_current_var_name}"="$(eval echo "$_current_var_value")"
                         _current_var_name=""
                         _current_var_value=""
@@ -2479,7 +2477,7 @@ interface_text () {
         { [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
 		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" \
             $_fzf_start_bind \
-            --bind "${next_page_action_shortcut}:${next_page_action_shortcut_action}" | set_keypress |
+            --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" | set_keypress |
 		trim_url > "$selected_id_file"
 
     _const_top_url="$(head -n 1 "$selected_id_file")"
@@ -2868,7 +2866,7 @@ interface_thumbnails () {
             --expect="$shortcut_binds" \
             --preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumbnail_viewer='$thumbnail_viewer' ytfzf_video_json_file='$ytfzf_video_json_file' $0 -W \"preview_img"$EOT"{f}\"" \
             $_fzf_start_bind \
-            --bind "${next_page_action_shortcut}:${next_page_action_shortcut_action}" \
+            --bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
             --preview-window "$fzf_preview_side:50%:wrap" --layout=reverse  | set_keypress |
         trim_url > "$selected_id_file"
 
@@ -3095,8 +3093,6 @@ preview_img <ytfzf-line-format>:
 
 internal_action_next_page () {
     shift
-
-    ! [ -p "$var_fifo" ] && die 1 "ytfzf var fifo server not running\n"
 
     read -r line < "$*"
     url="${line##*"|"}"
