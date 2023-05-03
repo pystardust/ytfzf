@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1985.d0aec58"
+YTFZF_VERSION="git-1986.deabadf"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1200,7 +1200,9 @@ downloader () {
 	case $is_audio_only in
 	    0) $use_detach_cmd "${ytdl_path}" -f "${ytdl_pref}" $ytdl_opts "$@"	;;
 	    1) $use_detach_cmd "${ytdl_path}" -x -f "${audio_pref}" $ytdl_opts "$@" ;;
-	esac && [ "$notify_playing" -eq 1 ] && notify-send -c ytfzf "Ytfzf Info" "Download complete"
+	esac && _success="finished" || _success="failed"
+    [ "$notify_playing" -eq 1 ] && notify-send -c ytfzf "Ytfzf Info" "Download $_success"
+
     end_of_set_args
 }
 # }}}
