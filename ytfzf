@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1991.15d1bcc"
+YTFZF_VERSION="git-1992.81fe54e"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3101,17 +3101,14 @@ get_video_format_simple() {
 }
 
 get_video_format() {
-	# the sed gets rid of random information
-	_audio_choices=$(case "$YTDL_EXEC_NAME" in
-		youtube-dl) ${ytdl_path} -F "$1" ;;
-		*) ${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort" ;;
-		esac | grep 'audio only')
+    case "$YTDL_EXEC_NAME" in
+        youtube-dl) _format_options=$("${ytdl_path}" -F "$1" | sed 1,3d) ;;
+        *) _format_options=$("${ytdl_path}" -q -F "$1" --format-sort "$format_selection_sort" | sed 1,3d) ;;
+    esac
+    _audio_choices="$(echo "$_format_options" | grep "audio only")"
 	[ "$_audio_choices" ] && audio_pref="$(echo "$_audio_choices" | quick_menu_wrapper "Audio format: " | awk '{print $1}')"
 	if [ "$is_audio_only" -eq 0 ]; then
-		video_pref=$(case "$YTDL_EXEC_NAME" in
-			youtube-dl) ${ytdl_path} -F "$1" | sed 1,3d ;;
-			*) ${ytdl_path} -q -F "$1" --format-sort "$format_selection_sort" : ;;
-			esac | sed 's/\\033\[[[:digit:]]*m//g' | grep -v 'audio only' | quick_menu_wrapper "Video Format: " | awk '{print $1}')
+        video_pref=$(echo "$_format_options" | sed 's/\\033\[[[:digit:]]*m//g' | grep -v 'audio only' | quick_menu_wrapper "Video Format: " | awk '{print $1}')
 	fi
 	ytdl_pref="${video_pref}+${audio_pref}/${video_pref}/${audio_pref}"
 }
