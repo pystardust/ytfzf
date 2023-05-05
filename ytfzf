@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1993.bca0518"
+YTFZF_VERSION="git-1994.b226572"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1400,13 +1400,14 @@ set_vars() {
 	instances_file="$cache_dir/instancesV2.json"
 
 	# read from environment to reset any variables to what the user set
+    
 	if [ "$check_exists" -eq 1 ]; then
 		_current_var_name=
 		_current_var_value=
 		while read -r _var; do
 			[ -z "$_var" ] && continue
 			case "$_var" in
-			export\ *)
+			export" "*)
 				[ "$_current_var_name" ] && {
 					export "${_current_var_name}"="$(eval echo "$_current_var_value")"
 					_current_var_name=""
@@ -1416,7 +1417,7 @@ set_vars() {
 				_current_var_name="${_current_var_name%%=*}"
 				_current_var_value="${_var#*=}"
 				;;
-			*) _current_var_value="${_current_var_value}${new_line}${_var}" ;;
+            (*) _current_var_value="${_current_var_value}${new_line}${_var}" ;;
 			esac
 		done <"$tmp_env"
 
@@ -3102,8 +3103,8 @@ get_video_format_simple() {
 
 get_video_format() {
     case "$YTDL_EXEC_NAME" in
-        youtube-dl) _format_options=$("${ytdl_path}" -F "$1" | sed 1,3d) ;;
-        *) _format_options=$("${ytdl_path}" -q -F "$1" --format-sort "$format_selection_sort" | sed 1,3d) ;;
+        (youtube-dl) _format_options=$("${ytdl_path}" -F "$1" | sed 1,3d) ;;
+        (*) _format_options=$("${ytdl_path}" -q -F "$1" --format-sort "$format_selection_sort" | sed 1,3d) ;;
     esac
     _audio_choices="$(echo "$_format_options" | grep "audio only")"
 	[ "$_audio_choices" ] && audio_pref="$(echo "$_audio_choices" | quick_menu_wrapper "Audio format: " | awk '{print $1}')"
