@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1996.833bd71"
+YTFZF_VERSION="git-1997.d543eea"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3399,7 +3399,8 @@ init_files() {
 	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
 
     #if we are in a submenu, cache_dir will be the previous session_cache_dir
-    [ "$__is_submenu" -eq 1 ] && _session_cache_dir_prefix="${cache_dir}" || session_cache_dir="${YTFZF_TEMP_DIR}"
+
+    [ "$__is_submenu" -eq 1 ] && _session_cache_dir_prefix="${cache_dir}" || _session_cache_dir_prefix="${YTFZF_TEMP_DIR}"
     session_cache_dir="${_session_cache_dir_prefix}/${SEARCH_PREFIX}-${YTFZF_PID}"
 
 	session_temp_dir="${session_cache_dir}/tmp"
