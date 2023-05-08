@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-1995.dfa767d"
+YTFZF_VERSION="git-1996.833bd71"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -28,6 +28,8 @@ YTFZF_VERSION="git-1995.dfa767d"
 [ "${YTFZF_LOGFILE}" ] && printf "[%s]\n==============\nSubmenu: %d\nFzf Preview: %d\n==============\n" "$(date)" "$__is_submenu" "$__is_fzf_preview" >>"${YTFZF_LOGFILE}"
 
 ! [ -d "$YTFZF_TEMP_DIR" ] && mkdir -p "${YTFZF_TEMP_DIR}"
+
+export YTFZF_PID=$$
 #}}}
 
 ############################
@@ -2924,7 +2926,7 @@ interface_thumbnails() {
 		jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.viewed)\t|\(.url)"' |
 		SHELL="$(command -v sh)" fzf -m --sync \
 			--expect="$shortcut_binds" \
-			--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' YTFZF_PID='$YTFZF_PID' fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumbnail_viewer='$thumbnail_viewer' ytfzf_video_json_file='$ytfzf_video_json_file' $0 -W \"preview_img"$EOT"{f}\"" \
+			--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumbnail_viewer='$thumbnail_viewer' ytfzf_video_json_file='$ytfzf_video_json_file' $0 -W \"preview_img"$EOT"{f}\"" \
 			$_fzf_start_bind \
 			--bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
 			--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse | set_keypress |
@@ -3385,8 +3387,6 @@ unset IFS
 
 # files {{{
 init_files() {
-	YTFZF_PID=$$
-
 	#$1 will be a search
 	SEARCH_PREFIX=$(printf "%s" "$1" | tr '/' '_' | tr -d "\"'")
 	# shellcheck disable=SC2031
@@ -3398,13 +3398,9 @@ init_files() {
 	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
 
-	# shellcheck disable=SC2031
-	if [ "$__is_submenu" -eq 1 ]; then
-		#if we are in a submenu, cache_dir will be the previous session_cache_dir
-		session_cache_dir="${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
-	else
-		session_cache_dir="${YTFZF_TEMP_DIR}/${SEARCH_PREFIX}-${YTFZF_PID}"
-	fi
+    #if we are in a submenu, cache_dir will be the previous session_cache_dir
+    [ "$__is_submenu" -eq 1 ] && _session_cache_dir_prefix="${cache_dir}" || session_cache_dir="${YTFZF_TEMP_DIR}"
+    session_cache_dir="${_session_cache_dir_prefix}/${SEARCH_PREFIX}-${YTFZF_PID}"
 
 	session_temp_dir="${session_cache_dir}/tmp"
 
@@ -3420,6 +3416,8 @@ init_files() {
 	: >"$ytfzf_video_json_file" 2>"$ytfzf_selected_urls" 3>"$keypress_file"
 
 	[ "$1" ] && printf "%s\n" "$1" >"${session_cache_dir}/searches.list"
+
+    unset _session_cache_dir_prefix
 }
 
 # }}}
@@ -3502,7 +3500,7 @@ handle_scrape_error() {
 		esac
 		;;
 	#:help search operator
-	100) print_info "---------\n" && return 100 ;;
+    100) print_info "---------\n" && return 100 ;;
 	126) print_info "$_scr does not have execute permissions\n" ;;
 	127) die 2 "invalid scraper: $_scr\n" ;;
 	*) print_error "An error occured while scraping: $_scr (scraper returned error: $1)\n" ;;
