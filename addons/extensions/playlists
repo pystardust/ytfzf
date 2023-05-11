@@ -76,7 +76,8 @@ on_opt_parse_list_titles () {
     exit 0
 }
 
-on_search_playlists () {
+ext_on_search_playlists () {
     [ -z "$_playlists_playlist_name" ] && return 0
-    url_handler_opts="playlist_name=${PLAYLISTS_YTFZF_DIR}/${_playlists_playlist_name}$(printf '\033')ytfzf_data=$ytfzf_video_json_file"
+    export _PLAYLIST_NAME=${PLAYLISTS_YTFZF_DIR}/${_playlists_playlist_name}
+    export YTFZF_VIDEO_JSON_FILE="${ytfzf_video_json_file}"
 }
