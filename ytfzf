@@ -410,7 +410,7 @@ on_post_set_vars___ytfzf__() {
 
 	: "${invidious_instance:=$(get_random_invidious_instance)}"
 
-	FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
+	export FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
 
 	[ "$multi_search" -eq 1 ] && load_fake_extension "__ytfzf_multisearch__"
 
