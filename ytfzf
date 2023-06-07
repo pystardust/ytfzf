@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2005.c22bca1"
+YTFZF_VERSION="git-2006.1fbdc51"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3074,7 +3074,6 @@ open_url_handler() {
 	# if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
 	# shellcheck disable=2031
 	printf "%s\t" "$ytdl_pref" "$is_audio_only" "$is_detach" "$video_pref" "$audio_pref" "$url_handler_opts" | session_temp_dir="${session_temp_dir}" session_cache_dir="${session_cache_dir}" "$url_handler" "$@"
-	end_of_set_args
 }
 #}}}
 
