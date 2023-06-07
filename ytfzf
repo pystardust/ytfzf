@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2007.1bcaad8"
+YTFZF_VERSION="git-2008.55cc0d3"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1164,7 +1164,7 @@ print_info() {
 }
 print_warning() {
     [ "${YTFZF_LOGFILE}" ] && pre_text="[WARNING]" || pre_text="${c_yellow}[WARNING]${c_reset}"
-    [ "$log_level" -ge 3 ] && _print_to_log_and_stderr "${pre_text}: $1"
+    [ "$log_level" -ge 1 ] && _print_to_log_and_stderr "${pre_text}: $1"
 }
 print_error() {
     [ "${YTFZF_LOGFILE}" ] && pre_text="[ERROR]" || pre_text="${c_red}[ERROR]${c_reset}"
