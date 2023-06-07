@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2008.55cc0d3"
+YTFZF_VERSION="git-2009.7e6119f"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -692,14 +692,6 @@ end_modify_ifs() {
 # }}}
 
 #general util{{{
-
-remove_quotes_on_var_value() {
-	read -r val
-	val="${val#[\"\']}"
-	val="${val%[\"\']}"
-	echo "$val"
-	unset val
-}
 
 _get_real_channel_link() {
 	#trim whitespace
