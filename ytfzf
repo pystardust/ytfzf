@@ -1152,7 +1152,7 @@ load_thumbnail_viewer() {
 
 _print_to_log_and_stderr () {
     tee -a "${YTFZF_LOGFILE:-/dev/null}" <<EOF >&2
-"$1"
+$(printf "$1")
 EOF
 }
 
