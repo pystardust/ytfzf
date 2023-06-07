@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2006.1fbdc51"
+YTFZF_VERSION="git-2007.1bcaad8"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -25,9 +25,7 @@ YTFZF_VERSION="git-2006.1fbdc51"
 
 : "${YTFZF_LOGFILE:=}"
 
-if [ "$YTFZF_LOGFILE" ] && [ "$__is_fzf_preview" -eq 1 ]; then
-    printf "[%s]\n==============\nSubmenu: %d\nFzf Preview: %d\n==============\n" "$(date)" "$__is_submenu" "$__is_fzf_preview" >> "${YTFZF_LOGFILE}"
-elif [ "$YTFZF_LOGFILE" ] && [ "$__is_submenu" -eq 1 ]; then
+if [ "$YTFZF_LOGFILE" ] && { [ "$__is_fzf_preview" -eq 1 ] || [ "$__is_submenu" -eq 1 ]; }; then
     printf "[%s]\n==============\nSubmenu: %d\nFzf Preview: %d\n==============\n" "$(date)" "$__is_submenu" "$__is_fzf_preview" >> "${YTFZF_LOGFILE}"
 elif [ "${YTFZF_LOGFILE}" ]; then
     : > "${YTFZF_LOGFILE}"
