@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2009.7e6119f"
+YTFZF_VERSION="git-2010.d369720"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1591,8 +1591,16 @@ scrape_subscriptions() {
 		[ -z "$channel_url" ] && continue
 		__subfile_line=$((__subfile_line + 1))
 		{
+            print_info "Scraping subscription: ${channel_url} (https://www.youtube.com)"
 			_tmp_subfile="${session_temp_dir}/channel-$__subfile_line"
-			scrape_youtube_channel "$channel_url" "$_tmp_subfile" </dev/null || return "$?"
+            _tmp_html="${session_temp_dir}/${tmp_filename}${__subfile_line}.html"
+            _tmp_json="${session_temp_dir}/${tmp_filename}${__subfile_line}.json"
+            set_real_channel_url_and_id "$channel_url"
+            _get_request "https://www.youtube.com/channel/${channel_id}/videos" > "$_tmp_html"
+            _youtube_get_json <"$_tmp_html" > "$_tmp_json"
+
+            channel_name=$(_youtube_channel_name <"$_tmp_html")
+			_youtube_channel_json "$channel_name" "youtube_channel_$mod" <"$_tmp_json" >> "$_tmp_subfile"
 			__new_data="$(jq '.[].scraper="subscriptions"' <"$_tmp_subfile")"
 			printf "%s\n" "$__new_data" >"$_tmp_subfile"
 			if [ ${fancy_subs} -eq 1 ]; then
