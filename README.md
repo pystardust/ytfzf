@@ -70,7 +70,7 @@ There are only 2 required dependencies, however the rest require some configurat
 | `iterm2` (requires `ueberzugpp`)                                          | &#9989;              |
 | `sixel` (requires `ueberzugpp`)                                           | &#9989;              |
 | `sway` (requires `ueberzugpp`)                                            | &9989; (only on sway)|
-| `wlroots` (requires `ueberzugpp`)                                         | &9989;               |
+| `wayland` (requires `ueberzugpp`)                                         | &9989;               |
 | [`chafa`](https://github.com/hpjansson/chafa)                             | &#9989;              |
 | [`catimg`](https://github.com/posva/catimg)                               | &#9989;              |
 | [`imv`](https://git.sr.ht/~exec64/imv)                                    | &#9989;              |
