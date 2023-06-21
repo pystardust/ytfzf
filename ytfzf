@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2012.af476ca"
+YTFZF_VERSION="git-2013.95d10b9"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2624,16 +2624,16 @@ preview_start() {
              o="${thumbnail_viewer}"
         fi
 		if command_exists ueberzugpp; then
-			ueberzugpp layer -o "${o}" --parser json <"$UEBERZUG_FIFO" 2>"$thumbnail_debug_log" &
+			ueberzugpp layer -o "${o}" --parser json <"$UEBERZUG_FIFO" 2>>"$thumbnail_debug_log" &
 		else
-			ueberzug layer --parser json <"$UEBERZUG_FIFO" 2>"$thumbnail_debug_log" &
+			ueberzug layer --parser json <"$UEBERZUG_FIFO" 2>>"$thumbnail_debug_log" &
 		fi
 		exec 3>"$UEBERZUG_FIFO"
 		;;
 	chafa | chafa-16 | chafa-tty | catimg | catimg-256 | swayimg | swayimg-hyprland) : ;;
 	imv)
 		first_img="$(jq -r '.[0].ID|select(.!=null)' <"$ytfzf_video_json_file")"
-		imv "$thumb_dir/${first_img}.jpg" >"$thumbnail_debug_log" 2>&1 &
+		imv "$thumb_dir/${first_img}.jpg" >>"$thumbnail_debug_log" 2>&1 &
 		export imv_pid="$!"
 		# helps prevent imv seg fault
 		sleep 0.1
@@ -2643,7 +2643,7 @@ preview_start() {
 		first_img="$(jq -r '.[0].ID|select(.!=null)' <"$ytfzf_video_json_file")"
 		export MPV_SOCKET="$session_temp_dir/mpv.socket"
 		rm -f "$MPV_SOCKET" >/dev/null 2>&1
-		mpv --input-ipc-server="$MPV_SOCKET" --loop-file=inf --idle=yes "$thumb_dir/${first_img}.jpg" >"$thumbnail_debug_log" 2>&1 &
+		mpv --input-ipc-server="$MPV_SOCKET" --loop-file=inf --idle=yes "$thumb_dir/${first_img}.jpg" >>"$thumbnail_debug_log" 2>&1 &
 		export mpv_pid=$!
 		;;
 	*)
@@ -2811,7 +2811,7 @@ preview_display_image() {
 				'width' "$width"
 			printf '"%s": "%s"' 'height' "$height"
 			printf "}\n"
-		} >"$UEBERZUG_FIFO" 2>"$thumbnail_debug_log"
+		} >"$UEBERZUG_FIFO" 2>>"$thumbnail_debug_log"
 		;;
 	swayimg-hyprland)
 		command_exists "hyprctl" || die 3 "hyprctl is required for this thumbnail viewer${new_line}"
@@ -2839,7 +2839,7 @@ preview_display_image() {
 		hyprctl keyword windowrulev2 float,title:swayimg >/dev/null 2>&1
 		hyprctl keyword windowrulev2 nofocus,title:swayimg >/dev/null 2>&1
 		hyprctl keyword windowrulev2 "noborder,title:swayimg" >/dev/null 2>&1
-		swayimg -s fit -g $((x + 10)),$y,$((img_w)),$((img_h)) "$thumb_path" 2>"$thumbnail_debug_log" >&2 &
+		swayimg -s fit -g $((x + 10)),$y,$((img_w)),$((img_h)) "$thumb_path" 2>>"$thumbnail_debug_log" >&2 &
 		printf "%s" "$!" >"$_swayimg_pid_file"
 		# without this there are weird flushing issues (maybe)
 		;;
@@ -2870,7 +2870,7 @@ preview_display_image() {
 		line_px_height=$((h / TTY_LINES))
 		get_swayimg_positioning "$((w))" "$((h))" "$x" "$y" "$col_px_width" "$line_px_height"
 		swaymsg 'no_focus [app_id="swayimg_.*"]' >/dev/null 2>&1
-		swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path" 2>"$thumbnail_debug_log" >&2 &
+		swayimg -s fit -g $x,$y,$((img_w)),$((img_h)) "$thumb_path" 2>>"$thumbnail_debug_log" >&2 &
 		printf "%s" "$!" >"$_swayimg_pid_file"
 		# without this there are weird flushing issues (maybe)
 		echo
@@ -2878,34 +2878,34 @@ preview_display_image() {
 	chafa)
 		printf '\n'
 		command_exists "chafa" || die 3 "${new_line}chafa is not installed${new_line}"
-		chafa --format=symbols -s "$((width - 4))x$height" "$thumb_path" 2>"$thumbnail_debug_log"
+		chafa --format=symbols -s "$((width - 4))x$height" "$thumb_path" 2>>"$thumbnail_debug_log"
 		;;
 	chafa-16)
 		printf '\n'
 		command_exists "chafa" || die 3 "${new_line}chafa is not installed${new_line}"
-		chafa --format=symbols -c 240 -s "$((width - 2))x$((height - 10))" "$thumb_path" 2>"$thumbnail_debug_log"
+		chafa --format=symbols -c 240 -s "$((width - 2))x$((height - 10))" "$thumb_path" 2>>"$thumbnail_debug_log"
 		;;
 	chafa-tty)
 		printf '\n'
 		command_exists "chafa" || die 3 "${new_line}chafa is not installed${new_line}"
-		chafa --format=symbols -c 16 -s "$((width - 2))x$((height - 10))" "$thumb_path" "$thumbnail_debug_log"
+		chafa --format=symbols -c 16 -s "$((width - 2))x$((height - 10))" "$thumb_path"  2>>"$thumbnail_debug_log"
 		;;
 	catimg)
 		printf '\n'
 		command_exists "catimg" || die 3 "${new_line}catimg is not installed${new_line}"
-		catimg -w "$width" "$thumb_path" 2>"$thumbnail_debug_log"
+		catimg -w "$width" "$thumb_path" 2>>"$thumbnail_debug_log"
 		;;
 	catimg-256)
 		printf '\n'
 		command_exists "catimg" || die 3 "${new_line}catimg is not installed${new_line}"
-		catimg -c -w "$width" "$thumb_path" 2>"$thumbnail_debug_log"
+		catimg -c -w "$width" "$thumb_path" 2>>"$thumbnail_debug_log"
 		;;
 	imv)
-		imv-msg "$imv_pid" open "$thumb_path" 2>"$thumbnail_debug_log" >&2
-		imv-msg "$imv_pid" next 2>"$thumbnail_debug_log" >&2
+		imv-msg "$imv_pid" open "$thumb_path" 2>>"$thumbnail_debug_log" >&2
+		imv-msg "$imv_pid" next 2>>"$thumbnail_debug_log" >&2
 		;;
 	mpv)
-		echo "loadfile '$thumb_path'" | socat - "$MPV_SOCKET" >"$thumbnail_debug_log" 2>&1
+		echo "loadfile '$thumb_path'" | socat - "$MPV_SOCKET" >>"$thumbnail_debug_log" 2>&1
 		;;
 	*)
 		get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
