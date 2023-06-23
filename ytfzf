@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2013.95d10b9"
+YTFZF_VERSION="git-2014.206a983"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -702,7 +702,10 @@ EOF
 	http?://*/@*)
 		domain=${_input_link#https://}
 		domain=${domain%%/*}
-		printf "https://www.youtube.com/channel/%s\n" "$(_get_request "$_input_link" | sed -n 's/.*itemprop="channelId" content="\([^"]*\)".*/\1/p')"
+        url=$(printf "https://www.youtube.com/channel/%s\n" "$(_get_request "$_input_link" | sed -n 's/.*"channelId":"\([^"]\+\).*/\1/p')")
+        _get_real_channel_link_handle_empty_real_path () {
+            printf "$url"
+        }
 		;;
 	http?://*/c/* | http?://*/user/* | *\.*)
 		domain=${_input_link#https://}
