@@ -2165,7 +2165,7 @@ Eg:
 	unset PARENT_invidious_instance PARENT_OUTPUT_JSON_FILE
 	return 0
 }
-scrrape_M() { scrape_multi "$@"; }
+scrape_M() { scrape_multi "$@"; }
 ## }}}
 
 ## Peertube {{{
