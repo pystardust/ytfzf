@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2014.206a983"
+YTFZF_VERSION="git-2015.64bd36b"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -383,7 +383,7 @@ on_clean_up___ytfzf__() {
 	rm -f "$jobs_file"
 	#}}}
     if [ "$__is_fzf_preview" -eq 0 ]; then
-        [ "$keep_cache" -eq 1 ] && print_debug "[CLEAN UP]: copying cache dir${new_line}" cp -r "${session_cache_dir}" "${cache_dir}"
+        [ "$keep_cache" -eq 1 ] && print_debug "[CLEAN UP]: copying cache dir${new_line}" && cp -r "${session_cache_dir}" "${cache_dir}"
 	    [ -d "$session_cache_dir" ] && rm -rf "$session_cache_dir"
     fi
 }
