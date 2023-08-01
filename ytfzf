@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2016.ec4e817"
+YTFZF_VERSION="git-2020.974fcb1"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2280,12 +2280,15 @@ scrape_O() { scrape_odysee "$@"; }
 # ytfzf json format{{{
 
 scrape_from_cache () {
+    on_clean_up_scrape_from_cache () {
+        rm -r "${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+    }
+    load_fake_extension "scrape_from_cache"
+
     set +f
     _location=$(printf "%s\n" "$cache_dir"/*-[0-9][0-9]* | quick_menu_wrapper "Pick from previous searches")
     scrape_json_file "$_location/videos_json" "$2"
     cp -r "$_location/thumbnails" "${session_cache_dir}"
-    ls "${session_cache_dir}"
-    ls "${thumb_dir}"
     set -f
 }
 
