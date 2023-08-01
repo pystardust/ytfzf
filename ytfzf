@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2021.0c1f5f0"
+YTFZF_VERSION="git-2022.301d584"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1145,7 +1145,7 @@ load_thumbnail_viewer() {
 
 _print_to_log_and_stderr () {
     tee -a "${YTFZF_LOGFILE:-/dev/null}" <<EOF >&2
-$(printf "$1")
+$(printf -- "$1")
 EOF
 }
 
@@ -2280,6 +2280,8 @@ scrape_O() { scrape_odysee "$@"; }
 # ytfzf json format{{{
 
 scrape_from_cache () {
+    search="$1"
+    [ "$search" = ":help" ] && print_info "Scrapes from a cached ytfzf search${new_line}the search is the cache # to use, where 1 is the most recent and \$ is the least recent" && return 100
     on_clean_up_scrape_from_cache () {
         rm -r "${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}" > /dev/null 2>&1
     }
@@ -2291,10 +2293,18 @@ scrape_from_cache () {
             printf "%s\n" "$(cat "${location}/created-at")-${location}"
         done | sort -nr | cut -d '-' -f2-
     )
-    _location=$(quick_menu_wrapper "Pick from previous searches" <<EOF
+
+    if [ -n "$search" ]; then
+        _location="$(sed -n "${search}p" <<EOF
+$_locations
+EOF
+)"
+    else
+        _location=$(quick_menu_wrapper "Pick from previous searches" <<EOF
 $_locations
 EOF
 )
+    fi
     [ -z "$_location" ] && return 1
     scrape_json_file "$_location/videos_json" "$2"
     cp -r "$_location/thumbnails" "${session_cache_dir}"
