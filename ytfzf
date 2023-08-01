@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2020.974fcb1"
+YTFZF_VERSION="git-2021.0c1f5f0"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2281,12 +2281,21 @@ scrape_O() { scrape_odysee "$@"; }
 
 scrape_from_cache () {
     on_clean_up_scrape_from_cache () {
-        rm -r "${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}"
+        rm -r "${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}" > /dev/null 2>&1
     }
     load_fake_extension "scrape_from_cache"
 
     set +f
-    _location=$(printf "%s\n" "$cache_dir"/*-[0-9][0-9]* | quick_menu_wrapper "Pick from previous searches")
+    _locations=$(
+        for location in "$cache_dir"/*-[0-9][0-9]*; do
+            printf "%s\n" "$(cat "${location}/created-at")-${location}"
+        done | sort -nr | cut -d '-' -f2-
+    )
+    _location=$(quick_menu_wrapper "Pick from previous searches" <<EOF
+$_locations
+EOF
+)
+    [ -z "$_location" ] && return 1
     scrape_json_file "$_location/videos_json" "$2"
     cp -r "$_location/thumbnails" "${session_cache_dir}"
     set -f
@@ -3480,6 +3489,8 @@ init_files() {
 
 	[ "$1" ] && printf "%s\n" "$1" >"${session_cache_dir}/searches.list"
 
+    awk 'BEGIN{print srand(srand())}' > "${session_cache_dir}/created-at"
+
     unset _session_cache_dir_prefix
 }
 
@@ -3579,8 +3590,10 @@ handle_scraping() {
 		__scrape_count=$((__scrape_count + 1))
 		do_an_event_function "ext_on_search" "$_search" "$curr_scrape"
 		command_exists "on_search_$_search" && "on_search_$_search" "$curr_scrape"
-		if ! "scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"; then
-			handle_scrape_error "$?" "$curr_scrape"
+        "scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"
+        _scrape_rv="$?"
+		if [ "$_scrape_rv" -ne 0 ]; then
+			handle_scrape_error "$_scrape_rv" "$curr_scrape"
 		fi
 	done
 	[ "$?" -eq 100 ] && exit 0

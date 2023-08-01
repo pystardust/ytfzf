@@ -891,6 +891,7 @@ If an addon scraper is used, it may use undocumented files.
 $cache_dir
 | \-\- watch_hist
 | \-\- <search>\-<pid>
+|  | \-\- created-at
 |  | \-\- searches.list
 |  | \-\- post-scrape
 |  | \-\- <submenu-search>-<submenu-pid>?
@@ -911,6 +912,9 @@ $cache_dir
 .PP
 An explanation of each directory/file:
 .RS
+.TP
+.IR created-at
+Contains the unix timestamp when the folder was created
 .TP
 .IR searches.list
 A list of all searches
