@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2015.64bd36b"
+YTFZF_VERSION="git-2016.ec4e817"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1371,7 +1371,7 @@ set_vars() {
 
 	multi_search="0"
 
-	custom_scrape_search_exclude="" scrape_search_exclude=" youtube-subscriptions S SI SL T youtube-trending H history "
+	custom_scrape_search_exclude="" scrape_search_exclude=" youtube-subscriptions S SI SL T youtube-trending H history from-cache "
 
 	max_thread_count="20"
 
@@ -2278,6 +2278,16 @@ scrape_O() { scrape_odysee "$@"; }
 ## }}}
 
 # ytfzf json format{{{
+
+scrape_from_cache () {
+    set +f
+    _location=$(printf "%s\n" "$cache_dir"/*-[0-9][0-9]* | quick_menu_wrapper "Pick from previous searches")
+    scrape_json_file "$_location/videos_json" "$2"
+    cp -r "$_location/thumbnails" "${session_cache_dir}"
+    ls "${session_cache_dir}"
+    ls "${thumb_dir}"
+    set -f
+}
 
 scrape_json_file() {
 	search="$1"
