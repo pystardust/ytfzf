@@ -3527,15 +3527,18 @@ handle_scraping() {
 	prepare_for_set_args ","
 	# if there is only 1 scraper used, multi search is on, then multiple searches will be performed seperated by ,
 	__scrape_count=0
+	__ret=0
 	for curr_scrape in $scrape; do
 		__scrape_count=$((__scrape_count + 1))
 		do_an_event_function "ext_on_search" "$_search" "$curr_scrape"
 		command_exists "on_search_$_search" && "on_search_$_search" "$curr_scrape"
-		if ! "scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"; then
-			handle_scrape_error "$?" "$curr_scrape"
+		"scrape_$(printf '%s' "$curr_scrape" | sed 's/-/_/g')" "$_search" "$ytfzf_video_json_file"
+		__ret=$?
+		if [ $__ret != 0 ]; then
+			handle_scrape_error $__ret "$curr_scrape"
 		fi
 	done
-	[ "$?" -eq 100 ] && exit 0
+	[ $? -eq 100 ] && exit 0
 	end_of_set_args
 }
 
