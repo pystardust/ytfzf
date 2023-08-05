@@ -2115,12 +2115,26 @@ scrape_invidious_channel() {
 
 		print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url${new_line}"
 
+		case "$modifier" in
+			streams)
+				__jq_filter='.streams? // []'
+				__jq_parser=_invidious_search_json_live
+				;;
+			playlists)
+				__jq_filter='.playlists? // []'
+				__jq_parser=_invidious_search_json_playlist
+				;;
+			videos|*)
+				__jq_filter='(.videos? // []) + (.latestVideos? // [])'
+				__jq_parser=_invidious_search_json_generic
+				;;
+		esac
+
 		_get_invidious_thumb_quality_name
 
 		_get_request "${channel_url##* }" \
-			-G --data-urlencode "page=$_cur_page" |
-			jq 'if (.videos|type) == "array" then .videos elif (.latestVideos|type) == "array" then .latestVideos else null end' |
-			_invidious_search_json_generic "invidious_channel" |
+				-G --data-urlencode "page=$_cur_page" |
+			jq "$__jq_filter" | $__jq_parser "invidious_channel" |
 			jq 'select(.!=[])' >>"$output_json_file" || return "$?"
 	done
 }
