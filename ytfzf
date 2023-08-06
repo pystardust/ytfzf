@@ -694,10 +694,8 @@ end_modify_ifs() {
 #general util{{{
 
 _get_real_channel_link() {
-	#trim whitespace
-	read -r _input_link <<EOF
-$1
-EOF
+	_input_link=$(trim_blank "$1")
+
 	case "$1" in
 	http?://*/@*)
 		domain=${_input_link#https://}
@@ -758,6 +756,9 @@ trim_url() {
 		printf '%s\n' "${_line##*"|"}"
 	done
 }
+
+trim_blank() { _s="${1##[[:blank:]]}"; printf '%s' "${_s%%[[:blank:]]}"; }
+
 
 command_exists() {
 	command -v "$1" >/dev/null 2>&1
@@ -1638,15 +1639,12 @@ scrape_subscriptions() {
 	# if _tmp_subfile does not have a unique name, weird things happen
 	__subfile_line=-1
 	_start_series_of_threads
-	while IFS="" read -r channel_url || [ -n "$channel_url" ]; do
+	while read -r channel_url || [ -n "$channel_url" ]; do
 
 		__subfile_line=$((__subfile_line + 1))
 
-		channel_url="${channel_url%%#*}"
-		#trim whitespace
-		read -r channel_url <<-EOF
-			        $channel_url
-		EOF
+		channel_url=$(trim_blank "${channel_url%%#*}")
+
 		[ -z "$channel_url" ] && continue
 		__subfile_line=$((__subfile_line + 1))
 		{
@@ -1682,7 +1680,8 @@ scrape_SI() {
 	: >"$_curl_config_file"
 
 	while read -r url; do
-		url="${url%%#*}"
+		url=$(trim_blank "${url%%#*}")
+
 		[ -z "$url" ] && continue
 
 		set_real_channel_url_and_id "$url"
@@ -1767,7 +1766,7 @@ scrape_youtube_channel() {
 		esac
 	done
 
-	modifiers="${modifiers##[[:space:]]}"
+	modifiers=$(trim_blank "$modifiers")
 
 	[ -z "$modifiers" ] && modifiers="videos"
 
@@ -2103,7 +2102,7 @@ scrape_invidious_channel() {
 		esac
 	done
 
-	modifiers="${modifiers##[[:space:]]}"
+	modifiers=$(trim_blank "$modifiers")
 
 	[ -z "$modifiers" ] && modifiers="videos"
 
