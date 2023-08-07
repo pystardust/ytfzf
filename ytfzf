@@ -1288,9 +1288,9 @@ set_vars() {
 	#necessary as a seperator for -W
 	EOT="$(printf '\003')"
 
-	if [ "$COLUMNS" ] && [ "$LINES" ]; then
-		TTY_COLS="${COLUMNS}"
-		TTY_LINES="${LINES}"
+	if [ "${COLUMNS:-$TTY_COLS}" ] && [ "${LINES:-$TTY_LINES}" ]; then
+		TTY_COLS="${COLUMNS:-$TTY_COLS}"
+		TTY_LINES="${LINES:-$TTY_LINES}"
 	elif command_exists "tput"; then
 		TTY_COLS=$(tput cols 2>/dev/null)
 		TTY_LINES=$(tput lines 2>/dev/null)
@@ -2594,7 +2594,7 @@ interface_text() {
 		{ [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
 		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" \
 			$_fzf_start_bind \
-			--bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" | set_keypress |
+			--bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 TTY_COLS=${TTY_COLS} TTY_LINES=${TTY_LINES} YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" | set_keypress |
 		trim_url >"$selected_id_file"
 
 	_const_top_url="$(head -n 1 "$selected_id_file")"
@@ -3001,7 +3001,7 @@ interface_thumbnails() {
 			--expect="$shortcut_binds" \
 			--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumbnail_viewer='$thumbnail_viewer' ytfzf_video_json_file='$ytfzf_video_json_file' $0 -W \"preview_img"$EOT"{f}\"" \
 			$_fzf_start_bind \
-			--bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
+			--bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 TTY_COLS=${TTY_COLS} TTY_LINES=${TTY_LINES} YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
 			--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse | set_keypress |
 		trim_url >"$selected_id_file"
 
