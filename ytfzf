@@ -929,6 +929,31 @@ run_interface() {
 	unset _interface
 }
 
+_init_video_info_text() {
+	TTY_COLS=$1
+
+	if command_exists "column" ; then
+		use_column=1
+	else
+		print_warning "command \"column\" not found, the menu may look very bad${new_line}"
+		use_column=0
+	fi
+
+	title_len=$((TTY_COLS / 2))
+	channel_len=$((TTY_COLS / 5))
+	dur_len=7
+	view_len=10
+	date_len=14
+}
+
+_post_video_info_text() {
+	if [ "$use_column" = "1" ] ; then
+		column -t -s "$tab_space"
+	else
+		cat
+	fi
+}
+
 _video_info_text() {
 	[ "${views#"|"}" -eq "${views#"|"}" ] 2>/dev/null && views="|$(printf "%s" "${views#"|"}" | add_commas)"
 	printf "%-${title_len}.${title_len}s\t" "$title"
@@ -1288,9 +1313,9 @@ set_vars() {
 	#necessary as a seperator for -W
 	EOT="$(printf '\003')"
 
-	if [ "$COLUMNS" ] && [ "$LINES" ]; then
-		TTY_COLS="${COLUMNS}"
-		TTY_LINES="${LINES}"
+	if [ "${COLUMNS:-$TTY_COLS}" ] && [ "${LINES:-$TTY_LINES}" ]; then
+		TTY_COLS="${COLUMNS:-$TTY_COLS}"
+		TTY_LINES="${LINES:-$TTY_LINES}"
 	elif command_exists "tput"; then
 		TTY_COLS=$(tput cols 2>/dev/null)
 		TTY_LINES=$(tput lines 2>/dev/null)
@@ -2572,29 +2597,21 @@ interface_text() {
 		return
 	}
 
-	# shellcheck disable=SC2015
-	command_exists "column" && use_column=1 || { print_warning "command \"column\" not found, the menu may look very bad${new_line}" && use_column=0; }
-
 	video_json_file=$1
 	selected_id_file=$2
 
-	title_len=$((TTY_COLS / 2))
-	channel_len=$((TTY_COLS / 5))
-	dur_len=7
-	view_len=10
-	date_len=14
+	_init_video_info_text "$TTY_COLS"
 
 	unset IFS
 
 	_c_SORTED_VIDEO_DATA="$(create_sorted_video_data)"
 
-	# shellcheck disable=2015
 	printf "%s\n" "$_c_SORTED_VIDEO_DATA" |
 		video_info_text |
-		{ [ $use_column -eq 1 ] && column -t -s "$tab_space" || cat; } |
+		_post_video_info_text |
 		fzf -m --sync --tabstop=1 --layout=reverse --expect="$shortcut_binds" \
 			$_fzf_start_bind \
-			--bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" | set_keypress |
+			--bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 TTY_COLS=${TTY_COLS} TTY_LINES=${TTY_LINES} YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" | set_keypress |
 		trim_url >"$selected_id_file"
 
 	_const_top_url="$(head -n 1 "$selected_id_file")"
@@ -2612,11 +2629,7 @@ interface_ext() {
 	selected_id_file=$2
 
 	# video_info_text can be set in the conf.sh, if set it will be preferred over the default given below
-	TTY_COLS=$external_menu_len
-	title_len=$((TTY_COLS / 2))
-	channel_len=$((TTY_COLS / 5))
-	dur_len=7
-	date_len=14
+	_init_video_info_text $external_menu_len
 
 	create_sorted_video_data |
 		video_info_text |
@@ -3001,7 +3014,7 @@ interface_thumbnails() {
 			--expect="$shortcut_binds" \
 			--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumbnail_viewer='$thumbnail_viewer' ytfzf_video_json_file='$ytfzf_video_json_file' $0 -W \"preview_img"$EOT"{f}\"" \
 			$_fzf_start_bind \
-			--bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
+			--bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 TTY_COLS=${TTY_COLS} TTY_LINES=${TTY_LINES} YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
 			--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse | set_keypress |
 		trim_url >"$selected_id_file"
 
@@ -3247,10 +3260,12 @@ internal_action_next_page() {
 
 		scrape_next_page_"$hovered_scraper"
 	fi
-	jq -c -r 'select(.!=[])|.[]' <"$ytfzf_video_json_file" |
-		sort_video_data_fn |
-		jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.url)"'
 
+	_init_video_info_text "$TTY_COLS"
+
+	create_sorted_video_data |
+		video_info_text |
+		_post_video_info_text
 }
 
 internal_action_preview_img() {
