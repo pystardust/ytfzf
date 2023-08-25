@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2033.5b2f349"
+YTFZF_VERSION="git-2034.37ad5ae"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3092,12 +3092,12 @@ handle_info() {
 	[ "$info_wait" -eq 1 ] && info_wait_prompt_wrapper
 
 	case "$info_wait_action" in
-	# simulates old behavior of when alt-l or alt-i is pressed and -l is enabled
-	q) [ "$is_loop" -eq 1 ] && return 3 || return 2 ;;
-	Q) return 2 ;;
-	[MmCc]) return 3 ;;
-	'') return 0 ;;
-	*) if command_exists "custom_info_wait_action_$info_wait_action"; then custom_info_wait_action_"$info_wait_action"; else print_error "info_wait_action is set to $info_wait_action but custom_info_wait_action_$info_wait_action does not exist${new_line}"; fi ;;
+        # simulates old behavior of when alt-l or alt-i is pressed and -l is enabled
+        q) [ "$is_loop" -eq 1 ] && return 3 || return 2 ;;
+        Q) return 2 ;;
+        [MmCc]) return 3 ;;
+        '') return 0 ;;
+        *) if command_exists "custom_info_wait_action_$info_wait_action"; then custom_info_wait_action_"$info_wait_action"; else print_error "info_wait_action is set to $info_wait_action but custom_info_wait_action_$info_wait_action does not exist${new_line}"; fi ;;
 	esac
 	return 0
 
