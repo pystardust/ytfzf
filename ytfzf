@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2022.301d584"
+YTFZF_VERSION="git-2023.4549119"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -323,6 +323,9 @@ print_help___ytfzf__() {
         --force-youtube         Converts invidious links to youtube links
                                 before playing (enabled by default)
 
+        --force-invidious       Uses the chosen invidious instance
+                                instead of converting to a youtube link
+
     ADDON OPTIONS:
         -e <extention>          Load an extention
 
@@ -413,6 +416,9 @@ on_post_set_vars___ytfzf__() {
 	[ ! -f "$instances_file" ] && refresh_inv_instances
 
 	: "${invidious_instance:=$(get_random_invidious_instance)}"
+
+    #if there is no domain, use the chosen invidious instance
+    [ -z "${yt_video_link_domain}" ] && yt_video_link_domain="${invidious_instance}"
 
 	export FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
 
@@ -3354,6 +3360,7 @@ parse_opt() {
 		;;
 	T | thumb-viewer) load_thumbnail_viewer "$optarg" || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer${new_line}" ;;
 	force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
+    force-invidious) yt_video_link_domain="" ;;
 	info-print-exit | info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
 	info-action) info_wait_action="$optarg" ;;
 	info-wait) info_wait="${optarg:-1}" ;;
