@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2024.b3a1537"
+YTFZF_VERSION="git-2033.5b2f349"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -402,7 +402,6 @@ on_load_fake_extension___ytfzf__() {
 
 on_post_set_vars___ytfzf__() {
 	[ -z "$ytdl_path" ] && { command_exists "yt-dlp" && ytdl_path="yt-dlp" || ytdl_path="youtube-dl"; }
-	export YTDL_EXEC_NAME="${ytdl_path##*/}"
 
 	: "${ytdl_pref:=$video_pref+$audio_pref/best/$video_pref/$audio_pref}"
 
@@ -3217,7 +3216,7 @@ get_video_format_simple() {
 }
 
 get_video_format() {
-    case "$YTDL_EXEC_NAME" in
+    case "${ytdl_path##*/}" in
         (youtube-dl) _format_options=$("${ytdl_path}" -F "$1" | sed 1,3d) ;;
         (*) _format_options=$("${ytdl_path}" -q -F "$1" --format-sort "$format_selection_sort" | sed 1,3d) ;;
     esac
