@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2034.37ad5ae"
+YTFZF_VERSION="git-2035.15c19ec"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -937,12 +937,10 @@ run_interface() {
 _init_video_info_text() {
 	TTY_COLS=$1
 
-	if command_exists "column" ; then
-		use_column=1
-	else
-		print_warning "command \"column\" not found, the menu may look very bad${new_line}"
-		use_column=0
-	fi
+    command_exists "column" && use_column=1 || {
+        use_column=0
+        print_warning "command \"column\" not found, the menu may look very bad${new_line}"
+    }
 
 	title_len=$((TTY_COLS / 2))
 	channel_len=$((TTY_COLS / 5))
