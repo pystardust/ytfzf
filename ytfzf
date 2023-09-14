@@ -554,7 +554,7 @@ on_load_fake_extension___ytfzf_search_history__() {
 	: "${search_hist_file:="$cache_dir/search_hist"}"
 	on_opt_parse_q() {
 		if [ "$enable_search_hist" -eq 0 ]; then
-			die 1 'In order to use this search history must be enabled${new_line}'
+			die 1 "In order to use this search history must be enabled${new_line}"
 		fi
 		[ ! -s "$search_hist_file" ] && die 1 "You have no search history${new_line}"
 		search_source="hist"
@@ -644,7 +644,7 @@ download_thumbnails() {
 		print_info "Skipping thumbnail download${new_line}"
 		return 0
 	}
-	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...${new_line}'
+	[ "$async_thumbnails" -eq 0 ] && print_info "Fetching thumbnails...${new_line}"
 	curl_config_file="${session_temp_dir}/curl_config"
 	[ -z "$*" ] && return 0
 	: >"$curl_config_file"
