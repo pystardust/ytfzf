@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="2.6.1.rc-1"
+YTFZF_VERSION="2.6.1"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -282,7 +282,7 @@ print_help___ytfzf__() {
                                     month
                                     year
 
-        --video-duration=<time> Searches for vidos that are:
+        --video-duration=<time> Searches for videos that are:
                                     short
                                     medium
                                     long
