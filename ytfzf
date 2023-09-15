@@ -282,7 +282,7 @@ print_help___ytfzf__() {
                                     month
                                     year
 
-        --video-duration=<time> Searches for vidos that are:
+        --video-duration=<time> Searches for videos that are:
                                     short
                                     medium
                                     long
