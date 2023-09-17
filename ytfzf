@@ -644,7 +644,7 @@ download_thumbnails() {
 		print_info "Skipping thumbnail download${new_line}"
 		return 0
 	}
-	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...${new_line}'
+	[ "$async_thumbnails" -eq 0 ] && print_info "Fetching thumbnails...${new_line}"
 	curl_config_file="${session_temp_dir}/curl_config"
 	[ -z "$*" ] && return 0
 	: >"$curl_config_file"
