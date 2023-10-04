@@ -3741,5 +3741,4 @@ while [ "$search_again" -eq 1 ]; do
 	main
 done
 #}}}
-
 # vim: foldmethod=marker:shiftwidth=4:tabstop=4
