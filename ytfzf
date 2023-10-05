@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2049.1983388"
+YTFZF_VERSION="git-2050.b6af2d3"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1326,7 +1326,7 @@ set_vars() {
 		TTY_LINES="${stty_cols_lines% *}"
 		TTY_COLS="${stty_cols_lines#* }"
 	else
-		print_warning "Could not determine terminal size, defaulting to 80 COLUMNS x 25 LINES${new_line}"
+		print_warning "Could not determine terminal size, defaulting to 80 COLUMNS x 25 LINES"
 		TTY_COLS=80
 		TTY_LINES=25
 	fi
