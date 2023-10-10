@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2052.ec7442f"
+YTFZF_VERSION="git-2053.ffd7156"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -282,7 +282,7 @@ print_help___ytfzf__() {
                                     month
                                     year
 
-        --video-duration=<time> Searches for vidos that are:
+        --video-duration=<time> Searches for videos that are:
                                     short
                                     medium
                                     long
@@ -386,7 +386,7 @@ on_clean_up___ytfzf__() {
 	rm -f "$jobs_file"
 	#}}}
     if [ "$__is_fzf_preview" -eq 0 ]; then
-        [ "$keep_cache" -eq 1 ] && print_debug "[CLEAN UP]: copying cache dir${new_line}" && cp -r "${session_cache_dir}" "${cache_dir}"
+        [ "$keep_cache" -eq 1 ] && print_debug "[CLEAN UP]: copying cache dir" && cp -r "${session_cache_dir}" "${cache_dir}"
 	    [ -d "$session_cache_dir" ] && rm -rf "$session_cache_dir"
     fi
 }
@@ -427,9 +427,9 @@ on_post_set_vars___ytfzf__() {
 
 	source_scrapers
 
-	print_debug "${new_line}=============${new_line}VARIABLE DUMP${new_line}=============${new_line}"
-	print_debug "$(set)${new_line}"
-	print_debug "${new_line}============${new_line}END VAR DUMP${new_line}============${new_line}"
+	print_debug "${new_line}=============${new_line}VARIABLE DUMP${new_line}============="
+	print_debug "$(set)"
+	print_debug "${new_line}============${new_line}END VAR DUMP${new_line}============"
 }
 #}}}
 
@@ -472,16 +472,16 @@ on_load_fake_extension___ytfzf_history_management__() {
 		case "$1" in
 		search)
 			: >"$search_hist_file"
-			print_info "Search history cleared${new_line}"
+			print_info "Search history cleared"
 			;;
 		watch)
 			: >"$hist_file"
-			print_info "Watch history cleared${new_line}"
+			print_info "Watch history cleared"
 			;;
 		*)
 			: >"$search_hist_file"
 			: >"$hist_file"
-			print_info "History cleared${new_line}"
+			print_info "History cleared"
 			;;
 		esac
 	}
@@ -496,7 +496,7 @@ on_load_fake_extension___ytfzf_history__() {
 	: "${hist_file:="$cache_dir/watch_hist"}"
 	on_opt_parse_history() {
 		if [ "$enable_hist" -eq 0 ]; then
-			die 1 "enable_hist must be set to 1 for -H/--history${new_line}"
+			die 1 "enable_hist must be set to 1 for -H/--history"
 		fi
 		scrape=history
 	}
@@ -511,7 +511,7 @@ on_open_url_handler___ytfzf_history__() {
 
 add_to_hist() {
 	[ "$enable_hist" -eq 1 ] || return
-	print_debug "[WATCH HIST]: adding to file $hist_file${new_line}"
+	print_debug "[WATCH HIST]: adding to file $hist_file"
 	# id of the video to add to hist will be passed through stdin
 	# if multiple videos are selected, multiple ids will be present on multiple lines
 	json_file="$1"
@@ -554,9 +554,9 @@ on_load_fake_extension___ytfzf_search_history__() {
 	: "${search_hist_file:="$cache_dir/search_hist"}"
 	on_opt_parse_q() {
 		if [ "$enable_search_hist" -eq 0 ]; then
-			die 1 'In order to use this search history must be enabled${new_line}'
+			die 1 "In order to use this search history must be enabled"
 		fi
-		[ ! -s "$search_hist_file" ] && die 1 "You have no search history${new_line}"
+		[ ! -s "$search_hist_file" ] && die 1 "You have no search history"
 		search_source="hist"
 	}
 	on_opt_parse_search_hist() {
@@ -565,7 +565,7 @@ on_load_fake_extension___ytfzf_search_history__() {
 }
 
 on_post_set_vars___ytfzf_search_history__() {
-	[ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead${new_line}" && search_source=hist
+	[ "${use_search_hist:-0}" -eq 1 ] && print_warning "use_search_hist is deprecated, please use search_source=hist instead" && search_source=hist
 }
 
 on_init_search___ytfzf_history__() {
@@ -606,7 +606,7 @@ def pad_left(n; num):
 
 # Invidious{{{
 refresh_inv_instances() {
-	print_info "Fetching list of healthy invidious instances ...${new_line}" &&
+	print_info "Fetching list of healthy invidious instances ..." &&
 		# The pipeline does the following:
 		#   - Fetches the avaiable invidious instances
 		#   - Gets the one where the api is public
@@ -641,10 +641,10 @@ create_sorted_video_data() {
 
 download_thumbnails() {
 	[ "$skip_thumb_download" -eq 1 ] && {
-		print_info "Skipping thumbnail download${new_line}"
+		print_info "Skipping thumbnail download"
 		return 0
 	}
-	[ "$async_thumbnails" -eq 0 ] && print_info 'Fetching thumbnails...${new_line}'
+	[ "$async_thumbnails" -eq 0 ] && print_info "Fetching thumbnails..."
 	curl_config_file="${session_temp_dir}/curl_config"
 	[ -z "$*" ] && return 0
 	: >"$curl_config_file"
@@ -723,7 +723,7 @@ _get_real_channel_link() {
 		id="${id%/playlists}"
 		id="${id%/streams}"
 		id="${id##*channel/}"
-		print_warning "$_input_link appears to be a youtube id, which is hard to detect, please use a full channel url next time${new_line}"
+		print_warning "$_input_link appears to be a youtube id, which is hard to detect, please use a full channel url next time"
 		domain="youtube.com"
 		url=$(printf "https://youtube.com/channel/%s/videos" "$id" | sed 's_\(https://\)*\(www\.\)*youtube\.com_'"${invidious_instance}"'_')
 		_get_real_channel_link_handle_empty_real_path() {
@@ -895,10 +895,10 @@ generic_wrapper() {
 	shift
 	fn_name="$base_name""$(printf "%s" "${interface:+_$interface}" | sed 's/-/_/g')"
 	if command_exists "$fn_name"; then
-		print_debug "[INTERFACE]: Running menu function: $fn_name${new_line}"
+		print_debug "[INTERFACE]: Running menu function: $fn_name"
 		$fn_name "$@"
 	else
-		print_debug "[INTERFACE]: Menu function $fn_name did not exist, falling back to ${base_name}_ext${new_line}"
+		print_debug "[INTERFACE]: Menu function $fn_name did not exist, falling back to ${base_name}_ext"
 		"$base_name"_ext "$@"
 	fi
 	unset fn_name
@@ -932,7 +932,7 @@ run_interface() {
 
 	_interface="interface_${interface:-text}"
 
-	print_debug "[INTERFACE]: Running interface: $_interface${new_line}"
+	print_debug "[INTERFACE]: Running interface: $_interface"
 
 	$(printf "%s" "$_interface" | sed 's/-/_/g') "$ytfzf_video_json_file" "$ytfzf_selected_urls"
 	unset _interface
@@ -943,7 +943,7 @@ _init_video_info_text() {
 
     command_exists "column" && use_column=1 || {
         use_column=0
-        print_warning "command \"column\" not found, the menu may look very bad${new_line}"
+        print_warning "command \"column\" not found, the menu may look very bad"
     }
 
 	title_len=$((TTY_COLS / 2))
@@ -1006,12 +1006,12 @@ thumbnail_video_info_text() {
 do_an_event_function() {
 	event="$1"
 	shift
-	print_debug "[EVENT]: doing event: $event${new_line}"
+	print_debug "[EVENT]: doing event: $event"
 	command_exists "$event" && $event "$@"
 	prepare_for_set_args " "
 	for ext in $loaded_extensions; do
 
-		command_exists "${event}_$ext" && print_debug "[EVENT]: $ext running $event${new_line}" && "${event}_$ext" "$@"
+		command_exists "${event}_$ext" && print_debug "[EVENT]: $ext running $event" && "${event}_$ext" "$@"
 	done
 	end_of_set_args
 }
@@ -1027,7 +1027,7 @@ source_scrapers() {
 			. "${YTFZF_SYSTEM_ADDON_DIR}/scrapers/$_scr"
 		fi
 		[ "$__is_fzf_preview" -eq 0 ] && command_exists "on_startup_$_scr" && "on_startup_$_scr"
-		print_debug "[LOADING]: Loaded scraper: $_scr${new_line}"
+		print_debug "[LOADING]: Loaded scraper: $_scr"
 	done
 	end_of_set_args
 }
@@ -1058,7 +1058,7 @@ load_extension() {
 	done
 	end_of_set_args
 
-	print_debug "[LOADING]: loaded extension: ${ext} with exit code: ${rv}${new_line}"
+	print_debug "[LOADING]: loaded extension: ${ext} with exit code: ${rv}"
 
 	return $rv
 }
@@ -1074,7 +1074,7 @@ load_fake_extension() {
 	fi
 
 	command_exists "on_load_fake_extension_$1" && on_load_fake_extension_"$1"
-	print_debug "[LOADING]: fake extension: $1 loaded${new_line}"
+	print_debug "[LOADING]: fake extension: $1 loaded"
 }
 
 load_sort_name() {
@@ -1095,7 +1095,7 @@ load_sort_name() {
 	esac
 	rv="$?"
 	unset "$_sort_name"
-	print_debug "[LOADING]: loaded sort name: ${_sort_name} with exit code: ${rv}${new_line}"
+	print_debug "[LOADING]: loaded sort name: ${_sort_name} with exit code: ${rv}"
 	return "$rv"
 }
 
@@ -1107,9 +1107,9 @@ load_url_handler() {
 		for path in "$YTFZF_URL_HANDLERS_DIR" "$YTFZF_SYSTEM_ADDON_DIR/url-handlers"; do
 			[ -f "${path}/${requested_url_handler}" ] && url_handler="${path}/${requested_url_handler}" && return
 		done
-		die 2 "$1 is not a url-handler${new_line}"
+		die 2 "$1 is not a url-handler"
 	fi
-	print_debug "[LOADING]: loaded url handler: ${requested_url_handler}${new_line}"
+	print_debug "[LOADING]: loaded url handler: ${requested_url_handler}"
 }
 
 load_interface() {
@@ -1138,7 +1138,7 @@ load_interface() {
 	esac
 	rv="$?"
 	unset requested_interface
-	print_debug "[LOADING]: loaded interface: ${requested_interface}${new_line}"
+	print_debug "[LOADING]: loaded interface: ${requested_interface}"
 	return "$rv"
 }
 
@@ -1151,7 +1151,7 @@ load_thumbnail_viewer() {
 		true
 		;;
 	swayimg-hyprland)
-		print_warning "swayimg-hyprland thumbnail viewer may mess up any rules you have for swayimg${new_line}"
+		print_warning "swayimg-hyprland thumbnail viewer may mess up any rules you have for swayimg"
 		thumbnail_viewer="$_thumbnail_viewer"
 		;;
 	./* | /* | ../* | ~/*)
@@ -1168,7 +1168,7 @@ load_thumbnail_viewer() {
 		;;
 	esac
 	rv="$?"
-	print_debug "[LOADING]: loaded thumbnail viewer: ${_thumbnail_viewer}${new_line}"
+	print_debug "[LOADING]: loaded thumbnail viewer: ${_thumbnail_viewer}"
 	unset _thumbnail_viewer
 	return $rv
 }
@@ -1177,7 +1177,7 @@ load_thumbnail_viewer() {
 # Logging {{{
 
 _print_to_log_and_stderr () {
-    tee -a "${YTFZF_LOGFILE:-/dev/null}" <<EOF >&2
+     tee -a "${YTFZF_LOGFILE:-/dev/null}" <<EOF >&2
 $(printf -- "$1")
 EOF
 }
@@ -1450,7 +1450,7 @@ missing_deps=""
 for dep in jq curl; do
 	command_exists "$dep" || missing_deps="${missing_deps}, ${dep}"
 done
-[ "$missing_deps" ] && die 3 "You are missing the following required dependencies${missing_deps}, Please install them.${new_line}"
+[ "$missing_deps" ] && die 3 "You are missing the following required dependencies${missing_deps}, Please install them."
 unset missing_deps
 #}}}
 
@@ -1543,7 +1543,7 @@ set_real_channel_url_and_id() {
 	_id="$(_get_channel_id "$_input_url")"
 	[ "$_id" = "$_input_url" ] &&
 		_url="$(_get_real_channel_link "$_input_url")" && _id="$(_get_channel_id "$_url")"
-	print_debug "[SCRAPE]: input url: $_input_url, detected url: $_url, detected id: $_id${new_line}"
+	print_debug "[SCRAPE]: input url: $_input_url, detected url: $_url, detected id: $_id"
 	channel_url="$_url" channel_id="$_id"
 	unset _url _id _input_url
 }
@@ -1611,7 +1611,7 @@ _youtube_channel_json() {
 
 scrape_yt () {
     search=$1
-    [ "$search" = ":help" ] && print_info "Scrape youtube without invidious\n" && return 100
+    [ "$search" = ":help" ] && print_info "Scrape youtube without invidious" && return 100
     output_json_file=$2
     _tmp_html="${session_temp_dir}/yt-search.html"
     _tmp_json="${session_temp_dir}/yt-search.json"
@@ -1666,7 +1666,7 @@ scrape_yt () {
 }
 
 scrape_subscriptions() {
-	! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist${new_line}"
+	! [ -f "$YTFZF_SUBSCRIPTIONS_FILE" ] && die 2 "subscriptions file doesn't exist"
 
 	# if _tmp_subfile does not have a unique name, weird things happen
 	__subfile_line=-1
@@ -1728,7 +1728,7 @@ scrape_SI() {
 
 	_tmp_json="${session_temp_dir}/SI.json"
 
-	print_info "Scraping subscriptions with instance: $invidious_instance${new_line}"
+	print_info "Scraping subscriptions with instance: $invidious_instance"
 
 	curl -fLZ --parallel-max "${max_thread_count}" -K "$_curl_config_file"
 	[ $? -eq 2 ] && curl -fL -K "$_curl_config_file"
@@ -1756,7 +1756,7 @@ scrape_SI() {
 
 scrape_youtube_channel() {
 	channel_url="$1"
-	[ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel${new_line}You can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:${new_line}:videos${new_line}:streams${new_line}:playlists${new_line}:v, :s, and :p may also be used as a shorter version${new_line}You may also use --type=live, --type=video, --type=playlist, or --type=all${new_line}" && return 100
+	[ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel${new_line}You can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:${new_line}:videos${new_line}:streams${new_line}:playlists${new_line}:v, :s, and :p may also be used as a shorter version${new_line}You may also use --type=live, --type=video, --type=playlist, or --type=all" && return 100
 	output_json_file="$2"
 
 	prepare_for_set_args
@@ -1805,7 +1805,7 @@ scrape_youtube_channel() {
 	set_real_channel_url_and_id "$channel_url"
 
 	for mod in $modifiers; do
-		print_info "Scraping Youtube channel: https://www.youtube.com/channel/${channel_id}/$mod${new_line}"
+		print_info "Scraping Youtube channel: https://www.youtube.com/channel/${channel_id}/$mod"
 		tmp_filename="channel-${channel_id}-$mod"
 		_tmp_html="${session_temp_dir}/${tmp_filename}.html"
 		_tmp_json="${session_temp_dir}/${tmp_filename}.json"
@@ -1961,7 +1961,7 @@ _concatinate_json_file() {
 
 scrape_invidious_playlist() {
 	playlist_url=$1
-	[ "$playlist_url" = ":help" ] && print_info "The search should be a link to a youtube playlist${new_line}" && return 100
+	[ "$playlist_url" = ":help" ] && print_info "The search should be a link to a youtube playlist" && return 100
 	output_json_file=$2
 
 	playlist_id="${playlist_url##*[?]list=}"
@@ -1979,7 +1979,7 @@ scrape_invidious_playlist() {
 		_get_request "$invidious_instance/api/v1/playlists/$playlist_id" \
 			-G --data-urlencode "page=$_cur_page" >"$_tmp_json" || return "$?"
 		jq -e '.videos==[]' <"$_tmp_json" >/dev/null 2>&1 && break
-		print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url, pg: $_cur_page)${new_line}"
+		print_info "Scraping Youtube playlist (with $invidious_instance) (playlist: $playlist_url, pg: $_cur_page)"
 
 		_invidious_playlist_json <"$_tmp_json" >>"$output_json_file"
 		_cur_page=$((_cur_page + 1))
@@ -1989,7 +1989,7 @@ scrape_youtube_playlist() { scrape_invidious_playlist "$@"; }
 
 scrape_invidious_search() {
 	page_query=$1
-	[ "$page_query" = ":help" ] && print_info "Make a youtube search${new_line}" && return 100
+	[ "$page_query" = ":help" ] && print_info "Make a youtube search" && return 100
 	output_json_file=$2
 
 	_ivs_cur_page=${pages_start:-1}
@@ -2007,7 +2007,7 @@ scrape_invidious_search() {
 		{
 			_tmp_json="${session_temp_dir}/yt-search-$_ivs_cur_page.json"
 
-			print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $_ivs_cur_page)${new_line}"
+			print_info "Scraping YouTube (with $invidious_instance) ($page_query, pg: $_ivs_cur_page)"
 
 			_get_request "$invidious_instance/api/v1/search" \
 				-G --data-urlencode "q=$page_query" \
@@ -2051,7 +2051,7 @@ scrape_next_page_invidious_search() {
 
 scrape_invidious_video_recommended() {
 	video="$1"
-	[ "$video" = ":help" ] && print_info "The search should be a link to a youtube video${new_line}" && return 100
+	[ "$video" = ":help" ] && print_info "The search should be a link to a youtube video" && return 100
 	output_json_file="$2"
 	case "$video" in
 	*/*) video="${video##*=}" ;;
@@ -2066,9 +2066,9 @@ scrape_R() { scrape_invidious_video_recommended "$@"; }
 
 scrape_invidious_trending() {
 	trending_tab=$(title_str "$1")
-	[ "$trending_tab" = ":help" ] && print_info "The search should be one of: Normal, Gaming, Music, News${new_line}" && return 100
+	[ "$trending_tab" = ":help" ] && print_info "The search should be one of: Normal, Gaming, Music, News" && return 100
 	output_json_file=$2
-	print_info "Scraping YouTube (with $invidious_instance) trending (${trending_tab:-Normal})${new_line}"
+	print_info "Scraping YouTube (with $invidious_instance) trending (${trending_tab:-Normal})"
 
 	_tmp_json="${session_temp_dir}/yt-trending"
 
@@ -2087,14 +2087,14 @@ scrape_T() { scrape_invidious_trending "$@"; }
 
 scrape_invidious_channel() {
 	channel_url=$1
-	[ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel${new_line}You can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:${new_line}:videos${new_line}:streams${new_line}:playlists${new_line}:v, :s, and :p may also be used as a shorter version${new_line}You may also use --type=live, --type=video, --type=playlist, or --type=all${new_line}" && return 100
+	[ "$channel_url" = ":help" ] && print_info "The search should be a link to a youtube channel${new_line}You can put one or more of the following modifiers followed by a space before the url to specify which type of videos to scrape:${new_line}:videos${new_line}:streams${new_line}:playlists${new_line}:v, :s, and :p may also be used as a shorter version${new_line}You may also use --type=live, --type=video, --type=playlist, or --type=all" && return 100
 	output_json_file=$2
 
 	tmp_file_name="channel-${channel_id}"
 	_tmp_html="${session_temp_dir}/${tmp_file_name}.html"
 	_tmp_json="${session_temp_dir}/${tmp_file_name}.json"
 
-	[ -n "$pages_to_scrape" ] || [ -n "$pages_start" ] && print_warning "If you want to use --pages or --pages-start${new_line}use -c invidious-playlist where the search is https://www.youtube.com/playlist?list=$channel_id${new_line}"
+	[ -n "$pages_to_scrape" ] || [ -n "$pages_start" ] && print_warning "If you want to use --pages or --pages-start${new_line}use -c invidious-playlist where the search is https://www.youtube.com/playlist?list=$channel_id"
 
 	prepare_for_set_args
 	set -- $1
@@ -2144,7 +2144,7 @@ scrape_invidious_channel() {
 	for modifier in $modifiers; do
 		channel_url="$invidious_instance/api/v1/channels/$channel_id/$modifier"
 
-		print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url${new_line}"
+		print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url"
 
 		case "$modifier" in
 			streams)
@@ -2192,7 +2192,7 @@ Eg:
 			invidious_instance="$PARENT_invidious_instance"
 			cache_dir="$session_cache_dir"
 			on_opt_parse_s() {
-				print_warning "-s is not supported in multi search${new_line}"
+				print_warning "-s is not supported in multi search"
 			}
 			_getopts "$@"
 			source_scrapers
@@ -2216,9 +2216,9 @@ scrape_M() { scrape_multi "$@"; }
 ## Peertube {{{
 scrape_peertube() {
 	page_query=$1
-	[ "$page_query" = ":help" ] && print_info "Search peertube${new_line}" && return 100
+	[ "$page_query" = ":help" ] && print_info "Search peertube" && return 100
 	output_json_file=$2
-	print_info "Scraping Peertube ($page_query)${new_line}"
+	print_info "Scraping Peertube ($page_query)"
 
 	_tmp_json="${session_temp_dir}/peertube.json"
 
@@ -2252,14 +2252,14 @@ scrape_P() { scrape_peertube "$@"; }
 scrape_odysee() {
 	[ "$odysee_video_search_count" -gt 50 ] && die 1 "--odysee-video-count must be <= 50"
 	page_query=$1
-	[ "$page_query" = ":help" ] && print_info "Search odysee${new_line}" && return 100
-	[ "${#page_query}" -le 2 ] && die 4 "Odysee searches must be 3 or more characters${new_line}"
+	[ "$page_query" = ":help" ] && print_info "Search odysee" && return 100
+	[ "${#page_query}" -le 2 ] && die 4 "Odysee searches must be 3 or more characters"
 	output_json_file=$2
 
 	# for scrape_next_page_odysee_search
 	[ -z "$_initial_odysee_video_search_count" ] && _initial_odysee_video_search_count=$odysee_video_search_count
 
-	print_info "Scraping Odysee ($page_query)${new_line}"
+	print_info "Scraping Odysee ($page_query)"
 
 	_tmp_json="${session_temp_dir}/odysee.json"
 
@@ -2368,7 +2368,7 @@ scrape_p() { scrape_json_file "$@"; }
 # Comments{{{
 scrape_comments() {
 	video_id="$1"
-	[ "$video_id" = ":help" ] && print_info "Search should be a link to a youtube video${new_line}" && return 100
+	[ "$video_id" = ":help" ] && print_info "Search should be a link to a youtube video" && return 100
 	case "$video_id" in
 	*/*) video_id="${video_id##*=}" ;;
 	esac
@@ -2377,7 +2377,7 @@ scrape_comments() {
 	i="${pages_start:-1}"
 	page_count="$((i + ${pages_to_scrape:-1}))"
 	while [ "$i" -le "$page_count" ]; do
-		print_info "Scraping comments (pg: $i)${new_line}"
+		print_info "Scraping comments (pg: $i)"
 		_out_comment_file="${session_temp_dir}/comments-$i.json.final"
 		_get_request "$invidious_instance/api/v1/comments/${video_id}" -G \
 			--data-urlencode "continuation=$continuation" >"$_comment_file"
@@ -2538,7 +2538,7 @@ handle_post_keypress() {
 handle_keypress() {
 	read -r keypress <"$1"
 
-	print_debug "[KEYPRESS]: handling keypress: $keypress${new_line}"
+	print_debug "[KEYPRESS]: handling keypress: $keypress"
 
 	command_exists "handle_custom_keypresses" && { handle_custom_keypresses "$keypress" || return "$?"; }
 	case "$keypress" in
@@ -2610,7 +2610,7 @@ auto_select() {
 
 # Text interface {{{
 interface_text() {
-	command_exists "fzf" || die 3 "fzf not installed, cannot use the default menu${new_line}"
+	command_exists "fzf" || die 3 "fzf not installed, cannot use the default menu"
 	# if it doesn't exist, this menu has not opened yet, no need to revert the actions of the last keypress
 	[ -f "$keypress_file" ] && handle_post_keypress
 
@@ -2681,7 +2681,7 @@ preview_start() {
 	case $thumbnail_viewer in
 	ueberzug | sixel | kitty | iterm2 | sway | wayland)
 		command_exists "ueberzug" || {
-			[ "$thumbnail_viewer" = "ueberzug" ] && die 3 "ueberzug is not installed${new_line}" || die 3 "ueberzugpp is not installed${new_line}"
+			[ "$thumbnail_viewer" = "ueberzug" ] && die 3 "ueberzug is not installed" || die 3 "ueberzugpp is not installed"
 		}
 		export UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 		rm -f "$UEBERZUG_FIFO"
@@ -2737,7 +2737,7 @@ preview_stop() {
 }
 
 command_exists "on_no_thumbnail" || on_no_thumbnail() {
-	die 1 "No image${new_line}"
+	die 1 "No image"
 }
 
 preview_no_img() {
@@ -2882,7 +2882,7 @@ preview_display_image() {
 		} >"$UEBERZUG_FIFO" 2>>"$thumbnail_debug_log"
 		;;
 	swayimg-hyprland)
-		command_exists "hyprctl" || die 3 "hyprctl is required for this thumbnail viewer${new_line}"
+		command_exists "hyprctl" || die 3 "hyprctl is required for this thumbnail viewer"
 		_swayimg_pid_file="${session_temp_dir}/_swayimg.pid"
 		[ -f "$_swayimg_pid_file" ] && kill "$(cat "$_swayimg_pid_file")" 2>/dev/null
 
@@ -2945,27 +2945,27 @@ preview_display_image() {
 		;;
 	chafa)
 		printf '\n'
-		command_exists "chafa" || die 3 "${new_line}chafa is not installed${new_line}"
+		command_exists "chafa" || die 3 "${new_line}chafa is not installed"
 		chafa --format=symbols -s "$((width - 4))x$height" "$thumb_path" 2>>"$thumbnail_debug_log"
 		;;
 	chafa-16)
 		printf '\n'
-		command_exists "chafa" || die 3 "${new_line}chafa is not installed${new_line}"
+		command_exists "chafa" || die 3 "${new_line}chafa is not installed"
 		chafa --format=symbols -c 240 -s "$((width - 2))x$((height - 10))" "$thumb_path" 2>>"$thumbnail_debug_log"
 		;;
 	chafa-tty)
 		printf '\n'
-		command_exists "chafa" || die 3 "${new_line}chafa is not installed${new_line}"
+		command_exists "chafa" || die 3 "${new_line}chafa is not installed"
 		chafa --format=symbols -c 16 -s "$((width - 2))x$((height - 10))" "$thumb_path"  2>>"$thumbnail_debug_log"
 		;;
 	catimg)
 		printf '\n'
-		command_exists "catimg" || die 3 "${new_line}catimg is not installed${new_line}"
+		command_exists "catimg" || die 3 "${new_line}catimg is not installed"
 		catimg -w "$width" "$thumb_path" 2>>"$thumbnail_debug_log"
 		;;
 	catimg-256)
 		printf '\n'
-		command_exists "catimg" || die 3 "${new_line}catimg is not installed${new_line}"
+		command_exists "catimg" || die 3 "${new_line}catimg is not installed"
 		catimg -c -w "$width" "$thumb_path" 2>>"$thumbnail_debug_log"
 		;;
 	imv)
@@ -3099,7 +3099,7 @@ handle_info() {
         Q) return 2 ;;
         [MmCc]) return 3 ;;
         '') return 0 ;;
-        *) if command_exists "custom_info_wait_action_$info_wait_action"; then custom_info_wait_action_"$info_wait_action"; else print_error "info_wait_action is set to $info_wait_action but custom_info_wait_action_$info_wait_action does not exist${new_line}"; fi ;;
+        *) if command_exists "custom_info_wait_action_$info_wait_action"; then custom_info_wait_action_"$info_wait_action"; else print_error "info_wait_action is set to $info_wait_action but custom_info_wait_action_$info_wait_action does not exist"; fi ;;
 	esac
 	return 0
 
@@ -3141,7 +3141,7 @@ submenu_handler() {
 		end_of_set_args
 
 		on_opt_parse_s() {
-			print_warning "-s is not supported in submenus${new_line}"
+			print_warning "-s is not supported in submenus"
 		}
 
 		_getopts "$@"
@@ -3175,7 +3175,7 @@ close_url_handler_submenu_handler() {
 close_url_handler() {
 	fn_name="$(printf "%s" "$1" | tr '-' '_')"
 	command_exists "close_url_handler_$fn_name" && close_url_handler_"$fn_name"
-	print_debug "[URL HANDLER]: Closing url handler: ${c_blue}${1}${c_reset} with function: ${c_bold}close_url_handler_${fn_name}${c_reset}${new_line}"
+	print_debug "[URL HANDLER]: Closing url handler: ${c_blue}${1}${c_reset} with function: ${c_bold}close_url_handler_${fn_name}${c_reset}"
 	do_an_event_function "after_close_url_handler" "$1"
 }
 
@@ -3186,12 +3186,12 @@ open_url_handler() {
 	prepare_for_set_args ' '
 	# shellcheck disable=SC2086
 	set -- $urls
-	[ -z "$*" ] && print_info "No urls selected${new_line}" && return 0
+	[ -z "$*" ] && print_info "No urls selected" && return 0
 	end_of_set_args
 
 	do_an_event_function "on_open_url_handler" "$@"
 
-	print_debug "[URL HANDLER]: Opening links: ${c_bold}${urls}${c_reset} with ${c_blue}${url_handler}${c_reset}${new_line}"
+	print_debug "[URL HANDLER]: Opening links: ${c_bold}${urls}${c_reset} with ${c_blue}${url_handler}${c_reset}"
 
 	# if we provide video_pref etc as arguments, we wouldn't be able to add more as it would break every url handler function
 	# shellcheck disable=2031
@@ -3238,7 +3238,7 @@ open_format_selection_if_requested() {
 	set -- $(tr '\n' ' ' <"$1")
 	end_of_set_args
 
-	print_debug "[INTERFACE]: [FORMAT SELECTION]: open format screen: ${c_blue}${format_selection_screen}${c_reset}${new_line}"
+	print_debug "[INTERFACE]: [FORMAT SELECTION]: open format screen: ${c_blue}${format_selection_screen}${c_reset}"
 	case "$format_selection_screen" in
 	normal)
 		get_video_format "$1"
@@ -3319,7 +3319,7 @@ parse_opt() {
 	# for some reason optarg may equal opt intentionally,
 	# this checks the unmodified optarg, which will only be equal if there is no = sign
 	[ "$opt" = "$OPTARG" ] && optarg=""
-	print_debug "[OPTIONS]: Parsing opt: $opt=$optarg${new_line}"
+	print_debug "[OPTIONS]: Parsing opt: $opt=$optarg"
 	# shellcheck disable=SC2031
 	command_exists "on_opt_parse" && { on_opt_parse "$opt" "$optarg" "$OPT" "$OPTARG" || return 0; }
 	fn_name="on_opt_parse_$(printf "%s" "$opt" | tr '-' '_')"
@@ -3357,7 +3357,7 @@ parse_opt() {
 	odysee-video-count) odysee_video_search_count="$optarg" ;;
 	ii | inv-instance) invidious_instance="$optarg" ;;
 	rii | refresh-inv-instances) refresh_inv_instances ;;
-	i | interface) load_interface "$optarg" || die 2 "$optarg is not an interface${new_line}" ;;
+	i | interface) load_interface "$optarg" || die 2 "$optarg is not an interface" ;;
 	c | scrape) scrape=$optarg ;;
 	scrape+) scrape="$scrape,$optarg" ;;
 	scrape-) scrape="$(printf '%s' "$scrape" | sed 's/'"$optarg"'//; s/,,/,/g')" ;;
@@ -3368,14 +3368,14 @@ parse_opt() {
 		: "${optarg:=1}"
 		if [ "$optarg" != 1 ] && [ "$optarg" != 0 ]; then
 			is_sort="1"
-			load_sort_name "$optarg" || die 2 "$optarg is not a sort-name${new_line}"
+			load_sort_name "$optarg" || die 2 "$optarg is not a sort-name"
 		else
 			is_sort=${optarg}
 		fi
 		;;
 	sort-name)
 		# shellcheck disable=SC2015
-		load_sort_name "$optarg" && is_sort=1 || die 2 "$optarg is not a sort-name${new_line}"
+		load_sort_name "$optarg" && is_sort=1 || die 2 "$optarg is not a sort-name"
 		;;
 	video-pref) video_pref=$optarg ;;
 	ytdl-pref) ytdl_pref=$optarg ;;
@@ -3385,9 +3385,9 @@ parse_opt() {
 	ytdl-path) ytdl_path="$optarg" ;;
 	preview-side)
 		fzf_preview_side="${optarg}"
-		[ -z "$fzf_preview_side" ] && die 2 "no preview side given${new_line}"
+		[ -z "$fzf_preview_side" ] && die 2 "no preview side given"
 		;;
-	T | thumb-viewer) load_thumbnail_viewer "$optarg" || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer${new_line}" ;;
+	T | thumb-viewer) load_thumbnail_viewer "$optarg" || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer" ;;
 	force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
     force-invidious) yt_video_link_domain="" ;;
 	info-print-exit | info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
@@ -3461,16 +3461,16 @@ parse_opt() {
 		;;
 	*)
 		# shellcheck disable=SC2031
-		[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt${new_line}"
+		[ "$OPT" = "$long_opt_char" ] && print_info "$0: illegal long option -- $opt"
 		;;
 	esac
 }
 
 _getopts() {
 	case "$long_opt_char" in
-	[a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric${new_line}" ;;
+	[a-uw-zA-UW-Z0-9]) die 2 "long_opt_char must be v or non alphanumeric" ;;
 	#? = 1 char, * = 1+ chars; ?* = 2+ chars
-	??*) die 2 "long_opt_char must be 1 char${new_line}" ;;
+	??*) die 2 "long_opt_char must be 1 char" ;;
 	esac
 
 	OPTIND=0
@@ -3562,7 +3562,7 @@ handle_actions() {
 	[ "$enable_actions" -eq 0 ] && return 0
 	actions=$(jq -r --arg urls "$(cat "$1")" '.[] | [.url, .action] as $data | if ( ($urls | split("\n" )) | index($data[0]) and $data[1] != null ) == true then $data[1] else "" end' <"$ytfzf_video_json_file" | sed '/^[[:space:]]*$/d')
 	while read -r action; do
-		print_debug "[ACTION]: handling action: $action${new_line}"
+		print_debug "[ACTION]: handling action: $action"
 
 		# this wil only be empty after all urls with actions have happened
 		# shellcheck disable=SC2031
@@ -3608,22 +3608,22 @@ set_scrape_count() {
 handle_scrape_error() {
 	_scr="$2"
 	case "$1" in
-	1) print_info "$_scr failed to load website${new_line}" ;;
-	6) print_error "Website ($_scr) unresponsive (do you have internet?)${new_line}" ;;
-	9) print_info "$_scr does not have a configuration file${new_line}" ;;
+	1) print_info "$_scr failed to load website" ;;
+	6) print_error "Website ($_scr) unresponsive (do you have internet?)" ;;
+	9) print_info "$_scr does not have a configuration file" ;;
 	22)
 		case "$_scr" in
 		youtube | Y | youtube-trending | T)
-			print_error "There was an error scraping $_scr ($invidious_instance)${new_line}Try changing invidious instances${new_line}"
+			print_error "There was an error scraping $_scr ($invidious_instance)${new_line}Try changing invidious instances"
 			;;
-		*) print_error "There was an error scraping $_scr${new_line}" ;;
+		*) print_error "There was an error scraping $_scr" ;;
 		esac
 		;;
 	#:help search operator
-    100) print_info "---------${new_line}" && return 100 ;;
-	126) print_info "$_scr does not have execute permissions${new_line}" ;;
-	127) die 2 "invalid scraper: $_scr${new_line}" ;;
-	*) print_error "An error occured while scraping: $_scr (scraper returned error: $1)${new_line}" ;;
+    100) print_info "---------" && return 100 ;;
+	126) print_info "$_scr does not have execute permissions" ;;
+	127) die 2 "invalid scraper: $_scr" ;;
+	*) print_error "An error occured while scraping: $_scr (scraper returned error: $1)" ;;
 	esac
 }
 
@@ -3651,7 +3651,7 @@ handle_scraping() {
 something_was_scraped() {
 	#this MUST be `! grep -q -v -e '\[\]` because it's possible that [] exists in the file IN ADDITION to a list of actual results, we want to see if those actual results exists.
 	if ! [ -s "${ytfzf_video_json_file}" ] || ! grep -q -v -e '\[\]' "$ytfzf_video_json_file"; then
-		print_error "Nothing was scraped${new_line}"
+		print_error "Nothing was scraped"
 		return 1
 	fi
 	return 0
@@ -3671,10 +3671,10 @@ init_search() {
 	_search="$1"
 	_search_source="$2"
 
-	print_debug "[SEARCH]: initializing search with search: $_search, and sources: $_search_source${new_line}"
+	print_debug "[SEARCH]: initializing search with search: $_search, and sources: $_search_source"
 
 	# only ask for search if scrape isn't something like S or T
-	is_asking_for_search_necessary && { get_search_from_source "$_search_source" "$_search" || die 5 "No search query${new_line}"; }
+	is_asking_for_search_necessary && { get_search_from_source "$_search_source" "$_search" || die 5 "No search query"; }
 	init_files "$_search"
 	set_scrape_count
 
