@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2060.de55ad3"
+YTFZF_VERSION="git-2061.649b1a5"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -26,9 +26,9 @@ YTFZF_VERSION="git-2060.de55ad3"
 : "${YTFZF_LOGFILE:=}"
 
 if [ "$YTFZF_LOGFILE" ] && { [ "$__is_fzf_preview" -eq 1 ] || [ "$__is_submenu" -eq 1 ]; }; then
-    printf "[%s]\n==============\nSubmenu: %d\nFzf Preview: %d\n==============\n" "$(date)" "$__is_submenu" "$__is_fzf_preview" >> "${YTFZF_LOGFILE}"
+	printf "[%s]\n==============\nSubmenu: %d\nFzf Preview: %d\n==============\n" "$(date)" "$__is_submenu" "$__is_fzf_preview" >>"${YTFZF_LOGFILE}"
 elif [ "${YTFZF_LOGFILE}" ]; then
-    : > "${YTFZF_LOGFILE}"
+	: >"${YTFZF_LOGFILE}"
 fi
 
 ! [ -d "$YTFZF_TEMP_DIR" ] && mkdir -p "${YTFZF_TEMP_DIR}"
@@ -385,10 +385,10 @@ on_clean_up___ytfzf__() {
 	done <"$jobs_file"
 	rm -f "$jobs_file"
 	#}}}
-    if [ "$__is_fzf_preview" -eq 0 ]; then
-        [ "$keep_cache" -eq 1 ] && print_debug "[CLEAN UP]: copying cache dir" && cp -r "${session_cache_dir}" "${cache_dir}"
-	    [ -d "$session_cache_dir" ] && rm -rf "$session_cache_dir"
-    fi
+	if [ "$__is_fzf_preview" -eq 0 ]; then
+		[ "$keep_cache" -eq 1 ] && print_debug "[CLEAN UP]: copying cache dir" && cp -r "${session_cache_dir}" "${cache_dir}"
+		[ -d "$session_cache_dir" ] && rm -rf "$session_cache_dir"
+	fi
 }
 
 on_load_fake_extension___ytfzf__() {
@@ -416,8 +416,8 @@ on_post_set_vars___ytfzf__() {
 
 	: "${invidious_instance:=$(get_random_invidious_instance)}"
 
-    #if there is no domain, use the chosen invidious instance
-    [ -z "${yt_video_link_domain}" ] && yt_video_link_domain="${invidious_instance}"
+	#if there is no domain, use the chosen invidious instance
+	[ -z "${yt_video_link_domain}" ] && yt_video_link_domain="${invidious_instance}"
 
 	export FZF_DEFAULT_OPTS="--margin=0,3,0,0 $FZF_DEFAULT_OPTS"
 
@@ -515,8 +515,8 @@ add_to_hist() {
 	# id of the video to add to hist will be passed through stdin
 	# if multiple videos are selected, multiple ids will be present on multiple lines
 	json_file="$1"
-    urls="$(printf '"%s",' $(cat))"
-    urls="[${urls%,}]"
+	urls="$(printf '"%s",' $(cat))"
+	urls="[${urls%,}]"
 	jq -r '[ .[]|select(.url as $url | '"$urls"' | index($url) >= 0)]' <"$json_file" | sed "/\[\]/d" | sed "2s/$/\n    \"viewed\": \"$(date +'%m\/%d\/%y\ %H\:%M\:%S\ %z')\",/" >>"$hist_file"
 	unset url urls json_file
 }
@@ -705,10 +705,10 @@ _get_real_channel_link() {
 	http?://*/@*)
 		domain=${_input_link#https://}
 		domain=${domain%%/*}
-        url=$(printf "https://www.youtube.com/channel/%s\n" "$(_get_request "$_input_link" | sed -n 's/.*"channelId":"\([^"]\+\).*/\1/p')")
-        _get_real_channel_link_handle_empty_real_path () {
-            printf "$url"
-        }
+		url=$(printf "https://www.youtube.com/channel/%s\n" "$(_get_request "$_input_link" | sed -n 's/.*"channelId":"\([^"]\+\).*/\1/p')")
+		_get_real_channel_link_handle_empty_real_path() {
+			printf "$url"
+		}
 		;;
 	http?://*/c/* | http?://*/user/* | *\.*)
 		domain=${_input_link#https://}
@@ -763,11 +763,10 @@ trim_url() {
 }
 
 trim_blank() {
-    sed 's/[[:blank:]]//g' <<EOF
+	sed 's/[[:blank:]]//g' <<EOF
 $1
 EOF
 }
-
 
 command_exists() {
 	command -v "$1" >/dev/null 2>&1
@@ -941,10 +940,10 @@ run_interface() {
 _init_video_info_text() {
 	TTY_COLS=$1
 
-    command_exists "column" && use_column=1 || {
-        use_column=0
-        print_warning "command \"column\" not found, the menu may look very bad"
-    }
+	command_exists "column" && use_column=1 || {
+		use_column=0
+		print_warning "command \"column\" not found, the menu may look very bad"
+	}
 
 	title_len=$((TTY_COLS / 2))
 	channel_len=$((TTY_COLS / 5))
@@ -954,7 +953,7 @@ _init_video_info_text() {
 }
 
 _post_video_info_text() {
-	if [ "$use_column" = "1" ] ; then
+	if [ "$use_column" = "1" ]; then
 		column -t -s "$tab_space"
 	else
 		cat
@@ -1176,27 +1175,27 @@ load_thumbnail_viewer() {
 
 # Logging {{{
 
-_print_to_log_and_stderr () {
-     tee -a "${YTFZF_LOGFILE:-/dev/null}" <<EOF >&2
+_print_to_log_and_stderr() {
+	tee -a "${YTFZF_LOGFILE:-/dev/null}" <<EOF >&2
 $(printf -- "$1")
 EOF
 }
 
 print_debug() {
-    [ "${YTFZF_LOGFILE}" ] && pre_text="[DEBUG]" || pre_text="${c_blue}[DEBUG]${c_reset}"
-    [ "$log_level" -ge 3 ] && _print_to_log_and_stderr "${pre_text}: $1"
-    return 0
+	[ "${YTFZF_LOGFILE}" ] && pre_text="[DEBUG]" || pre_text="${c_blue}[DEBUG]${c_reset}"
+	[ "$log_level" -ge 3 ] && _print_to_log_and_stderr "${pre_text}: $1"
+	return 0
 }
 print_info() {
-    [ "$log_level" -ge 2 ] && _print_to_log_and_stderr "$1"
+	[ "$log_level" -ge 2 ] && _print_to_log_and_stderr "$1"
 }
 print_warning() {
-    [ "${YTFZF_LOGFILE}" ] && pre_text="[WARNING]" || pre_text="${c_yellow}[WARNING]${c_reset}"
-    [ "$log_level" -ge 1 ] && _print_to_log_and_stderr "${pre_text}: $1"
+	[ "${YTFZF_LOGFILE}" ] && pre_text="[WARNING]" || pre_text="${c_yellow}[WARNING]${c_reset}"
+	[ "$log_level" -ge 1 ] && _print_to_log_and_stderr "${pre_text}: $1"
 }
 print_error() {
-    [ "${YTFZF_LOGFILE}" ] && pre_text="[ERROR]" || pre_text="${c_red}[ERROR]${c_reset}"
-    [ "$log_level" -ge 0 ] && _print_to_log_and_stderr "${pre_text}: $1"
+	[ "${YTFZF_LOGFILE}" ] && pre_text="[ERROR]" || pre_text="${c_red}[ERROR]${c_reset}"
+	[ "$log_level" -ge 0 ] && _print_to_log_and_stderr "${pre_text}: $1"
 }
 
 die() {
@@ -1417,7 +1416,7 @@ set_vars() {
 	instances_file="$cache_dir/instancesV2.json"
 
 	# read from environment to reset any variables to what the user set
-    
+
 	if [ "$check_exists" -eq 1 ]; then
 		_current_var_name=
 		_current_var_value=
@@ -1434,7 +1433,7 @@ set_vars() {
 				_current_var_name="${_current_var_name%%=*}"
 				_current_var_value="${_var#*=}"
 				;;
-            (*) _current_var_value="${_current_var_value}${new_line}${_var}" ;;
+			*) _current_var_value="${_current_var_value}${new_line}${_var}" ;;
 			esac
 		done <"$tmp_env"
 
@@ -1609,27 +1608,27 @@ _youtube_channel_json() {
 }
 #}}}
 
-scrape_yt () {
-    search=$1
-    [ "$search" = ":help" ] && print_info "Scrape youtube without invidious" && return 100
-    output_json_file=$2
-    _tmp_html="${session_temp_dir}/yt-search.html"
-    _tmp_json="${session_temp_dir}/yt-search.json"
+scrape_yt() {
+	search=$1
+	[ "$search" = ":help" ] && print_info "Scrape youtube without invidious" && return 100
+	output_json_file=$2
+	_tmp_html="${session_temp_dir}/yt-search.html"
+	_tmp_json="${session_temp_dir}/yt-search.json"
 
-    printf "%s\n" "Scraping Youtube (with https://www.youtube.com) ($search)"
+	printf "%s\n" "Scraping Youtube (with https://www.youtube.com) ($search)"
 
-    _get_request "https://www.youtube.com/results" \
-		    -G --data-urlencode "search_query=$search" \
-		    -H "User-Agent: $4" \
-		    -H 'Accept-Language: en-US,en;q=0.9' \
-		    --compressed > "$_tmp_html" || exit "$?"
-    sed -n '/var *ytInitialData/,$p' < "$_tmp_html" |
-	   tr -d '\n' |
-	   sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;' > "$_tmp_json"
+	_get_request "https://www.youtube.com/results" \
+		-G --data-urlencode "search_query=$search" \
+		-H "User-Agent: $4" \
+		-H 'Accept-Language: en-US,en;q=0.9' \
+		--compressed >"$_tmp_html" || exit "$?"
+	sed -n '/var *ytInitialData/,$p' <"$_tmp_html" |
+		tr -d '\n' |
+		sed -E ' s_^.*var ytInitialData ?=__ ; s_;</script>.*__ ;' >"$_tmp_json"
 
-    #gets a list of videos
-    {
-	jq '[ .contents|
+	#gets a list of videos
+	{
+		jq '[ .contents|
 	..|.videoRenderer? |
 	select(. !=null) |
 		{
@@ -1646,7 +1645,7 @@ scrape_yt () {
 		}
 	]'
 
-	 jq '[ .contents|
+		jq '[ .contents|
 	..|.playlistRenderer? |
 	select(. !=null) |
 		{
@@ -1662,7 +1661,7 @@ scrape_yt () {
 			action: "scrape type=invidious-playlist search='"${yt_video_link_domain}"'/playlist?list=\(.playlistId)"
 		}
 	]'
-    } < "$_tmp_json" >> "$output_json_file"
+	} <"$_tmp_json" >>"$output_json_file"
 }
 
 scrape_subscriptions() {
@@ -1680,16 +1679,16 @@ scrape_subscriptions() {
 		[ -z "$channel_url" ] && continue
 		__subfile_line=$((__subfile_line + 1))
 		{
-            print_info "Scraping subscription: ${channel_url} (https://www.youtube.com)"
+			print_info "Scraping subscription: ${channel_url} (https://www.youtube.com)"
 			_tmp_subfile="${session_temp_dir}/channel-$__subfile_line"
-            _tmp_html="${session_temp_dir}/${tmp_filename}${__subfile_line}.html"
-            _tmp_json="${session_temp_dir}/${tmp_filename}${__subfile_line}.json"
-            set_real_channel_url_and_id "$channel_url"
-            _get_request "https://www.youtube.com/channel/${channel_id}/videos" > "$_tmp_html"
-            _youtube_get_json <"$_tmp_html" > "$_tmp_json"
+			_tmp_html="${session_temp_dir}/${tmp_filename}${__subfile_line}.html"
+			_tmp_json="${session_temp_dir}/${tmp_filename}${__subfile_line}.json"
+			set_real_channel_url_and_id "$channel_url"
+			_get_request "https://www.youtube.com/channel/${channel_id}/videos" >"$_tmp_html"
+			_youtube_get_json <"$_tmp_html" >"$_tmp_json"
 
-            channel_name=$(_youtube_channel_name <"$_tmp_html")
-			_youtube_channel_json "$channel_name" "youtube_channel_$mod" <"$_tmp_json" >> "$_tmp_subfile"
+			channel_name=$(_youtube_channel_name <"$_tmp_html")
+			_youtube_channel_json "$channel_name" "youtube_channel_$mod" <"$_tmp_json" >>"$_tmp_subfile"
 			__new_data="$(jq '.[].scraper="subscriptions"' <"$_tmp_subfile")"
 			printf "%s\n" "$__new_data" >"$_tmp_subfile"
 			if [ ${fancy_subs} -eq 1 ]; then
@@ -2147,24 +2146,24 @@ scrape_invidious_channel() {
 		print_info "Scraping Youtube (with $invidious_instance) channel: $channel_url"
 
 		case "$modifier" in
-			streams)
-				__jq_filter='.streams? // []'
-				__jq_parser=_invidious_search_json_live
-				;;
-			playlists)
-				__jq_filter='.playlists? // []'
-				__jq_parser=_invidious_search_json_playlist
-				;;
-			videos|*)
-				__jq_filter='(.videos? // []) + (.latestVideos? // [])'
-				__jq_parser=_invidious_search_json_generic
-				;;
+		streams)
+			__jq_filter='.streams? // []'
+			__jq_parser=_invidious_search_json_live
+			;;
+		playlists)
+			__jq_filter='.playlists? // []'
+			__jq_parser=_invidious_search_json_playlist
+			;;
+		videos | *)
+			__jq_filter='(.videos? // []) + (.latestVideos? // [])'
+			__jq_parser=_invidious_search_json_generic
+			;;
 		esac
 
 		_get_invidious_thumb_quality_name
 
 		_get_request "${channel_url##* }" \
-				-G --data-urlencode "page=$_cur_page" |
+			-G --data-urlencode "page=$_cur_page" |
 			jq "$__jq_filter" | $__jq_parser "invidious_channel" |
 			jq 'select(.!=[])' >>"$output_json_file" || return "$?"
 	done
@@ -2324,36 +2323,38 @@ scrape_O() { scrape_odysee "$@"; }
 
 # ytfzf json format{{{
 
-scrape_from_cache () {
-    search="$1"
-    [ "$search" = ":help" ] && print_info "Scrapes from a cached ytfzf search${new_line}the search is the cache # to use, where 1 is the most recent and \$ is the least recent" && return 100
-    on_clean_up_scrape_from_cache () {
-        rm -r "${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}" > /dev/null 2>&1
-    }
-    load_fake_extension "scrape_from_cache"
+scrape_from_cache() {
+	search="$1"
+	[ "$search" = ":help" ] && print_info "Scrapes from a cached ytfzf search${new_line}the search is the cache # to use, where 1 is the most recent and \$ is the least recent" && return 100
+	on_clean_up_scrape_from_cache() {
+		rm -r "${cache_dir}/${SEARCH_PREFIX}-${YTFZF_PID}" >/dev/null 2>&1
+	}
+	load_fake_extension "scrape_from_cache"
 
-    set +f
-    _locations=$(
-        for location in "$cache_dir"/*-[0-9][0-9]*; do
-            printf "%s\n" "$(cat "${location}/created-at")-${location}"
-        done | sort -nr | cut -d '-' -f2-
-    )
+	set +f
+	_locations=$(
+		for location in "$cache_dir"/*-[0-9][0-9]*; do
+			printf "%s\n" "$(cat "${location}/created-at")-${location}"
+		done | sort -nr | cut -d '-' -f2-
+	)
 
-    if [ -n "$search" ]; then
-        _location="$(sed -n "${search}p" <<EOF
+	if [ -n "$search" ]; then
+		_location="$(
+			sed -n "${search}p" <<EOF
 $_locations
 EOF
-)"
-    else
-        _location=$(quick_menu_wrapper "Pick from previous searches" <<EOF
+		)"
+	else
+		_location=$(
+			quick_menu_wrapper "Pick from previous searches" <<EOF
 $_locations
 EOF
-)
-    fi
-    [ -z "$_location" ] && return 1
-    scrape_json_file "$_location/videos_json" "$2"
-    cp -r "$_location/thumbnails" "${session_cache_dir}"
-    set -f
+		)
+	fi
+	[ -z "$_location" ] && return 1
+	scrape_json_file "$_location/videos_json" "$2"
+	cp -r "$_location/thumbnails" "${session_cache_dir}"
+	set -f
 }
 
 scrape_json_file() {
@@ -2686,11 +2687,11 @@ preview_start() {
 		export UEBERZUG_FIFO="$session_temp_dir/ytfzf-ueberzug-fifo"
 		rm -f "$UEBERZUG_FIFO"
 		mkfifo "$UEBERZUG_FIFO"
-        if [ "$thumbnail_viewer" = "ueberzug" ]; then
-            o="x11"
-        else
-             o="${thumbnail_viewer}"
-        fi
+		if [ "$thumbnail_viewer" = "ueberzug" ]; then
+			o="x11"
+		else
+			o="${thumbnail_viewer}"
+		fi
 		if command_exists ueberzugpp; then
 			ueberzugpp layer -o "${o}" --parser json <"$UEBERZUG_FIFO" 2>>"$thumbnail_debug_log" &
 		else
@@ -2956,7 +2957,7 @@ preview_display_image() {
 	chafa-tty)
 		printf '\n'
 		command_exists "chafa" || die 3 "${new_line}chafa is not installed"
-		chafa --format=symbols -c 16 -s "$((width - 2))x$((height - 10))" "$thumb_path"  2>>"$thumbnail_debug_log"
+		chafa --format=symbols -c 16 -s "$((width - 2))x$((height - 10))" "$thumb_path" 2>>"$thumbnail_debug_log"
 		;;
 	catimg)
 		printf '\n'
@@ -3094,12 +3095,12 @@ handle_info() {
 	[ "$info_wait" -eq 1 ] && info_wait_prompt_wrapper
 
 	case "$info_wait_action" in
-        # simulates old behavior of when alt-l or alt-i is pressed and -l is enabled
-        q) [ "$is_loop" -eq 1 ] && return 3 || return 2 ;;
-        Q) return 2 ;;
-        [MmCc]) return 3 ;;
-        '') return 0 ;;
-        *) if command_exists "custom_info_wait_action_$info_wait_action"; then custom_info_wait_action_"$info_wait_action"; else print_error "info_wait_action is set to $info_wait_action but custom_info_wait_action_$info_wait_action does not exist"; fi ;;
+	# simulates old behavior of when alt-l or alt-i is pressed and -l is enabled
+	q) [ "$is_loop" -eq 1 ] && return 3 || return 2 ;;
+	Q) return 2 ;;
+	[MmCc]) return 3 ;;
+	'') return 0 ;;
+	*) if command_exists "custom_info_wait_action_$info_wait_action"; then custom_info_wait_action_"$info_wait_action"; else print_error "info_wait_action is set to $info_wait_action but custom_info_wait_action_$info_wait_action does not exist"; fi ;;
 	esac
 	return 0
 
@@ -3218,14 +3219,14 @@ get_video_format_simple() {
 }
 
 get_video_format() {
-    case "${ytdl_path##*/}" in
-        (youtube-dl) _format_options=$("${ytdl_path}" -F "$1" | sed 1,3d) ;;
-        (*) _format_options=$("${ytdl_path}" -q -F "$1" --format-sort "$format_selection_sort" | sed 1,3d) ;;
-    esac
-    _audio_choices="$(echo "$_format_options" | grep "audio only")"
+	case "${ytdl_path##*/}" in
+	youtube-dl) _format_options=$("${ytdl_path}" -F "$1" | sed 1,3d) ;;
+	*) _format_options=$("${ytdl_path}" -q -F "$1" --format-sort "$format_selection_sort" | sed 1,3d) ;;
+	esac
+	_audio_choices="$(echo "$_format_options" | grep "audio only")"
 	[ "$_audio_choices" ] && audio_pref="$(echo "$_audio_choices" | quick_menu_wrapper "Audio format: " | awk '{print $1}')"
 	if [ "$is_audio_only" -eq 0 ]; then
-        video_pref=$(echo "$_format_options" | sed 's/\\033\[[[:digit:]]*m//g' | grep -v 'audio only' | quick_menu_wrapper "Video Format: " | awk '{print $1}')
+		video_pref=$(echo "$_format_options" | sed 's/\\033\[[[:digit:]]*m//g' | grep -v 'audio only' | quick_menu_wrapper "Video Format: " | awk '{print $1}')
 	fi
 	ytdl_pref="${video_pref}+${audio_pref}/${video_pref}/${audio_pref}"
 }
@@ -3334,10 +3335,10 @@ parse_opt() {
 	m | audio-only) is_audio_only=${optarg:-1} ;;
 	d | download) url_handler=downloader ;;
 	f | formats) show_formats=${optarg:-1} ;;
-	S | select) interface="scripting" && is_specific_select="1" && scripting_video_count="$optarg";;
-	a | auto-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && is_auto_select=${optarg:-1};;
-	A | select-all) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && is_auto_select=${optarg:-1} && scripting_video_count='$';;
-	r | random-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && is_random_select=${optarg:-1};;
+	S | select) interface="scripting" && is_specific_select="1" && scripting_video_count="$optarg" ;;
+	a | auto-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && is_auto_select=${optarg:-1} ;;
+	A | select-all) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && is_auto_select=${optarg:-1} && scripting_video_count='$' ;;
+	r | random-select) [ -z "$optarg" ] || [ "$optarg" -eq 1 ] && is_random_select=${optarg:-1} ;;
 	n | link-count) scripting_video_count=$optarg ;;
 	l | loop) is_loop=${optarg:-1} ;;
 	s | search-again) search_again=${optarg:-1} ;;
@@ -3389,7 +3390,7 @@ parse_opt() {
 		;;
 	T | thumb-viewer) load_thumbnail_viewer "$optarg" || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer" ;;
 	force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
-    force-invidious) yt_video_link_domain="" ;;
+	force-invidious) yt_video_link_domain="" ;;
 	info-print-exit | info-exit) [ "${optarg:-1}" -eq 1 ] && info_wait_action=q ;;
 	info-action) info_wait_action="$optarg" ;;
 	info-wait) info_wait="${optarg:-1}" ;;
@@ -3515,10 +3516,10 @@ init_files() {
 	SEARCH_PREFIX="${SEARCH_PREFIX:-SCRAPE-$scrape}"
 	[ "${#SEARCH_PREFIX}" -gt 200 ] && SEARCH_PREFIX="SCRAPE-$scrape"
 
-    #if we are in a submenu, cache_dir will be the previous session_cache_dir
+	#if we are in a submenu, cache_dir will be the previous session_cache_dir
 
-    [ "$__is_submenu" -eq 1 ] && _session_cache_dir_prefix="${cache_dir}" || _session_cache_dir_prefix="${YTFZF_TEMP_DIR}"
-    session_cache_dir="${_session_cache_dir_prefix}/${SEARCH_PREFIX}-${YTFZF_PID}"
+	[ "$__is_submenu" -eq 1 ] && _session_cache_dir_prefix="${cache_dir}" || _session_cache_dir_prefix="${YTFZF_TEMP_DIR}"
+	session_cache_dir="${_session_cache_dir_prefix}/${SEARCH_PREFIX}-${YTFZF_PID}"
 
 	session_temp_dir="${session_cache_dir}/tmp"
 
@@ -3535,9 +3536,9 @@ init_files() {
 
 	[ "$1" ] && printf "%s\n" "$1" >"${session_cache_dir}/searches.list"
 
-    awk 'BEGIN{print srand(srand())}' > "${session_cache_dir}/created-at"
+	awk 'BEGIN{print srand(srand())}' >"${session_cache_dir}/created-at"
 
-    unset _session_cache_dir_prefix
+	unset _session_cache_dir_prefix
 }
 
 # }}}
@@ -3619,8 +3620,8 @@ handle_scrape_error() {
 		*) print_error "There was an error scraping $_scr" ;;
 		esac
 		;;
-	#:help search operator
-    100) print_info "---------" && return 100 ;;
+		#:help search operator
+	100) print_info "---------" && return 100 ;;
 	126) print_info "$_scr does not have execute permissions" ;;
 	127) die 2 "invalid scraper: $_scr" ;;
 	*) print_error "An error occured while scraping: $_scr (scraper returned error: $1)" ;;
