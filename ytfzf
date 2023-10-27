@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2061.649b1a5"
+YTFZF_VERSION="git-2062.2de0011"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1704,6 +1704,7 @@ scrape_subscriptions() {
 }
 scrape_youtube_subscriptions() { scrape_subscriptions "$@"; }
 scrape_S() { scrape_subscriptions "$@"; }
+scrape_s() { scrape_subscriptions "$@"; }
 
 scrape_SI() {
 	output_json_file="$2"
@@ -1752,6 +1753,8 @@ scrape_SI() {
 	fi >>"$output_json_file"
 	set -f
 }
+
+scrape_si() { scrape_SI "$@"; }
 
 scrape_youtube_channel() {
 	channel_url="$1"
