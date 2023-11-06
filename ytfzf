@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2062.2de0011"
+YTFZF_VERSION="git-2063.d040ad4"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -763,7 +763,7 @@ trim_url() {
 }
 
 trim_blank() {
-	sed 's/[[:blank:]]//g' <<EOF
+	sed -e 's/^[[:blank:]]*//g' -e 's/[[:blank:]]*$//g' <<EOF
 $1
 EOF
 }
