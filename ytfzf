@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2063.d040ad4"
+YTFZF_VERSION="git-2064.8ca1646"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1009,7 +1009,6 @@ do_an_event_function() {
 	command_exists "$event" && $event "$@"
 	prepare_for_set_args " "
 	for ext in $loaded_extensions; do
-
 		command_exists "${event}_$ext" && print_debug "[EVENT]: $ext running $event" && "${event}_$ext" "$@"
 	done
 	end_of_set_args
@@ -1708,7 +1707,7 @@ scrape_s() { scrape_subscriptions "$@"; }
 
 scrape_SI() {
 	output_json_file="$2"
-	_curl_config_file="${session_temp_dir}/curl_config"
+	_curl_config_file="${session_temp_dir}/curl_channels"
 	: >"$_curl_config_file"
 
 	while read -r url; do
@@ -2741,7 +2740,8 @@ preview_stop() {
 }
 
 command_exists "on_no_thumbnail" || on_no_thumbnail() {
-	die 1 "No image"
+    [ "${__did_on_no_thumbnail:-0}" -eq 1 ] || print_error "No image"
+    __did_on_no_thumbnail=1
 }
 
 preview_no_img() {
