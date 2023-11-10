@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2068.e48958c"
+YTFZF_VERSION="git-2069.42937fa"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1360,7 +1360,7 @@ set_vars() {
 	action_meta_key="ctrl"
 
 	# shortcuts
-	download_shortcut="${action_meta_key}-d" video_shortcut="${action_meta_key}-v" audio_shortcut="${action_meta_key}-m" detach_shortcut="${action_meta_key}-e" print_link_shortcut="${action_meta_key}-l" show_formats_shortcut="${action_meta_key}-f" info_shortcut="${action_meta_key}-i" search_again_shortcut="${action_meta_key}-s"
+	download_shortcut="${selection_meta_key}-d" video_shortcut="${selection_meta_key}-v" audio_shortcut="${selection_meta_key}-m" detach_shortcut="${selection_meta_key}-e" print_link_shortcut="${selection_meta_key}-l" show_formats_shortcut="${selection_meta_key}-f" info_shortcut="${selection_meta_key}-i" search_again_shortcut="${selection_meta_key}-s"
 
 	next_page_action_shortcut="${action_meta_key}-p"
 
@@ -3431,7 +3431,7 @@ parse_opt() {
 	disable-submenus) enable_submenus="${optarg:-0}" ;;
 	disable-actions) enable_actions="$((${optarg:-1} ^ 1))" ;;
 	thumbnail-quality) thumbnail_quality="$optarg" ;;
-	u | url-handler) load_url_handler "$optarg" ;;
+	u | url-handler) load_url_handler "$optarg";;
 	keep-cache) keep_cache="${optarg:-1}" ;;
 	submenu-opts | submenu-scraping-opts) submenu_opts="${optarg}" ;;
 	keep-vars) keep_vars="${optarg:-1}" ;;
