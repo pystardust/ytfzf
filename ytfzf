@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2064.8ca1646"
+YTFZF_VERSION="git-2065.4a27783"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2740,8 +2740,8 @@ preview_stop() {
 }
 
 command_exists "on_no_thumbnail" || on_no_thumbnail() {
-    [ "${__did_on_no_thumbnail:-0}" -eq 1 ] || print_error "No image"
-    __did_on_no_thumbnail=1
+	[ "${__did_on_no_thumbnail:-0}" -eq 1 ] || print_error "No image"
+	__did_on_no_thumbnail=1
 }
 
 preview_no_img() {
@@ -3390,6 +3390,10 @@ parse_opt() {
 	preview-side)
 		fzf_preview_side="${optarg}"
 		[ -z "$fzf_preview_side" ] && die 2 "no preview side given"
+		case "$fzf_preview_side" in
+		left | right | up | down) : ;;
+		*) die 2 "$fzf_preview_side is not a valid preview side, must be one of: left, right, up, down" ;;
+		esac
 		;;
 	T | thumb-viewer) load_thumbnail_viewer "$optarg" || [ -f "$thumbnail_viewer" ] || die 2 "$optarg is not a thumb-viewer" ;;
 	force-youtube) yt_video_link_domain="https://www.youtube.com" ;;
