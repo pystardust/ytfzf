@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2066.f48e708"
+YTFZF_VERSION="git-2067.f18630f"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1354,10 +1354,13 @@ set_vars() {
 	#actions are slow, disable if you want to increase runtime speed by 15ms
 	enable_actions=1
 
-	# shortcuts
-	download_shortcut="alt-d" video_shortcut="alt-v" audio_shortcut="alt-m" detach_shortcut="alt-e" print_link_shortcut="alt-l" show_formats_shortcut="alt-f" info_shortcut="alt-i" search_again_shortcut="alt-s"
+    selection_meta_key="alt"
+    action_meta_key="ctrl"
 
-	next_page_action_shortcut="ctrl-p"
+	# shortcuts
+	download_shortcut="${meta_key}-d" video_shortcut="${meta_key}-v" audio_shortcut="${meta_key}-m" detach_shortcut="${meta_key}-e" print_link_shortcut="${meta_key}-l" show_formats_shortcut="${meta_key}-f" info_shortcut="${meta_key}-i" search_again_shortcut="${meta_key}-s"
+
+	next_page_action_shortcut="${action_meta_key}-p"
 
 	# interface design
 	show_thumbnails="0" is_sort="0" skip_thumb_download="0" external_menu_len="210"
