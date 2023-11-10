@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2067.f18630f"
+YTFZF_VERSION="git-2068.e48958c"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1304,7 +1304,7 @@ set_vars() {
 	# save the ecurrent environment so that any user set variables will be saved
 	if [ "$check_exists" -eq 1 ]; then
 		tmp_env="${YTFZF_TEMP_DIR}/ytfzf-env-$$"
-		export -p > "$tmp_env"
+		export -p >"$tmp_env"
 	fi
 
 	# debugging
@@ -1342,6 +1342,8 @@ set_vars() {
 
 	# menu options
 
+	preview_window_width=50%
+
 	enable_submenus="1" submenu_opts="" submenu_scraping_opts="" enable_back_button="1"
 	keep_vars=0
 
@@ -1354,11 +1356,11 @@ set_vars() {
 	#actions are slow, disable if you want to increase runtime speed by 15ms
 	enable_actions=1
 
-    selection_meta_key="alt"
-    action_meta_key="ctrl"
+	selection_meta_key="alt"
+	action_meta_key="ctrl"
 
 	# shortcuts
-	download_shortcut="${meta_key}-d" video_shortcut="${meta_key}-v" audio_shortcut="${meta_key}-m" detach_shortcut="${meta_key}-e" print_link_shortcut="${meta_key}-l" show_formats_shortcut="${meta_key}-f" info_shortcut="${meta_key}-i" search_again_shortcut="${meta_key}-s"
+	download_shortcut="${action_meta_key}-d" video_shortcut="${action_meta_key}-v" audio_shortcut="${action_meta_key}-m" detach_shortcut="${action_meta_key}-e" print_link_shortcut="${action_meta_key}-l" show_formats_shortcut="${action_meta_key}-f" info_shortcut="${action_meta_key}-i" search_again_shortcut="${action_meta_key}-s"
 
 	next_page_action_shortcut="${action_meta_key}-p"
 
@@ -1438,11 +1440,11 @@ set_vars() {
 			*) _current_var_value="${_current_var_value}${new_line}${_var}" ;;
 			esac
 		done <"$tmp_env"
-        [ "$_current_var_name" ] && {
-            export "${_current_var_name}"="$(eval echo "$_current_var_value")"
-            _current_var_name=""
-            _current_var_value=""
-        }
+		[ "$_current_var_name" ] && {
+			export "${_current_var_name}"="$(eval echo "$_current_var_value")"
+			_current_var_name=""
+			_current_var_value=""
+		}
 
 		rm "$tmp_env"
 	fi
@@ -3052,12 +3054,13 @@ interface_thumbnails() {
 	printf "%s\n" "$_c_SORTED_VIDEO_DATA" |
 		jq -r '"\(.title)'"$gap_space"'\t|\(.channel)\t|\(.duration)\t|\(.views)\t|\(.date)\t|\(.viewed)\t|\(.url)"' |
 		_post_video_info_text |
-		SHELL="$(command -v sh)" fzf -m --sync \
+		fzf -m --sync \
 			--expect="$shortcut_binds" \
 			--preview "__is_fzf_preview=1 YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' session_temp_dir='$session_temp_dir' fzf_preview_side='$fzf_preview_side' scrape='$scrape' thumbnail_viewer='$thumbnail_viewer' ytfzf_video_json_file='$ytfzf_video_json_file' $0 -W \"preview_img"$EOT"{f}\"" \
 			$_fzf_start_bind \
 			--bind "${next_page_action_shortcut}:reload(__is_fzf_preview=1 TTY_COLS=${TTY_COLS} TTY_LINES=${TTY_LINES} YTFZF_CHECK_VARS_EXISTS=1 session_cache_dir='$session_cache_dir' ytfzf_video_json_file='$ytfzf_video_json_file' invidious_instance='$invidious_instance' yt_video_link_domain='$yt_video_link_domain' pages_to_scrape='$pages_to_scrape' session_temp_dir='$session_temp_dir' $0 -W \"next_page"$EOT"{f}\")" \
-			--preview-window "$fzf_preview_side:50%:wrap" --layout=reverse | set_keypress |
+			--preview-window "$fzf_preview_side:$preview_window_width:wrap" --layout=reverse |
+		set_keypress |
 		trim_url >"$selected_id_file"
 
 	preview_stop "$thumbnail_viewer"
