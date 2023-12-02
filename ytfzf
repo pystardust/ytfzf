@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2069.42937fa"
+YTFZF_VERSION="git-2070.01603a3"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -2882,6 +2882,14 @@ preview_display_image() {
 	get_ueberzug_positioning "$FZF_PREVIEW_COLUMNS" "$FZF_PREVIEW_LINES" "$fzf_preview_side"
 	case $thumbnail_viewer in
 	ueberzug | sixel | kitty | iterm2 | sway | wayland)
+		#not exactly sure why this is necessary
+		[ "$thumbnail_viewer" = "kitty" ] && width=$((width - 11))
+		{
+			printf "{"
+			printf "\"%s\": \"%s\"," "action" "remove" "identifier" "ytfzf"
+			printf '"%s": "%s"' "draw" "True"
+			printf "}\n"
+		} >"$UEBERZUG_FIFO" 2>>"$thumbnail_debug_log"
 		{
 			printf "{"
 			printf '"%s": "%s",' \
@@ -3431,7 +3439,7 @@ parse_opt() {
 	disable-submenus) enable_submenus="${optarg:-0}" ;;
 	disable-actions) enable_actions="$((${optarg:-1} ^ 1))" ;;
 	thumbnail-quality) thumbnail_quality="$optarg" ;;
-	u | url-handler) load_url_handler "$optarg";;
+	u | url-handler) load_url_handler "$optarg" ;;
 	keep-cache) keep_cache="${optarg:-1}" ;;
 	submenu-opts | submenu-scraping-opts) submenu_opts="${optarg}" ;;
 	keep-vars) keep_vars="${optarg:-1}" ;;
