@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2071.73506c3"
+YTFZF_VERSION="git-2072.6fe8d0d"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -3302,6 +3302,8 @@ internal_action_next_page() {
 
 	video_json_file="$ytfzf_video_json_file"
 
+	thumb_dir="${session_cache_dir}/thumbnails"
+
 	hovered_scraper="$(jq -r '.[]|select(.url=="'"$url"'").scraper' <"$ytfzf_video_json_file")"
 
 	if command_exists "scrape_next_page_$hovered_scraper"; then
@@ -3312,6 +3314,15 @@ internal_action_next_page() {
 		pages_start="${pages_start%[\"\']}"
 
 		scrape_next_page_"$hovered_scraper"
+	fi
+
+	if [ "$show_thumbnails" -eq 1 ]; then
+		prepare_for_set_args
+		case "$async_thumbnails" in
+		0) download_thumbnails $(get_missing_thumbnails) ;;
+		1) download_thumbnails $(get_missing_thumbnails) >/dev/null 2>&1 & ;;
+		esac
+		end_of_set_args
 	fi
 
 	_init_video_info_text "$TTY_COLS"
