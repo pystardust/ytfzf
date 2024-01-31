@@ -1,3 +1,9 @@
+# NOTICE
+
+This project is no longer actively maintained, it should still work for the foreseeable future
+
+---
+
 <p align="center">
     <a> <img src=.assets/logo.png></a>
     <br />
@@ -26,14 +32,14 @@
 
 # Table Of Contents
 
-* [`Dependencies`](#Dependencies)
-* [`Install`](#Install)
-* [`Features`](#Features)
-* [`Examples`](#Examples)
-* [`Configuration`](#Configuration)
-* [`Bugs`](#Bugs)
-* [`Contributing`](#Contributing)
-* [`Credits`](#Credits)
+- [`Dependencies`](#Dependencies)
+- [`Install`](#Install)
+- [`Features`](#Features)
+- [`Examples`](#Examples)
+- [`Configuration`](#Configuration)
+- [`Bugs`](#Bugs)
+- [`Contributing`](#Contributing)
+- [`Credits`](#Credits)
 
 ---
 
@@ -43,40 +49,40 @@ There are only 2 required dependencies, however the rest require some configurat
 
 ## Required dependencies
 
-* [`jq`](https://github.com/stedolan/jq)
-* [`curl`](https://github.com/curl/curl)
+- [`jq`](https://github.com/stedolan/jq)
+- [`curl`](https://github.com/curl/curl)
 
 ## Recommended dependencies
 
-* [`mpv`](https://github.com/mpv-player/mpv) (the default video and audio player)
-* [`fzf`](https://github.com/junegunn/fzf) (the default menu selection screen)
+- [`mpv`](https://github.com/mpv-player/mpv) (the default video and audio player)
+- [`fzf`](https://github.com/junegunn/fzf) (the default menu selection screen)
 
 ## Optional dependencies
 
-* [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (for downloading)
-* [`dmenu`](https://tools.suckless.org/dmenu/) (only if using the -D option)
-* [`ueberzugpp`](https://github.com/jstkdng/ueberzugpp)
-    * needed for the following thumbnail viewers:
-        * `kitty`, `iterm2`, `sixel`, and `ueberzug`
-    * the original [`ueberzug`](https://github.com/seebye/ueberzug) or any fork may be used if you only want to use the `ueberzug` viewer.
+- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (for downloading)
+- [`dmenu`](https://tools.suckless.org/dmenu/) (only if using the -D option)
+- [`ueberzugpp`](https://github.com/jstkdng/ueberzugpp)
+  - needed for the following thumbnail viewers:
+    - `kitty`, `iterm2`, `sixel`, and `ueberzug`
+  - the original [`ueberzug`](https://github.com/seebye/ueberzug) or any fork may be used if you only want to use the `ueberzug` viewer.
 
 ### Thumbnail Viewers
 
-* **To use a thumbnail viewer include `-T <viewer>` in the command when running ytfzf**
+- **To use a thumbnail viewer include `-T <viewer>` in the command when running ytfzf**
 
-| Program                                                                   | Wayland Support      |
-| :--                                                                       | :--                  |
-| [`kitty`](https://github.com/kovidgoyal/kitty) (requires `ueberzugpp`)    | &#9989;              |
-| `iterm2` (requires `ueberzugpp`)                                          | &#9989;              |
-| `sixel` (requires `ueberzugpp`)                                           | &#9989;              |
-| `sway` (requires `ueberzugpp`)                                            | &9989; (only on sway)|
-| `wayland` (requires `ueberzugpp`)                                         | &9989;               |
-| [`chafa`](https://github.com/hpjansson/chafa)                             | &#9989;              |
-| [`catimg`](https://github.com/posva/catimg)                               | &#9989;              |
-| [`imv`](https://git.sr.ht/~exec64/imv)                                    | &#9989;              |
-| [`mpv`](https://github.com/mpv-player/mpv)                                | &#9989;              |
-| [`swayimg`](https://github.com/artemsen/swayimg)                          | only on `sway`       |
-| [`swayimg`](https://github.com/artemsen/swayimg) (-T swayimg-hyprland)    | only on `hyprland`   |
+| Program                                                                | Wayland Support        |
+| :--------------------------------------------------------------------- | :--------------------- |
+| [`kitty`](https://github.com/kovidgoyal/kitty) (requires `ueberzugpp`) | &#9989;                |
+| `iterm2` (requires `ueberzugpp`)                                       | &#9989;                |
+| `sixel` (requires `ueberzugpp`)                                        | &#9989;                |
+| `sway` (requires `ueberzugpp`)                                         | &#9989; (only on sway) |
+| `wayland` (requires `ueberzugpp`)                                      | &#9989;                |
+| [`chafa`](https://github.com/hpjansson/chafa)                          | &#9989;                |
+| [`catimg`](https://github.com/posva/catimg)                            | &#9989;                |
+| [`imv`](https://git.sr.ht/~exec64/imv)                                 | &#9989;                |
+| [`mpv`](https://github.com/mpv-player/mpv)                             | &#9989;                |
+| [`swayimg`](https://github.com/artemsen/swayimg)                       | only on `sway`         |
+| [`swayimg`](https://github.com/artemsen/swayimg) (-T swayimg-hyprland) | only on `hyprland`     |
 
 # Install
 
@@ -88,19 +94,21 @@ There are only 2 required dependencies, however the rest require some configurat
 
 1. Install the dependencies listed [above](#Dependencies)
 2. Run the following commands
+
 ```sh
 git clone https://github.com/pystardust/ytfzf
 cd ytfzf
 sudo make install doc
 ```
 
-* If you wish to not install documentation (highly unrecommended) run `sudo make install` instead.
+- If you wish to not install documentation (highly unrecommended) run `sudo make install` instead.
 
-* If you wish to install addons, run `sudo make addons`
-    * `YTFZF_SYSTEM_ADDONS_DIR` will point to `/usr/local/share/ytfzf/addons` even if you set `PREFIX` to something else
-    * If you use a different prefix, it would be smart to export `YTFZF_SYSTEM_ADDONS_DIR` to `$PREFIX/share/ytfzf/addons` in a shell startup file.
+- If you wish to install addons, run `sudo make addons`
 
-* You may also install `ytfzf` through your package manager, as listed on the side.
+  - `YTFZF_SYSTEM_ADDONS_DIR` will point to `/usr/local/share/ytfzf/addons` even if you set `PREFIX` to something else
+  - If you use a different prefix, it would be smart to export `YTFZF_SYSTEM_ADDONS_DIR` to `$PREFIX/share/ytfzf/addons` in a shell startup file.
+
+- You may also install `ytfzf` through your package manager, as listed on the side.
 
 ## Addons
 
@@ -128,14 +136,14 @@ To use an extension addon run `ytfzf -e <extension> ...`
 
 # Features
 
-* Subscriptions
-* Thumbnails
-* Watch history
-* Search History
-* Downloading
-* Queueing multiple videos
-* Custom menus, and scrapers
-* Addon support
+- Subscriptions
+- Thumbnails
+- Watch history
+- Search History
+- Downloading
+- Queueing multiple videos
+- Custom menus, and scrapers
+- Addon support
 
 ---
 
@@ -165,7 +173,7 @@ ytfzf -L <search>
 ytfzf -cO <search>
 ```
 
-> Use the chafa thumbnail viewer, pass --vo=sixel, and --quiet to mpv, scrape odysee with the search *odysee search*, youtube with the search: *youtube search*, and also scrape subscriptions
+> Use the chafa thumbnail viewer, pass --vo=sixel, and --quiet to mpv, scrape odysee with the search _odysee search_, youtube with the search: _youtube search_, and also scrape subscriptions
 
 ```sh
 ytfzf -t -T chafa --url-handler-opts='--vo=sixel --quiet' -cO,Y,SI --multi-search odysee search,youtube search
@@ -187,9 +195,9 @@ For more information, see `ytfzf(5)` which should be installed, if it's not see 
 
 # Bugs
 
-* *dwm with swallow patch: Images don't render with ueberzug when looped (ie, option `-l`)*
-* *if thumbnails are not working `.Xauthority` might be causing it. Try deleting it and relogging into your computer.*
-* When fzf is not set to 100% height, thumbnails may appear in the wrong position
+- _dwm with swallow patch: Images don't render with ueberzug when looped (ie, option `-l`)_
+- _if thumbnails are not working `.Xauthority` might be causing it. Try deleting it and relogging into your computer._
+- When fzf is not set to 100% height, thumbnails may appear in the wrong position
 
 # Contributing
 
@@ -197,14 +205,13 @@ Feel free to contribute, and add your name to the credits, please use the develo
 
 # Credits
 
-| User           | Contributions                             | Donate|
-| :---           | :---                                      | :--- |
-| Pystardust    | [contributions](credits/pystardust.md)    ||
-| Euro20179     | [contributions](credits/euro20179.md)     ||
-| Simonhughxyz  | [contributions](credits/simonhughxyz.md)  ||
-| Jac-Zac       | [contributions](credits/jac-zac.md)       ||
-| Mudskipper875 | [contributions](credits/mudskipper875.md) ||
-| Gardockt | [contributions](credits/gardockt.md)||
-| qoheniac | [contributions](credits/qoheniac.md)||
-| mathisto | [contributions](credits/mathisto.md)||
-
+| User          | Contributions                             | Donate |
+| :------------ | :---------------------------------------- | :----- |
+| Pystardust    | [contributions](credits/pystardust.md)    |        |
+| Euro20179     | [contributions](credits/euro20179.md)     |        |
+| Simonhughxyz  | [contributions](credits/simonhughxyz.md)  |        |
+| Jac-Zac       | [contributions](credits/jac-zac.md)       |        |
+| Mudskipper875 | [contributions](credits/mudskipper875.md) |        |
+| Gardockt      | [contributions](credits/gardockt.md)      |        |
+| qoheniac      | [contributions](credits/qoheniac.md)      |        |
+| mathisto      | [contributions](credits/mathisto.md)      |        |

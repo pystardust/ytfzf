@@ -255,6 +255,12 @@ Valid options:
 .RE
 
 .TP
+.RB $ preview_window_width
+The amount of space to use for the fzf preview
+.br
+.IR default: " 50%"
+
+.TP
 .RB $ thumbnail_viewer
 The program to display images for thumbnail previews
 .br
@@ -458,52 +464,70 @@ Whether or not to make another search after fzf is closed.
 .IR default: " 0"
 
 .TP
+.RB $ selection_meta_key
+The meta key for shortcuts that select a video.
+.br
+.IR default: " alt"
+
+.TP
 .RB $ download_shortcut
 The shortcut to download the selected videos.
 .br
-.IR default: " alt-d"
+.IR default: " $selection_meta_key-d"
 
 .TP
 .RB $ video_shortcut
 The shortcut to watch the selected videos.
 .br
-.IR default: " alt-v"
+.IR default: " $selection_meta_key-v"
 
 .TP
 .RB $ audio_shortcut
 The shortcut to listen to the selected videos.
 .br
-.IR default: " alt-m"
+.IR default: " $selection_meta_key-m"
 
 .TP
 .RB $ detach_shortcut
 The shortcut to use the detach player.
 .br
-.IR default: " alt-e"
+.IR default: " $selection_meta_key-e"
 
 .TP
 .RB $ print_link_shortcut
 The shortcut to use to print the link.
 .br
-.IR default: " alt-l"
+.IR default: " $selection_meta_key-l"
 
 .TP
 .RB $ show_formats_shortcut
 The shortcut to show formats before playing the video.
 .br
-.IR default: " alt-f"
+.IR default: " $selection_meta_key-f"
 
 .TP
 .RB $ info_shortcut
 The shortcut to get all info about the selected video.
 .br
-.IR default: " alt-i"
+.IR default: " $selection_meta_key-i"
 
 .TP
 .RB $ search_again_shortcut
 The shortcut to make another search.
 .br
-.IR default: " alt-s"
+.IR default: " $selection_meta_key-s"
+
+.TP
+.RB $ action_meta_key
+The meta key for shorcuts that do something
+.br
+.IR default: " ctrl"
+
+.TP
+.RB next_page_action_shortcut
+The shortcut to scrape the next page.
+.br
+.IR default: " $action_meta_key-p"
 
 .TP
 .RB $ shortcut_binds
@@ -512,12 +536,6 @@ The keys to listen for in fzf.
 .IR default: " Enter,double-click,$download_shortcut,
 $video_shortcut,$detach_shortcut,$print_link_shortcut,$show_formats_shortcut,
 $info_shortcut,$search_again_shortcut,$custom_shortcut_binds"
-
-.TP
-.RB next_page_action_shortcut
-The shortcut to scrape the next page.
-.br
-.IR default: " ctrl-p"
 
 .TP
 .RB $ custom_shortcut_binds
@@ -744,6 +762,11 @@ The amount of videos to scrape per channel when getting subscriptions.
 Misc
 
 .RS
+
+.TP 
+.RB $ gap_space
+The amount of space after the title in the thumbnail viewer menu.
+.IR default: "'                             '"
 
 .TP
 .RB $ scrape_search_exclude
