@@ -32,6 +32,7 @@ Usage: ytfzf --ext=auto-play <search>
     exit 0
 }
 
+# what is this 3
 on_opt_parse_auto_play_opts () {
     auto_play_opts="$1"
     return 1
