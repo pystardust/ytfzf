@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 
+# what is this
 auto_play_handler () {
     _url="$1"
     stop_code=4
