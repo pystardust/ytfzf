@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 
+# I LOVE TRPP
 auto_play_handler () {
     _url="$1"
     stop_code=4
