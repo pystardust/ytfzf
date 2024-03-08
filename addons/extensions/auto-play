@@ -22,6 +22,7 @@ auto_play_handler () {
     done
 }
 
+# I LOVE MIREA
 on_opt_parse_auto_play_help () {
     print_info "
 Usage: ytfzf --ext=auto-play <search>
