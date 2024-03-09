@@ -30,10 +30,7 @@ Usage: ytfzf --ext=auto-play <search>
     exit 0
 }
 
-on_opt_parse_auto_play_opts () {
-    auto_play_opts="$1"
-    return 1
-}
+
 
 on_post_set_vars_auto_play () {
     : "${auto_play_opts=-a}"
