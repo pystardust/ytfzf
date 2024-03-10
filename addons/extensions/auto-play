@@ -15,7 +15,6 @@ auto_play_handler () {
         link=$(url_handler="$user_url_handler" ytfzf --ext=auto-play --auto-play-opts="$auto_play_opts" -cR $auto_play_opts -L --search-again=0 --loop=0 "$id" | tr '\n' '\t')
         id="${link%%$tab*}"
         id="${id##*=}"
-        set -f
         $user_url_handler $link
         if [ $? -eq $stop_code ]; then break; fi
     done
