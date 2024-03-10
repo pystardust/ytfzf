@@ -24,7 +24,7 @@ auto_play_handler () {
 on_opt_parse_auto_play_help () {
     print_info "
 Usage: ytfzf --ext=auto-play <search>
-    Options:
+
         --auto-play-opts:                 opts to use for auto play, default: -a
 "
     exit 0
