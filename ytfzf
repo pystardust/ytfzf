@@ -5,7 +5,7 @@
 
 # versioning system:
 # major.minor.bugs
-YTFZF_VERSION="git-2051.a67ba26"
+YTFZF_VERSION="git-2077.0857c74"
 
 #ENVIRONMENT VARIABLES {{{
 : "${YTFZF_CONFIG_DIR:=${XDG_CONFIG_HOME:-$HOME/.config}/ytfzf}"
@@ -1144,7 +1144,7 @@ load_thumbnail_viewer() {
 	_thumbnail_viewer="$1"
 	case "$_thumbnail_viewer" in
 	# these are special cases, where they are not themselves commands
-	chafa-16 | chafa | chafa-tty | catimg | catimg-256 | imv | ueberzug | iterm2 | swayimg | mpv | sixel | kitty | sway | wayland)
+	chafa-16 | chafa | chafa-tty | chafa-sixel | catimg | catimg-256 | imv | ueberzug | iterm2 | swayimg | mpv | sixel | kitty | sway | wayland)
 		thumbnail_viewer="$_thumbnail_viewer"
 		true
 		;;
@@ -2711,7 +2711,7 @@ preview_start() {
 		fi
 		exec 3>"$UEBERZUG_FIFO"
 		;;
-	chafa | chafa-16 | chafa-tty | catimg | catimg-256 | swayimg | swayimg-hyprland) : ;;
+	chafa | chafa-16 | chafa-tty | chafa-sixel | catimg | catimg-256 | swayimg | swayimg-hyprland) : ;;
 	imv)
 		first_img="$(jq -r '.[0].ID|select(.!=null)' <"$ytfzf_video_json_file")"
 		imv "$thumb_dir/${first_img}.jpg" >>"$thumbnail_debug_log" 2>&1 &
@@ -2736,7 +2736,7 @@ preview_stop() {
 	thumbnail_viewer=$1
 	case $thumbnail_viewer in
 	ueberzug | sixel | kitty | iterm2 | sway | wayland) exec 3>&- ;;
-	chafa | chafa-16 | chafa-tty | catimg | catimg-256) : ;;
+	chafa | chafa-16 | chafa-tty | chafa-sixel | catimg | catimg-256) : ;;
 	mpv)
 		kill "$mpv_pid"
 		rm "$MPV_SOCKET" >/dev/null 2>&1
@@ -2757,7 +2757,7 @@ command_exists "on_no_thumbnail" || on_no_thumbnail() {
 preview_no_img() {
 	thumbnail_viewer="$1"
 	case $thumbnail_viewer in
-	chafa | chafa-16 | chafa-tty | catimg | catimg-256 | imv | mpv) : ;;
+	chafa | chafa-16 | chafa-tty | chafa-sixel | catimg | catimg-256 | imv | mpv) : ;;
 	ueberzug | sixel | kitty | iterm2 | sway | wayland)
 		{
 			printf "{"
@@ -2980,6 +2980,10 @@ preview_display_image() {
 		command_exists "chafa" || die 3 "${new_line}chafa is not installed"
 		chafa --format=symbols -c 16 -s "$((width - 2))x$((height - 10))" "$thumb_path" 2>>"$thumbnail_debug_log"
 		;;
+    chafa-sixel)
+        printf '\n'
+        command_exists "chafa" || die 3 "${new_line}chafa is not installed"
+        chafa -f sixel -s "${FZF_PREVIEW_COLUMNS}x${FZF_PREVIEW_LINES}" "$thumb_path" 2>> "$thumbnail_debug_log" ;;
 	catimg)
 		printf '\n'
 		command_exists "catimg" || die 3 "${new_line}catimg is not installed"
