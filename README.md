@@ -86,7 +86,7 @@ There are only 2 required dependencies, however the rest require some configurat
 
 # Install
 
-<a href="https://repology.org/metapackage/ytfzf">
+<a href="https://repology.org/project/ytfzf/versions">
     <img src="https://repology.org/badge/vertical-allrepos/ytfzf.svg" alt="Repo status" align="right">
 </a>
 
