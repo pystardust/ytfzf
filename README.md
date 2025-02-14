@@ -215,5 +215,4 @@ Feel free to contribute, and add your name to the credits, please use the develo
 | Gardockt      | [contributions](credits/gardockt.md)      |        |
 | qoheniac      | [contributions](credits/qoheniac.md)      |        |
 | mathisto      | [contributions](credits/mathisto.md)      |        |
-Added 1 checnge in README.md
-Added 2nd change in branch 1
+Added 1st checnge in branch 1
